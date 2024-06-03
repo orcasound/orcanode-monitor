@@ -1,0 +1,74 @@
+# Orcanode Monitor Design
+
+## Backend Monitoring Logic
+
+The web service will be deployed as an azurewebsites.net service.  Periodically, at a frequency that can be
+configured by an administrator, the service will do the following:
+
+1. Enumerate the orcanodes listed at https://live.orcasound.net/api/json/feeds and update its internal list
+   of nodes, tracking the “node_name” and “bucket”, for each orcanode.
+
+2. For each orcanode:
+
+   a. Query the latest timestamp by fetching “https://{bucket}.s3.amazonaws.com/{node_name}/latest.txt”
+      (e.g., https://streaming-orcasound-net.s3.amazonaws.com/rpi_orcasound_lab/latest.txt for the Orcasound
+      Lab node).  This can be optimized by storing the Last-Modified header value and using If-Modified-Since
+      in subsequent queries.
+
+   b. If the timestamp is new, query the manifest file by fetching
+      “https://{bucket}.s3.amazonaws.com/{node_name}/hls/{timestamp}/live.m3u8”
+      (e.g., https://streaming-orcasound-net.s3.amazonaws.com/rpi_port_townsend/hls/1717439421/live.m3u8
+      for the Port Townsend node).
+
+   c. Update the state of the orcanode in stable storage.  Other internal modules can register for notifications
+      of changes to this state.
+
+The following state will be stored per orcanode:
+
+  * **name**: The human-readable name from the “name” obtained in step 1.
+
+  * **node_name**: The URI path component from the “node_name” obtained in step 1.
+
+  * **bucket**: The hostname component from the “bucket” obtained in step 1.
+
+  * **latest-recorded**: The Unix timestamp value in the latest.txt file obtained in step 2a (Question as recorded on the orcanode?)
+
+  * **latest-uploaded**: The Last-Modified timestamp on the latest.txt file as recorded by Amazon, obtained in step 2a.
+
+  * **manifest-updated**: The Last-Modified timestamp on the manifest file as recorded by Amazon, obtained in step 2b.
+
+### Configured parameters
+
+**Frequency to poll (in minutes)**: Service will poll each orcanode at the configured frequency.
+
+**Max upload delay (in minutes)**: If the manifest file is older than this, the node will be considered offline.
+
+## Web page front end
+
+The proposed web service would expose a web page that would display, for each node, the current state and
+recent history of the state, including % uptime over some time period.
+
+## If-This-Then-That (IFTTT) Integration
+
+The service will expose endpoints for an [IFTTT Service API](https://ifttt.com/docs/api_reference).  For the
+present, no authentication will be required since all state is read-only and public information.
+
+An IFTTT-compatible service can implement:
+
+ * **Triggers**: These are HTTPS API endpoints the service exposes that IFTTT can poll to fetch events
+   that can be used to trigger IFTTT Applets. IFTTT docs explain that “IFTTT will fire an Applet’s
+   action for each new item returned by the trigger.  Events should remain on the timeline indefinitely
+   and should not expire, although they may roll off the bottom of the list once the timeline exceeds 50 items.”
+
+ * **Actions**: These are HTTPS API endpoints the service exposes that IFTTT can call to cause actions
+   to occur as directed by an IFTTT Applet.  Currently, this capability will not be used.
+
+ * **Realtime notifications**: These are HTTP API endpoints that IFTTT exposes that the service can call
+   to notify IFTTT that new information is available at a trigger API the service exposes.  In other words,
+   when something critical changes, the [IFTTT Realtime API](https://ifttt.com/docs/api_reference#realtime-api)
+   can be used to notify IFTTT that new information is available.  This will cause IFTTT to call the
+   service’s trigger API to fetch the latest data.
+
+### Configured parameters
+
+**api_url_prefix**: The URI prefix to use for exposing the IFTTT Service API
