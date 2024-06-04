@@ -110,13 +110,41 @@ namespace OrcanodeMonitor.Core
             }
 
             string content = await response.Content.ReadAsStringAsync();
-            DateTime? latestRecorded = UnixTimeStampToDateTime(content);
-            node.LatestRecorded = UnixTimeStampToDateTime(content);
+            string unixTimestampString = content.TrimEnd();
+            DateTime? latestRecorded = UnixTimeStampToDateTime(unixTimestampString);
+            if (latestRecorded.HasValue)
+            {
+                node.LatestRecorded = latestRecorded;
+
+                DateTimeOffset? offset = response.Content.Headers.LastModified;
+                if (offset.HasValue)
+                {
+                    node.LatestUploaded = offset.Value.UtcDateTime;
+                }
+            }
+
+            await UpdateManifestTimestampAsync(node, unixTimestampString);
+        }
+
+        /// <summary>
+        /// Update the ManifestUpdated timestamp for a given Orcanode by querying S3.
+        /// </summary>
+        /// <param name="node">Orcanode to update</param>
+        /// <param name="unixTimestampString">Value in the latest.txt file</param>
+        /// <returns></returns>
+        public async static Task UpdateManifestTimestampAsync(Orcanode node, string unixTimestampString)
+        {
+            string url = "https://" + node.Bucket + ".s3.amazonaws.com/" + node.NodeName + "/hls/" + unixTimestampString + "/live.m3u8";
+            HttpResponseMessage response = await httpClient.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                return;
+            }
 
             DateTimeOffset? offset = response.Content.Headers.LastModified;
             if (offset.HasValue)
             {
-                node.LatestUploaded = offset.Value.UtcDateTime;
+                node.ManifestUpdated = offset.Value.UtcDateTime;
             }
         }
     }
