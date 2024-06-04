@@ -71,7 +71,11 @@ namespace OrcanodeMonitor.Core
                 {
                     continue;
                 }
-                var node = new Orcanode(name.ToString(), nodeName.ToString(), bucket.ToString());
+                if (!attributes.TryGetProperty("slug", out var slug))
+                {
+                    continue;
+                }
+                var node = new Orcanode(name.ToString(), nodeName.ToString(), bucket.ToString(), slug.ToString());
                 result.NodeList.Add(node);
             }
             result.Succeeded = true;

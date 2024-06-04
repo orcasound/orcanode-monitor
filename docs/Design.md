@@ -32,6 +32,8 @@ The following state will be stored per orcanode:
 
   * **bucket**: The hostname component from the “bucket” obtained in step 1.
 
+  * **slug**: The URI path component from the “slug” obtained in step 1.
+
   * **latest-recorded**: The Unix timestamp value in the latest.txt file obtained in step 2a (Question as recorded on the orcanode?)
 
   * **latest-uploaded**: The Last-Modified timestamp on the latest.txt file as recorded by Amazon, obtained in step 2a.

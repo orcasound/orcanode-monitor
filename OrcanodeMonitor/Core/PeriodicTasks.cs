@@ -8,7 +8,9 @@ namespace OrcanodeMonitor.Core
 {
     public class PeriodicTasks : BackgroundService
     {
+        // TODO: allow frequency to poll to be configurable.
         TimeSpan _frequencyToPoll = TimeSpan.FromMinutes(5);
+
         private readonly ILogger<PeriodicTasks> _logger;
 
         public PeriodicTasks(ILogger<PeriodicTasks> logger)

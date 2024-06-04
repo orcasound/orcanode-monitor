@@ -1,10 +1,44 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Dashboard";
 }
 
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+    <h1 class="display-4">Dashboard</h1>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Latest recorded</th>
+            <th>Latest uploaded</th>
+            <th>Manifest updated</th>
+            <th>Current state</th>
+            <th></th>
+        </tr>
+    @foreach (Core.Orcanode item in Model.Nodes)
+    {
+        <tr style="background-color: @Model.NodeColor(item)">
+            <td>
+                @Html.DisplayFor(modelItem => item.Name)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.LatestRecorded)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.LatestUploaded)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.ManifestUpdated)
+            </td>
+             <td>
+                @Html.DisplayFor(modelItem => item.Status)
+            </td>
+            <td>
+                <a href="https://live.orcasound.net/listen/@Html.DisplayFor(modelItem => item.Slug)" target="_blank">
+                    <button>Listen</button>
+                </a>
+            </td>
+        </tr>
+    }
+    <</table>
+ </div>
