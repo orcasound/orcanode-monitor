@@ -33,7 +33,9 @@ namespace OrcanodeMonitor.Core
         {
             return String.Format("{0} {1} at {2}", Slug, Status, Fetcher.UnixTimeStampToDateTime(Meta.UnixTimestamp));
         }
+        [JsonPropertyName("timestamp")]
         public DateTime? DateTime => Core.Fetcher.UnixTimeStampToDateTime(Meta.UnixTimestamp)?.ToLocalTime();
+        [JsonPropertyName("description")]
         public string Description { get
             {
                 string nodeName = State.GetNode(Slug)?.Name ?? "<Unknown>";
