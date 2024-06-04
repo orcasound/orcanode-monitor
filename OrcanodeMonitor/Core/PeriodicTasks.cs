@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace OrcanodeMonitor
+namespace OrcanodeMonitor.Core
 {
     public class PeriodicTasks : BackgroundService
     {
@@ -21,11 +21,11 @@ namespace OrcanodeMonitor
             {
                 try
                 {
-                    // Execute your business logic here
+                    // Execute business logic.
                     await ExecuteTask();
 
-                    // Adjust the interval as needed
-                    await Task.Delay(TimeSpan.FromSeconds(30), stoppingToken);
+                    // Schedule the next execution.
+                    await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
                 }
                 catch (Exception ex)
                 {
@@ -34,10 +34,12 @@ namespace OrcanodeMonitor
             }
         }
 
-        private async Task ExecuteTask()
+        private new async Task ExecuteTask()
         {
             // Your business logic goes here
             _logger.LogInformation("Background task executed.");
+
+            FetchNodesResult result = await Fetcher.FetchNodesAsync();
         }
     }
 

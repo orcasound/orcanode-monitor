@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Hosting;
-using OrcanodeMonitor;
+using OrcanodeMonitor.Core;
 
 var builder = WebApplication.CreateBuilder(args);
 
