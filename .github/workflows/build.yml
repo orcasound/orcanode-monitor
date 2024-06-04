@@ -39,4 +39,4 @@ jobs:
       - name: Build
         if: steps.skip_check.outputs.should_skip != 'true'
         run: |
-          msbuild OrcanodeMonitor.sln /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform="Any CPU"
+          dotnet build OrcanodeMonitor.sln /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform="Any CPU"
