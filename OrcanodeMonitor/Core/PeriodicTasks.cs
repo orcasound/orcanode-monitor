@@ -39,7 +39,16 @@ namespace OrcanodeMonitor.Core
             // Your business logic goes here
             _logger.LogInformation("Background task executed.");
 
-            FetchNodesResult result = await Fetcher.FetchNodesAsync();
+            EnumerateNodesResult result = await Fetcher.EnumerateNodesAsync();
+            if (!result.Succeeded)
+            {
+                return;
+            }
+
+            foreach (Orcanode node in result.NodeList)
+            {
+                await Fetcher.UpdateLatestTimestampAsync(node);
+            }
         }
     }
 
