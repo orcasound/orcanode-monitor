@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.34928.147
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrcanodeMonitor", "OrcanodeMonitor\OrcanodeMonitor.csproj", "{D45F546F-D66C-4FDC-B680-D457275221BD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrcanodeMonitor", "OrcanodeMonitor\OrcanodeMonitor.csproj", "{D45F546F-D66C-4FDC-B680-D457275221BD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

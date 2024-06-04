@@ -20,9 +20,9 @@ namespace OrcanodeMonitor.Core
     }
     public class Fetcher
     {
-        private static HttpClient httpClient = new HttpClient();
-        private static string url = "https://live.orcasound.net/api/json/feeds";
-        private static DateTime unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        private static HttpClient _httpClient = new HttpClient();
+        private static string _orcasoundFeedsUrl = "https://live.orcasound.net/api/json/feeds";
+        private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
         /// <summary>
         /// Get the current list of Orcanodes from orcasound.net.
@@ -34,7 +34,7 @@ namespace OrcanodeMonitor.Core
             string json = "";
             try
             {
-                json = await httpClient.GetStringAsync(url);
+                json = await _httpClient.GetStringAsync(_orcasoundFeedsUrl);
             }
             catch (Exception)
             {
@@ -91,7 +91,7 @@ namespace OrcanodeMonitor.Core
             }
 
             // A Unix timestamp is a count of seconds past the Unix epoch.
-            DateTime dateTime = unixEpoch.AddSeconds(unixTimeStampDouble);
+            DateTime dateTime = _unixEpoch.AddSeconds(unixTimeStampDouble);
             return dateTime;
         }
 
@@ -103,7 +103,7 @@ namespace OrcanodeMonitor.Core
         public async static Task UpdateLatestTimestampAsync(Orcanode node)
         {
             string url = "https://" + node.Bucket + ".s3.amazonaws.com/" + node.NodeName + "/latest.txt";
-            HttpResponseMessage response = await httpClient.GetAsync(url);
+            HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (!response.IsSuccessStatusCode)
             {
                 return;
@@ -135,7 +135,7 @@ namespace OrcanodeMonitor.Core
         public async static Task UpdateManifestTimestampAsync(Orcanode node, string unixTimestampString)
         {
             string url = "https://" + node.Bucket + ".s3.amazonaws.com/" + node.NodeName + "/hls/" + unixTimestampString + "/live.m3u8";
-            HttpResponseMessage response = await httpClient.GetAsync(url);
+            HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (!response.IsSuccessStatusCode)
             {
                 return;

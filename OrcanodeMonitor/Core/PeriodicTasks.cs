@@ -8,6 +8,7 @@ namespace OrcanodeMonitor.Core
 {
     public class PeriodicTasks : BackgroundService
     {
+        TimeSpan _frequencyToPoll = TimeSpan.FromMinutes(5);
         private readonly ILogger<PeriodicTasks> _logger;
 
         public PeriodicTasks(ILogger<PeriodicTasks> logger)
@@ -25,7 +26,7 @@ namespace OrcanodeMonitor.Core
                     await ExecuteTask();
 
                     // Schedule the next execution.
-                    await Task.Delay(TimeSpan.FromMinutes(5), stoppingToken);
+                    await Task.Delay(_frequencyToPoll, stoppingToken);
                 }
                 catch (Exception ex)
                 {
@@ -36,7 +37,6 @@ namespace OrcanodeMonitor.Core
 
         private new async Task ExecuteTask()
         {
-            // Your business logic goes here
             _logger.LogInformation("Background task executed.");
 
             EnumerateNodesResult result = await Fetcher.EnumerateNodesAsync();
@@ -49,6 +49,8 @@ namespace OrcanodeMonitor.Core
             {
                 await Fetcher.UpdateLatestTimestampAsync(node);
             }
+
+            State.SetLastResult(result);
         }
     }
 

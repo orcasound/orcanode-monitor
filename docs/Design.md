@@ -12,8 +12,9 @@ configured by an administrator, the service will do the following:
 
    a. Query the latest timestamp by fetching “https://{bucket}.s3.amazonaws.com/{node_name}/latest.txt”
       (e.g., https://streaming-orcasound-net.s3.amazonaws.com/rpi_orcasound_lab/latest.txt for the Orcasound
-      Lab node).  This can be optimized by storing the Last-Modified header value and using If-Modified-Since
-      in subsequent queries.
+      Lab node).  This could possibly be optimized by storing the Last-Modified header value and using
+      If-Modified-Since in subsequent queries, but since the content is so small the optimization does not
+      seem worth it.
 
    b. If the timestamp is new, query the manifest file by fetching
       “https://{bucket}.s3.amazonaws.com/{node_name}/hls/{timestamp}/live.m3u8”
@@ -45,8 +46,8 @@ The following state will be stored per orcanode:
 
 ## Web page front end
 
-The proposed web service would expose a web page that would display, for each node, the current state and
-recent history of the state, including % uptime over some time period.
+The proposed web service would expose a web page that would display, for each node, the current state and potentially
+also the recent history of the state including % uptime over some time period.
 
 ## If-This-Then-That (IFTTT) Integration
 

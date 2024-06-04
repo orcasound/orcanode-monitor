@@ -1,7 +1,16 @@
 ﻿namespace OrcanodeMonitor.Core
 {
+    public enum OrcanodeStatus
+    {
+        Offline = 0,
+        Online
+    }
     public class Orcanode
     {
+        /// <summary>
+        /// If the manifest file is older than this, the node will be considered offline.
+        /// </summary>
+        TimeSpan _maxUploadDelay = TimeSpan.FromMinutes(2);
         public Orcanode(string name, string nodeName, string bucket)
         {
             Name = name;
@@ -23,6 +32,22 @@
         /// Last modified timestamp on the manifest file, in UTC.
         /// </summary>
         public DateTime? ManifestUpdated { get; set; }
+        public OrcanodeStatus Status
+        {
+            get
+            {
+                if (!ManifestUpdated.HasValue)
+                {
+                    return OrcanodeStatus.Offline;
+                }
+                TimeSpan manifestAge = DateTime.Now.Subtract(ManifestUpdated.Value);
+                if (manifestAge > _maxUploadDelay)
+                {
+                    return OrcanodeStatus.Offline;
+                }
+                return OrcanodeStatus.Online;
+            }
+        }
         public override string ToString() => Name;
     }
 }
