@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿// Copyright (c) Orcanode Monitor contributors
+// SPDX-License-Identifier: MIT
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace OrcanodeMonitor.Api

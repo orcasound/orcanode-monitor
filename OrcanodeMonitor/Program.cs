@@ -1,3 +1,5 @@
+// Copyright (c) Orcanode Monitor contributors
+// SPDX-License-Identifier: MIT
 using Microsoft.Extensions.Hosting;
 using OrcanodeMonitor.Core;
 

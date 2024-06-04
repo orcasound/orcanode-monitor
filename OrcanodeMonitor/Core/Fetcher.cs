@@ -1,4 +1,6 @@
-﻿using System;
+﻿// Copyright (c) Orcanode Monitor contributors
+// SPDX-License-Identifier: MIT
+using System;
 using System.Dynamic;
 using System.Text.Json;
 using System.Net.Http;

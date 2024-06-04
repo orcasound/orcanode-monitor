@@ -1,4 +1,6 @@
-﻿namespace OrcanodeMonitor.Core
+﻿// Copyright (c) Orcanode Monitor contributors
+// SPDX-License-Identifier: MIT
+namespace OrcanodeMonitor.Core
 {
     public class State
     {
