@@ -13,11 +13,13 @@ namespace OrcanodeMonitor.Core
     {
         public List<Orcanode> NodeList { get; private set; }
         public bool Succeeded { get; set; }
+        public DateTime Timestamp { get; private set; }
 
-        public EnumerateNodesResult()
+        public EnumerateNodesResult(DateTime timestamp)
         {
             NodeList = new List<Orcanode>();
             Succeeded = false;
+            Timestamp = timestamp;
         }
     }
     public class Fetcher
@@ -32,56 +34,68 @@ namespace OrcanodeMonitor.Core
         /// <returns>EnumerateNodesResult object</returns>
         public async static Task<EnumerateNodesResult> EnumerateNodesAsync()
         {
-            var result = new EnumerateNodesResult();
+            var result = new EnumerateNodesResult(DateTime.Now);
             string json = "";
             try
             {
                 json = await _httpClient.GetStringAsync(_orcasoundFeedsUrl);
+                if (json == "")
+                {
+                    return result;
+                }
+                dynamic response = JsonSerializer.Deserialize<ExpandoObject>(json);
+                if (response == null)
+                {
+                    return result;
+                }
+                JsonElement dataArray = response.data;
+                if (dataArray.ValueKind != JsonValueKind.Array)
+                {
+                    return result;
+                }
+                foreach (JsonElement feed in dataArray.EnumerateArray())
+                {
+                    if (!feed.TryGetProperty("attributes", out JsonElement attributes))
+                    {
+                        continue;
+                    }
+                    if (!attributes.TryGetProperty("name", out var name))
+                    {
+                        continue;
+                    }
+                    if (!attributes.TryGetProperty("node_name", out var nodeName))
+                    {
+                        continue;
+                    }
+                    if (!attributes.TryGetProperty("bucket", out var bucket))
+                    {
+                        continue;
+                    }
+                    if (!attributes.TryGetProperty("slug", out var slug))
+                    {
+                        continue;
+                    }
+                    var node = new Orcanode(name.ToString(), nodeName.ToString(), bucket.ToString(), slug.ToString());
+                    result.NodeList.Add(node);
+                }
+                result.Succeeded = true;
             }
             catch (Exception)
             {
             }
-            if (json == "")
-            {
-                return result;
-            }
-            dynamic response = JsonSerializer.Deserialize<ExpandoObject>(json);
-            if (response == null)
-            {
-                return result;
-            }
-            JsonElement dataArray = response.data;
-            if (dataArray.ValueKind != JsonValueKind.Array)
-            {
-                return result;
-            }
-            foreach (JsonElement feed in dataArray.EnumerateArray())
-            {
-                if (!feed.TryGetProperty("attributes", out JsonElement attributes))
-                {
-                    continue;
-                }
-                if (!attributes.TryGetProperty("name", out var name))
-                {
-                    continue;
-                }
-                if (!attributes.TryGetProperty("node_name", out var nodeName))
-                {
-                    continue;
-                }
-                if (!attributes.TryGetProperty("bucket", out var bucket))
-                {
-                    continue;
-                }
-                if (!attributes.TryGetProperty("slug", out var slug))
-                {
-                    continue;
-                }
-                var node = new Orcanode(name.ToString(), nodeName.ToString(), bucket.ToString(), slug.ToString());
-                result.NodeList.Add(node);
-            }
-            result.Succeeded = true;
             return result;
+        }
+
+        /// <summary>
+        /// Convert a unix timestamp in integer form to a DateTime value.
+        /// </summary>
+        /// <param name="unixTimeStamp">Unix timestamp</param>
+        /// <returns>DateTime value or null on failure</returns>
+        public static DateTime? UnixTimeStampToDateTime(long unixTimeStamp)
+        {
+            // A Unix timestamp is a count of seconds past the Unix epoch.
+            DateTime dateTime = _unixEpoch.AddSeconds(unixTimeStamp);
+            return dateTime;
         }
 
         /// <summary>
@@ -89,16 +103,20 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="unixTimeStampString">Unix timestamp string to parse</param>
         /// <returns>DateTime value or null on failure</returns>
-        private static DateTime? UnixTimeStampToDateTime(string unixTimeStampString)
+        private static DateTime? UnixTimeStampStringToDateTime(string unixTimeStampString)
         {
-            if (!double.TryParse(unixTimeStampString, out var unixTimeStampDouble))
+            if (!long.TryParse(unixTimeStampString, out var unixTimeStamp))
             {
                 return null;
             }
 
-            // A Unix timestamp is a count of seconds past the Unix epoch.
-            DateTime dateTime = _unixEpoch.AddSeconds(unixTimeStampDouble);
-            return dateTime;
+            return UnixTimeStampToDateTime(unixTimeStamp);
+        }
+
+        public static long DateTimeToUnixTimeStamp(DateTime dateTime)
+        {
+            long unixTime = (long)(dateTime - _unixEpoch).TotalSeconds;
+            return unixTime;
         }
 
         /// <summary>
@@ -117,7 +135,7 @@ namespace OrcanodeMonitor.Core
 
             string content = await response.Content.ReadAsStringAsync();
             string unixTimestampString = content.TrimEnd();
-            DateTime? latestRecorded = UnixTimeStampToDateTime(unixTimestampString);
+            DateTime? latestRecorded = UnixTimeStampStringToDateTime(unixTimestampString);
             if (latestRecorded.HasValue)
             {
                 node.LatestRecorded = latestRecorded;
