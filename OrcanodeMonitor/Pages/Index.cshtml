@@ -5,7 +5,7 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4">Dashboard</h1>
+    <h1 class="display-4">Current State</h1>
     <table>
         <tr>
             <th>Name</th>
@@ -40,5 +40,23 @@
             </td>
         </tr>
     }
-    <</table>
+    </table>
+    <h1 class="display-4">Recent Events</h1>
+    <table>
+        <tr>
+            <th>Timestamp</th>
+            <th>Event</th>
+        </tr>
+        @foreach (Core.OrcanodeEvent item in Model.RecentEvents)
+        {
+            <tr>
+                <td>
+                    @item.DateTime
+                </td>
+                <td>
+                    @item.Description
+                </td>
+            </tr>
+        }
+    </table>
  </div>

@@ -57,6 +57,7 @@ namespace OrcanodeMonitor.Core
             return result;
         }
         public static EnumerateNodesResult? LastResult => _lastResult;
+        public static Orcanode? GetNode(string slug) => LastResult?.NodeList.Find(item => item.Slug == slug);
 
         // TODO: persist state across restarts.
     }

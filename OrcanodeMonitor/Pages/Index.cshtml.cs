@@ -11,6 +11,8 @@ namespace OrcanodeMonitor.Pages
     {
         private readonly ILogger<IndexModel> _logger;
         public List<Orcanode> Nodes => State.LastResult?.NodeList ?? new List<Orcanode>();
+        private const int _maxEventCountToDisplay = 20;
+        public List<OrcanodeEvent> RecentEvents => State.GetEvents(_maxEventCountToDisplay);
 
         public IndexModel(ILogger<IndexModel> logger)
         {

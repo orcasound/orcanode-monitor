@@ -33,5 +33,16 @@ namespace OrcanodeMonitor.Core
         {
             return String.Format("{0} {1} at {2}", Slug, Status, Fetcher.UnixTimeStampToDateTime(Meta.UnixTimestamp));
         }
+        public DateTime? DateTime => Core.Fetcher.UnixTimeStampToDateTime(Meta.UnixTimestamp)?.ToLocalTime();
+        public string Description { get
+            {
+                string nodeName = State.GetNode(Slug)?.Name ?? "<Unknown>";
+                if (Status == OrcanodeStatus.Offline)
+                {
+                    return String.Format("{0} went OFFLINE", nodeName);
+                }
+                return String.Format("{0} was detected as up", nodeName);
+            }
+        }
     }
 }
