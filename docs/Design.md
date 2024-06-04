@@ -53,7 +53,11 @@ also the recent history of the state including % uptime over some time period.
 
 ## If-This-Then-That (IFTTT) Integration
 
-The service will expose endpoints for an [IFTTT Service API](https://ifttt.com/docs/api_reference).  For the
+The service will act as a "Shim App" in the [IFTTT Architecture](https://ifttt.com/docs/process_overview):
+
+![IFTTT Architecture](https://web-assets.ifttt.com/packs/media/docs/architecture_diagram-731615e48160fd6438d2.png "IFTTT Architecture")
+
+and expose endpoints for an [IFTTT Service API](https://ifttt.com/docs/api_reference).  For the
 present, no authentication will be required since all state is read-only and public information.
 
 An IFTTT-compatible service can implement:
