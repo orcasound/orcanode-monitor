@@ -8,16 +8,8 @@ namespace OrcanodeMonitor.Api
 {
     [Route("api/ifttt/v1/triggers/[controller]")]
     [ApiController]
-    public class TestController : ControllerBase
+    public class NodeStateEventsController : ControllerBase
     {
-#if false
-        // GET: api/ifttt/v1/triggers/test
-        [HttpGet]
-        public IEnumerable<string> Get()
-        {
-            return new string[] { "value1", "value2" };
-        }
-#endif
         private JsonResult GetEvents(int limit)
         {
             List<Core.OrcanodeEvent> latestEvents = Core.State.GetEvents(limit);
@@ -68,32 +60,5 @@ namespace OrcanodeMonitor.Api
                 return BadRequest("Invalid JSON data.");
             }
         }
-
-#if false
-        // GET api/ifttt/v1/triggers/<TestController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/ifttt/v1/triggers/<TestController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/ifttt/v1/triggers/<TestController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/ifttt/v1/triggers/<TestController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
-        }
-#endif
     }
 }
