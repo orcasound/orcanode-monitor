@@ -39,7 +39,7 @@ namespace OrcanodeMonitor.Core
                 string nodeName = State.GetNode(Slug)?.Name ?? "<Unknown>";
                 if (Status == OrcanodeStatus.Offline)
                 {
-                    return String.Format("{0} went OFFLINE", nodeName);
+                    return String.Format("{0} was detected as OFFLINE", nodeName);
                 }
                 return String.Format("{0} was detected as up", nodeName);
             }

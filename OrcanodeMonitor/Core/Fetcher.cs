@@ -115,7 +115,8 @@ namespace OrcanodeMonitor.Core
 
         public static long DateTimeToUnixTimeStamp(DateTime dateTime)
         {
-            long unixTime = (long)(dateTime - _unixEpoch).TotalSeconds;
+            DateTime utcTime = dateTime.ToUniversalTime();
+            long unixTime = (long)(utcTime - _unixEpoch).TotalSeconds;
             return unixTime;
         }
 

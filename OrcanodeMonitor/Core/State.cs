@@ -6,32 +6,40 @@ namespace OrcanodeMonitor.Core
     {
         private static List<OrcanodeEvent> _events = new List<OrcanodeEvent>();
         private static EnumerateNodesResult? _lastResult;
-        private static void AddOrcanodeEvent(Orcanode node, DateTime resultTimestamp)
+        private static void AddOrcanodeEvent(List<OrcanodeEvent> list, Orcanode node, DateTime resultTimestamp)
         {
             DateTime eventTimestamp = node.ManifestUpdated.HasValue ? node.ManifestUpdated.Value : resultTimestamp;
             var orcanodeEvent = new OrcanodeEvent(node.Slug, node.Status, eventTimestamp);
-
-            // Insert latest event at the beginning.
-            _events.Insert(0, orcanodeEvent);
+            list.Add(orcanodeEvent);
         }
 
         public static void SetLastResult(EnumerateNodesResult result)
         {
+            var newEvents = new List<OrcanodeEvent>();
             foreach (Orcanode nodeNewState in result.NodeList)
             {
                 OrcanodeStatus newStatus = nodeNewState.Status;
                 if (_lastResult == null)
                 {
-                    AddOrcanodeEvent(nodeNewState, result.Timestamp);
+                    AddOrcanodeEvent(newEvents, nodeNewState, result.Timestamp);
                     continue;
                 }
                 Orcanode? nodeOldState = _lastResult.NodeList.Find(node => node.Slug == nodeNewState.Slug);
                 OrcanodeStatus oldStatus = (nodeOldState != null) ? nodeOldState.Status : OrcanodeStatus.Offline;
                 if (newStatus != oldStatus)
                 {
-                    AddOrcanodeEvent(nodeNewState, result.Timestamp);
+                    AddOrcanodeEvent(newEvents, nodeNewState, result.Timestamp);
                 }
             }
+
+            // Sort new events.
+            var ascendingOrder = newEvents.OrderBy(e => e.DateTime);
+            foreach (OrcanodeEvent orcanodeEvent in ascendingOrder)
+            {
+                // Insert latest event at the beginning.
+                _events.Insert(0, orcanodeEvent);
+            }
+
             _lastResult = result;
         }
 
