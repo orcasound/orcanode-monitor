@@ -12,8 +12,9 @@ configured by an administrator, the service will do the following:
 
    a. Query the latest timestamp by fetching “https://{bucket}.s3.amazonaws.com/{node_name}/latest.txt”
       (e.g., https://streaming-orcasound-net.s3.amazonaws.com/rpi_orcasound_lab/latest.txt for the Orcasound
-      Lab node).  This can be optimized by storing the Last-Modified header value and using If-Modified-Since
-      in subsequent queries.
+      Lab node).  This could possibly be optimized by storing the Last-Modified header value and using
+      If-Modified-Since in subsequent queries, but since the content is so small the optimization does not
+      seem worth it.
 
    b. If the timestamp is new, query the manifest file by fetching
       “https://{bucket}.s3.amazonaws.com/{node_name}/hls/{timestamp}/live.m3u8”
@@ -31,6 +32,8 @@ The following state will be stored per orcanode:
 
   * **bucket**: The hostname component from the “bucket” obtained in step 1.
 
+  * **slug**: The URI path component from the “slug” obtained in step 1.
+
   * **latest-recorded**: The Unix timestamp value in the latest.txt file obtained in step 2a (Question as recorded on the orcanode?)
 
   * **latest-uploaded**: The Last-Modified timestamp on the latest.txt file as recorded by Amazon, obtained in step 2a.
@@ -45,12 +48,16 @@ The following state will be stored per orcanode:
 
 ## Web page front end
 
-The proposed web service would expose a web page that would display, for each node, the current state and
-recent history of the state, including % uptime over some time period.
+The proposed web service would expose a web page that would display, for each node, the current state and potentially
+also the recent history of the state including % uptime over some time period.
 
 ## If-This-Then-That (IFTTT) Integration
 
-The service will expose endpoints for an [IFTTT Service API](https://ifttt.com/docs/api_reference).  For the
+The service will act as a "Shim App" in the [IFTTT Architecture](https://ifttt.com/docs/process_overview):
+
+![IFTTT Architecture](https://web-assets.ifttt.com/packs/media/docs/architecture_diagram-731615e48160fd6438d2.png "IFTTT Architecture")
+
+and expose endpoints for an [IFTTT Service API](https://ifttt.com/docs/api_reference).  For the
 present, no authentication will be required since all state is read-only and public information.
 
 An IFTTT-compatible service can implement:
