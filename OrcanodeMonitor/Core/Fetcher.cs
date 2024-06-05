@@ -24,6 +24,7 @@ namespace OrcanodeMonitor.Core
     }
     public class Fetcher
     {
+        private static TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
         private static HttpClient _httpClient = new HttpClient();
         private static string _orcasoundFeedsUrl = "https://live.orcasound.net/api/json/feeds";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
@@ -98,6 +99,16 @@ namespace OrcanodeMonitor.Core
             return dateTime;
         }
 
+        public static DateTime? UtcToLocalDateTime(DateTime? utcDateTime)
+        {
+            if (utcDateTime == null)
+            {
+                return null;
+            }
+            DateTime localDateTime = TimeZoneInfo.ConvertTime(utcDateTime.Value, _pacificTimeZone);
+            return localDateTime;
+        }
+
         /// <summary>
         /// Convert a unix timestamp in string form to a DateTime value.
         /// </summary>
@@ -124,8 +135,9 @@ namespace OrcanodeMonitor.Core
         /// Update the timestamps for a given Orcanode by querying files on S3.
         /// </summary>
         /// <param name="node">Orcanode to update</param>
+        /// <param name="responseTimestamp">Timestamp at which the result was returned</param>
         /// <returns></returns>
-        public async static Task UpdateLatestTimestampAsync(Orcanode node)
+        public async static Task UpdateLatestTimestampAsync(Orcanode node, DateTime responseTimestamp)
         {
             string url = "https://" + node.Bucket + ".s3.amazonaws.com/" + node.NodeName + "/latest.txt";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
@@ -139,16 +151,16 @@ namespace OrcanodeMonitor.Core
             DateTime? latestRecorded = UnixTimeStampStringToDateTime(unixTimestampString);
             if (latestRecorded.HasValue)
             {
-                node.LatestRecorded = latestRecorded;
+                node.LatestRecordedUtc = latestRecorded.HasValue ? latestRecorded.Value.ToUniversalTime() : null;
 
                 DateTimeOffset? offset = response.Content.Headers.LastModified;
                 if (offset.HasValue)
                 {
-                    node.LatestUploaded = offset.Value.UtcDateTime;
+                    node.LatestUploadedUtc = offset.Value.UtcDateTime;
                 }
             }
 
-            await UpdateManifestTimestampAsync(node, unixTimestampString);
+            await UpdateManifestTimestampAsync(node, unixTimestampString, responseTimestamp);
         }
 
         /// <summary>
@@ -156,8 +168,9 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="node">Orcanode to update</param>
         /// <param name="unixTimestampString">Value in the latest.txt file</param>
+        /// <param name="responseTimestamp">Timestamp at which the result was returned</param>
         /// <returns></returns>
-        public async static Task UpdateManifestTimestampAsync(Orcanode node, string unixTimestampString)
+        public async static Task UpdateManifestTimestampAsync(Orcanode node, string unixTimestampString, DateTime responseTimestamp)
         {
             string url = "https://" + node.Bucket + ".s3.amazonaws.com/" + node.NodeName + "/hls/" + unixTimestampString + "/live.m3u8";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
@@ -169,8 +182,10 @@ namespace OrcanodeMonitor.Core
             DateTimeOffset? offset = response.Content.Headers.LastModified;
             if (offset.HasValue)
             {
-                node.ManifestUpdated = offset.Value.UtcDateTime;
+                node.ManifestUpdatedUtc = offset.Value.UtcDateTime;
             }
+
+            node.LastCheckedUtc = responseTimestamp.ToUniversalTime();
         }
     }
 }

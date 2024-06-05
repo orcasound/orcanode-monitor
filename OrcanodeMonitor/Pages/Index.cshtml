@@ -12,6 +12,7 @@
             <th>Latest recorded</th>
             <th>Latest uploaded</th>
             <th>Manifest updated</th>
+            <th>Last checked</th>
             <th>Current state</th>
             <th></th>
         </tr>
@@ -19,16 +20,21 @@
     {
         <tr style="background-color: @Model.NodeColor(item)">
             <td>
+                <a href="https://open.quiltdata.com/b/streaming-orcasound-net/tree/@item.NodeName/">
                 @Html.DisplayFor(modelItem => item.Name)
+                </a>
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.LatestRecorded)
+                @Html.DisplayFor(modelItem => item.LatestRecordedLocal)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.LatestUploaded)
+                @Html.DisplayFor(modelItem => item.LatestUploadedLocal)
             </td>
             <td>
-                @Html.DisplayFor(modelItem => item.ManifestUpdated)
+                @Html.DisplayFor(modelItem => item.ManifestUpdatedLocal)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.LastCheckedLocal)
             </td>
              <td>
                 @Html.DisplayFor(modelItem => item.Status)

@@ -51,7 +51,7 @@ namespace OrcanodeMonitor.Core
 
             foreach (Orcanode node in result.NodeList)
             {
-                await Fetcher.UpdateLatestTimestampAsync(node);
+                await Fetcher.UpdateLatestTimestampAsync(node, result.Timestamp);
             }
 
             State.SetLastResult(result);
