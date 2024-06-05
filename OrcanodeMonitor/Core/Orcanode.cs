@@ -28,24 +28,44 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Value in the latest.txt file, as a UTC DateTime.
         /// </summary>
-        public DateTime? LatestRecorded { get; set; }
+        public DateTime? LatestRecordedUtc { get; set; }
+        /// <summary>
+        /// Value in the latest.txt file, as a Local DateTime.
+        /// </summary>
+        public DateTime? LatestRecordedLocal => Fetcher.UtcToLocalDateTime(LatestRecordedUtc);
         /// <summary>
         /// Last modified timestamp on the latest.txt file, in UTC.
         /// </summary>
-        public DateTime? LatestUploaded { get; set; }
+        public DateTime? LatestUploadedUtc { get; set; }
+        /// <summary>
+        /// Last modified timestamp on the latest.txt file, in local time.
+        /// </summary>
+        public DateTime? LatestUploadedLocal => Fetcher.UtcToLocalDateTime(LatestUploadedUtc);
         /// <summary>
         /// Last modified timestamp on the manifest file, in UTC.
         /// </summary>
-        public DateTime? ManifestUpdated { get; set; }
+        public DateTime? ManifestUpdatedUtc { get; set; }
+        /// <summary>
+        /// Last modified timestamp on the manifest file, in local time.
+        /// </summary>
+        public DateTime? ManifestUpdatedLocal => Fetcher.UtcToLocalDateTime(ManifestUpdatedUtc);
+        /// <summary>
+        /// Last time the S3 instance was queried, in UTC.
+        /// </summary>
+        public DateTime? LastCheckedUtc { get; set; }
+        /// <summary>
+        /// Last time the S3 instance was queried, in local time.
+        /// </summary>
+        public DateTime? LastCheckedLocal => Fetcher.UtcToLocalDateTime(LastCheckedUtc);
         public OrcanodeStatus Status
         {
             get
             {
-                if (!ManifestUpdated.HasValue)
+                if (!ManifestUpdatedUtc.HasValue || !LastCheckedUtc.HasValue)
                 {
                     return OrcanodeStatus.Offline;
                 }
-                TimeSpan manifestAge = DateTime.Now.Subtract(ManifestUpdated.Value);
+                TimeSpan manifestAge = LastCheckedUtc.Value.Subtract(ManifestUpdatedUtc.Value);
                 if (manifestAge > _maxUploadDelay)
                 {
                     return OrcanodeStatus.Offline;

@@ -8,8 +8,8 @@ namespace OrcanodeMonitor.Core
         private static EnumerateNodesResult? _lastResult;
         private static void AddOrcanodeEvent(List<OrcanodeEvent> list, Orcanode node, DateTime resultTimestamp)
         {
-            DateTime eventTimestamp = node.ManifestUpdated.HasValue ? node.ManifestUpdated.Value : resultTimestamp;
-            var orcanodeEvent = new OrcanodeEvent(node.Slug, node.Status, eventTimestamp);
+            DateTime eventTimestampUtc = node.ManifestUpdatedUtc.HasValue ? node.ManifestUpdatedUtc.Value : resultTimestamp.ToUniversalTime();
+            var orcanodeEvent = new OrcanodeEvent(node.Slug, node.Status, eventTimestampUtc);
             list.Add(orcanodeEvent);
         }
 
