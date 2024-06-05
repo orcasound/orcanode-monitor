@@ -31,10 +31,10 @@ namespace OrcanodeMonitor.Core
         public OrcanodeEventMeta Meta { get; private set; }
         public override string ToString()
         {
-            return String.Format("{0} {1} at {2}", Slug, Status, Fetcher.UnixTimeStampToDateTime(Meta.UnixTimestamp));
+            return String.Format("{0} {1} at {2}", Slug, Status, Fetcher.UnixTimeStampToDateTimeLocal(Meta.UnixTimestamp));
         }
         [JsonPropertyName("timestamp")]
-        public DateTime? DateTime => Core.Fetcher.UnixTimeStampToDateTime(Meta.UnixTimestamp)?.ToLocalTime();
+        public DateTime? DateTime => Fetcher.UnixTimeStampToDateTimeLocal(Meta.UnixTimestamp);
         [JsonPropertyName("description")]
         public string Description { get
             {

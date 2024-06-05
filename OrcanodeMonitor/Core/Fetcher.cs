@@ -88,15 +88,25 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Convert a unix timestamp in integer form to a DateTime value.
+        /// Convert a unix timestamp in integer form to a DateTime value in UTC.
         /// </summary>
         /// <param name="unixTimeStamp">Unix timestamp</param>
         /// <returns>DateTime value or null on failure</returns>
-        public static DateTime? UnixTimeStampToDateTime(long unixTimeStamp)
+        public static DateTime? UnixTimeStampToDateTimeUtc(long unixTimeStamp)
         {
             // A Unix timestamp is a count of seconds past the Unix epoch.
             DateTime dateTime = _unixEpoch.AddSeconds(unixTimeStamp);
             return dateTime;
+        }
+
+        /// <summary>
+        /// Convert a unix timestamp in integer form to a DateTime value in local time.
+        /// </summary>
+        /// <param name="unixTimeStamp">Unix timestamp</param>
+        /// <returns>DateTime value or null on failure</returns>
+        public static DateTime? UnixTimeStampToDateTimeLocal(long unixTimeStamp)
+        {
+            return UtcToLocalDateTime(UnixTimeStampToDateTimeUtc(unixTimeStamp));
         }
 
         public static DateTime? UtcToLocalDateTime(DateTime? utcDateTime)
@@ -110,18 +120,18 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Convert a unix timestamp in string form to a DateTime value.
+        /// Convert a unix timestamp in string form to a DateTime value in UTC.
         /// </summary>
         /// <param name="unixTimeStampString">Unix timestamp string to parse</param>
         /// <returns>DateTime value or null on failure</returns>
-        private static DateTime? UnixTimeStampStringToDateTime(string unixTimeStampString)
+        private static DateTime? UnixTimeStampStringToDateTimeUtc(string unixTimeStampString)
         {
             if (!long.TryParse(unixTimeStampString, out var unixTimeStamp))
             {
                 return null;
             }
 
-            return UnixTimeStampToDateTime(unixTimeStamp);
+            return UnixTimeStampToDateTimeUtc(unixTimeStamp);
         }
 
         public static long DateTimeToUnixTimeStamp(DateTime dateTime)
@@ -148,7 +158,7 @@ namespace OrcanodeMonitor.Core
 
             string content = await response.Content.ReadAsStringAsync();
             string unixTimestampString = content.TrimEnd();
-            DateTime? latestRecorded = UnixTimeStampStringToDateTime(unixTimestampString);
+            DateTime? latestRecorded = UnixTimeStampStringToDateTimeUtc(unixTimestampString);
             if (latestRecorded.HasValue)
             {
                 node.LatestRecordedUtc = latestRecorded.HasValue ? latestRecorded.Value.ToUniversalTime() : null;
