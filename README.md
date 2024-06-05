@@ -1,5 +1,7 @@
 # orcanode-monitor
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/orcasound/orcanode-monitor/badge)](https://scorecard.dev/viewer/?uri=github.com/orcasound/orcanode-monitor)
+
 Orcanode Monitor is a web service for monitoring liveness of [orcanode](https://github.com/orcasound/orcanode) audio streaming.
 
 The troubleshooting guide at
