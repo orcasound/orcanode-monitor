@@ -1,5 +1,7 @@
 # Orcanode Monitor Design
 
+![Orcanode Monitor Architecture](OrcanodeMonitorArchitecture.png "Orcanode Monitor Architecture")
+
 ## Backend Monitoring Logic
 
 The web service will be deployed as an azurewebsites.net service.  Periodically, at a frequency that can be
