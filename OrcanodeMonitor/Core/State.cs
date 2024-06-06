@@ -9,7 +9,7 @@ namespace OrcanodeMonitor.Core
         private static void AddOrcanodeEvent(List<OrcanodeEvent> list, Orcanode node, DateTime resultTimestamp)
         {
             DateTime eventTimestampUtc = node.ManifestUpdatedUtc.HasValue ? node.ManifestUpdatedUtc.Value : resultTimestamp.ToUniversalTime();
-            var orcanodeEvent = new OrcanodeEvent(node.Slug, node.Status, eventTimestampUtc);
+            var orcanodeEvent = new OrcanodeEvent(node.OrcasoundSlug, node.OrcasoundStatus, eventTimestampUtc);
             list.Add(orcanodeEvent);
         }
 
@@ -18,14 +18,14 @@ namespace OrcanodeMonitor.Core
             var newEvents = new List<OrcanodeEvent>();
             foreach (Orcanode nodeNewState in result.NodeList)
             {
-                OrcanodeStatus newStatus = nodeNewState.Status;
+                OrcanodeStatus newStatus = nodeNewState.OrcasoundStatus;
                 if (_lastResult == null)
                 {
                     AddOrcanodeEvent(newEvents, nodeNewState, result.Timestamp);
                     continue;
                 }
-                Orcanode? nodeOldState = _lastResult.NodeList.Find(node => node.Slug == nodeNewState.Slug);
-                OrcanodeStatus oldStatus = (nodeOldState != null) ? nodeOldState.Status : OrcanodeStatus.Offline;
+                Orcanode? nodeOldState = _lastResult.NodeList.Find(node => node.OrcasoundSlug == nodeNewState.OrcasoundSlug);
+                OrcanodeStatus oldStatus = (nodeOldState != null) ? nodeOldState.OrcasoundStatus : OrcanodeStatus.Offline;
                 if (newStatus != oldStatus)
                 {
                     AddOrcanodeEvent(newEvents, nodeNewState, result.Timestamp);
@@ -65,7 +65,7 @@ namespace OrcanodeMonitor.Core
             return result;
         }
         public static EnumerateNodesResult? LastResult => _lastResult;
-        public static Orcanode? GetNode(string slug) => LastResult?.NodeList.Find(item => item.Slug == slug);
+        public static Orcanode? GetNode(string slug) => LastResult?.NodeList.Find(item => item.OrcasoundSlug == slug);
 
         // TODO: persist state across restarts.
     }

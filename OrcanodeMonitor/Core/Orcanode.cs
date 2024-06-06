@@ -7,6 +7,13 @@ namespace OrcanodeMonitor.Core
         Offline = 0,
         Online
     }
+    public enum OrcanodeUpgradeStatus
+    {
+        Unknown = 0,
+        UpToDate = 1,
+        UpgradeAvailable
+    }
+
     public class Orcanode
     {
         /// <summary>
@@ -14,17 +21,55 @@ namespace OrcanodeMonitor.Core
         /// TODO: allow max upload delay to be configurable.
         /// </summary>
         TimeSpan _maxUploadDelay = TimeSpan.FromMinutes(2);
-        public Orcanode(string name, string nodeName, string bucket, string slug)
+        public Orcanode(string orcasoundName, string s3nodeName, string s3bucket, string orcasoundSlug)
         {
-            Name = name;
-            NodeName = nodeName;
-            Bucket = bucket;
-            Slug = slug;
+            OrcasoundName = orcasoundName;
+
+            // Convert an Orcasound name of "Beach Camp at Sunset Bay" to just "Sunset Bay".)
+            string displayName = orcasoundName;
+            int atIndex = orcasoundName.IndexOf(" at ");
+            if (atIndex >= 0)
+            {
+                displayName = orcasoundName.Substring(atIndex + 4);
+            }
+            DisplayName = displayName;
+
+            S3NodeName = s3nodeName;
+            S3Bucket = s3bucket;
+            OrcasoundSlug = orcasoundSlug;
         }
-        public string Name { get; private set; }
-        public string NodeName { get; private set; }
-        public string Bucket { get; private set; }
-        public string Slug { get; private set; }
+        public Orcanode(string dataplicityName)
+        {
+            DataplicityName = dataplicityName;
+
+            string displayName = dataplicityName;
+            int atIndex = dataplicityName.IndexOf(": ");
+            if (atIndex >= 0)
+            {
+                displayName = dataplicityName.Substring(atIndex + 2);
+            }
+            DisplayName = displayName;
+        }
+        /// <summary>
+        /// Human-readable name.
+        /// </summary>
+        public string DisplayName { get; private set; }
+        /// <summary>
+        /// Human-readable name at Orcasound.
+        /// </summary>
+        public string OrcasoundName { get; private set; }
+        /// <summary>
+        /// The URI path component from the "node_name" field obtained from orcasound.net.
+        /// </summary>
+        public string S3NodeName { get; private set; }
+        /// <summary>
+        /// The hostname component from the "bucket" field obtained from orcasound.net
+        /// </summary>
+        public string S3Bucket { get; private set; }
+        /// <summary>
+        /// The URI path component from the "slug" field obtained from orcasound.net.
+        /// </summary>
+        public string OrcasoundSlug { get; private set; }
         /// <summary>
         /// Value in the latest.txt file, as a UTC DateTime.
         /// </summary>
@@ -57,7 +102,26 @@ namespace OrcanodeMonitor.Core
         /// Last time the S3 instance was queried, in local time.
         /// </summary>
         public DateTime? LastCheckedLocal => Fetcher.UtcToLocalDateTime(LastCheckedUtc);
-        public OrcanodeStatus Status
+        /// <summary>
+        /// The name of the node at Dataplicity.
+        /// </summary>
+        public string DataplicityName { get; set; }
+        /// <summary>
+        /// The description of the node at Dataplicity.
+        /// </summary>
+        public string DataplicityDescription { get; set; }
+        /// <summary>
+        /// The id ("serial") of the node at Dataplicity.
+        /// </summary>
+        public string DataplicityId { get; set; }
+        /// <summary>
+        /// Whether Dataplicity believes the node is online.
+        /// </summary>
+        public bool? DataplicityOnline { get; set; }
+        public bool? DataplicityUpgradeAvailable { get; set; }
+        public OrcanodeUpgradeStatus DataplicityUpgradeStatus => (DataplicityUpgradeAvailable ?? false) ? OrcanodeUpgradeStatus.UpgradeAvailable : OrcanodeUpgradeStatus.UpToDate;
+        public OrcanodeStatus DataplicityStatus => (DataplicityOnline ?? false) ? OrcanodeStatus.Online : OrcanodeStatus.Offline;
+        public OrcanodeStatus OrcasoundStatus
         {
             get
             {
@@ -73,6 +137,6 @@ namespace OrcanodeMonitor.Core
                 return OrcanodeStatus.Online;
             }
         }
-        public override string ToString() => Name;
+        public override string ToString() => DisplayName;
     }
 }

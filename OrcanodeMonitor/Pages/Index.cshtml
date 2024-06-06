@@ -6,24 +6,30 @@
 
 <div class="text-center">
     <h1 class="display-4">Current State</h1>
+    <p>
+        Status as of: @Model.LastChecked
+    </p>
     <table>
         <tr>
             <th>Name</th>
+            <!--
             <th>Latest recorded</th>
             <th>Latest uploaded</th>
             <th>Manifest updated</th>
             <th>Last checked</th>
-            <th>Current state</th>
+            -->
+            <th>Dataplicity Status</th>
+            <th>Upgrade Status</th>
+            <th>Orcasound Status</th>
             <th></th>
         </tr>
     @foreach (Core.Orcanode item in Model.Nodes)
     {
-        <tr style="background-color: @Model.NodeColor(item)">
-            <td>
-                <a href="https://open.quiltdata.com/b/streaming-orcasound-net/tree/@item.NodeName/">
-                @Html.DisplayFor(modelItem => item.Name)
-                </a>
+        <tr>
+            <td title="@Html.DisplayFor(modelItem => item.DataplicityDescription)">
+                @Html.DisplayFor(modelItem => item.DisplayName)
             </td>
+            <!--
             <td>
                 @Html.DisplayFor(modelItem => item.LatestRecordedLocal)
             </td>
@@ -36,11 +42,24 @@
             <td>
                 @Html.DisplayFor(modelItem => item.LastCheckedLocal)
             </td>
-             <td>
-                @Html.DisplayFor(modelItem => item.Status)
+            -->
+            <td style="background-color: @Model.NodeOrcasoundColor(item)">
+                <a href="https://open.quiltdata.com/b/streaming-orcasound-net/tree/@item.S3NodeName/">
+                    @Html.DisplayFor(modelItem => item.OrcasoundStatus)
+                </a>
+            </td>
+            <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
+                <a href="https://www.dataplicity.com/app/">
+                    @Html.DisplayFor(modelItem => item.DataplicityUpgradeStatus)
+                </a>
+            </td>
+            <td style="background-color: @Model.NodeDataplicityColor(item)">
+                <a href="https://www.dataplicity.com/app/">
+                    @Html.DisplayFor(modelItem => item.DataplicityStatus)
+                </a>
             </td>
             <td>
-                <a href="https://live.orcasound.net/listen/@Html.DisplayFor(modelItem => item.Slug)" target="_blank">
+                <a href="https://live.orcasound.net/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" target="_blank">
                     <button>Listen</button>
                 </a>
             </td>

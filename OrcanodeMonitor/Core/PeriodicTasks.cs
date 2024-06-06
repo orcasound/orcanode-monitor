@@ -43,16 +43,16 @@ namespace OrcanodeMonitor.Core
         {
             _logger.LogInformation("Background task executed.");
 
-            EnumerateNodesResult result = await Fetcher.EnumerateNodesAsync();
-            if (!result.Succeeded)
+            EnumerateNodesResult result = await Fetcher.EnumerateOrcasoundNodesAsync();
+            if (result.Succeeded)
             {
-                return;
+                foreach (Orcanode node in result.NodeList)
+                {
+                    await Fetcher.UpdateLatestTimestampAsync(node, result.Timestamp);
+                }
             }
 
-            foreach (Orcanode node in result.NodeList)
-            {
-                await Fetcher.UpdateLatestTimestampAsync(node, result.Timestamp);
-            }
+            await Fetcher.EnumerateDataplicityNodesAsync(result);
 
             State.SetLastResult(result);
         }

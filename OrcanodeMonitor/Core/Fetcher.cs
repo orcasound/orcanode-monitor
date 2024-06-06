@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
+using System.Net.Sockets;
 
 namespace OrcanodeMonitor.Core
 {
@@ -27,14 +28,120 @@ namespace OrcanodeMonitor.Core
         private static TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
         private static HttpClient _httpClient = new HttpClient();
         private static string _orcasoundFeedsUrl = "https://live.orcasound.net/api/json/feeds";
+        private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
 
         /// <summary>
-        /// Get the current list of Orcanodes from orcasound.net.
+        /// Test for a match between a human-readable name at Orcasound, and
+        /// a device name at Duplicity.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="dataplicityName"></param>
+        /// <returns></returns>
+        private static bool NameMatch(string name, string dataplicityName)
+        {
+            // Look for the result inside the Dataplicity name.
+            if (dataplicityName.Contains(name))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Look for an Orcanode by Dataplicity name in a list and create one if not found.
+        /// </summary>
+        /// <param name="nodeList"></param>
+        /// <param name="dataplicityName"></param>
+        /// <returns></returns>
+        private static Orcanode FindOrCreateOrcanode(List<Orcanode> nodeList, string dataplicityName)
+        {
+            foreach (Orcanode node in nodeList)
+            {
+                if (node.DataplicityName == dataplicityName)
+                {
+                    return node;
+                }
+                if ((node.DataplicityName == null) && dataplicityName.Contains(node.DisplayName))
+                {
+                    node.DataplicityName = dataplicityName;
+                    return node;
+                }
+            }
+
+            var newNode = new Orcanode(dataplicityName);
+            nodeList.Add(newNode);
+            return newNode;
+        }
+
+        public async static Task EnumerateDataplicityNodesAsync(EnumerateNodesResult result)
+        {
+            try
+            {
+                string? orcasound_dataplicity_token = Environment.GetEnvironmentVariable("ORCASOUND_DATAPLICITY_TOKEN");
+                if (orcasound_dataplicity_token == null)
+                {
+                    return;
+                }
+
+                string jsonArray;
+                using (var request = new HttpRequestMessage
+                {
+                    RequestUri = new Uri(_dataplicityDevicesUrl),
+                    Method = HttpMethod.Get,
+                })
+                {
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_dataplicity_token);
+                    HttpResponseMessage response = await _httpClient.SendAsync(request);
+                    response.EnsureSuccessStatusCode();
+                    jsonArray = await response.Content.ReadAsStringAsync();
+                }
+
+                dynamic deviceArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
+                if (deviceArray.ValueKind != JsonValueKind.Array)
+                {
+                    return;
+                }
+                foreach (JsonElement device in deviceArray.EnumerateArray())
+                {
+                    if (!device.TryGetProperty("name", out var name))
+                    {
+                        continue;
+                    }
+                    Orcanode node = FindOrCreateOrcanode(result.NodeList, name.ToString());
+                    if (device.TryGetProperty("online", out var online))
+                    {
+                        node.DataplicityOnline = online.GetBoolean();
+                    }
+                    if (device.TryGetProperty("description", out var description))
+                    {
+                        node.DataplicityDescription = description.ToString();
+                    }
+                    if (device.TryGetProperty("serial", out var serial))
+                    {
+                        node.DataplicityId = serial.ToString();
+                    }
+                    if (device.TryGetProperty("upgrade_available", out var upgradeAvailable))
+                    {
+                        node.DataplicityUpgradeAvailable = upgradeAvailable.GetBoolean();
+                    }
+                }
+
+                // TODO: how should we merge the Succeeded value?
+                result.Succeeded = true;
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        /// <summary>
+        /// Get the current list of Orcanodes from orcasound.net and dataplicity.com.
         /// </summary>
         /// <returns>EnumerateNodesResult object</returns>
-        public async static Task<EnumerateNodesResult> EnumerateNodesAsync()
+        public async static Task<EnumerateNodesResult> EnumerateOrcasoundNodesAsync()
         {
+            // TODO: move this outside.
             var result = new EnumerateNodesResult(DateTime.Now);
             string json = "";
             try
@@ -149,7 +256,7 @@ namespace OrcanodeMonitor.Core
         /// <returns></returns>
         public async static Task UpdateLatestTimestampAsync(Orcanode node, DateTime responseTimestamp)
         {
-            string url = "https://" + node.Bucket + ".s3.amazonaws.com/" + node.NodeName + "/latest.txt";
+            string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/latest.txt";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (!response.IsSuccessStatusCode)
             {
@@ -182,7 +289,7 @@ namespace OrcanodeMonitor.Core
         /// <returns></returns>
         public async static Task UpdateManifestTimestampAsync(Orcanode node, string unixTimestampString, DateTime responseTimestamp)
         {
-            string url = "https://" + node.Bucket + ".s3.amazonaws.com/" + node.NodeName + "/hls/" + unixTimestampString + "/live.m3u8";
+            string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/hls/" + unixTimestampString + "/live.m3u8";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (!response.IsSuccessStatusCode)
             {
