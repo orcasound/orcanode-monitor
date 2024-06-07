@@ -44,7 +44,7 @@ The following state will be stored per orcanode:
 
   * **slug**: The URI path component from the “slug” obtained in step 1.
 
-  * **latest-recorded**: The Unix timestamp value in the latest.txt file obtained in step 2a (Question as recorded on the orcanode?)
+  * **latest-recorded**: The Unix timestamp value in the latest.txt file obtained in step 2a as recorded on the orcanode.
 
   * **latest-uploaded**: The Last-Modified timestamp on the latest.txt file as recorded by Amazon, obtained in step 2a.
 
@@ -60,9 +60,9 @@ The following state will be stored per orcanode:
 
 ### Configured parameters
 
-**ORCASOUND_POLL_FREQUENCY_IN_MINUTES**: Service will poll each orcanode at the configured frequency.
+**ORCASOUND_POLL_FREQUENCY_IN_MINUTES**: Service will poll each orcanode at the configured frequency. Default: 5
 
-**ORCASOUND_MAX_UPLOAD_DELAY_MINUTES**: If the manifest file is older than this, the node will be considered offline.
+**ORCASOUND_MAX_UPLOAD_DELAY_MINUTES**: If the manifest file is older than this, the node will be considered offline. Default: 2
 
 ## Web page front end
 

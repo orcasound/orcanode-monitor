@@ -150,6 +150,22 @@ namespace OrcanodeMonitor.Core
         public bool? DataplicityUpgradeAvailable { get; set; }
         public OrcanodeUpgradeStatus DataplicityUpgradeStatus => (DataplicityUpgradeAvailable ?? false) ? OrcanodeUpgradeStatus.UpgradeAvailable : OrcanodeUpgradeStatus.UpToDate;
         public OrcanodeOnlineStatus DataplicityStatus => (DataplicityOnline ?? false) ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Offline;
+        public string? OrcaHelloName { get
+            {
+                if (DisplayName == null) return string.Empty;
+
+                // Any special cases here, since OrcaHello does not support
+                // node enumeration, nor does it use the same names as
+                // Dataplicity or Orcasound.net.
+                if (DisplayName == "Orcasound Lab") return "Haro Strait";
+
+                return DisplayName;
+            }
+        }
+        public DateTime? LastOrcaHelloDetectionTimestamp { get; set; }
+        public int? LastOrcaHelloDetectionConfidence { get; set; }
+        public string? LastOrcaHelloDetectionComments { get; set; }
+        public bool? LastOrcaHelloDetectionFound { get; set; }
         public OrcanodeOnlineStatus OrcasoundOnlineStatus
         {
             get

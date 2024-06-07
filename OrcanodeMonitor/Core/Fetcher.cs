@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
 using System.Net.Sockets;
+using System.Web;
 
 namespace OrcanodeMonitor.Core
 {
@@ -74,6 +75,91 @@ namespace OrcanodeMonitor.Core
             return newNode;
         }
 
+        /// <summary>
+        /// Update the list of Orcanodes using data from OrcaHello.
+        /// OrcaHello does not currently allow enumerating nodes.
+        /// </summary>
+        /// <param name="result">Result to update</param>
+        /// <returns></returns>
+        public async static Task EnumerateOrcaHelloNodesAsync(EnumerateNodesResult result)
+        {
+            foreach (Orcanode node in result.NodeList)
+            {
+                await UpdateOrcaHelloDataAsync(node);
+            }
+        }
+
+        public async static Task UpdateOrcaHelloDataAsync(Orcanode node)
+        {
+            string? name = HttpUtility.UrlEncode(node.OrcaHelloName);
+            if (name == null)
+            {
+                return;
+            }
+            string url = "https://aifororcasdetections.azurewebsites.net/api/detections?Page=1&SortBy=timestamp&SortOrder=desc&Timeframe=all&Location=" + name + "&RecordsPerPage=1";
+            string json = "";
+            try
+            {
+                json = await _httpClient.GetStringAsync(url);
+                if (json == "")
+                {
+                    return;
+                }
+                dynamic dataArray = JsonSerializer.Deserialize<JsonElement>(json);
+                if (dataArray.ValueKind != JsonValueKind.Array)
+                {
+                    return;
+                }
+                foreach (JsonElement detection in dataArray.EnumerateArray())
+                {
+                    if (!detection.TryGetProperty("timestamp", out var timestampElement))
+                    {
+                        return;
+                    }
+                    if (!DateTime.TryParseExact(timestampElement.ToString(), "yyyy-MM-ddTHH:mm:ss.ffffffZ", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out DateTime timestamp))
+                    {
+                        return;
+                    }
+                    if (timestamp <= node.LastOrcaHelloDetectionTimestamp)
+                    {
+                        // No new detections.
+                        return;
+                    }
+
+                    // Parse other properties.
+                    if (!detection.TryGetProperty("confidence", out var confidenceElement))
+                    {
+                        return;
+                    }
+                    if (!confidenceElement.TryGetDouble(out double confidence))
+                    {
+                        return;
+                    }
+                    if (!detection.TryGetProperty("comments", out var comments))
+                    {
+                        return;
+                    }
+                    if (!detection.TryGetProperty("found", out var found))
+                    {
+                        return;
+                    }
+
+                    node.LastOrcaHelloDetectionTimestamp = timestamp;
+                    node.LastOrcaHelloDetectionFound = found.ToString() == "yes";
+                    node.LastOrcaHelloDetectionComments = comments.ToString();
+                    node.LastOrcaHelloDetectionConfidence = (int)(confidence + 0.5);
+                }
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        /// <summary>
+        /// Get the current list of Orcanodes from dataplicity.com.
+        /// </summary>
+        /// <param name="result">Result to update</param>
+        /// <returns></returns>
         public async static Task EnumerateDataplicityNodesAsync(EnumerateNodesResult result)
         {
             try
@@ -148,30 +234,29 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get the current list of Orcanodes from orcasound.net and dataplicity.com.
+        /// Get the current list of Orcanodes from orcasound.net.
         /// </summary>
-        /// <returns>EnumerateNodesResult object</returns>
-        public async static Task<EnumerateNodesResult> EnumerateOrcasoundNodesAsync()
+        /// <param name="result">Result to update</param>
+        /// <returns></returns>
+        public async static Task EnumerateOrcasoundNodesAsync(EnumerateNodesResult result)
         {
-            // TODO: move this outside.
-            var result = new EnumerateNodesResult(DateTime.Now);
             string json = "";
             try
             {
                 json = await _httpClient.GetStringAsync(_orcasoundFeedsUrl);
                 if (json == "")
                 {
-                    return result;
+                    return;
                 }
                 dynamic response = JsonSerializer.Deserialize<ExpandoObject>(json);
                 if (response == null)
                 {
-                    return result;
+                    return;
                 }
                 JsonElement dataArray = response.data;
                 if (dataArray.ValueKind != JsonValueKind.Array)
                 {
-                    return result;
+                    return;
                 }
                 foreach (JsonElement feed in dataArray.EnumerateArray())
                 {
@@ -198,12 +283,13 @@ namespace OrcanodeMonitor.Core
                     var node = new Orcanode(name.ToString(), nodeName.ToString(), bucket.ToString(), slug.ToString());
                     result.NodeList.Add(node);
                 }
+
+                // TODO: how should we merge the Succeeded value?
                 result.Succeeded = true;
             }
             catch (Exception)
             {
             }
-            return result;
         }
 
         /// <summary>
