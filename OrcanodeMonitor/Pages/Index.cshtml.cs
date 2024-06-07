@@ -32,18 +32,18 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeOrcasoundColor(Orcanode node)
         {
-            OrcanodeStatus status = node.OrcasoundStatus;
-            if (status == OrcanodeStatus.Offline)
+            OrcanodeOnlineStatus status = node.OrcasoundOnlineStatus;
+            if (status == OrcanodeOnlineStatus.Online)
             {
-                return ColorTranslator.ToHtml(Color.Red);
+                return ColorTranslator.ToHtml(Color.LightGreen);
             }
-            return ColorTranslator.ToHtml(Color.LightGreen);
+            return ColorTranslator.ToHtml(Color.Red);
         }
 
         public string NodeDataplicityColor(Orcanode node)
         {
-            OrcanodeStatus status = node.DataplicityStatus;
-            if (status == OrcanodeStatus.Offline)
+            OrcanodeOnlineStatus status = node.DataplicityStatus;
+            if (status == OrcanodeOnlineStatus.Offline)
             {
                 return ColorTranslator.ToHtml(Color.Red);
             }

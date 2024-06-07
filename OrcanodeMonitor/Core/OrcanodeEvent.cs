@@ -17,7 +17,7 @@ namespace OrcanodeMonitor.Core
 
     public class OrcanodeEvent
     {
-        public OrcanodeEvent(string slug, OrcanodeStatus status, DateTime timestamp)
+        public OrcanodeEvent(string slug, OrcanodeOnlineStatus status, DateTime timestamp)
         {
             Slug = slug;
             Status = status;
@@ -26,7 +26,7 @@ namespace OrcanodeMonitor.Core
         [JsonPropertyName("slug")]
         public string Slug { get; private set; }
         [JsonPropertyName("status")]
-        public OrcanodeStatus Status { get; private set; }
+        public OrcanodeOnlineStatus Status { get; private set; }
         [JsonPropertyName("meta")]
         public OrcanodeEventMeta Meta { get; private set; }
         public override string ToString()
@@ -39,7 +39,7 @@ namespace OrcanodeMonitor.Core
         public string Description { get
             {
                 string nodeName = State.GetNode(Slug)?.DisplayName ?? "<Unknown>";
-                if (Status == OrcanodeStatus.Offline)
+                if (Status == OrcanodeOnlineStatus.Offline)
                 {
                     return String.Format("{0} was detected as OFFLINE", nodeName);
                 }

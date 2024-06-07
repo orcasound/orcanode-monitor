@@ -2,9 +2,10 @@
 // SPDX-License-Identifier: MIT
 namespace OrcanodeMonitor.Core
 {
-    public enum OrcanodeStatus
+    public enum OrcanodeOnlineStatus
     {
-        Offline = 0,
+        Absent = 0,
+        Offline,
         Online
     }
     public enum OrcanodeUpgradeStatus
@@ -120,21 +121,25 @@ namespace OrcanodeMonitor.Core
         public bool? DataplicityOnline { get; set; }
         public bool? DataplicityUpgradeAvailable { get; set; }
         public OrcanodeUpgradeStatus DataplicityUpgradeStatus => (DataplicityUpgradeAvailable ?? false) ? OrcanodeUpgradeStatus.UpgradeAvailable : OrcanodeUpgradeStatus.UpToDate;
-        public OrcanodeStatus DataplicityStatus => (DataplicityOnline ?? false) ? OrcanodeStatus.Online : OrcanodeStatus.Offline;
-        public OrcanodeStatus OrcasoundStatus
+        public OrcanodeOnlineStatus DataplicityStatus => (DataplicityOnline ?? false) ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Offline;
+        public OrcanodeOnlineStatus OrcasoundOnlineStatus
         {
             get
             {
+                if (OrcasoundSlug == null)
+                {
+                    return OrcanodeOnlineStatus.Absent;
+                }
                 if (!ManifestUpdatedUtc.HasValue || !LastCheckedUtc.HasValue)
                 {
-                    return OrcanodeStatus.Offline;
+                    return OrcanodeOnlineStatus.Offline;
                 }
                 TimeSpan manifestAge = LastCheckedUtc.Value.Subtract(ManifestUpdatedUtc.Value);
                 if (manifestAge > _maxUploadDelay)
                 {
-                    return OrcanodeStatus.Offline;
+                    return OrcanodeOnlineStatus.Offline;
                 }
-                return OrcanodeStatus.Online;
+                return OrcanodeOnlineStatus.Online;
             }
         }
         public override string ToString() => DisplayName;
