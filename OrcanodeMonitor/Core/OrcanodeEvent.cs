@@ -38,7 +38,7 @@ namespace OrcanodeMonitor.Core
         [JsonPropertyName("description")]
         public string Description { get
             {
-                string nodeName = State.GetNode(Slug)?.Name ?? "<Unknown>";
+                string nodeName = State.GetNode(Slug)?.DisplayName ?? "<Unknown>";
                 if (Status == OrcanodeStatus.Offline)
                 {
                     return String.Format("{0} was detected as OFFLINE", nodeName);

@@ -18,13 +18,44 @@ namespace OrcanodeMonitor.Pages
         {
             _logger = logger;
         }
-
-        public string NodeColor(Orcanode node)
+        public string LastChecked
         {
-            OrcanodeStatus status = node.Status;
+            get
+            {
+                if (State.LastResult == null)
+                {
+                    return "";
+                }
+                return Fetcher.UtcToLocalDateTime(State.LastResult.Timestamp).ToString();
+            }
+        }
+
+        public string NodeOrcasoundColor(Orcanode node)
+        {
+            OrcanodeStatus status = node.OrcasoundStatus;
             if (status == OrcanodeStatus.Offline)
             {
                 return ColorTranslator.ToHtml(Color.Red);
+            }
+            return ColorTranslator.ToHtml(Color.LightGreen);
+        }
+
+        public string NodeDataplicityColor(Orcanode node)
+        {
+            OrcanodeStatus status = node.DataplicityStatus;
+            if (status == OrcanodeStatus.Offline)
+            {
+                return ColorTranslator.ToHtml(Color.Red);
+            }
+            return ColorTranslator.ToHtml(Color.LightGreen);
+        }
+
+        public string NodeDataplicityUpgradeColor(Orcanode node)
+        {
+            OrcanodeUpgradeStatus status = node.DataplicityUpgradeStatus;
+            if (status == OrcanodeUpgradeStatus.UpgradeAvailable)
+            {
+                return ColorTranslator.ToHtml(Color.Yellow);
             }
             return ColorTranslator.ToHtml(Color.LightGreen);
         }

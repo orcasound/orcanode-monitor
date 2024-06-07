@@ -7,10 +7,10 @@
 The web service will be deployed as an azurewebsites.net service.  Periodically, at a frequency that can be
 configured by an administrator, the service will do the following:
 
-1. Enumerate the orcanodes listed at https://live.orcasound.net/api/json/feeds and update its internal list
+1. Enumerate the orcanodes listed at https://live.orcasound.net/api/json/feeds and update the internal list
    of nodes, tracking the “node_name” and “bucket”, for each orcanode.
 
-2. For each orcanode:
+2. For each orcanode found in step 1:
 
    a. Query the latest timestamp by fetching “https://{bucket}.s3.amazonaws.com/{node_name}/latest.txt”
       (e.g., https://streaming-orcasound-net.s3.amazonaws.com/rpi_orcasound_lab/latest.txt for the Orcasound
@@ -26,13 +26,21 @@ configured by an administrator, the service will do the following:
    c. Update the state of the orcanode in stable storage.  Other internal modules can register for notifications
       of changes to this state.
 
+3. Enumerate the orcanodes listed at
+   [https://apps.dataplicity.com/devices](https://docs.dataplicity.com/reference/devicessearch) and update the
+   internal list of nodes, tracking the "name" and "online", for each orcanode.
+
+4. For each orcanode found in step 3:
+
+   a. Update the state of the orcanode in stable storage.  Other internal modules can register for notifications
+
 The following state will be stored per orcanode:
 
   * **name**: The human-readable name from the “name” obtained in step 1.
 
-  * **node_name**: The URI path component from the “node_name” obtained in step 1.
+  * **s3_node_name**: The URI path component from the “node_name” obtained in step 1.
 
-  * **bucket**: The hostname component from the “bucket” obtained in step 1.
+  * **s3_bucket**: The hostname component from the “bucket” obtained in step 1.
 
   * **slug**: The URI path component from the “slug” obtained in step 1.
 
@@ -41,6 +49,14 @@ The following state will be stored per orcanode:
   * **latest-uploaded**: The Last-Modified timestamp on the latest.txt file as recorded by Amazon, obtained in step 2a.
 
   * **manifest-updated**: The Last-Modified timestamp on the manifest file as recorded by Amazon, obtained in step 2b.
+
+  * **dataplicity-name**: The value of the "name" field obtained in step 3.
+
+  * **dataplicity-description**: The value of the "description" field obtained in step 3.
+
+  * **dataplicity-upgrade-available**: The value of the "upgrade_available" field obtained in step 3.
+
+  * **dataplicity-online**: The value of the "online" field obtained in step 3.
 
 ### Configured parameters
 
