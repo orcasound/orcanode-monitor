@@ -51,7 +51,8 @@ namespace OrcanodeMonitor.Core
         {
             _logger.LogInformation("Background task executed.");
 
-            EnumerateNodesResult result = await Fetcher.EnumerateOrcasoundNodesAsync();
+            var result = new EnumerateNodesResult(DateTime.Now);
+            await Fetcher.EnumerateOrcasoundNodesAsync(result);
             if (result.Succeeded)
             {
                 foreach (Orcanode node in result.NodeList)
@@ -62,10 +63,12 @@ namespace OrcanodeMonitor.Core
 
             await Fetcher.EnumerateDataplicityNodesAsync(result);
 
+            // OrcaHello is time-consuming to query so do this last.
+            await Fetcher.EnumerateOrcaHelloNodesAsync(result);
+
             State.SetLastResult(result);
         }
     }
-
 }
 
 //
