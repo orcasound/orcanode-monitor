@@ -19,7 +19,8 @@
             <th>Last checked</th>
             -->
             <th>Dataplicity Status</th>
-            <th>Upgrade Status</th>
+            <th>Agent Version</th>
+            <th>SD Card Util.</th>
             <th>Orcasound Status</th>
             <th></th>
         </tr>
@@ -50,30 +51,34 @@
             </td>
             <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
                 <a href="https://www.dataplicity.com/app/">
-                    @Html.DisplayFor(modelItem => item.DataplicityUpgradeStatus)
+                    @Html.DisplayFor(modelItem => item.AgentVersion)
                 </a>
             </td>
-                @if (item.OrcasoundOnlineStatus == Core.OrcanodeOnlineStatus.Absent)
-                {
-                    <td style="background-color: @Model.NodeOrcasoundColor(item)">
+            <td>
+                @Html.DisplayFor(modelItem => item.DiskUsedInGigs)/@Html.DisplayFor(modelItem => item.DiskCapacityInGigs)G
+                (@Html.DisplayFor(modelItem => item.DiskUsagePercentage)%)
+            </td>
+            @if (item.OrcasoundOnlineStatus == Core.OrcanodeOnlineStatus.Absent)
+            {
+                <td style="background-color: @Model.NodeOrcasoundColor(item)">
+                    @Html.DisplayFor(modelItem => item.OrcasoundOnlineStatus)
+                </td>
+                <td>
+                </td>
+            }
+            else
+            {
+                <td style="background-color: @Model.NodeOrcasoundColor(item)">
+                    <a href="https://open.quiltdata.com/b/streaming-orcasound-net/tree/@item.S3NodeName/">
                         @Html.DisplayFor(modelItem => item.OrcasoundOnlineStatus)
-                    </td>
-                    <td>
-                    </td>
-                }
-                else
-                {
-                    <td style="background-color: @Model.NodeOrcasoundColor(item)">
-                        <a href="https://open.quiltdata.com/b/streaming-orcasound-net/tree/@item.S3NodeName/">
-                            @Html.DisplayFor(modelItem => item.OrcasoundOnlineStatus)
-                        </a>
-                    </td>
-                    <td>
-                        <a href="https://live.orcasound.net/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" target="_blank">
-                            <button>Listen</button>
-                        </a>
-                    </td>
-                }
+                    </a>
+                </td>
+                <td>
+                    <a href="https://live.orcasound.net/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" target="_blank">
+                        <button>Listen</button>
+                    </a>
+                </td>
+            }
         </tr>
     }
     </table>
