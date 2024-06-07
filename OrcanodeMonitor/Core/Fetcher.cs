@@ -121,6 +121,18 @@ namespace OrcanodeMonitor.Core
                     {
                         node.DataplicityId = serial.ToString();
                     }
+                    if (device.TryGetProperty("agent_version", out var agentVersion))
+                    {
+                        node.AgentVersion = agentVersion.ToString();
+                    }
+                    if (device.TryGetProperty("disk_capacity", out var diskCapacity))
+                    {
+                        node.DiskCapacity = diskCapacity.GetInt64();
+                    }
+                    if (device.TryGetProperty("disk_used", out var diskUsed))
+                    {
+                        node.DiskUsed = diskUsed.GetInt64();
+                    }
                     if (device.TryGetProperty("upgrade_available", out var upgradeAvailable))
                     {
                         node.DataplicityUpgradeAvailable = upgradeAvailable.GetBoolean();

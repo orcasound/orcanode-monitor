@@ -108,13 +108,32 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         public string DataplicityName { get; set; }
         /// <summary>
-        /// The description of the node at Dataplicity.
+        /// The description at Dataplicity.
         /// </summary>
         public string DataplicityDescription { get; set; }
         /// <summary>
-        /// The id ("serial") of the node at Dataplicity.
+        /// The id ("serial") at Dataplicity.
         /// </summary>
         public string DataplicityId { get; set; }
+        /// <summary>
+        /// The agent version as reported by Dataplicity.
+        /// </summary>
+        public string AgentVersion { get; set; }
+        /// <summary>
+        /// The disk capacity as reported by Dataplicity.
+        /// </summary>
+        public long DiskCapacity { get; set; }
+        /// <summary>
+        /// The disk used value as reported by Dataplicity.
+        /// </summary>
+        public long DiskUsed { get; set; }
+        /// <summary>
+        /// The disk usage percentage.
+        /// </summary>
+        public long DiskUsagePercentage => (100 * DiskUsed) / DiskCapacity;
+        public long DiskUsedInGigs => DiskUsed / 1000000000;
+        public long DiskCapacityInGigs => DiskCapacity / 1000000000;
+
         /// <summary>
         /// Whether Dataplicity believes the node is online.
         /// </summary>
