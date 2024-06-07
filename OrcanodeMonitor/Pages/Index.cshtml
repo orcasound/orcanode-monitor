@@ -43,9 +43,9 @@
                 @Html.DisplayFor(modelItem => item.LastCheckedLocal)
             </td>
             -->
-            <td style="background-color: @Model.NodeOrcasoundColor(item)">
-                <a href="https://open.quiltdata.com/b/streaming-orcasound-net/tree/@item.S3NodeName/">
-                    @Html.DisplayFor(modelItem => item.OrcasoundStatus)
+            <td style="background-color: @Model.NodeDataplicityColor(item)">
+                <a href="https://www.dataplicity.com/app/">
+                    @Html.DisplayFor(modelItem => item.DataplicityStatus)
                 </a>
             </td>
             <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
@@ -53,16 +53,27 @@
                     @Html.DisplayFor(modelItem => item.DataplicityUpgradeStatus)
                 </a>
             </td>
-            <td style="background-color: @Model.NodeDataplicityColor(item)">
-                <a href="https://www.dataplicity.com/app/">
-                    @Html.DisplayFor(modelItem => item.DataplicityStatus)
-                </a>
-            </td>
-            <td>
-                <a href="https://live.orcasound.net/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" target="_blank">
-                    <button>Listen</button>
-                </a>
-            </td>
+                @if (item.OrcasoundOnlineStatus == Core.OrcanodeOnlineStatus.Absent)
+                {
+                    <td style="background-color: @Model.NodeOrcasoundColor(item)">
+                        @Html.DisplayFor(modelItem => item.OrcasoundOnlineStatus)
+                    </td>
+                    <td>
+                    </td>
+                }
+                else
+                {
+                    <td style="background-color: @Model.NodeOrcasoundColor(item)">
+                        <a href="https://open.quiltdata.com/b/streaming-orcasound-net/tree/@item.S3NodeName/">
+                            @Html.DisplayFor(modelItem => item.OrcasoundOnlineStatus)
+                        </a>
+                    </td>
+                    <td>
+                        <a href="https://live.orcasound.net/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" target="_blank">
+                            <button>Listen</button>
+                        </a>
+                    </td>
+                }
         </tr>
     }
     </table>
