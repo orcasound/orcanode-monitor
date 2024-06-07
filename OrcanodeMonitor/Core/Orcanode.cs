@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
+
 namespace OrcanodeMonitor.Core
 {
     public enum OrcanodeOnlineStatus
@@ -17,11 +18,19 @@ namespace OrcanodeMonitor.Core
 
     public class Orcanode
     {
+        const int _defaultMaxUploadDelayMinutes = 2;
         /// <summary>
         /// If the manifest file is older than this, the node will be considered offline.
-        /// TODO: allow max upload delay to be configurable.
         /// </summary>
-        TimeSpan _maxUploadDelay = TimeSpan.FromMinutes(2);
+        private static TimeSpan MaxUploadDelay
+        {
+            get
+            {
+                string? maxUploadDelayMinutesString = Environment.GetEnvironmentVariable("ORCASOUND_MAX_UPLOAD_DELAY_MINUTES");
+                int maxUploadDelayMinutes = (int.TryParse(maxUploadDelayMinutesString, out var minutes)) ? minutes : _defaultMaxUploadDelayMinutes;
+                return TimeSpan.FromMinutes(maxUploadDelayMinutes);
+            }
+        }
         public Orcanode(string orcasoundName, string s3nodeName, string s3bucket, string orcasoundSlug)
         {
             OrcasoundName = orcasoundName;
@@ -154,7 +163,7 @@ namespace OrcanodeMonitor.Core
                     return OrcanodeOnlineStatus.Offline;
                 }
                 TimeSpan manifestAge = LastCheckedUtc.Value.Subtract(ManifestUpdatedUtc.Value);
-                if (manifestAge > _maxUploadDelay)
+                if (manifestAge > MaxUploadDelay)
                 {
                     return OrcanodeOnlineStatus.Offline;
                 }

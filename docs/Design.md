@@ -60,9 +60,9 @@ The following state will be stored per orcanode:
 
 ### Configured parameters
 
-**Frequency to poll (in minutes)**: Service will poll each orcanode at the configured frequency.
+**ORCASOUND_POLL_FREQUENCY_IN_MINUTES**: Service will poll each orcanode at the configured frequency.
 
-**Max upload delay (in minutes)**: If the manifest file is older than this, the node will be considered offline.
+**ORCASOUND_MAX_UPLOAD_DELAY_MINUTES**: If the manifest file is older than this, the node will be considered offline.
 
 ## Web page front end
 

@@ -10,8 +10,16 @@ namespace OrcanodeMonitor.Core
 {
     public class PeriodicTasks : BackgroundService
     {
-        // TODO: allow frequency to poll to be configurable.
-        TimeSpan _frequencyToPoll = TimeSpan.FromMinutes(5);
+        const int _defaultFrequencyToPollInMinutes = 5;
+        private static TimeSpan FrequencyToPoll
+        {
+            get
+            {
+                string? frequencyToPollInMinutesString = Environment.GetEnvironmentVariable("ORCASOUND_POLL_FREQUENCY_IN_MINUTES");
+                int frequencyToPollInMinutes = (int.TryParse(frequencyToPollInMinutesString, out var minutes)) ? minutes : _defaultFrequencyToPollInMinutes;
+                return TimeSpan.FromMinutes(frequencyToPollInMinutes);
+            }
+        }
 
         private readonly ILogger<PeriodicTasks> _logger;
 
@@ -30,7 +38,7 @@ namespace OrcanodeMonitor.Core
                     await ExecuteTask();
 
                     // Schedule the next execution.
-                    await Task.Delay(_frequencyToPoll, stoppingToken);
+                    await Task.Delay(FrequencyToPoll, stoppingToken);
                 }
                 catch (Exception ex)
                 {
