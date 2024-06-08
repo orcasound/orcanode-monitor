@@ -3,8 +3,9 @@
 
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using OrcanodeMonitor.Core;
 
-namespace OrcanodeMonitor.Core
+namespace OrcanodeMonitor.Models
 {
     public class OrcanodeEventMeta
     {
@@ -35,19 +36,21 @@ namespace OrcanodeMonitor.Core
         public OrcanodeEventMeta Meta { get; private set; }
         public override string ToString()
         {
-            return String.Format("{0} {1} at {2}", Slug, Status, Fetcher.UnixTimeStampToDateTimeLocal(Meta.UnixTimestamp));
+            return string.Format("{0} {1} at {2}", Slug, Status, Fetcher.UnixTimeStampToDateTimeLocal(Meta.UnixTimestamp));
         }
         [JsonPropertyName("timestamp")]
         public DateTime? DateTime => Fetcher.UnixTimeStampToDateTimeLocal(Meta.UnixTimestamp);
         [JsonPropertyName("description")]
-        public string Description { get
+        public string Description
+        {
+            get
             {
                 string nodeName = State.GetNode(Slug)?.DisplayName ?? "<Unknown>";
                 if (Status == OrcanodeOnlineStatus.Offline)
                 {
-                    return String.Format("{0} was detected as OFFLINE", nodeName);
+                    return string.Format("{0} was detected as OFFLINE", nodeName);
                 }
-                return String.Format("{0} was detected as up", nodeName);
+                return string.Format("{0} was detected as up", nodeName);
             }
         }
     }

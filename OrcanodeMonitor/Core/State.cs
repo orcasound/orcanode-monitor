@@ -1,11 +1,16 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
+using OrcanodeMonitor.Models;
+
 namespace OrcanodeMonitor.Core
 {
     public class State
     {
         private static List<OrcanodeEvent> _events = new List<OrcanodeEvent>();
-        private static EnumerateNodesResult? _lastResult;
+        private static List<Orcanode> _nodes = new List<Orcanode>();
+        public static List<Orcanode> Nodes => _nodes;
+        public static DateTime? LastUpdatedTimestamp { get; set; }
+
         private static void AddOrcanodeEvent(List<OrcanodeEvent> list, Orcanode node, DateTime resultTimestamp)
         {
             DateTime eventTimestampUtc = node.ManifestUpdatedUtc.HasValue ? node.ManifestUpdatedUtc.Value : resultTimestamp.ToUniversalTime();
@@ -13,6 +18,7 @@ namespace OrcanodeMonitor.Core
             list.Add(orcanodeEvent);
         }
 
+#if false
         public static void SetLastResult(EnumerateNodesResult result)
         {
             var newEvents = new List<OrcanodeEvent>();
@@ -42,6 +48,7 @@ namespace OrcanodeMonitor.Core
 
             _lastResult = result;
         }
+#endif
 
         /// <summary>
         /// Get a list of the most recent events in order from most to least recent,
@@ -64,8 +71,7 @@ namespace OrcanodeMonitor.Core
             }
             return result;
         }
-        public static EnumerateNodesResult? LastResult => _lastResult;
-        public static Orcanode? GetNode(string slug) => LastResult?.NodeList.Find(item => item.OrcasoundSlug == slug);
+        public static Orcanode? GetNode(string slug) => Nodes.Find(item => item.OrcasoundSlug == slug);
 
         // TODO: persist state across restarts.
     }

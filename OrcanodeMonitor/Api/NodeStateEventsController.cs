@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using OrcanodeMonitor.Models;
 using System.Dynamic;
 using System.Text.Json;
 
@@ -12,7 +13,7 @@ namespace OrcanodeMonitor.Api
     {
         private JsonResult GetEvents(int limit)
         {
-            List<Core.OrcanodeEvent> latestEvents = Core.State.GetEvents(limit);
+            List<OrcanodeEvent> latestEvents = Core.State.GetEvents(limit);
             var dataResult = new { data = latestEvents };
 
             var jsonString = JsonSerializer.Serialize(dataResult);

@@ -3,6 +3,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OrcanodeMonitor.Core;
+using OrcanodeMonitor.Models;
 using System.Drawing;
 
 namespace OrcanodeMonitor.Pages
@@ -10,7 +11,7 @@ namespace OrcanodeMonitor.Pages
     public class IndexModel : PageModel
     {
         private readonly ILogger<IndexModel> _logger;
-        public List<Orcanode> Nodes => State.LastResult?.NodeList ?? new List<Orcanode>();
+        public List<Orcanode> Nodes => State.Nodes;
         private const int _maxEventCountToDisplay = 20;
         public List<OrcanodeEvent> RecentEvents => State.GetEvents(_maxEventCountToDisplay);
 
@@ -22,11 +23,11 @@ namespace OrcanodeMonitor.Pages
         {
             get
             {
-                if (State.LastResult == null)
+                if (State.LastUpdatedTimestamp == null)
                 {
                     return "";
                 }
-                return Fetcher.UtcToLocalDateTime(State.LastResult.Timestamp).ToString();
+                return Fetcher.UtcToLocalDateTime(State.LastUpdatedTimestamp).ToString();
             }
         }
 
