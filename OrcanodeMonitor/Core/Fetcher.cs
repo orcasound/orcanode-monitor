@@ -294,7 +294,7 @@ namespace OrcanodeMonitor.Core
                 {
                     if (node.S3Bucket != null)
                     {
-                        await Fetcher.UpdateS3DataAsync(node, DateTime.UtcNow);
+                        await Fetcher.UpdateS3DataAsync(node);
                     }
                 }
             }
@@ -361,9 +361,8 @@ namespace OrcanodeMonitor.Core
         /// Update the timestamps for a given Orcanode by querying files on S3.
         /// </summary>
         /// <param name="node">Orcanode to update</param>
-        /// <param name="responseTimestamp">Timestamp at which the result was returned</param>
         /// <returns></returns>
-        public async static Task UpdateS3DataAsync(Orcanode node, DateTime responseTimestamp)
+        public async static Task UpdateS3DataAsync(Orcanode node)
         {
             string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/latest.txt";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
@@ -386,7 +385,7 @@ namespace OrcanodeMonitor.Core
                 }
             }
 
-            await UpdateManifestTimestampAsync(node, unixTimestampString, responseTimestamp);
+            await UpdateManifestTimestampAsync(node, unixTimestampString);
         }
 
         /// <summary>
@@ -394,10 +393,11 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="node">Orcanode to update</param>
         /// <param name="unixTimestampString">Value in the latest.txt file</param>
-        /// <param name="responseTimestamp">Timestamp at which the result was returned</param>
         /// <returns></returns>
-        public async static Task UpdateManifestTimestampAsync(Orcanode node, string unixTimestampString, DateTime responseTimestamp)
+        public async static Task UpdateManifestTimestampAsync(Orcanode node, string unixTimestampString)
         {
+            OrcanodeOnlineStatus oldStatus = node.OrcasoundOnlineStatus;
+
             string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/hls/" + unixTimestampString + "/live.m3u8";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (!response.IsSuccessStatusCode)
@@ -406,12 +406,20 @@ namespace OrcanodeMonitor.Core
             }
 
             DateTimeOffset? offset = response.Content.Headers.LastModified;
-            if (offset.HasValue)
+            if (!offset.HasValue)
             {
-                node.ManifestUpdatedUtc = offset.Value.UtcDateTime;
+                node.LastCheckedUtc = DateTime.UtcNow;
+                return;
             }
 
-            node.LastCheckedUtc = responseTimestamp.ToUniversalTime();
+            node.ManifestUpdatedUtc = offset.Value.UtcDateTime;
+            node.LastCheckedUtc = DateTime.UtcNow;
+
+            OrcanodeOnlineStatus newStatus = node.OrcasoundOnlineStatus;
+            if (newStatus != oldStatus)
+            {
+                State.AddOrcanodeStreamStatusEvent(node);
+            }
         }
     }
 }

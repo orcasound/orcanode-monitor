@@ -13,7 +13,15 @@ namespace OrcanodeMonitor.Api
     {
         private JsonResult GetEvents(int limit)
         {
-            List<OrcanodeEvent> latestEvents = Core.State.GetEvents(limit);
+            List<OrcanodeEvent> events = Core.State.GetEvents(limit);
+
+            // Convert to IFTTT data transfer objects.
+            var latestEvents = new List<OrcanodeIftttEventDTO>();
+            foreach (OrcanodeEvent e in events)
+            {
+                latestEvents.Add(e.ToIftttEventDTO());
+            }
+
             var dataResult = new { data = latestEvents };
 
             var jsonString = JsonSerializer.Serialize(dataResult);

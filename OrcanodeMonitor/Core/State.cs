@@ -11,44 +11,17 @@ namespace OrcanodeMonitor.Core
         public static List<Orcanode> Nodes => _nodes;
         public static DateTime? LastUpdatedTimestamp { get; set; }
 
-        private static void AddOrcanodeEvent(List<OrcanodeEvent> list, Orcanode node, DateTime resultTimestamp)
+        private static void AddOrcanodeStreamStatusEvent(List<OrcanodeEvent> list, Orcanode node)
         {
-            DateTime eventTimestampUtc = node.ManifestUpdatedUtc.HasValue ? node.ManifestUpdatedUtc.Value : resultTimestamp.ToUniversalTime();
-            var orcanodeEvent = new OrcanodeEvent(node.OrcasoundSlug, node.OrcasoundOnlineStatus, eventTimestampUtc);
-            list.Add(orcanodeEvent);
+            string value = (node.OrcasoundOnlineStatus == OrcanodeOnlineStatus.Online) ? "up" : "OFFLINE";
+            var orcanodeEvent = new OrcanodeEvent(node.OrcasoundSlug, "stream status", value, DateTime.UtcNow);
+            list.Insert(0, orcanodeEvent);
         }
 
-#if false
-        public static void SetLastResult(EnumerateNodesResult result)
+        public static void AddOrcanodeStreamStatusEvent(Orcanode node)
         {
-            var newEvents = new List<OrcanodeEvent>();
-            foreach (Orcanode nodeNewState in result.NodeList)
-            {
-                OrcanodeOnlineStatus newStatus = nodeNewState.OrcasoundOnlineStatus;
-                if (_lastResult == null)
-                {
-                    AddOrcanodeEvent(newEvents, nodeNewState, result.Timestamp);
-                    continue;
-                }
-                Orcanode? nodeOldState = _lastResult.NodeList.Find(node => node.OrcasoundSlug == nodeNewState.OrcasoundSlug);
-                OrcanodeOnlineStatus oldStatus = (nodeOldState != null) ? nodeOldState.OrcasoundOnlineStatus : OrcanodeOnlineStatus.Offline;
-                if (newStatus != oldStatus)
-                {
-                    AddOrcanodeEvent(newEvents, nodeNewState, result.Timestamp);
-                }
-            }
-
-            // Sort new events.
-            var ascendingOrder = newEvents.OrderBy(e => e.DateTime);
-            foreach (OrcanodeEvent orcanodeEvent in ascendingOrder)
-            {
-                // Insert latest event at the beginning.
-                _events.Insert(0, orcanodeEvent);
-            }
-
-            _lastResult = result;
+            AddOrcanodeStreamStatusEvent(_events, node);
         }
-#endif
 
         /// <summary>
         /// Get a list of the most recent events in order from most to least recent,
