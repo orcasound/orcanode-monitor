@@ -1,7 +1,10 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
-namespace OrcanodeMonitor.Core
+using System.ComponentModel.DataAnnotations;
+using OrcanodeMonitor.Core;
+
+namespace OrcanodeMonitor.Models
 {
     public enum OrcanodeOnlineStatus
     {
@@ -27,14 +30,27 @@ namespace OrcanodeMonitor.Core
             get
             {
                 string? maxUploadDelayMinutesString = Environment.GetEnvironmentVariable("ORCASOUND_MAX_UPLOAD_DELAY_MINUTES");
-                int maxUploadDelayMinutes = (int.TryParse(maxUploadDelayMinutesString, out var minutes)) ? minutes : _defaultMaxUploadDelayMinutes;
+                int maxUploadDelayMinutes = int.TryParse(maxUploadDelayMinutesString, out var minutes) ? minutes : _defaultMaxUploadDelayMinutes;
                 return TimeSpan.FromMinutes(maxUploadDelayMinutes);
             }
         }
-        public Orcanode(string orcasoundName, string s3nodeName, string s3bucket, string orcasoundSlug)
-        {
-            OrcasoundName = orcasoundName;
 
+        // Key field.  This is NOT the dataplicity ID, since a node might first be detected
+        // at another site before we get the dataplicity ID.
+        public Guid ID { get; set; }
+
+        public Orcanode()
+        {
+            ID = Guid.NewGuid();
+        }
+
+        /// <summary>
+        /// The "serial" at Dataplicity.
+        /// </summary>
+        public string DataplicitySerial { get; set; }
+
+        public static string OrcasoundNameToDisplayName(string orcasoundName)
+        {
             // Convert an Orcasound name of "Beach Camp at Sunset Bay" to just "Sunset Bay".)
             string displayName = orcasoundName;
             int atIndex = orcasoundName.IndexOf(" at ");
@@ -42,44 +58,45 @@ namespace OrcanodeMonitor.Core
             {
                 displayName = orcasoundName.Substring(atIndex + 4);
             }
-            DisplayName = displayName;
-
-            S3NodeName = s3nodeName;
-            S3Bucket = s3bucket;
-            OrcasoundSlug = orcasoundSlug;
+            return displayName;
         }
-        public Orcanode(string dataplicityName)
+
+        public static string DataplicityNameToDisplayName(string dataplicityName)
         {
-            DataplicityName = dataplicityName;
-
             string displayName = dataplicityName;
-            int atIndex = dataplicityName.IndexOf(": ");
-            if (atIndex >= 0)
+            int index = dataplicityName.IndexOf(": ");
+            if (index >= 0)
             {
-                displayName = dataplicityName.Substring(atIndex + 2);
+                displayName = dataplicityName.Substring(index + 2);
             }
-            DisplayName = displayName;
+            index = dataplicityName.IndexOf("Rpi ");
+            if (index >= 0)
+            {
+                displayName = dataplicityName.Substring(index + 4);
+            }
+            return displayName;
         }
+
         /// <summary>
         /// Human-readable name.
         /// </summary>
-        public string DisplayName { get; private set; }
+        public string DisplayName { get; set; }
         /// <summary>
         /// Human-readable name at Orcasound.
         /// </summary>
-        public string OrcasoundName { get; private set; }
+        public string OrcasoundName { get; set; }
         /// <summary>
         /// The URI path component from the "node_name" field obtained from orcasound.net.
         /// </summary>
-        public string S3NodeName { get; private set; }
+        public string S3NodeName { get; set; }
         /// <summary>
         /// The hostname component from the "bucket" field obtained from orcasound.net
         /// </summary>
-        public string S3Bucket { get; private set; }
+        public string S3Bucket { get; set; }
         /// <summary>
         /// The URI path component from the "slug" field obtained from orcasound.net.
         /// </summary>
-        public string OrcasoundSlug { get; private set; }
+        public string OrcasoundSlug { get; set; }
         /// <summary>
         /// Value in the latest.txt file, as a UTC DateTime.
         /// </summary>
@@ -96,10 +113,12 @@ namespace OrcanodeMonitor.Core
         /// Last modified timestamp on the latest.txt file, in local time.
         /// </summary>
         public DateTime? LatestUploadedLocal => Fetcher.UtcToLocalDateTime(LatestUploadedUtc);
+
         /// <summary>
         /// Last modified timestamp on the manifest file, in UTC.
         /// </summary>
         public DateTime? ManifestUpdatedUtc { get; set; }
+
         /// <summary>
         /// Last modified timestamp on the manifest file, in local time.
         /// </summary>
@@ -121,10 +140,6 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         public string DataplicityDescription { get; set; }
         /// <summary>
-        /// The id ("serial") at Dataplicity.
-        /// </summary>
-        public string DataplicityId { get; set; }
-        /// <summary>
         /// The agent version as reported by Dataplicity.
         /// </summary>
         public string AgentVersion { get; set; }
@@ -139,7 +154,7 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// The disk usage percentage.
         /// </summary>
-        public long DiskUsagePercentage => (100 * DiskUsed) / DiskCapacity;
+        public long DiskUsagePercentage => 100 * DiskUsed / DiskCapacity;
         public long DiskUsedInGigs => DiskUsed / 1000000000;
         public long DiskCapacityInGigs => DiskCapacity / 1000000000;
 
@@ -148,9 +163,11 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         public bool? DataplicityOnline { get; set; }
         public bool? DataplicityUpgradeAvailable { get; set; }
-        public OrcanodeUpgradeStatus DataplicityUpgradeStatus => (DataplicityUpgradeAvailable ?? false) ? OrcanodeUpgradeStatus.UpgradeAvailable : OrcanodeUpgradeStatus.UpToDate;
-        public OrcanodeOnlineStatus DataplicityStatus => (DataplicityOnline ?? false) ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Offline;
-        public string? OrcaHelloName { get
+        public OrcanodeUpgradeStatus DataplicityUpgradeStatus => DataplicityUpgradeAvailable ?? false ? OrcanodeUpgradeStatus.UpgradeAvailable : OrcanodeUpgradeStatus.UpToDate;
+        public OrcanodeOnlineStatus DataplicityStatus => DataplicityOnline ?? false ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Offline;
+        public string? OrcaHelloName
+        {
+            get
             {
                 if (DisplayName == null) return string.Empty;
 
@@ -166,26 +183,26 @@ namespace OrcanodeMonitor.Core
         public int? LastOrcaHelloDetectionConfidence { get; set; }
         public string? LastOrcaHelloDetectionComments { get; set; }
         public bool? LastOrcaHelloDetectionFound { get; set; }
-        public OrcanodeOnlineStatus OrcasoundOnlineStatus
+
+        private static OrcanodeOnlineStatus GetOrcasoundOnlineStatus(string slug, DateTime? manifestUpdatedUtc, DateTime? lastCheckedUtc)
         {
-            get
+            if (slug == null)
             {
-                if (OrcasoundSlug == null)
-                {
-                    return OrcanodeOnlineStatus.Absent;
-                }
-                if (!ManifestUpdatedUtc.HasValue || !LastCheckedUtc.HasValue)
-                {
-                    return OrcanodeOnlineStatus.Offline;
-                }
-                TimeSpan manifestAge = LastCheckedUtc.Value.Subtract(ManifestUpdatedUtc.Value);
-                if (manifestAge > MaxUploadDelay)
-                {
-                    return OrcanodeOnlineStatus.Offline;
-                }
-                return OrcanodeOnlineStatus.Online;
+                return OrcanodeOnlineStatus.Absent;
             }
+            if (!manifestUpdatedUtc.HasValue || !lastCheckedUtc.HasValue)
+            {
+                return OrcanodeOnlineStatus.Offline;
+            }
+            TimeSpan manifestAge = lastCheckedUtc.Value.Subtract(manifestUpdatedUtc.Value);
+            if (manifestAge > MaxUploadDelay)
+            {
+                return OrcanodeOnlineStatus.Offline;
+            }
+            return OrcanodeOnlineStatus.Online;
         }
+
+        public OrcanodeOnlineStatus OrcasoundOnlineStatus => GetOrcasoundOnlineStatus(OrcasoundSlug, ManifestUpdatedUtc, LastCheckedUtc);
         public override string ToString() => DisplayName;
     }
 }

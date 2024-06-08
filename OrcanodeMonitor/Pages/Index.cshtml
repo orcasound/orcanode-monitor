@@ -11,7 +11,7 @@
     </p>
     <table>
         <tr>
-            <th>Name</th>
+            <th>Location</th>
             <!--
             <th>Latest recorded</th>
             <th>Latest uploaded</th>
@@ -26,7 +26,7 @@
             <th>Last OrcaHello Detection</th>
             <th>Confidence</th>
         </tr>
-    @foreach (Core.Orcanode item in Model.Nodes)
+    @foreach (Models.Orcanode item in Model.Nodes)
     {
         <tr>
             <td title="@Html.DisplayFor(modelItem => item.DataplicityDescription)">
@@ -60,7 +60,7 @@
                 @Html.DisplayFor(modelItem => item.DiskUsedInGigs)/@Html.DisplayFor(modelItem => item.DiskCapacityInGigs)G
                 (@Html.DisplayFor(modelItem => item.DiskUsagePercentage)%)
             </td>
-            @if (item.OrcasoundOnlineStatus == Core.OrcanodeOnlineStatus.Absent)
+            @if (item.OrcasoundOnlineStatus == Models.OrcanodeOnlineStatus.Absent)
             {
                 <td style="background-color: @Model.NodeOrcasoundColor(item)">
                     @Html.DisplayFor(modelItem => item.OrcasoundOnlineStatus)
@@ -96,7 +96,7 @@
             <th>Timestamp</th>
             <th>Event</th>
         </tr>
-        @foreach (Core.OrcanodeEvent item in Model.RecentEvents)
+        @foreach (Models.OrcanodeEvent item in Model.RecentEvents)
         {
             <tr>
                 <td>

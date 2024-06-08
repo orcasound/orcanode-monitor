@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OrcanodeMonitor.Models;
 
 namespace OrcanodeMonitor.Core
 {
@@ -51,22 +52,14 @@ namespace OrcanodeMonitor.Core
         {
             _logger.LogInformation("Background task executed.");
 
-            var result = new EnumerateNodesResult(DateTime.Now);
-            await Fetcher.EnumerateOrcasoundNodesAsync(result);
-            if (result.Succeeded)
-            {
-                foreach (Orcanode node in result.NodeList)
-                {
-                    await Fetcher.UpdateLatestTimestampAsync(node, result.Timestamp);
-                }
-            }
+            await Fetcher.UpdateDataplicityDataAsync();
+            State.LastUpdatedTimestamp = DateTime.UtcNow;
 
-            await Fetcher.EnumerateDataplicityNodesAsync(result);
+            await Fetcher.UpdateOrcasoundDataAsync();
+            State.LastUpdatedTimestamp = DateTime.UtcNow;
 
             // OrcaHello is time-consuming to query so do this last.
-            await Fetcher.EnumerateOrcaHelloNodesAsync(result);
-
-            State.SetLastResult(result);
+            await Fetcher.UpdateOrcaHelloDataAsync();
         }
     }
 }
