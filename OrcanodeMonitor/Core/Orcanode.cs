@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
+using System.ComponentModel.DataAnnotations;
+
 namespace OrcanodeMonitor.Core
 {
     public enum OrcanodeOnlineStatus

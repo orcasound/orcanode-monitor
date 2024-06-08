@@ -1,4 +1,8 @@
-﻿using System.Text.Json.Serialization;
+﻿// Copyright (c) Orcanode Monitor contributors
+// SPDX-License-Identifier: MIT
+
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace OrcanodeMonitor.Core
 {
