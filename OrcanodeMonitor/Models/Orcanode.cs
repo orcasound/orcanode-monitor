@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using OrcanodeMonitor.Core;
 
 namespace OrcanodeMonitor.Models
@@ -35,13 +36,27 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        // Key field.  This is NOT the dataplicity ID, since a node might first be detected
-        // at another site before we get the dataplicity ID.
+        /// <summary>
+        /// Database key field. This is NOT the dataplicity serial GUID, since a node might first be
+        /// detected via another mechanism before we get the dataplicity serial GUID.
+        /// </summary>
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public Guid ID { get; set; }
 
         public Orcanode()
         {
             ID = Guid.NewGuid();
+
+            // Initialize reference types.
+            LastOrcaHelloDetectionComments = string.Empty;
+            OrcasoundName = string.Empty;
+            OrcasoundSlug = string.Empty;
+            S3Bucket = string.Empty;
+            S3NodeName = string.Empty;
+            AgentVersion = string.Empty;
+            DataplicityDescription = string.Empty;
+            DataplicityName = string.Empty;
+            DataplicitySerial = string.Empty;
         }
 
         /// <summary>
@@ -80,6 +95,7 @@ namespace OrcanodeMonitor.Models
         /// <summary>
         /// Human-readable name.
         /// </summary>
+        [Required]
         public string DisplayName { get; set; }
         /// <summary>
         /// Human-readable name at Orcasound.
@@ -154,7 +170,7 @@ namespace OrcanodeMonitor.Models
         /// <summary>
         /// The disk usage percentage.
         /// </summary>
-        public long DiskUsagePercentage => 100 * DiskUsed / DiskCapacity;
+        public long DiskUsagePercentage => (DiskCapacity > 0) ? (100 * DiskUsed / DiskCapacity) : 0;
         public long DiskUsedInGigs => DiskUsed / 1000000000;
         public long DiskCapacityInGigs => DiskCapacity / 1000000000;
 
@@ -165,7 +181,7 @@ namespace OrcanodeMonitor.Models
         public bool? DataplicityUpgradeAvailable { get; set; }
         public OrcanodeUpgradeStatus DataplicityUpgradeStatus => DataplicityUpgradeAvailable ?? false ? OrcanodeUpgradeStatus.UpgradeAvailable : OrcanodeUpgradeStatus.UpToDate;
         public OrcanodeOnlineStatus DataplicityStatus => DataplicityOnline ?? false ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Offline;
-        public string? OrcaHelloName
+        public string OrcaHelloName
         {
             get
             {
@@ -181,7 +197,7 @@ namespace OrcanodeMonitor.Models
         }
         public DateTime? LastOrcaHelloDetectionTimestamp { get; set; }
         public int? LastOrcaHelloDetectionConfidence { get; set; }
-        public string? LastOrcaHelloDetectionComments { get; set; }
+        public string LastOrcaHelloDetectionComments { get; set; }
         public bool? LastOrcaHelloDetectionFound { get; set; }
 
         private static OrcanodeOnlineStatus GetOrcasoundOnlineStatus(string slug, DateTime? manifestUpdatedUtc, DateTime? lastCheckedUtc)

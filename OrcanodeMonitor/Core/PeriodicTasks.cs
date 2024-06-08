@@ -5,12 +5,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
+using static System.Formats.Asn1.AsnWriter;
 
 namespace OrcanodeMonitor.Core
 {
     public class PeriodicTasks : BackgroundService
     {
+        private readonly IServiceScopeFactory _scopeFactory;
         const int _defaultFrequencyToPollInMinutes = 5;
         private static TimeSpan FrequencyToPoll
         {
@@ -24,9 +27,10 @@ namespace OrcanodeMonitor.Core
 
         private readonly ILogger<PeriodicTasks> _logger;
 
-        public PeriodicTasks(ILogger<PeriodicTasks> logger)
+        public PeriodicTasks(IServiceScopeFactory scopeFactory, ILogger<PeriodicTasks> logger)
         {
             _logger = logger;
+            _scopeFactory = scopeFactory;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -52,14 +56,17 @@ namespace OrcanodeMonitor.Core
         {
             _logger.LogInformation("Background task executed.");
 
-            await Fetcher.UpdateDataplicityDataAsync();
+            using var scope = _scopeFactory.CreateScope();
+            OrcanodeMonitorContext context = scope.ServiceProvider.GetRequiredService<OrcanodeMonitorContext>();
+
+            await Fetcher.UpdateDataplicityDataAsync(context);
             State.LastUpdatedTimestamp = DateTime.UtcNow;
 
-            await Fetcher.UpdateOrcasoundDataAsync();
+            await Fetcher.UpdateOrcasoundDataAsync(context);
             State.LastUpdatedTimestamp = DateTime.UtcNow;
 
             // OrcaHello is time-consuming to query so do this last.
-            await Fetcher.UpdateOrcaHelloDataAsync();
+            await Fetcher.UpdateOrcaHelloDataAsync(context);
         }
     }
 }

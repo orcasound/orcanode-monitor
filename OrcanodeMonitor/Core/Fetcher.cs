@@ -9,6 +9,9 @@ using System.Xml.Linq;
 using System.Net.Sockets;
 using System.Web;
 using OrcanodeMonitor.Models;
+using Microsoft.EntityFrameworkCore;
+using OrcanodeMonitor.Data;
+using Microsoft.IdentityModel.Tokens;
 
 namespace OrcanodeMonitor.Core
 {
@@ -37,7 +40,7 @@ namespace OrcanodeMonitor.Core
             return false;
         }
 
-        private static Orcanode FindOrCreateOrcanodeByDataplicitySerial(List<Orcanode> nodeList, string serial)
+        private static Orcanode FindOrCreateOrcanodeByDataplicitySerial(DbSet<Orcanode> nodeList, string serial)
         {
             foreach (Orcanode node in nodeList)
             {
@@ -60,7 +63,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="nodeList">Orcanode list to look in</param>
         /// <param name="orcasoundName">Name to look for</param>
         /// <returns>Node found or created</returns>
-        private static Orcanode FindOrCreateOrcanodeByOrcasoundName(List<Orcanode> nodeList, string orcasoundName)
+        private static Orcanode FindOrCreateOrcanodeByOrcasoundName(DbSet<Orcanode> nodeList, string orcasoundName)
         {
             foreach (Orcanode node in nodeList)
             {
@@ -68,7 +71,7 @@ namespace OrcanodeMonitor.Core
                 {
                     return node;
                 }
-                if ((node.OrcasoundName == null) && orcasoundName.Contains(node.DisplayName))
+                if ((node.OrcasoundName.IsNullOrEmpty()) && orcasoundName.Contains(node.DisplayName))
                 {
                     node.OrcasoundName = orcasoundName;
                     return node;
@@ -87,16 +90,18 @@ namespace OrcanodeMonitor.Core
         /// Update the list of Orcanodes using data from OrcaHello.
         /// OrcaHello does not currently allow enumerating nodes.
         /// </summary>
+        /// <param name="context">Database context to update</param>
         /// <returns></returns>
-        public async static Task UpdateOrcaHelloDataAsync()
+        public async static Task UpdateOrcaHelloDataAsync(OrcanodeMonitorContext context)
         {
-            foreach (Orcanode node in State.Nodes)
+            DbSet<Orcanode> nodes = context.Orcanodes;
+            foreach (Orcanode node in nodes)
             {
-                await UpdateOrcaHelloDataAsync(node);
+                await UpdateOrcaHelloDataAsync(context, node);
             }
         }
 
-        public async static Task UpdateOrcaHelloDataAsync(Orcanode node)
+        public async static Task UpdateOrcaHelloDataAsync(OrcanodeMonitorContext context, Orcanode node)
         {
             string? name = HttpUtility.UrlEncode(node.OrcaHelloName);
             if (name == null)
@@ -156,8 +161,10 @@ namespace OrcanodeMonitor.Core
                     node.LastOrcaHelloDetectionComments = comments.ToString();
                     node.LastOrcaHelloDetectionConfidence = (int)(confidence + 0.5);
                 }
+
+                await context.SaveChangesAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
             }
         }
@@ -165,11 +172,13 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Update Orcanode state by querying dataplicity.com.
         /// </summary>
+        /// <param name="context">Database context to update</param>
         /// <returns></returns>
-        public async static Task UpdateDataplicityDataAsync()
+        public async static Task UpdateDataplicityDataAsync(OrcanodeMonitorContext context)
         {
             try
             {
+                DbSet<Orcanode> dbNodes = context.Orcanodes;
                 string? orcasound_dataplicity_token = Environment.GetEnvironmentVariable("ORCASOUND_DATAPLICITY_TOKEN");
                 if (orcasound_dataplicity_token == null)
                 {
@@ -200,12 +209,12 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
-                    Orcanode node = FindOrCreateOrcanodeByDataplicitySerial(State.Nodes, serial.ToString());
+                    Orcanode node = FindOrCreateOrcanodeByDataplicitySerial(dbNodes, serial.ToString());
                     if (device.TryGetProperty("name", out var name))
                     {
                         string dataplicityName = name.ToString();
                         node.DataplicityName = dataplicityName;
-                        if (node.DisplayName == null)
+                        if (node.DisplayName.IsNullOrEmpty())
                         {
                             node.DisplayName = Orcanode.DataplicityNameToDisplayName(dataplicityName);
                         }
@@ -235,8 +244,10 @@ namespace OrcanodeMonitor.Core
                         node.DataplicityUpgradeAvailable = upgradeAvailable.GetBoolean();
                     }
                 }
+
+                await context.SaveChangesAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
             }
         }
@@ -244,13 +255,14 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Update the current list of Orcanodes using data from orcasound.net.
         /// </summary>
+        /// <param name="context">Database context to update</param>
         /// <returns></returns>
-        public async static Task UpdateOrcasoundDataAsync()
+        public async static Task UpdateOrcasoundDataAsync(OrcanodeMonitorContext context)
         {
-            string json = "";
             try
             {
-                json = await _httpClient.GetStringAsync(_orcasoundFeedsUrl);
+                DbSet<Orcanode> nodes = context.Orcanodes;
+                string json = await _httpClient.GetStringAsync(_orcasoundFeedsUrl);
                 if (json == "")
                 {
                     return;
@@ -275,7 +287,7 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
-                    Orcanode node = FindOrCreateOrcanodeByOrcasoundName(State.Nodes, name.ToString());
+                    Orcanode node = FindOrCreateOrcanodeByOrcasoundName(nodes, name.ToString());
                     if (attributes.TryGetProperty("node_name", out var nodeName))
                     {
                         node.S3NodeName = nodeName.ToString();
@@ -290,16 +302,19 @@ namespace OrcanodeMonitor.Core
                     }
                 }
 
-                foreach (Orcanode node in State.Nodes)
+                foreach (Orcanode node in nodes)
                 {
-                    if (node.S3Bucket != null)
+                    if (!node.S3Bucket.IsNullOrEmpty())
                     {
                         await Fetcher.UpdateS3DataAsync(node);
                     }
                 }
+
+                await context.SaveChangesAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                string msg = ex.ToString();
             }
         }
 

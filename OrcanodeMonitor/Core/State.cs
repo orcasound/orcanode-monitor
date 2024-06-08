@@ -1,14 +1,38 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
+using Microsoft.EntityFrameworkCore;
+using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 
 namespace OrcanodeMonitor.Core
 {
     public class State
     {
+#if false
+        public static Data.OrcanodeMonitorContext DatabaseContext
+        {
+            get
+            {
+                if (_databaseContext == null)
+                {
+                    _databaseContext = new Data.OrcanodeMonitorContext();
+                }
+                return _databaseContext;
+            }
+        }
+#endif
         private static List<OrcanodeEvent> _events = new List<OrcanodeEvent>();
+#if false
         private static List<Orcanode> _nodes = new List<Orcanode>();
         public static List<Orcanode> Nodes => _nodes;
+#endif
+#if false
+        public static async Task<List<Orcanode>> GetNodesAsync(OrcanodeMonitorContext context)
+        {
+            return await context.Orcanodes.ToListAsync();
+        }
+#endif
+
         public static DateTime? LastUpdatedTimestamp { get; set; }
 
         private static void AddOrcanodeStreamStatusEvent(List<OrcanodeEvent> list, Orcanode node)
@@ -44,8 +68,5 @@ namespace OrcanodeMonitor.Core
             }
             return result;
         }
-        public static Orcanode? GetNode(string slug) => Nodes.Find(item => item.OrcasoundSlug == slug);
-
-        // TODO: persist state across restarts.
     }
 }
