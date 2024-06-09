@@ -43,7 +43,8 @@ namespace OrcanodeMonitor.Core
 
         private static Orcanode FindOrCreateOrcanodeByDataplicitySerial(DbSet<Orcanode> nodeList, string serial)
         {
-            foreach (Orcanode node in nodeList)
+            List<Orcanode> nodes = nodeList.ToList();
+            foreach (Orcanode node in nodes)
             {
                 if (node.DataplicitySerial == serial)
                 {
@@ -66,7 +67,8 @@ namespace OrcanodeMonitor.Core
         /// <returns>Node found or created</returns>
         private static Orcanode FindOrCreateOrcanodeByOrcasoundName(DbSet<Orcanode> nodeList, string orcasoundName)
         {
-            foreach (Orcanode node in nodeList)
+            List<Orcanode> nodes = nodeList.ToList();
+            foreach (Orcanode node in nodes)
             {
                 if (node.OrcasoundName == orcasoundName)
                 {
@@ -95,7 +97,7 @@ namespace OrcanodeMonitor.Core
         /// <returns></returns>
         public async static Task UpdateOrcaHelloDataAsync(OrcanodeMonitorContext context)
         {
-            DbSet<Orcanode> nodes = context.Orcanodes;
+            List<Orcanode> nodes = await context.Orcanodes.ToListAsync();
             foreach (Orcanode node in nodes)
             {
                 await UpdateOrcaHelloDataAsync(context, node);
@@ -179,7 +181,6 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                DbSet<Orcanode> dbNodes = context.Orcanodes;
                 string? orcasound_dataplicity_token = Environment.GetEnvironmentVariable("ORCASOUND_DATAPLICITY_TOKEN");
                 if (orcasound_dataplicity_token == null)
                 {
@@ -210,7 +211,7 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
-                    Orcanode node = FindOrCreateOrcanodeByDataplicitySerial(dbNodes, serial.ToString());
+                    Orcanode node = FindOrCreateOrcanodeByDataplicitySerial(context.Orcanodes, serial.ToString());
                     if (device.TryGetProperty("name", out var name))
                     {
                         string dataplicityName = name.ToString();
@@ -263,7 +264,6 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                DbSet<Orcanode> nodes = context.Orcanodes;
                 string json = await _httpClient.GetStringAsync(_orcasoundFeedsUrl);
                 if (json == "")
                 {
@@ -289,7 +289,7 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
-                    Orcanode node = FindOrCreateOrcanodeByOrcasoundName(nodes, name.ToString());
+                    Orcanode node = FindOrCreateOrcanodeByOrcasoundName(context.Orcanodes, name.ToString());
                     if (attributes.TryGetProperty("node_name", out var nodeName))
                     {
                         node.S3NodeName = nodeName.ToString();
@@ -304,6 +304,7 @@ namespace OrcanodeMonitor.Core
                     }
                 }
 
+                List<Orcanode> nodes = await context.Orcanodes.ToListAsync();
                 foreach (Orcanode node in nodes)
                 {
                     if (!node.S3Bucket.IsNullOrEmpty())

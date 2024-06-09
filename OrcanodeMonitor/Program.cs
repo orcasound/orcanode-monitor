@@ -9,10 +9,22 @@ using Newtonsoft.Json.Converters;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var connection = String.Empty;
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddEnvironmentVariables().AddJsonFile("appsettings.Development.json");
+    connection = builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING");
+}
+else
+{
+    connection = Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTIONSTRING");
+}
+// var connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
+
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.")));
+    options.UseSqlServer(connection));
 builder.Services.AddHostedService<PeriodicTasks>(); // Register your background service
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
