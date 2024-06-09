@@ -9,6 +9,10 @@ using System.Xml.Linq;
 using System.Net.Sockets;
 using System.Web;
 using OrcanodeMonitor.Models;
+using Microsoft.EntityFrameworkCore;
+using OrcanodeMonitor.Data;
+using Microsoft.IdentityModel.Tokens;
+using Mono.TextTemplating;
 
 namespace OrcanodeMonitor.Core
 {
@@ -37,9 +41,10 @@ namespace OrcanodeMonitor.Core
             return false;
         }
 
-        private static Orcanode FindOrCreateOrcanodeByDataplicitySerial(List<Orcanode> nodeList, string serial)
+        private static Orcanode FindOrCreateOrcanodeByDataplicitySerial(DbSet<Orcanode> nodeList, string serial)
         {
-            foreach (Orcanode node in nodeList)
+            List<Orcanode> nodes = nodeList.ToList();
+            foreach (Orcanode node in nodes)
             {
                 if (node.DataplicitySerial == serial)
                 {
@@ -60,15 +65,16 @@ namespace OrcanodeMonitor.Core
         /// <param name="nodeList">Orcanode list to look in</param>
         /// <param name="orcasoundName">Name to look for</param>
         /// <returns>Node found or created</returns>
-        private static Orcanode FindOrCreateOrcanodeByOrcasoundName(List<Orcanode> nodeList, string orcasoundName)
+        private static Orcanode FindOrCreateOrcanodeByOrcasoundName(DbSet<Orcanode> nodeList, string orcasoundName)
         {
-            foreach (Orcanode node in nodeList)
+            List<Orcanode> nodes = nodeList.ToList();
+            foreach (Orcanode node in nodes)
             {
                 if (node.OrcasoundName == orcasoundName)
                 {
                     return node;
                 }
-                if ((node.OrcasoundName == null) && orcasoundName.Contains(node.DisplayName))
+                if ((node.OrcasoundName.IsNullOrEmpty()) && orcasoundName.Contains(node.DisplayName))
                 {
                     node.OrcasoundName = orcasoundName;
                     return node;
@@ -87,16 +93,18 @@ namespace OrcanodeMonitor.Core
         /// Update the list of Orcanodes using data from OrcaHello.
         /// OrcaHello does not currently allow enumerating nodes.
         /// </summary>
+        /// <param name="context">Database context to update</param>
         /// <returns></returns>
-        public async static Task UpdateOrcaHelloDataAsync()
+        public async static Task UpdateOrcaHelloDataAsync(OrcanodeMonitorContext context)
         {
-            foreach (Orcanode node in State.Nodes)
+            List<Orcanode> nodes = await context.Orcanodes.ToListAsync();
+            foreach (Orcanode node in nodes)
             {
-                await UpdateOrcaHelloDataAsync(node);
+                await UpdateOrcaHelloDataAsync(context, node);
             }
         }
 
-        public async static Task UpdateOrcaHelloDataAsync(Orcanode node)
+        public async static Task UpdateOrcaHelloDataAsync(OrcanodeMonitorContext context, Orcanode node)
         {
             string? name = HttpUtility.UrlEncode(node.OrcaHelloName);
             if (name == null)
@@ -156,8 +164,10 @@ namespace OrcanodeMonitor.Core
                     node.LastOrcaHelloDetectionComments = comments.ToString();
                     node.LastOrcaHelloDetectionConfidence = (int)(confidence + 0.5);
                 }
+
+                await context.SaveChangesAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
             }
         }
@@ -165,8 +175,9 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Update Orcanode state by querying dataplicity.com.
         /// </summary>
+        /// <param name="context">Database context to update</param>
         /// <returns></returns>
-        public async static Task UpdateDataplicityDataAsync()
+        public async static Task UpdateDataplicityDataAsync(OrcanodeMonitorContext context)
         {
             try
             {
@@ -200,12 +211,12 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
-                    Orcanode node = FindOrCreateOrcanodeByDataplicitySerial(State.Nodes, serial.ToString());
+                    Orcanode node = FindOrCreateOrcanodeByDataplicitySerial(context.Orcanodes, serial.ToString());
                     if (device.TryGetProperty("name", out var name))
                     {
                         string dataplicityName = name.ToString();
                         node.DataplicityName = dataplicityName;
-                        if (node.DisplayName == null)
+                        if (node.DisplayName.IsNullOrEmpty())
                         {
                             node.DisplayName = Orcanode.DataplicityNameToDisplayName(dataplicityName);
                         }
@@ -235,8 +246,11 @@ namespace OrcanodeMonitor.Core
                         node.DataplicityUpgradeAvailable = upgradeAvailable.GetBoolean();
                     }
                 }
+
+                MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
+                await context.SaveChangesAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
             }
         }
@@ -244,13 +258,13 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Update the current list of Orcanodes using data from orcasound.net.
         /// </summary>
+        /// <param name="context">Database context to update</param>
         /// <returns></returns>
-        public async static Task UpdateOrcasoundDataAsync()
+        public async static Task UpdateOrcasoundDataAsync(OrcanodeMonitorContext context)
         {
-            string json = "";
             try
             {
-                json = await _httpClient.GetStringAsync(_orcasoundFeedsUrl);
+                string json = await _httpClient.GetStringAsync(_orcasoundFeedsUrl);
                 if (json == "")
                 {
                     return;
@@ -275,7 +289,7 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
-                    Orcanode node = FindOrCreateOrcanodeByOrcasoundName(State.Nodes, name.ToString());
+                    Orcanode node = FindOrCreateOrcanodeByOrcasoundName(context.Orcanodes, name.ToString());
                     if (attributes.TryGetProperty("node_name", out var nodeName))
                     {
                         node.S3NodeName = nodeName.ToString();
@@ -290,16 +304,21 @@ namespace OrcanodeMonitor.Core
                     }
                 }
 
-                foreach (Orcanode node in State.Nodes)
+                List<Orcanode> nodes = await context.Orcanodes.ToListAsync();
+                foreach (Orcanode node in nodes)
                 {
-                    if (node.S3Bucket != null)
+                    if (!node.S3Bucket.IsNullOrEmpty())
                     {
-                        await Fetcher.UpdateS3DataAsync(node);
+                        await Fetcher.UpdateS3DataAsync(context, node);
                     }
                 }
+
+                MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
+                await context.SaveChangesAsync();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                string msg = ex.ToString();
             }
         }
 
@@ -327,9 +346,13 @@ namespace OrcanodeMonitor.Core
 
         public static DateTime? UtcToLocalDateTime(DateTime? utcDateTime)
         {
-            if (utcDateTime == null)
+            if (!utcDateTime.HasValue)
             {
                 return null;
+            }
+            if (utcDateTime.Value.Kind == DateTimeKind.Unspecified)
+            {
+                utcDateTime = DateTime.SpecifyKind(utcDateTime.Value, DateTimeKind.Utc);
             }
             DateTime localDateTime = TimeZoneInfo.ConvertTime(utcDateTime.Value, _pacificTimeZone);
             return localDateTime;
@@ -360,9 +383,10 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Update the timestamps for a given Orcanode by querying files on S3.
         /// </summary>
+        /// <param name="context">Database context</param>
         /// <param name="node">Orcanode to update</param>
         /// <returns></returns>
-        public async static Task UpdateS3DataAsync(Orcanode node)
+        public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, Orcanode node)
         {
             string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/latest.txt";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
@@ -385,16 +409,37 @@ namespace OrcanodeMonitor.Core
                 }
             }
 
-            await UpdateManifestTimestampAsync(node, unixTimestampString);
+            await UpdateManifestTimestampAsync(context, node, unixTimestampString);
+        }
+
+        /// <summary>
+        /// Get a list of the most recent events in order from most to least recent,
+        /// up to a maximum of 'limit' events.
+        /// </summary>
+        /// <param name="context">Database context</param>
+        /// <param name="limit">Maximum number of events to return</param>
+        /// <returns>List of events</returns>
+        public static List<OrcanodeEvent> GetEvents(OrcanodeMonitorContext context, int limit)
+        {
+            List<OrcanodeEvent> orcanodeEvents = context.OrcanodeEvents.OrderByDescending(e => e.DateTimeUtc).Take(limit).ToList();
+            return orcanodeEvents;
+        }
+
+        private static void AddOrcanodeStreamStatusEvent(OrcanodeMonitorContext context, Orcanode node)
+        {
+            string value = (node.OrcasoundOnlineStatus == OrcanodeOnlineStatus.Online) ? "up" : "OFFLINE";
+            var orcanodeEvent = new OrcanodeEvent(node, "stream status", value, DateTime.UtcNow);
+            context.OrcanodeEvents.Add(orcanodeEvent);
         }
 
         /// <summary>
         /// Update the ManifestUpdated timestamp for a given Orcanode by querying S3.
         /// </summary>
+        /// <param name="context">Database context</param>
         /// <param name="node">Orcanode to update</param>
         /// <param name="unixTimestampString">Value in the latest.txt file</param>
         /// <returns></returns>
-        public async static Task UpdateManifestTimestampAsync(Orcanode node, string unixTimestampString)
+        public async static Task UpdateManifestTimestampAsync(OrcanodeMonitorContext context, Orcanode node, string unixTimestampString)
         {
             OrcanodeOnlineStatus oldStatus = node.OrcasoundOnlineStatus;
 
@@ -418,7 +463,7 @@ namespace OrcanodeMonitor.Core
             OrcanodeOnlineStatus newStatus = node.OrcasoundOnlineStatus;
             if (newStatus != oldStatus)
             {
-                State.AddOrcanodeStreamStatusEvent(node);
+                AddOrcanodeStreamStatusEvent(context, node);
             }
         }
     }

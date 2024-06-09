@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using OrcanodeMonitor.Core;
 
@@ -9,25 +10,29 @@ namespace OrcanodeMonitor.Models
 {
     public class OrcanodeEventIftttMeta
     {
-        public OrcanodeEventIftttMeta(Guid id, DateTime timestamp)
+        public OrcanodeEventIftttMeta(int id, DateTime timestamp)
         {
-            Id = id;
+            Id = id.ToString();
             UnixTimestamp = Fetcher.DateTimeToUnixTimeStamp(timestamp);
         }
         [JsonPropertyName("id")]
-        public Guid Id { get; private set; }
+        public string Id { get; private set; }
         [JsonPropertyName("timestamp")]
         public long UnixTimestamp { get; private set; }
     }
 
+    /// <summary>
+    /// Data Transfer Object for IFTTT events.
+    /// </summary>
     public class OrcanodeIftttEventDTO
     {
-        public OrcanodeIftttEventDTO(Guid id, string slug, string type, string value, DateTime timestamp)
+        public OrcanodeIftttEventDTO(int id, string slug, string nodeName, string type, string value, DateTime timestamp)
         {
             Slug = slug;
             Type = type;
             Value = value;
             Meta = new OrcanodeEventIftttMeta(id, timestamp);
+            Description = string.Format("{0} was detected as {1}", nodeName, Value);
         }
         [JsonPropertyName("slug")]
         public string Slug { get; private set; }
@@ -44,46 +49,53 @@ namespace OrcanodeMonitor.Models
         [JsonPropertyName("timestamp")]
         public DateTime? DateTime => Fetcher.UnixTimeStampToDateTimeLocal(Meta.UnixTimestamp);
         [JsonPropertyName("description")]
-        public string Description
-        {
-            get
-            {
-                string nodeName = State.GetNode(Slug)?.DisplayName ?? "<Unknown>";
-                return string.Format("{0} was detected as {1}", nodeName, Value);
-            }
-        }
+        public string Description { get; private set; }
     }
 
     public class OrcanodeEvent
     {
-        public OrcanodeEvent(string slug, string type, string value, DateTime timestamp)
+        public OrcanodeEvent()
         {
-            ID = Guid.NewGuid();
-            Slug = slug;
+        }
+
+        public OrcanodeEvent(Orcanode node, string type, string value, DateTime timestamp)
+        {
+            Slug = node.OrcasoundSlug;
             Type = type;
             Value = value;
-            DateTime = timestamp;
+            DateTimeUtc = timestamp;
+            OrcanodeId = node.ID;
         }
-        public OrcanodeIftttEventDTO ToIftttEventDTO() => new OrcanodeIftttEventDTO(ID, Slug, Type, Value, DateTime);
-        public Guid ID { get; private set; }
-        public string Slug { get; private set; }
-        public string Type { get; private set; }
-        public string Value { get; private set; }
-        public Guid NodeId { get; private set; }
-        public DateTime DateTime { get; private set; }
+        public OrcanodeIftttEventDTO ToIftttEventDTO() => new OrcanodeIftttEventDTO(ID, NodeName, Slug, Type, Value, DateTimeUtc);
+
+        /// <summary>
+        /// Database key for an event.
+        /// </summary>
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int ID { get; set; }
+        
+        public string Slug { get; set; }
+        public string Type { get; set; }
+        public string Value { get; set; }
+
+        /// <summary>
+        /// Foreign Key for an Orcanode.
+        /// </summary>
+        public int OrcanodeId { get; set; }
+
+        // Navigation property that uses OrcanodeId.
+        public Orcanode Orcanode { get; set; }
+
+        public string NodeName => Orcanode?.DisplayName ?? "<Unknown>";
+
+        public DateTime DateTimeUtc { get; set; }
+        public DateTime DateTimeLocal => Fetcher.UtcToLocalDateTime(DateTimeUtc).Value;
 
         public override string ToString()
         {
-            return string.Format("{0} {1} {2} at {3}", Slug, Type, Value, Fetcher.UtcToLocalDateTime(DateTime));
+            return string.Format("{0} {1} {2} at {3}", Slug, Type, Value, Fetcher.UtcToLocalDateTime(DateTimeUtc));
         }
 
-        public string Description
-        {
-            get
-            {
-                string nodeName = State.GetNode(Slug)?.DisplayName ?? "<Unknown>";
-                return string.Format("{0} was detected as {1}", nodeName, Value);
-            }
-        }
+        public string Description => string.Format("{0} was detected as {1}", NodeName, Value);
     }
 }

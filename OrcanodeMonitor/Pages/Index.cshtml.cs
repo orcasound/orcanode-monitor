@@ -2,7 +2,9 @@
 // SPDX-License-Identifier: MIT
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 using OrcanodeMonitor.Core;
+using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Drawing;
 
@@ -10,24 +12,29 @@ namespace OrcanodeMonitor.Pages
 {
     public class IndexModel : PageModel
     {
+        private OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<IndexModel> _logger;
-        public List<Orcanode> Nodes => State.Nodes;
+        private List<Orcanode> _nodes;
+        public List<Orcanode> Nodes => _nodes;
         private const int _maxEventCountToDisplay = 20;
-        public List<OrcanodeEvent> RecentEvents => State.GetEvents(_maxEventCountToDisplay);
+        public List<OrcanodeEvent> RecentEvents => Fetcher.GetEvents(_databaseContext, _maxEventCountToDisplay);
 
-        public IndexModel(ILogger<IndexModel> logger)
+        public IndexModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger)
         {
+            _databaseContext = context;
             _logger = logger;
         }
         public string LastChecked
         {
             get
             {
-                if (State.LastUpdatedTimestamp == null)
+                MonitorState monitorState = MonitorState.GetFrom(_databaseContext);
+
+                if (monitorState.LastUpdatedTimestampUtc == null)
                 {
                     return "";
                 }
-                return Fetcher.UtcToLocalDateTime(State.LastUpdatedTimestamp).ToString();
+                return Fetcher.UtcToLocalDateTime(monitorState.LastUpdatedTimestampUtc).ToString();
             }
         }
 
@@ -74,9 +81,9 @@ namespace OrcanodeMonitor.Pages
             return ColorTranslator.ToHtml(Color.LightGreen);
         }
 
-        public void OnGet()
+        public async Task OnGetAsync()
         {
-
+            _nodes = await _databaseContext.Orcanodes.ToListAsync();
         }
     }
 }
