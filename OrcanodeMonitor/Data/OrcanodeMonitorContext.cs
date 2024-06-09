@@ -14,12 +14,6 @@ namespace OrcanodeMonitor.Data
         {
         }
 
-#if false
-        public OrcanodeMonitorContext() : base()
-        {
-        }
-#endif
-
         public DbSet<OrcanodeMonitor.Models.Orcanode> Orcanodes { get; set; } = default!;
         public DbSet<OrcanodeMonitor.Models.OrcanodeEvent> OrcanodeEvents { get; set; } = default!;
 

@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Dynamic;
 using System.Text.Json;
@@ -11,9 +12,16 @@ namespace OrcanodeMonitor.Api
     [ApiController]
     public class NodeStateEventsController : ControllerBase
     {
+        private readonly OrcanodeMonitorContext _databaseContext;
+
+        public NodeStateEventsController(OrcanodeMonitorContext context)
+        {
+            _databaseContext = context;
+        }
+
         private JsonResult GetEvents(int limit)
         {
-            List<OrcanodeEvent> events = Core.State.GetEvents(limit);
+            List<OrcanodeEvent> events = Core.Fetcher.GetEvents(_databaseContext, limit);
 
             // Convert to IFTTT data transfer objects.
             var latestEvents = new List<OrcanodeIftttEventDTO>();

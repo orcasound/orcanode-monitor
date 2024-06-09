@@ -59,13 +59,14 @@ namespace OrcanodeMonitor.Models
             ID = Guid.NewGuid();
         }
 
-        public OrcanodeEvent(string slug, string type, string value, DateTime timestamp)
+        public OrcanodeEvent(Orcanode node, string type, string value, DateTime timestamp)
         {
             ID = Guid.NewGuid();
-            Slug = slug;
+            Slug = node.OrcasoundSlug;
             Type = type;
             Value = value;
             DateTime = timestamp;
+            OrcanodeId = node.ID;
         }
         public OrcanodeIftttEventDTO ToIftttEventDTO() => new OrcanodeIftttEventDTO(ID, NodeName, Slug, Type, Value, DateTime);
 

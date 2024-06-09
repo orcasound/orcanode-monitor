@@ -306,7 +306,7 @@ namespace OrcanodeMonitor.Core
                 {
                     if (!node.S3Bucket.IsNullOrEmpty())
                     {
-                        await Fetcher.UpdateS3DataAsync(node);
+                        await Fetcher.UpdateS3DataAsync(context, node);
                     }
                 }
 
@@ -375,9 +375,10 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Update the timestamps for a given Orcanode by querying files on S3.
         /// </summary>
+        /// <param name="context">Database context</param>
         /// <param name="node">Orcanode to update</param>
         /// <returns></returns>
-        public async static Task UpdateS3DataAsync(Orcanode node)
+        public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, Orcanode node)
         {
             string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/latest.txt";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
@@ -400,16 +401,37 @@ namespace OrcanodeMonitor.Core
                 }
             }
 
-            await UpdateManifestTimestampAsync(node, unixTimestampString);
+            await UpdateManifestTimestampAsync(context, node, unixTimestampString);
+        }
+
+        /// <summary>
+        /// Get a list of the most recent events in order from most to least recent,
+        /// up to a maximum of 'limit' events.
+        /// </summary>
+        /// <param name="context">Database context</param>
+        /// <param name="limit">Maximum number of events to return</param>
+        /// <returns>List of events</returns>
+        public static List<OrcanodeEvent> GetEvents(OrcanodeMonitorContext context, int limit)
+        {
+            List<OrcanodeEvent> orcanodeEvents = context.OrcanodeEvents.OrderByDescending(e => e.DateTime).Take(limit).ToList();
+            return orcanodeEvents;
+        }
+
+        private static void AddOrcanodeStreamStatusEvent(OrcanodeMonitorContext context, Orcanode node)
+        {
+            string value = (node.OrcasoundOnlineStatus == OrcanodeOnlineStatus.Online) ? "up" : "OFFLINE";
+            var orcanodeEvent = new OrcanodeEvent(node, "stream status", value, DateTime.UtcNow);
+            context.OrcanodeEvents.Add(orcanodeEvent);
         }
 
         /// <summary>
         /// Update the ManifestUpdated timestamp for a given Orcanode by querying S3.
         /// </summary>
+        /// <param name="context">Database context</param>
         /// <param name="node">Orcanode to update</param>
         /// <param name="unixTimestampString">Value in the latest.txt file</param>
         /// <returns></returns>
-        public async static Task UpdateManifestTimestampAsync(Orcanode node, string unixTimestampString)
+        public async static Task UpdateManifestTimestampAsync(OrcanodeMonitorContext context, Orcanode node, string unixTimestampString)
         {
             OrcanodeOnlineStatus oldStatus = node.OrcasoundOnlineStatus;
 
@@ -433,7 +455,7 @@ namespace OrcanodeMonitor.Core
             OrcanodeOnlineStatus newStatus = node.OrcasoundOnlineStatus;
             if (newStatus != oldStatus)
             {
-                State.AddOrcanodeStreamStatusEvent(node);
+                AddOrcanodeStreamStatusEvent(context, node);
             }
         }
     }
