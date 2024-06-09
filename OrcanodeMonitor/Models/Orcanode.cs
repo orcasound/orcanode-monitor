@@ -40,13 +40,11 @@ namespace OrcanodeMonitor.Models
         /// Database key field. This is NOT the dataplicity serial GUID, since a node might first be
         /// detected via another mechanism before we get the dataplicity serial GUID.
         /// </summary>
-        [DatabaseGenerated(DatabaseGeneratedOption.None)]
-        public Guid ID { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int ID { get; set; }
 
         public Orcanode()
         {
-            ID = Guid.NewGuid();
-
             // Initialize reference types.
             LastOrcaHelloDetectionComments = string.Empty;
             OrcasoundName = string.Empty;

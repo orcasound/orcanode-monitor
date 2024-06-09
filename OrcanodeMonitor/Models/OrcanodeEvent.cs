@@ -10,13 +10,13 @@ namespace OrcanodeMonitor.Models
 {
     public class OrcanodeEventIftttMeta
     {
-        public OrcanodeEventIftttMeta(Guid id, DateTime timestamp)
+        public OrcanodeEventIftttMeta(int id, DateTime timestamp)
         {
-            Id = id;
+            Id = id.ToString();
             UnixTimestamp = Fetcher.DateTimeToUnixTimeStamp(timestamp);
         }
         [JsonPropertyName("id")]
-        public Guid Id { get; private set; }
+        public string Id { get; private set; }
         [JsonPropertyName("timestamp")]
         public long UnixTimestamp { get; private set; }
     }
@@ -26,7 +26,7 @@ namespace OrcanodeMonitor.Models
     /// </summary>
     public class OrcanodeIftttEventDTO
     {
-        public OrcanodeIftttEventDTO(Guid id, string slug, string nodeName, string type, string value, DateTime timestamp)
+        public OrcanodeIftttEventDTO(int id, string slug, string nodeName, string type, string value, DateTime timestamp)
         {
             Slug = slug;
             Type = type;
@@ -56,25 +56,23 @@ namespace OrcanodeMonitor.Models
     {
         public OrcanodeEvent()
         {
-            ID = Guid.NewGuid();
         }
 
         public OrcanodeEvent(Orcanode node, string type, string value, DateTime timestamp)
         {
-            ID = Guid.NewGuid();
             Slug = node.OrcasoundSlug;
             Type = type;
             Value = value;
-            DateTime = timestamp;
+            DateTimeUtc = timestamp;
             OrcanodeId = node.ID;
         }
-        public OrcanodeIftttEventDTO ToIftttEventDTO() => new OrcanodeIftttEventDTO(ID, NodeName, Slug, Type, Value, DateTime);
+        public OrcanodeIftttEventDTO ToIftttEventDTO() => new OrcanodeIftttEventDTO(ID, NodeName, Slug, Type, Value, DateTimeUtc);
 
         /// <summary>
         /// Database key for an event.
         /// </summary>
-        [DatabaseGenerated(DatabaseGeneratedOption.None)]
-        public Guid ID { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int ID { get; set; }
         
         public string Slug { get; set; }
         public string Type { get; set; }
@@ -83,18 +81,19 @@ namespace OrcanodeMonitor.Models
         /// <summary>
         /// Foreign Key for an Orcanode.
         /// </summary>
-        public Guid OrcanodeId { get; set; }
+        public int OrcanodeId { get; set; }
 
         // Navigation property that uses OrcanodeId.
         public Orcanode Orcanode { get; set; }
 
         public string NodeName => Orcanode?.DisplayName ?? "<Unknown>";
 
-        public DateTime DateTime { get; set; }
+        public DateTime DateTimeUtc { get; set; }
+        public DateTime DateTimeLocal => Fetcher.UtcToLocalDateTime(DateTimeUtc).Value;
 
         public override string ToString()
         {
-            return string.Format("{0} {1} {2} at {3}", Slug, Type, Value, Fetcher.UtcToLocalDateTime(DateTime));
+            return string.Format("{0} {1} {2} at {3}", Slug, Type, Value, Fetcher.UtcToLocalDateTime(DateTimeUtc));
         }
 
         public string Description => string.Format("{0} was detected as {1}", NodeName, Value);

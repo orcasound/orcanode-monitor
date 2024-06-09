@@ -12,6 +12,7 @@ using OrcanodeMonitor.Models;
 using Microsoft.EntityFrameworkCore;
 using OrcanodeMonitor.Data;
 using Microsoft.IdentityModel.Tokens;
+using Mono.TextTemplating;
 
 namespace OrcanodeMonitor.Core
 {
@@ -245,6 +246,7 @@ namespace OrcanodeMonitor.Core
                     }
                 }
 
+                MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
                 await context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -310,6 +312,7 @@ namespace OrcanodeMonitor.Core
                     }
                 }
 
+                MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
                 await context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -342,9 +345,13 @@ namespace OrcanodeMonitor.Core
 
         public static DateTime? UtcToLocalDateTime(DateTime? utcDateTime)
         {
-            if (utcDateTime == null)
+            if (!utcDateTime.HasValue)
             {
                 return null;
+            }
+            if (utcDateTime.Value.Kind == DateTimeKind.Unspecified)
+            {
+                utcDateTime = DateTime.SpecifyKind(utcDateTime.Value, DateTimeKind.Utc);
             }
             DateTime localDateTime = TimeZoneInfo.ConvertTime(utcDateTime.Value, _pacificTimeZone);
             return localDateTime;
@@ -413,7 +420,7 @@ namespace OrcanodeMonitor.Core
         /// <returns>List of events</returns>
         public static List<OrcanodeEvent> GetEvents(OrcanodeMonitorContext context, int limit)
         {
-            List<OrcanodeEvent> orcanodeEvents = context.OrcanodeEvents.OrderByDescending(e => e.DateTime).Take(limit).ToList();
+            List<OrcanodeEvent> orcanodeEvents = context.OrcanodeEvents.OrderByDescending(e => e.DateTimeUtc).Take(limit).ToList();
             return orcanodeEvents;
         }
 

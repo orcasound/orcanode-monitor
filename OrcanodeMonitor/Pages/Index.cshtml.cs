@@ -28,11 +28,13 @@ namespace OrcanodeMonitor.Pages
         {
             get
             {
-                if (State.LastUpdatedTimestamp == null)
+                MonitorState monitorState = MonitorState.GetFrom(_databaseContext);
+
+                if (monitorState.LastUpdatedTimestampUtc == null)
                 {
                     return "";
                 }
-                return Fetcher.UtcToLocalDateTime(State.LastUpdatedTimestamp).ToString();
+                return Fetcher.UtcToLocalDateTime(monitorState.LastUpdatedTimestampUtc).ToString();
             }
         }
 

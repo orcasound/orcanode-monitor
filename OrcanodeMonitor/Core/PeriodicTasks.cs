@@ -60,10 +60,8 @@ namespace OrcanodeMonitor.Core
             OrcanodeMonitorContext context = scope.ServiceProvider.GetRequiredService<OrcanodeMonitorContext>();
 
             await Fetcher.UpdateDataplicityDataAsync(context);
-            State.LastUpdatedTimestamp = DateTime.UtcNow;
 
             await Fetcher.UpdateOrcasoundDataAsync(context);
-            State.LastUpdatedTimestamp = DateTime.UtcNow;
 
             // OrcaHello is time-consuming to query so do this last.
             await Fetcher.UpdateOrcaHelloDataAsync(context);
