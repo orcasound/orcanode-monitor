@@ -7,10 +7,18 @@
 The web service will be deployed as an azurewebsites.net service.  Periodically, at a frequency that can be
 configured by an administrator, the service will do the following:
 
-1. Enumerate the orcanodes listed at https://live.orcasound.net/api/json/feeds and update the internal list
-   of nodes, tracking the “node_name” and “bucket”, for each orcanode.
+1. Enumerate the orcanodes listed at
+   [https://apps.dataplicity.com/devices](https://docs.dataplicity.com/reference/devicessearch) and update the
+   internal list of nodes, tracking the "name" and "online" and various other attributes, for each orcanode.
 
 2. For each orcanode found in step 1:
+
+   a. Update the state of the orcanode in stable storage.  Other internal modules can register for notifications
+
+3. Enumerate the orcanodes listed at https://live.orcasound.net/api/json/feeds and update the internal list
+   of nodes, tracking the “node_name” and “bucket”, for each orcanode.
+
+4. For each orcanode found in step 3:
 
    a. Query the latest timestamp by fetching “https://{bucket}.s3.amazonaws.com/{node_name}/latest.txt”
       (e.g., https://streaming-orcasound-net.s3.amazonaws.com/rpi_orcasound_lab/latest.txt for the Orcasound
@@ -26,37 +34,53 @@ configured by an administrator, the service will do the following:
    c. Update the state of the orcanode in stable storage.  Other internal modules can register for notifications
       of changes to this state.
 
-3. Enumerate the orcanodes listed at
-   [https://apps.dataplicity.com/devices](https://docs.dataplicity.com/reference/devicessearch) and update the
-   internal list of nodes, tracking the "name" and "online", for each orcanode.
-
-4. For each orcanode found in step 3:
-
-   a. Update the state of the orcanode in stable storage.  Other internal modules can register for notifications
+   d. Query aifororcas to find the last detection by fetching
+      "https://aifororcasdetections.azurewebsites.net/api/detections?Page=1&SortBy=timestamp&SortOrder=desc&Timeframe=all&Location={name}&RecordsPerPage=1", where "{name}" is the display name of the node. Note: AIforOrcas
+      still uses "Haro Strait" instead of "Orcasound Lab" so this exception will be manually coded until the
+      node name is corrected.
 
 The following state will be stored per orcanode:
 
-  * **name**: The human-readable name from the “name” obtained in step 1.
+  * **DisplayName**: The human-readable name to display on the web page.  This name is derived from the names
+    obtained from Dataplicity and live.orcasound.net.
 
-  * **s3_node_name**: The URI path component from the “node_name” obtained in step 1.
+  * **OrcasoundName**: The human-readable name used by live.orcasound.net.
 
-  * **s3_bucket**: The hostname component from the “bucket” obtained in step 1.
+  * **S3NodeName**: The URI path component from the “node_name” obtained from live.orcasound.net.
 
-  * **slug**: The URI path component from the “slug” obtained in step 1.
+  * **S3Bucket**: The hostname component from the “bucket” obtained from live.orcasound.net.
 
-  * **latest-recorded**: The Unix timestamp value in the latest.txt file obtained in step 2a as recorded on the orcanode.
+  * **OrcasoundSlug**: The URI path component from the “slug” obtained from live.orcasound.net.
 
-  * **latest-uploaded**: The Last-Modified timestamp on the latest.txt file as recorded by Amazon, obtained in step 2a.
+  * **LatestRecordedUtc**: The timestamp recorded in the latest.txt file on S3.
 
-  * **manifest-updated**: The Last-Modified timestamp on the manifest file as recorded by Amazon, obtained in step 2b.
+  * **LatestUploadedUtc**: The Last-Modified timestamp on the latest.txt file as recorded on S3.
 
-  * **dataplicity-name**: The value of the "name" field obtained in step 3.
+  * **ManifestUpdatedUtc**: The Last-Modified timestamp on the manifest file as recorded by S3.
 
-  * **dataplicity-description**: The value of the "description" field obtained in step 3.
+  * **LastCheckedUtc**: The last time the S3 instance was queried, as recorded by Orcanode Monitor.
 
-  * **dataplicity-upgrade-available**: The value of the "upgrade_available" field obtained in step 3.
+  * **DataplicityName**: The value of the "name" field obtained from Dataplicity.
 
-  * **dataplicity-online**: The value of the "online" field obtained in step 3.
+  * **DataplicityDescription**: The value of the "description" field obtained from Dataplicity.
+
+  * **AgentVersion**: The version of the agent software running on the node, as obtained from Dataplicity.
+
+  * **DiskCapacity**: The disk capacity of the node, as obtained from Dataplicity.
+
+  * **DiskUsed**: The amount of disk used on the node, as obtained from Dataplicity.
+
+  * **DataplicityUpgradeAvailable**: The value of the "upgrade_available" field obtained from Dataplicity.
+
+  * **DataplicityOnline**: The value of the "online" field obtained from Dataplicity.
+
+  * **LastOrcaHelloDetectionTimestamp**: The time at which OrcaHello last generated a detection for this node.
+
+  * **LastOrcaHelloDetectionConfidence**: The confidence of the last OrcaHello detection.
+
+  * **LastOrcaHelloDetectionComments**: The comments on the last OrcaHello detection.
+
+  * **LastOrcaHelloDetectionFound**: The value of the "found" field obtained from OrcaHello.
 
 ### Configured parameters
 
@@ -66,8 +90,9 @@ The following state will be stored per orcanode:
 
 ## Web page front end
 
-The proposed web service would expose a web page that would display, for each node, the current state and potentially
-also the recent history of the state including % uptime over some time period.
+The web service exposes a web page that displays, for each node, the current state of the nodes, and a list of
+recent events (i.e., state changes in nodes).  In the future, it could potentially also show the % uptime of each
+node over some time period.
 
 ## If-This-Then-That (IFTTT) Integration
 
