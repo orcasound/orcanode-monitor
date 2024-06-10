@@ -21,10 +21,6 @@ jobs:
       BUILD_CONFIGURATION: ${{matrix.configurations}}
 
     steps:
-      - uses: step-security/harden-runner@f086349bfa2bd1361f7909c78558e816508cdc10 # v2.8.0
-        with:
-          egress-policy: audit
-
       - id: skip_check
         uses: fkirc/skip-duplicate-actions@v5
         with:
