@@ -1,4 +1,4 @@
-name: Build and deploy .NET Core application to Web App OrcanodeMonitor
+name: Build and deploy .NET Core application to Web App OrcanodeMonitorStaging
 on:
   push:
     branches:
