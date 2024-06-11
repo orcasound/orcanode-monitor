@@ -7,12 +7,23 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 
 namespace OrcanodeMonitor.Api
 {
+    public class ErrorResponse
+    {
+        public List<ErrorItem> Errors { get; set; }
+    }
+
+    public class ErrorItem
+    {
+        public string Message { get; set; }
+    }
+
     [Route("api/ifttt/v1/queries/[controller]")]
     [ApiController]
     public class OrcanodesController : ControllerBase
@@ -30,7 +41,7 @@ namespace OrcanodeMonitor.Api
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Orcanode>>> GetOrcanode()
         {
-            return await GetJsonNodesAsync(_defaultLimit);
+            return await GetJsonNodesAsync(string.Empty, _defaultLimit);
         }
 
 #if false
@@ -49,26 +60,49 @@ namespace OrcanodeMonitor.Api
         }
 #endif
 
-        private async Task<JsonResult> GetJsonNodesAsync(int limit)
+        private async Task<JsonResult> GetJsonNodesAsync(string cursor, int limit)
         {
             var nodes = await _databaseContext.Orcanodes.ToListAsync();
 
             // Convert to IFTTT data transfer objects.
             var jsonNodes = new List<OrcanodeIftttDTO>();
+            string myCursor = string.Empty;
             foreach (Orcanode node in nodes)
             {
+                string nodeCursor = node.ID.ToString();
+                if (cursor != string.Empty)
+                {
+                    if (cursor != nodeCursor)
+                    {
+                        continue;
+                    }
+                    // Found the node with the cursor so we can continue normally now.
+                    cursor = string.Empty;
+                }
+                if (jsonNodes.Count >= limit)
+                {
+                    myCursor = node.ID.ToString();
+                    break;
+                }
                 jsonNodes.Add(node.ToIftttDTO());
             }
 
-            var dataResult = new { data = jsonNodes };
-
-            var jsonString = JsonSerializer.Serialize(dataResult);
-            var jsonDocument = JsonDocument.Parse(jsonString);
-
-            // Get the JSON data as an array.
-            var jsonElement = jsonDocument.RootElement;
-
-            return new JsonResult(jsonElement);
+            if (!myCursor.IsNullOrEmpty())
+            {
+                var dataResult = new { data = jsonNodes, cursor = myCursor };
+                var jsonString = JsonSerializer.Serialize(dataResult);
+                var jsonDocument = JsonDocument.Parse(jsonString);
+                var jsonElement = jsonDocument.RootElement;
+                return new JsonResult(jsonElement);
+            }
+            else
+            {
+                var dataResult = new { data = jsonNodes };
+                var jsonString = JsonSerializer.Serialize(dataResult);
+                var jsonDocument = JsonDocument.Parse(jsonString);
+                var jsonElement = jsonDocument.RootElement;
+                return new JsonResult(jsonElement);
+            }
         }
 
         // POST: api/ifttt/v1/queries/orcanodes
@@ -76,10 +110,10 @@ namespace OrcanodeMonitor.Api
         [HttpPost]
         public async Task<ActionResult<Orcanode>> PostOrcanode([FromBody] JsonElement requestBody)
         {
-            ObjectResult failure = Fetcher.CheckIftttServiceKey(Request);
+            var failure = Fetcher.CheckIftttServiceKey(Request);
             if (failure != null)
             {
-                return failure;
+                return Unauthorized(failure);
             }
 
             try
@@ -92,12 +126,17 @@ namespace OrcanodeMonitor.Api
                         limit = explicitLimit;
                     }
                 }
+                string cursor = string.Empty;
+                if (requestBody.TryGetProperty("cursor", out JsonElement cursorElement))
+                {
+                    cursor = cursorElement.ToString();
+                }
                 if (requestBody.TryGetProperty("queryFields", out JsonElement triggerFields))
                 {
                     // TODO: use queryFields.
                 }
 
-                return await GetJsonNodesAsync(limit);
+                return await GetJsonNodesAsync(cursor, limit);
             }
             catch (JsonException)
             {

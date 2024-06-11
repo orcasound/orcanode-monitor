@@ -46,8 +46,8 @@ namespace OrcanodeMonitor.Models
         {
             return string.Format("{0} {1} {2} at {3}", Slug, Type, Value, Fetcher.UnixTimeStampToDateTimeLocal(Meta.UnixTimestamp));
         }
-        [JsonPropertyName("timestamp")]
-        public DateTime? DateTime => Fetcher.UnixTimeStampToDateTimeLocal(Meta.UnixTimestamp);
+        [JsonPropertyName("created_at")]
+        public DateTime? CreatedAt => Fetcher.UnixTimeStampToDateTimeUtc(Meta.UnixTimestamp);
         [JsonPropertyName("description")]
         public string Description { get; private set; }
     }

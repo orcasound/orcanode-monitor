@@ -14,10 +14,10 @@ namespace OrcanodeMonitor.Api
         [HttpPost]
         public IActionResult Post()
         {
-            ObjectResult failure = Fetcher.CheckIftttServiceKey(Request);
+            var failure = Fetcher.CheckIftttServiceKey(Request);
             if (failure != null)
             {
-                return failure;
+                return Unauthorized(failure);
             }
 
             var result = new

@@ -16,6 +16,7 @@ using Mono.TextTemplating;
 using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
+using OrcanodeMonitor.Api;
 
 namespace OrcanodeMonitor.Core
 {
@@ -478,7 +479,7 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="request">HTTP request received</param>
         /// <returns>null on success, ObjectResult if failed</returns>
-        public static ObjectResult? CheckIftttServiceKey(HttpRequest request)
+        public static ErrorResponse? CheckIftttServiceKey(HttpRequest request)
         {
             if (request.Headers.TryGetValue("IFTTT-Service-Key", out var values) &&
     values.Any())
@@ -489,10 +490,15 @@ namespace OrcanodeMonitor.Core
                     return null;
                 }
             }
-            return new ObjectResult("Unauthorized access")
+            string errorMessage = "Unauthorized access";
+            var errorResponse = new ErrorResponse
             {
-                StatusCode = (int)HttpStatusCode.Unauthorized
+                Errors = new List<ErrorItem>
+                {
+                    new ErrorItem { Message = errorMessage }
+                }
             };
+            return errorResponse;
         }
     }
 }

@@ -55,10 +55,10 @@ namespace OrcanodeMonitor.Api
         [HttpPost]
         public IActionResult Post([FromBody] JsonElement requestBody)
         {
-            ObjectResult failure = Fetcher.CheckIftttServiceKey(Request);
+            var failure = Fetcher.CheckIftttServiceKey(Request);
             if (failure != null)
             {
-                return failure;
+                return Unauthorized(failure);
             }
 
             if (requestBody.ValueKind != JsonValueKind.Object)
