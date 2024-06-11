@@ -84,7 +84,7 @@ namespace OrcanodeMonitor.Models
         public int OrcanodeId { get; set; }
 
         // Navigation property that uses OrcanodeId.
-        public Orcanode Orcanode { get; set; }
+        public virtual Orcanode Orcanode { get; set; }
 
         public string NodeName => Orcanode?.DisplayName ?? "<Unknown>";
 
