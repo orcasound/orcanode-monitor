@@ -26,7 +26,7 @@ namespace OrcanodeMonitor.Models
     /// </summary>
     public class OrcanodeIftttEventDTO
     {
-        public OrcanodeIftttEventDTO(int id, string slug, string nodeName, string type, string value, DateTime timestamp)
+        public OrcanodeIftttEventDTO(int id, string nodeName, string slug, string type, string value, DateTime timestamp)
         {
             Slug = slug;
             Type = type;

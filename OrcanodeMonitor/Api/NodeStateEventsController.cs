@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Dynamic;
@@ -12,6 +13,7 @@ namespace OrcanodeMonitor.Api
     [ApiController]
     public class NodeStateEventsController : ControllerBase
     {
+        const int _defaultLimit = 50;
         private readonly OrcanodeMonitorContext _databaseContext;
 
         public NodeStateEventsController(OrcanodeMonitorContext context)
@@ -41,28 +43,38 @@ namespace OrcanodeMonitor.Api
             return new JsonResult(jsonElement);
         }
 
+        // GET is not used by IFTTT so this does not require a service key.
         // GET: api/ifttt/v1/triggers/<TestController>
         [HttpGet]
-        public JsonResult Get()
+        public IActionResult Get()
         {
-            return GetEvents(50);
+            return GetEvents(_defaultLimit);
         }
 
         // POST api/ifttt/v1/triggers/<TestController>
         [HttpPost]
-        public IActionResult Post([FromBody] string value)
+        public IActionResult Post([FromBody] JsonElement requestBody)
         {
+            ObjectResult failure = Fetcher.CheckIftttServiceKey(Request);
+            if (failure != null)
+            {
+                return failure;
+            }
+
+            if (requestBody.ValueKind != JsonValueKind.Object)
+            {
+                return BadRequest("Invalid JSON data.");
+            }
+
             try
             {
-                dynamic requestBody = JsonSerializer.Deserialize<ExpandoObject>(value);
-                if (!requestBody.TryGetProperty("limit", out JsonElement limitElement))
+                int limit = _defaultLimit;
+                if (requestBody.TryGetProperty("limit", out JsonElement limitElement))
                 {
-                    return BadRequest("Invalid JSON data.");
-                }
-                int limit = 50;
-                if (limitElement.TryGetInt32(out int explicitLimit))
-                {
-                    limit = explicitLimit;
+                    if (limitElement.TryGetInt32(out int explicitLimit))
+                    {
+                        limit = explicitLimit;
+                    }
                 }
                 if (requestBody.TryGetProperty("triggerFields", out JsonElement triggerFields))
                 {
