@@ -219,7 +219,7 @@ namespace OrcanodeMonitor.Models
 
         private static OrcanodeOnlineStatus GetOrcasoundOnlineStatus(string slug, DateTime? manifestUpdatedUtc, DateTime? lastCheckedUtc)
         {
-            if (slug == null)
+            if (slug.IsNullOrEmpty())
             {
                 return OrcanodeOnlineStatus.Absent;
             }
