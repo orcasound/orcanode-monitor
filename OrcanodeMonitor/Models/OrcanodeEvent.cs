@@ -26,7 +26,7 @@ namespace OrcanodeMonitor.Models
     /// </summary>
     public class OrcanodeIftttEventDTO
     {
-        public OrcanodeIftttEventDTO(int id, string slug, string nodeName, string type, string value, DateTime timestamp)
+        public OrcanodeIftttEventDTO(int id, string nodeName, string slug, string type, string value, DateTime timestamp)
         {
             Slug = slug;
             Type = type;
@@ -46,8 +46,8 @@ namespace OrcanodeMonitor.Models
         {
             return string.Format("{0} {1} {2} at {3}", Slug, Type, Value, Fetcher.UnixTimeStampToDateTimeLocal(Meta.UnixTimestamp));
         }
-        [JsonPropertyName("timestamp")]
-        public DateTime? DateTime => Fetcher.UnixTimeStampToDateTimeLocal(Meta.UnixTimestamp);
+        [JsonPropertyName("created_at")]
+        public DateTime? CreatedAt => Fetcher.UnixTimeStampToDateTimeUtc(Meta.UnixTimestamp);
         [JsonPropertyName("description")]
         public string Description { get; private set; }
     }
@@ -84,7 +84,7 @@ namespace OrcanodeMonitor.Models
         public int OrcanodeId { get; set; }
 
         // Navigation property that uses OrcanodeId.
-        public Orcanode Orcanode { get; set; }
+        public virtual Orcanode Orcanode { get; set; }
 
         public string NodeName => Orcanode?.DisplayName ?? "<Unknown>";
 

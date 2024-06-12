@@ -129,7 +129,7 @@ An IFTTT-compatible service can implement:
 
 The production server is online at: https://orcanodemonitor.azurewebsites.net/
 
-The production server is automatically updated if a Git tag with a [SemVer](semver.org) format version
+The production server is automatically updated if a Git tag with a [SemVer](https://semver.org) format version
 (e.g., "v0.1.0") is pushed to GitHub.
 
 ### Staging server

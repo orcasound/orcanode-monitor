@@ -3,6 +3,9 @@
 
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json.Linq;
 using OrcanodeMonitor.Core;
 
 namespace OrcanodeMonitor.Models
@@ -18,6 +21,20 @@ namespace OrcanodeMonitor.Models
         Unknown = 0,
         UpToDate = 1,
         UpgradeAvailable
+    }
+
+    public class OrcanodeIftttDTO
+    {
+        public OrcanodeIftttDTO(int id, string displayName)
+        {
+            ID = id;
+            DisplayName = displayName;
+        }
+        [JsonPropertyName("ID")]
+        public int ID { get; private set; }
+        [JsonPropertyName("display_name")]
+        public string DisplayName { get; private set; }
+        public override string ToString() => DisplayName;
     }
 
     public class Orcanode
@@ -56,6 +73,8 @@ namespace OrcanodeMonitor.Models
             DataplicityName = string.Empty;
             DataplicitySerial = string.Empty;
         }
+
+        public OrcanodeIftttDTO ToIftttDTO() => new OrcanodeIftttDTO(ID, DisplayName);
 
         /// <summary>
         /// The "serial" at Dataplicity.

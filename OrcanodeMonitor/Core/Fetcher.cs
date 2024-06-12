@@ -13,6 +13,10 @@ using Microsoft.EntityFrameworkCore;
 using OrcanodeMonitor.Data;
 using Microsoft.IdentityModel.Tokens;
 using Mono.TextTemplating;
+using Azure.Core;
+using Microsoft.AspNetCore.Mvc;
+using System.Net;
+using OrcanodeMonitor.Api;
 
 namespace OrcanodeMonitor.Core
 {
@@ -23,6 +27,9 @@ namespace OrcanodeMonitor.Core
         private static string _orcasoundFeedsUrl = "https://live.orcasound.net/api/json/feeds";
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+        private static string _iftttServiceKey = Environment.GetEnvironmentVariable("IFTTT_SERVICE_KEY") ?? "<unknown>";
+
+        public static string IftttServiceKey => _iftttServiceKey;
 
         /// <summary>
         /// Test for a match between a human-readable name at Orcasound, and
@@ -465,6 +472,33 @@ namespace OrcanodeMonitor.Core
             {
                 AddOrcanodeStreamStatusEvent(context, node);
             }
+        }
+
+        /// <summary>
+        /// Check whether a request includes the correct IFTTT-Service-Key value.
+        /// </summary>
+        /// <param name="request">HTTP request received</param>
+        /// <returns>null on success, ObjectResult if failed</returns>
+        public static ErrorResponse? CheckIftttServiceKey(HttpRequest request)
+        {
+            if (request.Headers.TryGetValue("IFTTT-Service-Key", out var values) &&
+    values.Any())
+            {
+                string value = values.First();
+                if (value == Fetcher.IftttServiceKey)
+                {
+                    return null;
+                }
+            }
+            string errorMessage = "Unauthorized access";
+            var errorResponse = new ErrorResponse
+            {
+                Errors = new List<ErrorItem>
+                {
+                    new ErrorItem { Message = errorMessage }
+                }
+            };
+            return errorResponse;
         }
     }
 }
