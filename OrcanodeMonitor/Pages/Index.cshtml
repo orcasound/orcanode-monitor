@@ -23,8 +23,10 @@
             <th>SD Card Util.</th>
             <th>Stream Status</th>
             <th></th>
+            <!--
             <th>Last OrcaHello Detection</th>
             <th>Confidence</th>
+            -->
         </tr>
     @foreach (Models.Orcanode item in Model.Nodes)
     {
@@ -81,12 +83,14 @@
                     </a>
                 </td>
             }
+            <!--
             <td>
                 @Html.DisplayFor(modelItem => item.LastOrcaHelloDetectionTimestamp)
             </td>
             <td style="background-color: @Model.NodeOrcaHelloDetectionColor(item)" title="@Html.DisplayFor(modelItem => item.LastOrcaHelloDetectionComments)">
                 @Html.DisplayFor(modelItem => item.LastOrcaHelloDetectionConfidence)%
             </td>
+            -->
         </tr>
     }
     </table>
