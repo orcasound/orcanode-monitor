@@ -63,7 +63,9 @@ namespace OrcanodeMonitor.Models
         public Orcanode()
         {
             // Initialize reference types.
+#if ORCAHELLO
             LastOrcaHelloDetectionComments = string.Empty;
+#endif
             OrcasoundName = string.Empty;
             OrcasoundSlug = string.Empty;
             S3Bucket = string.Empty;
@@ -198,6 +200,7 @@ namespace OrcanodeMonitor.Models
         public bool? DataplicityUpgradeAvailable { get; set; }
         public OrcanodeUpgradeStatus DataplicityUpgradeStatus => DataplicityUpgradeAvailable ?? false ? OrcanodeUpgradeStatus.UpgradeAvailable : OrcanodeUpgradeStatus.UpToDate;
         public OrcanodeOnlineStatus DataplicityStatus => DataplicityOnline ?? false ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Offline;
+#if ORCAHELLO
         public string OrcaHelloName
         {
             get
@@ -212,6 +215,7 @@ namespace OrcanodeMonitor.Models
                 return DisplayName;
             }
         }
+#endif
         public DateTime? LastOrcaHelloDetectionTimestamp { get; set; }
         public int? LastOrcaHelloDetectionConfidence { get; set; }
         public string LastOrcaHelloDetectionComments { get; set; }

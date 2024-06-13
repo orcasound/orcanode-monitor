@@ -63,8 +63,10 @@ namespace OrcanodeMonitor.Core
 
             await Fetcher.UpdateOrcasoundDataAsync(context);
 
+#if ORCAHELLO
             // OrcaHello is time-consuming to query so do this last.
             await Fetcher.UpdateOrcaHelloDataAsync(context);
+#endif
         }
     }
 }

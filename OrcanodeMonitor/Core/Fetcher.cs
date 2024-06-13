@@ -96,6 +96,7 @@ namespace OrcanodeMonitor.Core
             return newNode;
         }
 
+#if ORCAHELLO
         /// <summary>
         /// Update the list of Orcanodes using data from OrcaHello.
         /// OrcaHello does not currently allow enumerating nodes.
@@ -178,6 +179,7 @@ namespace OrcanodeMonitor.Core
             {
             }
         }
+#endif
 
         /// <summary>
         /// Update Orcanode state by querying dataplicity.com.
