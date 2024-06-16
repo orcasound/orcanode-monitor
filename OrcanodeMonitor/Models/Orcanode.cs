@@ -199,7 +199,7 @@ namespace OrcanodeMonitor.Models
         public bool? DataplicityOnline { get; set; }
         public bool? DataplicityUpgradeAvailable { get; set; }
         public OrcanodeUpgradeStatus DataplicityUpgradeStatus => DataplicityUpgradeAvailable ?? false ? OrcanodeUpgradeStatus.UpgradeAvailable : OrcanodeUpgradeStatus.UpToDate;
-        public OrcanodeOnlineStatus DataplicityStatus => DataplicityOnline ?? false ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Offline;
+        public OrcanodeOnlineStatus DataplicityConnectionStatus => DataplicityOnline ?? false ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Offline;
 #if ORCAHELLO
         public string OrcaHelloName
         {

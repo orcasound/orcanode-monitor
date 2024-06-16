@@ -50,7 +50,7 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeDataplicityColor(Orcanode node)
         {
-            OrcanodeOnlineStatus status = node.DataplicityStatus;
+            OrcanodeOnlineStatus status = node.DataplicityConnectionStatus;
             if (status == OrcanodeOnlineStatus.Offline)
             {
                 return ColorTranslator.ToHtml(Color.Red);

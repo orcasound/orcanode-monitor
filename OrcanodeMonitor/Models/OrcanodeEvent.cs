@@ -73,7 +73,7 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ID { get; set; }
-        
+
         public string Slug { get; set; }
         public string Type { get; set; }
         public string Value { get; set; }
@@ -93,9 +93,23 @@ namespace OrcanodeMonitor.Models
 
         public override string ToString()
         {
-            return string.Format("{0} {1} {2} at {3}", Slug, Type, Value, Fetcher.UtcToLocalDateTime(DateTimeUtc));
+            return string.Format("{0} {1} => {2} at {3}", Slug, Type, Value, Fetcher.UtcToLocalDateTime(DateTimeUtc));
         }
 
-        public string Description => string.Format("{0} hydrophone stream was detected as {1}", NodeName, Value);
+        public string Description
+        {
+            get
+            {
+                // Convert type from old value to new value.
+                // TODO: do a migration in the database itself and remove this code.
+                string type = Type;
+                if (type == "stream status")
+                {
+                    type = "hydrophone stream";
+                }
+
+                return string.Format("{0} {1} was detected as {2}", NodeName, type, Value);
+            }
+        }
     }
 }

@@ -17,6 +17,7 @@ using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using OrcanodeMonitor.Api;
+using Newtonsoft.Json.Linq;
 
 namespace OrcanodeMonitor.Core
 {
@@ -48,17 +49,26 @@ namespace OrcanodeMonitor.Core
             return false;
         }
 
-        private static Orcanode FindOrCreateOrcanodeByDataplicitySerial(DbSet<Orcanode> nodeList, string serial)
+        /// <summary>
+        /// Find or create a node using the serial number value at Dataplicity.
+        /// </summary>
+        /// <param name="nodeList">Database table to look in and potentially update</param>
+        /// <param name="serial">Dataplicity serial number to look for</param>
+        /// <param name="connectionStatus">Dataplicity connection status</param>
+        /// <returns></returns>
+        private static Orcanode FindOrCreateOrcanodeByDataplicitySerial(DbSet<Orcanode> nodeList, string serial, out OrcanodeOnlineStatus connectionStatus)
         {
             List<Orcanode> nodes = nodeList.ToList();
             foreach (Orcanode node in nodes)
             {
                 if (node.DataplicitySerial == serial)
                 {
+                    connectionStatus = node.DataplicityConnectionStatus;
                     return node;
                 }
             }
 
+            connectionStatus = OrcanodeOnlineStatus.Absent;
             var newNode = new Orcanode();
             newNode.DataplicitySerial = serial;
 
@@ -220,7 +230,11 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
-                    Orcanode node = FindOrCreateOrcanodeByDataplicitySerial(context.Orcanodes, serial.ToString());
+
+                    Orcanode node = FindOrCreateOrcanodeByDataplicitySerial(context.Orcanodes, serial.ToString(), out OrcanodeOnlineStatus oldStatus);
+                    OrcanodeUpgradeStatus oldAgentUpgradeStatus = node.DataplicityUpgradeStatus;
+                    long oldDiskCapacityInGigs = node.DiskCapacityInGigs;
+
                     if (device.TryGetProperty("name", out var name))
                     {
                         string dataplicityName = name.ToString();
@@ -253,6 +267,24 @@ namespace OrcanodeMonitor.Core
                     if (device.TryGetProperty("upgrade_available", out var upgradeAvailable))
                     {
                         node.DataplicityUpgradeAvailable = upgradeAvailable.GetBoolean();
+                    }
+
+                    // Trigger any event changes.
+                    OrcanodeOnlineStatus newStatus = node.DataplicityConnectionStatus;
+                    if (newStatus != oldStatus)
+                    {
+                        AddDataplicityConnectionStatusEvent(context, node);
+                    }
+                    if (oldStatus != OrcanodeOnlineStatus.Absent)
+                    {
+                        if (oldAgentUpgradeStatus != node.DataplicityUpgradeStatus)
+                        {
+                            AddDataplicityAgentUpgradeStatusChangeEvent(context, node);
+                        }
+                        if (oldDiskCapacityInGigs != node.DiskCapacityInGigs)
+                        {
+                            AddDiskCapacityChangeEvent(context, node);
+                        }
                     }
                 }
 
@@ -434,7 +466,28 @@ namespace OrcanodeMonitor.Core
             return orcanodeEvents;
         }
 
-        private static void AddOrcanodeStreamStatusEvent(OrcanodeMonitorContext context, Orcanode node)
+        private static void AddDataplicityConnectionStatusEvent(OrcanodeMonitorContext context, Orcanode node)
+        {
+            string value = (node.DataplicityConnectionStatus == OrcanodeOnlineStatus.Online) ? "up" : "OFFLINE";
+            var orcanodeEvent = new OrcanodeEvent(node, "dataplicity connection", value, DateTime.UtcNow);
+            context.OrcanodeEvents.Add(orcanodeEvent);
+        }
+
+        private static void AddDataplicityAgentUpgradeStatusChangeEvent(OrcanodeMonitorContext context, Orcanode node)
+        {
+            string value = node.DataplicityUpgradeStatus.ToString();
+            var orcanodeEvent = new OrcanodeEvent(node, "agent upgrade status", value, DateTime.UtcNow);
+            context.OrcanodeEvents.Add(orcanodeEvent);
+        }
+
+        private static void AddDiskCapacityChangeEvent(OrcanodeMonitorContext context, Orcanode node)
+        {
+            string value = string.Format("{0}G", node.DiskCapacityInGigs);
+            var orcanodeEvent = new OrcanodeEvent(node, "SD card size", value, DateTime.UtcNow);
+            context.OrcanodeEvents.Add(orcanodeEvent);
+        }
+
+        private static void AddHydrophoneStreamStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = (node.OrcasoundOnlineStatus == OrcanodeOnlineStatus.Online) ? "up" : "OFFLINE";
             var orcanodeEvent = new OrcanodeEvent(node, "hydrophone stream", value, DateTime.UtcNow);
@@ -472,7 +525,7 @@ namespace OrcanodeMonitor.Core
             OrcanodeOnlineStatus newStatus = node.OrcasoundOnlineStatus;
             if (newStatus != oldStatus)
             {
-                AddOrcanodeStreamStatusEvent(context, node);
+                AddHydrophoneStreamStatusEvent(context, node);
             }
         }
 
