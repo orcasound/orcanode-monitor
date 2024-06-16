@@ -437,7 +437,7 @@ namespace OrcanodeMonitor.Core
         private static void AddOrcanodeStreamStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = (node.OrcasoundOnlineStatus == OrcanodeOnlineStatus.Online) ? "up" : "OFFLINE";
-            var orcanodeEvent = new OrcanodeEvent(node, "stream status", value, DateTime.UtcNow);
+            var orcanodeEvent = new OrcanodeEvent(node, "hydrophone stream", value, DateTime.UtcNow);
             context.OrcanodeEvents.Add(orcanodeEvent);
         }
 
