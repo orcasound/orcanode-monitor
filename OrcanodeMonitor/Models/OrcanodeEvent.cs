@@ -32,7 +32,7 @@ namespace OrcanodeMonitor.Models
             Type = type;
             Value = value;
             Meta = new OrcanodeEventIftttMeta(id, timestamp);
-            Description = string.Format("{0} was detected as {1}", nodeName, Value);
+            Description = string.Format("{0} orcanode stream was detected as {1}", nodeName, Value);
         }
         [JsonPropertyName("slug")]
         public string Slug { get; private set; }
@@ -96,6 +96,6 @@ namespace OrcanodeMonitor.Models
             return string.Format("{0} {1} {2} at {3}", Slug, Type, Value, Fetcher.UtcToLocalDateTime(DateTimeUtc));
         }
 
-        public string Description => string.Format("{0} was detected as {1}", NodeName, Value);
+        public string Description => string.Format("{0} hydrophone stream was detected as {1}", NodeName, Value);
     }
 }
