@@ -59,9 +59,17 @@ namespace OrcanodeMonitor.Core
             using var scope = _scopeFactory.CreateScope();
             OrcanodeMonitorContext context = scope.ServiceProvider.GetRequiredService<OrcanodeMonitorContext>();
 
+            int oldEventCount = context.OrcanodeEvents.Count();
+
             await Fetcher.UpdateDataplicityDataAsync(context);
 
             await Fetcher.UpdateOrcasoundDataAsync(context);
+
+            int newEventCount = context.OrcanodeEvents.Count();
+            if (newEventCount > oldEventCount)
+            {
+                await Fetcher.NotifyIfttt(context);
+            }
 
 #if ORCAHELLO
             // OrcaHello is time-consuming to query so do this last.

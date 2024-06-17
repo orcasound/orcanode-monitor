@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using OrcanodeMonitor.Api;
 using Newtonsoft.Json.Linq;
+using static System.Net.WebRequestMethods;
 
 namespace OrcanodeMonitor.Core
 {
@@ -27,6 +28,7 @@ namespace OrcanodeMonitor.Core
         private static HttpClient _httpClient = new HttpClient();
         private static string _orcasoundFeedsUrl = "https://live.orcasound.net/api/json/feeds";
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
+        private static string _iftttNotificationUrl = "https://realtime.ifttt.com/v1/notifications";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         private static string _iftttServiceKey = Environment.GetEnvironmentVariable("IFTTT_SERVICE_KEY") ?? "<unknown>";
 
@@ -294,6 +296,35 @@ namespace OrcanodeMonitor.Core
             catch (Exception ex)
             {
             }
+        }
+
+        /// <summary>
+        /// Call the IFTTT Realtime API to notify it of changes.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <returns></returns>
+        public async static Task NotifyIfttt(OrcanodeMonitorContext context)
+        {
+            var triggerIdentities = new List<IftttTriggerIdentityDTO>();
+            var dataResult = new { data = triggerIdentities };
+            string json = JsonSerializer.Serialize(dataResult);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            string jsonArray;
+            using (var request = new HttpRequestMessage
+            {
+                RequestUri = new Uri(_iftttNotificationUrl),
+                Method = HttpMethod.Post,
+                Content = content,
+            })
+            {
+                request.Headers.Add("IFTTT-Service-Key", _iftttServiceKey);
+                HttpResponseMessage response = await _httpClient.SendAsync(request);
+                response.EnsureSuccessStatusCode();
+                jsonArray = await response.Content.ReadAsStringAsync();
+            }
+
+            var result = await _httpClient.PostAsJsonAsync(_iftttNotificationUrl, dataResult);
         }
 
         /// <summary>
