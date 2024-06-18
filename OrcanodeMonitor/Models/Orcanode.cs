@@ -142,6 +142,8 @@ namespace OrcanodeMonitor.Models
         public bool? DataplicityOnline { get; set; }
         public bool? DataplicityUpgradeAvailable { get; set; }
 
+        public double? AudioStandardDeviation { get; set; }
+
         #endregion persisted
 
         #region derived
@@ -238,7 +240,7 @@ namespace OrcanodeMonitor.Models
             }
             return displayName;
         }
-  
+
         private static OrcanodeOnlineStatus GetOrcasoundOnlineStatus(string slug, DateTime? manifestUpdatedUtc, DateTime? lastCheckedUtc)
         {
             if (slug.IsNullOrEmpty())

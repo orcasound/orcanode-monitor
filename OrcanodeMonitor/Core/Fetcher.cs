@@ -19,6 +19,8 @@ using System.Net;
 using OrcanodeMonitor.Api;
 using Newtonsoft.Json.Linq;
 using System.Threading.Channels;
+using Microsoft.AspNetCore.Http.HttpResults;
+using System.Net.Mail;
 
 namespace OrcanodeMonitor.Core
 {
@@ -535,6 +537,18 @@ namespace OrcanodeMonitor.Core
             {
                 AddHydrophoneStreamStatusEvent(context, node);
             }
+
+            // Download manifest.
+            Uri baseUri = new Uri(url);
+            string manifestContent = await _httpClient.GetStringAsync(url);
+
+            // Get the last filename in the manifest.
+            string[] lines = manifestContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            string lastLine = lines[lines.Count() - 1];
+            Uri newUri = new Uri(baseUri, lastLine);
+            using Stream stream = await _httpClient.GetStreamAsync(newUri);
+            double stdDev = await FfmpegCoreAnalyzer.AnalyzeAudioStreamAsync(stream);
+            node.AudioStandardDeviation = stdDev;
         }
 
         /// <summary>
