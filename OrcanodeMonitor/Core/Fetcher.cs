@@ -18,6 +18,9 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using OrcanodeMonitor.Api;
 using Newtonsoft.Json.Linq;
+using System.Threading.Channels;
+using Microsoft.AspNetCore.Http.HttpResults;
+using System.Net.Mail;
 
 namespace OrcanodeMonitor.Core
 {
@@ -268,6 +271,12 @@ namespace OrcanodeMonitor.Core
                     {
                         node.DataplicityUpgradeAvailable = upgradeAvailable.GetBoolean();
                     }
+                    if (oldStatus == OrcanodeOnlineStatus.Absent)
+                    {
+                        // Save changes to make the node have an ID before we can
+                        // possibly generate any events.
+                        await context.SaveChangesAsync();
+                    }
 
                     // Trigger any event changes.
                     OrcanodeOnlineStatus newStatus = node.DataplicityConnectionStatus;
@@ -293,6 +302,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
+                string msg = ex.ToString();
             }
         }
 
@@ -489,7 +499,7 @@ namespace OrcanodeMonitor.Core
 
         private static void AddHydrophoneStreamStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
-            string value = (node.OrcasoundOnlineStatus == OrcanodeOnlineStatus.Online) ? "up" : "OFFLINE";
+            string value = node.OrcasoundOnlineStatusString;
             var orcanodeEvent = new OrcanodeEvent(node, "hydrophone stream", value, DateTime.UtcNow);
             context.OrcanodeEvents.Add(orcanodeEvent);
         }
@@ -521,6 +531,30 @@ namespace OrcanodeMonitor.Core
 
             node.ManifestUpdatedUtc = offset.Value.UtcDateTime;
             node.LastCheckedUtc = DateTime.UtcNow;
+
+            // Download manifest.
+            Uri baseUri = new Uri(url);
+            string manifestContent = await _httpClient.GetStringAsync(url);
+
+            // Get a recent filename in the manifest.
+            // Sometimes the manifest is updated before the file is actually available,
+            // so we try to get the penultimate .ts file in the manifest.
+            string[] lines = manifestContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            int lineNumber = lines.Count();
+            lineNumber = (lineNumber > 3) ? lineNumber - 3 : lineNumber - 1;
+            string lastLine = lines[lineNumber];
+            Uri newUri = new Uri(baseUri, lastLine);
+            try
+            {
+                using Stream stream = await _httpClient.GetStreamAsync(newUri);
+                double stdDev = await FfmpegCoreAnalyzer.AnalyzeAudioStreamAsync(stream);
+                node.AudioStandardDeviation = stdDev;
+            } catch (Exception ex)
+            {
+                // We couldn't fetch the stream audio so could not update the
+                // audio standard deviation. Just ignore this for now.
+                var msg = ex.ToString();
+            }
 
             OrcanodeOnlineStatus newStatus = node.OrcasoundOnlineStatus;
             if (newStatus != oldStatus)

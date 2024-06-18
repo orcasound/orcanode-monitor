@@ -4,6 +4,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
 using OrcanodeMonitor.Core;
@@ -14,7 +15,8 @@ namespace OrcanodeMonitor.Models
     {
         Absent = 0,
         Offline,
-        Online
+        Online,
+        Unintelligible
     }
     public enum OrcanodeUpgradeStatus
     {
@@ -40,6 +42,114 @@ namespace OrcanodeMonitor.Models
     public class Orcanode
     {
         const int _defaultMaxUploadDelayMinutes = 2;
+        const double _defaultMinIntelligibleStreamDeviation = 175;
+
+        public Orcanode()
+        {
+            // Initialize reference types.
+            OrcasoundName = string.Empty;
+            OrcasoundSlug = string.Empty;
+            S3Bucket = string.Empty;
+            S3NodeName = string.Empty;
+            AgentVersion = string.Empty;
+            DataplicityDescription = string.Empty;
+            DataplicityName = string.Empty;
+            DataplicitySerial = string.Empty;
+            DisplayName = string.Empty;
+        }
+
+        #region persisted
+        // Persisted fields.  If any changes are made, the database must go through a migration.
+        // See https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/?tabs=vs
+        // for more information.
+
+        /// <summary>
+        /// Database key field. This is NOT the dataplicity serial GUID, since a node might first be
+        /// detected via another mechanism before we get the dataplicity serial GUID.
+        /// </summary>
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int ID { get; set; }
+
+        /// <summary>
+        /// Human-readable name.
+        /// </summary>
+        [Required]
+        public string DisplayName { get; set; }
+        /// <summary>
+        /// Human-readable name at Orcasound.
+        /// </summary>
+        public string OrcasoundName { get; set; }
+        /// <summary>
+        /// The URI path component from the "node_name" field obtained from orcasound.net.
+        /// </summary>
+        public string S3NodeName { get; set; }
+
+        /// <summary>
+        /// The hostname component from the "bucket" field obtained from orcasound.net
+        /// </summary>
+        public string S3Bucket { get; set; }
+
+        /// <summary>
+        /// The URI path component from the "slug" field obtained from orcasound.net.
+        /// </summary>
+        public string OrcasoundSlug { get; set; }
+
+        /// <summary>
+        /// Value in the latest.txt file, as a UTC DateTime.
+        /// </summary>
+        public DateTime? LatestRecordedUtc { get; set; }
+
+        /// <summary>
+        /// The "serial" at Dataplicity.
+        /// </summary>
+        public string DataplicitySerial { get; set; }
+
+        /// <summary>
+        /// Last modified timestamp on the latest.txt file, in UTC.
+        /// </summary>
+        public DateTime? LatestUploadedUtc { get; set; }
+
+        /// <summary>
+        /// Last modified timestamp on the manifest file, in UTC.
+        /// </summary>
+        public DateTime? ManifestUpdatedUtc { get; set; }
+
+        /// <summary>
+        /// Last time the S3 instance was queried, in UTC.
+        /// </summary>
+        public DateTime? LastCheckedUtc { get; set; }
+        /// <summary>
+        /// The name of the node at Dataplicity.
+        /// </summary>
+        public string DataplicityName { get; set; }
+        /// <summary>
+        /// The description at Dataplicity.
+        /// </summary>
+        public string DataplicityDescription { get; set; }
+        /// <summary>
+        /// The agent version as reported by Dataplicity.
+        /// </summary>
+        public string AgentVersion { get; set; }
+        /// <summary>
+        /// The disk capacity as reported by Dataplicity.
+        /// </summary>
+        public long DiskCapacity { get; set; }
+        /// <summary>
+        /// The disk used value as reported by Dataplicity.
+        /// </summary>
+        public long DiskUsed { get; set; }
+
+        /// <summary>
+        /// Whether Dataplicity believes the node is online.
+        /// </summary>
+        public bool? DataplicityOnline { get; set; }
+        public bool? DataplicityUpgradeAvailable { get; set; }
+
+        public double? AudioStandardDeviation { get; set; }
+
+        #endregion persisted
+
+        #region derived
         /// <summary>
         /// If the manifest file is older than this, the node will be considered offline.
         /// </summary>
@@ -53,35 +163,78 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        /// <summary>
-        /// Database key field. This is NOT the dataplicity serial GUID, since a node might first be
-        /// detected via another mechanism before we get the dataplicity serial GUID.
-        /// </summary>
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int ID { get; set; }
-
-        public Orcanode()
+        private static double MinIntelligibleStreamDeviation
         {
-            // Initialize reference types.
-#if ORCAHELLO
-            LastOrcaHelloDetectionComments = string.Empty;
-#endif
-            OrcasoundName = string.Empty;
-            OrcasoundSlug = string.Empty;
-            S3Bucket = string.Empty;
-            S3NodeName = string.Empty;
-            AgentVersion = string.Empty;
-            DataplicityDescription = string.Empty;
-            DataplicityName = string.Empty;
-            DataplicitySerial = string.Empty;
+            get
+            {
+                string? minIntelligibleStreamDeviationString = Environment.GetEnvironmentVariable("ORCASOUND_MIN_INTELLIGIBLE_STREAM_DEVIATION");
+                double minIntelligibleStreamDeviation = double.TryParse(minIntelligibleStreamDeviationString, out var deviation) ? deviation : _defaultMinIntelligibleStreamDeviation;
+                return minIntelligibleStreamDeviation;
+            }
         }
 
-        public OrcanodeIftttDTO ToIftttDTO() => new OrcanodeIftttDTO(ID, DisplayName);
+        /// <summary>
+        /// Value in the latest.txt file, as a Local DateTime.
+        /// </summary>
+        public DateTime? LatestRecordedLocal => Fetcher.UtcToLocalDateTime(LatestRecordedUtc);
 
         /// <summary>
-        /// The "serial" at Dataplicity.
+        /// Last modified timestamp on the latest.txt file, in local time.
         /// </summary>
-        public string DataplicitySerial { get; set; }
+        public DateTime? LatestUploadedLocal => Fetcher.UtcToLocalDateTime(LatestUploadedUtc);
+
+        /// <summary>
+        /// Last modified timestamp on the manifest file, in local time.
+        /// </summary>
+        public DateTime? ManifestUpdatedLocal => Fetcher.UtcToLocalDateTime(ManifestUpdatedUtc);
+
+        /// <summary>
+        /// Last time the S3 instance was queried, in local time.
+        /// </summary>
+        public DateTime? LastCheckedLocal => Fetcher.UtcToLocalDateTime(LastCheckedUtc);
+
+        /// <summary>
+        /// The disk usage percentage.
+        /// </summary>
+        public long DiskUsagePercentage => (DiskCapacity > 0) ? (100 * DiskUsed / DiskCapacity) : 0;
+        public long DiskUsedInGigs => DiskUsed / 1000000000;
+        public long DiskCapacityInGigs => DiskCapacity / 1000000000;
+
+        public OrcanodeUpgradeStatus DataplicityUpgradeStatus => DataplicityUpgradeAvailable ?? false ? OrcanodeUpgradeStatus.UpgradeAvailable : OrcanodeUpgradeStatus.UpToDate;
+        public OrcanodeOnlineStatus DataplicityConnectionStatus => DataplicityOnline ?? false ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Offline;
+
+#if ORCAHELLO
+        public string OrcaHelloName
+        {
+            get
+            {
+                if (DisplayName == null) return string.Empty;
+
+                // Any special cases here, since OrcaHello does not support
+                // node enumeration, nor does it use the same names as
+                // Dataplicity or Orcasound.net.
+                if (DisplayName == "Orcasound Lab") return "Haro Strait";
+
+                return DisplayName;
+            }
+        }
+#endif
+        public OrcanodeOnlineStatus OrcasoundOnlineStatus => GetS3StreamStatus(OrcasoundSlug, ManifestUpdatedUtc, LastCheckedUtc, AudioStandardDeviation);
+
+        public string OrcasoundOnlineStatusString {
+            get
+            {
+                // Snapshot the status.
+                OrcanodeOnlineStatus status = OrcasoundOnlineStatus;
+
+                // Convert to a display string.
+                return (status == OrcanodeOnlineStatus.Online) ? "up" : OrcasoundOnlineStatus.ToString().ToUpper();
+            }
+        }
+        #endregion derived
+
+        #region methods
+        public OrcanodeIftttDTO ToIftttDTO() => new OrcanodeIftttDTO(ID, DisplayName);
 
         public static string OrcasoundNameToDisplayName(string orcasoundName)
         {
@@ -111,117 +264,7 @@ namespace OrcanodeMonitor.Models
             return displayName;
         }
 
-        /// <summary>
-        /// Human-readable name.
-        /// </summary>
-        [Required]
-        public string DisplayName { get; set; }
-        /// <summary>
-        /// Human-readable name at Orcasound.
-        /// </summary>
-        public string OrcasoundName { get; set; }
-        /// <summary>
-        /// The URI path component from the "node_name" field obtained from orcasound.net.
-        /// </summary>
-        public string S3NodeName { get; set; }
-        /// <summary>
-        /// The hostname component from the "bucket" field obtained from orcasound.net
-        /// </summary>
-        public string S3Bucket { get; set; }
-        /// <summary>
-        /// The URI path component from the "slug" field obtained from orcasound.net.
-        /// </summary>
-        public string OrcasoundSlug { get; set; }
-        /// <summary>
-        /// Value in the latest.txt file, as a UTC DateTime.
-        /// </summary>
-        public DateTime? LatestRecordedUtc { get; set; }
-        /// <summary>
-        /// Value in the latest.txt file, as a Local DateTime.
-        /// </summary>
-        public DateTime? LatestRecordedLocal => Fetcher.UtcToLocalDateTime(LatestRecordedUtc);
-        /// <summary>
-        /// Last modified timestamp on the latest.txt file, in UTC.
-        /// </summary>
-        public DateTime? LatestUploadedUtc { get; set; }
-        /// <summary>
-        /// Last modified timestamp on the latest.txt file, in local time.
-        /// </summary>
-        public DateTime? LatestUploadedLocal => Fetcher.UtcToLocalDateTime(LatestUploadedUtc);
-
-        /// <summary>
-        /// Last modified timestamp on the manifest file, in UTC.
-        /// </summary>
-        public DateTime? ManifestUpdatedUtc { get; set; }
-
-        /// <summary>
-        /// Last modified timestamp on the manifest file, in local time.
-        /// </summary>
-        public DateTime? ManifestUpdatedLocal => Fetcher.UtcToLocalDateTime(ManifestUpdatedUtc);
-        /// <summary>
-        /// Last time the S3 instance was queried, in UTC.
-        /// </summary>
-        public DateTime? LastCheckedUtc { get; set; }
-        /// <summary>
-        /// Last time the S3 instance was queried, in local time.
-        /// </summary>
-        public DateTime? LastCheckedLocal => Fetcher.UtcToLocalDateTime(LastCheckedUtc);
-        /// <summary>
-        /// The name of the node at Dataplicity.
-        /// </summary>
-        public string DataplicityName { get; set; }
-        /// <summary>
-        /// The description at Dataplicity.
-        /// </summary>
-        public string DataplicityDescription { get; set; }
-        /// <summary>
-        /// The agent version as reported by Dataplicity.
-        /// </summary>
-        public string AgentVersion { get; set; }
-        /// <summary>
-        /// The disk capacity as reported by Dataplicity.
-        /// </summary>
-        public long DiskCapacity { get; set; }
-        /// <summary>
-        /// The disk used value as reported by Dataplicity.
-        /// </summary>
-        public long DiskUsed { get; set; }
-        /// <summary>
-        /// The disk usage percentage.
-        /// </summary>
-        public long DiskUsagePercentage => (DiskCapacity > 0) ? (100 * DiskUsed / DiskCapacity) : 0;
-        public long DiskUsedInGigs => DiskUsed / 1000000000;
-        public long DiskCapacityInGigs => DiskCapacity / 1000000000;
-
-        /// <summary>
-        /// Whether Dataplicity believes the node is online.
-        /// </summary>
-        public bool? DataplicityOnline { get; set; }
-        public bool? DataplicityUpgradeAvailable { get; set; }
-        public OrcanodeUpgradeStatus DataplicityUpgradeStatus => DataplicityUpgradeAvailable ?? false ? OrcanodeUpgradeStatus.UpgradeAvailable : OrcanodeUpgradeStatus.UpToDate;
-        public OrcanodeOnlineStatus DataplicityConnectionStatus => DataplicityOnline ?? false ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Offline;
-#if ORCAHELLO
-        public string OrcaHelloName
-        {
-            get
-            {
-                if (DisplayName == null) return string.Empty;
-
-                // Any special cases here, since OrcaHello does not support
-                // node enumeration, nor does it use the same names as
-                // Dataplicity or Orcasound.net.
-                if (DisplayName == "Orcasound Lab") return "Haro Strait";
-
-                return DisplayName;
-            }
-        }
-#endif
-        public DateTime? LastOrcaHelloDetectionTimestamp { get; set; }
-        public int? LastOrcaHelloDetectionConfidence { get; set; }
-        public string LastOrcaHelloDetectionComments { get; set; }
-        public bool? LastOrcaHelloDetectionFound { get; set; }
-
-        private static OrcanodeOnlineStatus GetOrcasoundOnlineStatus(string slug, DateTime? manifestUpdatedUtc, DateTime? lastCheckedUtc)
+        private static OrcanodeOnlineStatus GetS3StreamStatus(string slug, DateTime? manifestUpdatedUtc, DateTime? lastCheckedUtc, double? audioStandardDeviation)
         {
             if (slug.IsNullOrEmpty())
             {
@@ -236,10 +279,15 @@ namespace OrcanodeMonitor.Models
             {
                 return OrcanodeOnlineStatus.Offline;
             }
+            if (audioStandardDeviation.HasValue && (audioStandardDeviation < MinIntelligibleStreamDeviation))
+            {
+                return OrcanodeOnlineStatus.Unintelligible;
+            }
             return OrcanodeOnlineStatus.Online;
         }
 
-        public OrcanodeOnlineStatus OrcasoundOnlineStatus => GetOrcasoundOnlineStatus(OrcasoundSlug, ManifestUpdatedUtc, LastCheckedUtc);
         public override string ToString() => DisplayName;
+
+        #endregion methods
     }
 }

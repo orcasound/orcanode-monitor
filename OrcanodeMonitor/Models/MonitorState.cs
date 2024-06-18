@@ -16,13 +16,20 @@ namespace OrcanodeMonitor.Models
             ID = _singletonKey;
         }
 
+        #region persisted
+        // Persisted fields.  If any changes are made, the database must go through a migration.
+        // See https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/?tabs=vs
+        // for more information.
+
         /// <summary>
         /// Database key field.
         /// </summary>
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int ID { get; set; }
         public DateTime? LastUpdatedTimestampUtc { get; set; }
+        #endregion persisted
 
+        #region methods
         public static MonitorState GetFrom(OrcanodeMonitorContext context)
         {
             MonitorState? state = context.MonitorState.Find(_singletonKey);
@@ -39,5 +46,6 @@ namespace OrcanodeMonitor.Models
             context.MonitorState.Add(state);
             return state;
         }
+        #endregion methods
     }
 }

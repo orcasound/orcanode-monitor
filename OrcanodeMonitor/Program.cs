@@ -19,7 +19,9 @@ else
 {
     connection = Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTIONSTRING");
 }
-// var connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
+
+// Remove this line to use the local SQL database instead of the Azure one.
+// connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
 
 // Add services to the container.
 builder.Services.AddRazorPages();
