@@ -63,9 +63,7 @@ namespace OrcanodeMonitor.Models
         public Orcanode()
         {
             // Initialize reference types.
-#if ORCAHELLO
             LastOrcaHelloDetectionComments = string.Empty;
-#endif
             OrcasoundName = string.Empty;
             OrcasoundSlug = string.Empty;
             S3Bucket = string.Empty;

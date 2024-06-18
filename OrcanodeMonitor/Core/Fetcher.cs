@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using OrcanodeMonitor.Api;
 using Newtonsoft.Json.Linq;
+using System.Threading.Channels;
 
 namespace OrcanodeMonitor.Core
 {
@@ -267,6 +268,12 @@ namespace OrcanodeMonitor.Core
                     if (device.TryGetProperty("upgrade_available", out var upgradeAvailable))
                     {
                         node.DataplicityUpgradeAvailable = upgradeAvailable.GetBoolean();
+                    }
+                    if (oldStatus == OrcanodeOnlineStatus.Absent)
+                    {
+                        // Save changes to make the node have an ID before we can
+                        // possibly generate any events.
+                        await context.SaveChangesAsync();
                     }
 
                     // Trigger any event changes.
