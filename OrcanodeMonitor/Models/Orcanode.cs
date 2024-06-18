@@ -63,7 +63,6 @@ namespace OrcanodeMonitor.Models
         public Orcanode()
         {
             // Initialize reference types.
-            LastOrcaHelloDetectionComments = string.Empty;
             OrcasoundName = string.Empty;
             OrcasoundSlug = string.Empty;
             S3Bucket = string.Empty;
@@ -214,10 +213,6 @@ namespace OrcanodeMonitor.Models
             }
         }
 #endif
-        public DateTime? LastOrcaHelloDetectionTimestamp { get; set; }
-        public int? LastOrcaHelloDetectionConfidence { get; set; }
-        public string LastOrcaHelloDetectionComments { get; set; }
-        public bool? LastOrcaHelloDetectionFound { get; set; }
 
         private static OrcanodeOnlineStatus GetOrcasoundOnlineStatus(string slug, DateTime? manifestUpdatedUtc, DateTime? lastCheckedUtc)
         {

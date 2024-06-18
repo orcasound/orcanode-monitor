@@ -58,19 +58,6 @@ namespace OrcanodeMonitor.Pages
             return ColorTranslator.ToHtml(Color.LightGreen);
         }
 
-        public string NodeOrcaHelloDetectionColor(Orcanode node)
-        {
-            if (node.LastOrcaHelloDetectionFound == null)
-            {
-                return ColorTranslator.ToHtml(Color.White);
-            }
-            if (node.LastOrcaHelloDetectionFound == false)
-            {
-                return ColorTranslator.ToHtml(Color.Yellow);
-            }
-            return ColorTranslator.ToHtml(Color.LightGreen);
-        }
-
         public string NodeDataplicityUpgradeColor(Orcanode node)
         {
             OrcanodeUpgradeStatus status = node.DataplicityUpgradeStatus;
