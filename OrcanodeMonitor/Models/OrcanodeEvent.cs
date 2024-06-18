@@ -52,6 +52,10 @@ namespace OrcanodeMonitor.Models
         public string Description { get; private set; }
     }
 
+    // Instances of this class are persisted in a SQL database.  If any changes
+    // are made to persisted fields, the database must go through a migration.
+    // See https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/?tabs=vs
+    // for more information.
     public class OrcanodeEvent
     {
         public OrcanodeEvent()
@@ -66,7 +70,11 @@ namespace OrcanodeMonitor.Models
             DateTimeUtc = timestamp;
             OrcanodeId = node.ID;
         }
-        public OrcanodeIftttEventDTO ToIftttEventDTO() => new OrcanodeIftttEventDTO(ID, NodeName, Slug, Type, Value, DateTimeUtc);
+
+        #region persisted
+        // Persisted fields.  If any changes are made, the database must go through a migration.
+        // See https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/?tabs=vs
+        // for more information.
 
         /// <summary>
         /// Database key for an event.
@@ -86,15 +94,15 @@ namespace OrcanodeMonitor.Models
         // Navigation property that uses OrcanodeId.
         public virtual Orcanode Orcanode { get; set; }
 
+        public DateTime DateTimeUtc { get; set; }
+
+        #endregion persisted
+
+        #region derived
+
         public string NodeName => Orcanode?.DisplayName ?? "<Unknown>";
 
-        public DateTime DateTimeUtc { get; set; }
         public DateTime DateTimeLocal => Fetcher.UtcToLocalDateTime(DateTimeUtc).Value;
-
-        public override string ToString()
-        {
-            return string.Format("{0} {1} => {2} at {3}", Slug, Type, Value, Fetcher.UtcToLocalDateTime(DateTimeUtc));
-        }
 
         public string Description
         {
@@ -111,5 +119,17 @@ namespace OrcanodeMonitor.Models
                 return string.Format("{0} {1} was detected as {2}", NodeName, type, Value);
             }
         }
+
+        #endregion derived
+
+        #region methods
+        public OrcanodeIftttEventDTO ToIftttEventDTO() => new OrcanodeIftttEventDTO(ID, NodeName, Slug, Type, Value, DateTimeUtc);
+
+        public override string ToString()
+        {
+            return string.Format("{0} {1} => {2} at {3}", Slug, Type, Value, Fetcher.UtcToLocalDateTime(DateTimeUtc));
+        }
+
+        #endregion methods
     }
 }

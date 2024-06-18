@@ -300,6 +300,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
+                string msg = ex.ToString();
             }
         }
 
