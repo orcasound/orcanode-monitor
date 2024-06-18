@@ -4,6 +4,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json.Linq;
 using OrcanodeMonitor.Core;
@@ -14,7 +15,8 @@ namespace OrcanodeMonitor.Models
     {
         Absent = 0,
         Offline,
-        Online
+        Online,
+        Unintelligible
     }
     public enum OrcanodeUpgradeStatus
     {
@@ -40,6 +42,7 @@ namespace OrcanodeMonitor.Models
     public class Orcanode
     {
         const int _defaultMaxUploadDelayMinutes = 2;
+        const double _defaultMinIntelligibleStreamDeviation = 175;
 
         public Orcanode()
         {
@@ -160,6 +163,16 @@ namespace OrcanodeMonitor.Models
             }
         }
 
+        private static double MinIntelligibleStreamDeviation
+        {
+            get
+            {
+                string? minIntelligibleStreamDeviationString = Environment.GetEnvironmentVariable("ORCASOUND_MIN_INTELLIGIBLE_STREAM_DEVIATION");
+                double minIntelligibleStreamDeviation = double.TryParse(minIntelligibleStreamDeviationString, out var deviation) ? deviation : _defaultMinIntelligibleStreamDeviation;
+                return minIntelligibleStreamDeviation;
+            }
+        }
+
         /// <summary>
         /// Value in the latest.txt file, as a Local DateTime.
         /// </summary>
@@ -206,8 +219,18 @@ namespace OrcanodeMonitor.Models
             }
         }
 #endif
-        public OrcanodeOnlineStatus OrcasoundOnlineStatus => GetOrcasoundOnlineStatus(OrcasoundSlug, ManifestUpdatedUtc, LastCheckedUtc);
+        public OrcanodeOnlineStatus OrcasoundOnlineStatus => GetS3StreamStatus(OrcasoundSlug, ManifestUpdatedUtc, LastCheckedUtc, AudioStandardDeviation);
 
+        public string OrcasoundOnlineStatusString {
+            get
+            {
+                // Snapshot the status.
+                OrcanodeOnlineStatus status = OrcasoundOnlineStatus;
+
+                // Convert to a display string.
+                return (status == OrcanodeOnlineStatus.Online) ? "up" : OrcasoundOnlineStatus.ToString().ToUpper();
+            }
+        }
         #endregion derived
 
         #region methods
@@ -241,7 +264,7 @@ namespace OrcanodeMonitor.Models
             return displayName;
         }
 
-        private static OrcanodeOnlineStatus GetOrcasoundOnlineStatus(string slug, DateTime? manifestUpdatedUtc, DateTime? lastCheckedUtc)
+        private static OrcanodeOnlineStatus GetS3StreamStatus(string slug, DateTime? manifestUpdatedUtc, DateTime? lastCheckedUtc, double? audioStandardDeviation)
         {
             if (slug.IsNullOrEmpty())
             {
@@ -255,6 +278,10 @@ namespace OrcanodeMonitor.Models
             if (manifestAge > MaxUploadDelay)
             {
                 return OrcanodeOnlineStatus.Offline;
+            }
+            if (audioStandardDeviation.HasValue && (audioStandardDeviation < MinIntelligibleStreamDeviation))
+            {
+                return OrcanodeOnlineStatus.Unintelligible;
             }
             return OrcanodeOnlineStatus.Online;
         }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using OrcanodeMonitor.Data;
 
@@ -11,9 +12,11 @@ using OrcanodeMonitor.Data;
 namespace OrcanodeMonitor.Migrations
 {
     [DbContext(typeof(OrcanodeMonitorContext))]
-    partial class OrcanodeMonitorContextModelSnapshot : ModelSnapshot
+    [Migration("20240618162220_AddAudioStandardDeviation")]
+    partial class AddAudioStandardDeviation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
