@@ -11,7 +11,6 @@ namespace OrcanodeMonitor.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-#if false
             migrationBuilder.CreateTable(
                 name: "MonitorState",
                 columns: table => new
@@ -84,7 +83,6 @@ namespace OrcanodeMonitor.Migrations
                 name: "IX_OrcanodeEvent_OrcanodeId",
                 table: "OrcanodeEvent",
                 column: "OrcanodeId");
-#endif
         }
 
         /// <inheritdoc />
