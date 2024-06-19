@@ -34,10 +34,8 @@ configured by an administrator, the service will do the following:
    c. Update the state of the orcanode in stable storage.  Other internal modules can register for notifications
       of changes to this state.
 
-   d. Query aifororcas to find the last detection by fetching
-      "https://aifororcasdetections.azurewebsites.net/api/detections?Page=1&SortBy=timestamp&SortOrder=desc&Timeframe=all&Location={name}&RecordsPerPage=1", where "{name}" is the display name of the node. Note: AIforOrcas
-      still uses "Haro Strait" instead of "Orcasound Lab" so this exception will be manually coded until the
-      node name is corrected.
+   d. Download the 2nd most recent .ts file listed in the manifest (the most recent one may not be accessible
+      yet) and analyze the stream to find the standard deviation of audio, to detect unintelligible streams.
 
 The following state will be stored per orcanode:
 
@@ -74,19 +72,15 @@ The following state will be stored per orcanode:
 
   * **DataplicityOnline**: The value of the "online" field obtained from Dataplicity.
 
-  * **LastOrcaHelloDetectionTimestamp**: The time at which OrcaHello last generated a detection for this node.
-
-  * **LastOrcaHelloDetectionConfidence**: The confidence of the last OrcaHello detection.
-
-  * **LastOrcaHelloDetectionComments**: The comments on the last OrcaHello detection.
-
-  * **LastOrcaHelloDetectionFound**: The value of the "found" field obtained from OrcaHello.
+  * **AudioStandardDeviation**: The standard deviation of the audio stream obtained in step 4d.
 
 ### Configured parameters
 
 **ORCASOUND_POLL_FREQUENCY_IN_MINUTES**: Service will poll each orcanode at the configured frequency. Default: 5
 
 **ORCASOUND_MAX_UPLOAD_DELAY_MINUTES**: If the manifest file is older than this, the node will be considered offline. Default: 2
+
+**ORCASOUND_MIN_INTELLIGIBLE_STREAM_DEVIATION**: The minimum standard deviation needed to determine that an audio stream is intelligible. Default: 175
 
 ## Web page front end
 
