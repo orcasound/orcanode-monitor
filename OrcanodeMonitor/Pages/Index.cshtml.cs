@@ -38,9 +38,8 @@ namespace OrcanodeMonitor.Pages
             }
         }
 
-        public string NodeOrcasoundColor(Orcanode node)
+        private string GetBackgroundColor(OrcanodeOnlineStatus status)
         {
-            OrcanodeOnlineStatus status = node.OrcasoundOnlineStatus;
             if (status == OrcanodeOnlineStatus.Online)
             {
                 return ColorTranslator.ToHtml(Color.LightGreen);
@@ -48,9 +47,8 @@ namespace OrcanodeMonitor.Pages
             return ColorTranslator.ToHtml(Color.Red);
         }
 
-        public string NodeOrcasoundContrastColor(Orcanode node)
+        private string GetTextColor(OrcanodeOnlineStatus status)
         {
-            OrcanodeOnlineStatus status = node.OrcasoundOnlineStatus;
             if (status == OrcanodeOnlineStatus.Online)
             {
                 return ColorTranslator.ToHtml(Color.FromArgb(0, 0, 238));
@@ -58,25 +56,17 @@ namespace OrcanodeMonitor.Pages
             return ColorTranslator.ToHtml(Color.White);
         }
 
-        public string NodeDataplicityColor(Orcanode node)
-        {
-            OrcanodeOnlineStatus status = node.DataplicityConnectionStatus;
-            if (status == OrcanodeOnlineStatus.Offline)
-            {
-                return ColorTranslator.ToHtml(Color.Red);
-            }
-            return ColorTranslator.ToHtml(Color.LightGreen);
-        }
+        public string NodeS3BackgroundColor(Orcanode node) => GetBackgroundColor(node.S3StreamStatus);
 
-        public string NodeDataplicityContrastColor(Orcanode node)
-        {
-            OrcanodeOnlineStatus status = node.DataplicityConnectionStatus;
-            if (status == OrcanodeOnlineStatus.Online)
-            {
-                return ColorTranslator.ToHtml(Color.FromArgb(0, 0, 238));
-            }
-            return ColorTranslator.ToHtml(Color.White);
-        }
+        public string NodeS3TextColor(Orcanode node) => GetTextColor(node.S3StreamStatus);
+
+        public string NodeDataplicityBackgroundColor(Orcanode node) => GetBackgroundColor(node.DataplicityConnectionStatus);
+
+        public string NodeDataplicityTextColor(Orcanode node) => GetTextColor(node.DataplicityConnectionStatus);
+
+        public string NodeOrcasoundBackgroundColor(Orcanode node) => GetBackgroundColor(node.OrcasoundStatus);
+
+        public string NodeOrcasoundTextColor(Orcanode node) => GetTextColor(node.OrcasoundStatus);
 
         public string NodeDataplicityUpgradeColor(Orcanode node)
         {
