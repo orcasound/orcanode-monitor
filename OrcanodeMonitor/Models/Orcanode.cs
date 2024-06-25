@@ -219,16 +219,51 @@ namespace OrcanodeMonitor.Models
             }
         }
 #endif
-        public OrcanodeOnlineStatus OrcasoundOnlineStatus => GetS3StreamStatus(OrcasoundSlug, ManifestUpdatedUtc, LastCheckedUtc, AudioStandardDeviation);
+        public OrcanodeOnlineStatus OrcasoundStatus
+        {
+            get
+            {
+                if (OrcasoundSlug.IsNullOrEmpty())
+                {
+                    return OrcanodeOnlineStatus.Absent;
+                }
+                return OrcanodeOnlineStatus.Online;
+            }
+        }
+
+        public OrcanodeOnlineStatus S3StreamStatus
+        {
+            get
+            {
+                if (S3NodeName.IsNullOrEmpty())
+                {
+                    return OrcanodeOnlineStatus.Absent;
+                }
+                if (!ManifestUpdatedUtc.HasValue || !LastCheckedUtc.HasValue)
+                {
+                    return OrcanodeOnlineStatus.Offline;
+                }
+                TimeSpan manifestAge = LastCheckedUtc.Value.Subtract(ManifestUpdatedUtc.Value);
+                if (manifestAge > MaxUploadDelay)
+                {
+                    return OrcanodeOnlineStatus.Offline;
+                }
+                if (AudioStandardDeviation.HasValue && (AudioStandardDeviation < MinIntelligibleStreamDeviation))
+                {
+                    return OrcanodeOnlineStatus.Unintelligible;
+                }
+                return OrcanodeOnlineStatus.Online;
+            }
+        }
 
         public string OrcasoundOnlineStatusString {
             get
             {
                 // Snapshot the status.
-                OrcanodeOnlineStatus status = OrcasoundOnlineStatus;
+                OrcanodeOnlineStatus status = S3StreamStatus;
 
                 // Convert to a display string.
-                return (status == OrcanodeOnlineStatus.Online) ? "up" : OrcasoundOnlineStatus.ToString().ToUpper();
+                return (status == OrcanodeOnlineStatus.Online) ? "up" : S3StreamStatus.ToString().ToUpper();
             }
         }
         #endregion derived
@@ -248,6 +283,11 @@ namespace OrcanodeMonitor.Models
             return displayName;
         }
 
+        /// <summary>
+        /// Derive a human-readable display name from a Dataplcity node name.
+        /// </summary>
+        /// <param name="dataplicityName">The node name at Dataplicity</param>
+        /// <returns>Display name string</returns>
         public static string DataplicityNameToDisplayName(string dataplicityName)
         {
             string displayName = dataplicityName;
@@ -264,26 +304,25 @@ namespace OrcanodeMonitor.Models
             return displayName;
         }
 
-        private static OrcanodeOnlineStatus GetS3StreamStatus(string slug, DateTime? manifestUpdatedUtc, DateTime? lastCheckedUtc, double? audioStandardDeviation)
+        /// <summary>
+        /// Derive a default S3 node name from a Dataplicity node name.
+        /// </summary>
+        /// <param name="dataplicityName">The node name at Dataplicity</param>
+        /// <returns>Default S3 node name</returns>
+        public static string DataplicityNameToS3Name(string dataplicityName)
         {
-            if (slug.IsNullOrEmpty())
+            string s3Name = dataplicityName;
+            int index = dataplicityName.IndexOf(": ");
+            if (index >= 0)
             {
-                return OrcanodeOnlineStatus.Absent;
+                s3Name = dataplicityName.Substring(index + 2);
             }
-            if (!manifestUpdatedUtc.HasValue || !lastCheckedUtc.HasValue)
+            s3Name = s3Name.ToLower().Replace(' ', '_');
+            if (!s3Name.StartsWith("rpi_"))
             {
-                return OrcanodeOnlineStatus.Offline;
+                s3Name = "rpi_" + s3Name;
             }
-            TimeSpan manifestAge = lastCheckedUtc.Value.Subtract(manifestUpdatedUtc.Value);
-            if (manifestAge > MaxUploadDelay)
-            {
-                return OrcanodeOnlineStatus.Offline;
-            }
-            if (audioStandardDeviation.HasValue && (audioStandardDeviation < MinIntelligibleStreamDeviation))
-            {
-                return OrcanodeOnlineStatus.Unintelligible;
-            }
-            return OrcanodeOnlineStatus.Online;
+            return s3Name;
         }
 
         public override string ToString() => DisplayName;

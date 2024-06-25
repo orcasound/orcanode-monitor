@@ -32,7 +32,7 @@ namespace OrcanodeMonitor.Core
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         private static string _iftttServiceKey = Environment.GetEnvironmentVariable("IFTTT_SERVICE_KEY") ?? "<unknown>";
-
+        private static string _defaultS3Bucket = "streaming-orcasound-net";
         public static string IftttServiceKey => _iftttServiceKey;
 
         /// <summary>
@@ -246,6 +246,14 @@ namespace OrcanodeMonitor.Core
                         {
                             node.DisplayName = Orcanode.DataplicityNameToDisplayName(dataplicityName);
                         }
+                        if (node.S3Bucket.IsNullOrEmpty())
+                        {
+                            node.S3Bucket = _defaultS3Bucket;
+                        }
+                        if (node.S3NodeName.IsNullOrEmpty())
+                        {
+                            node.S3NodeName = Orcanode.DataplicityNameToS3Name(dataplicityName);
+                        }
                     }
                     if (device.TryGetProperty("online", out var online))
                     {
@@ -354,11 +362,22 @@ namespace OrcanodeMonitor.Core
                         node.OrcasoundSlug = slug.ToString();
                     }
                 }
+                await context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                string msg = ex.ToString();
+            }
+        }
 
+        public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context)
+        {
+            try
+            {
                 List<Orcanode> nodes = await context.Orcanodes.ToListAsync();
                 foreach (Orcanode node in nodes)
                 {
-                    if (!node.S3Bucket.IsNullOrEmpty())
+                    if (!node.S3NodeName.IsNullOrEmpty())
                     {
                         await Fetcher.UpdateS3DataAsync(context, node);
                     }
@@ -513,7 +532,7 @@ namespace OrcanodeMonitor.Core
         /// <returns></returns>
         public async static Task UpdateManifestTimestampAsync(OrcanodeMonitorContext context, Orcanode node, string unixTimestampString)
         {
-            OrcanodeOnlineStatus oldStatus = node.OrcasoundOnlineStatus;
+            OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
 
             string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/hls/" + unixTimestampString + "/live.m3u8";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
@@ -556,7 +575,7 @@ namespace OrcanodeMonitor.Core
                 var msg = ex.ToString();
             }
 
-            OrcanodeOnlineStatus newStatus = node.OrcasoundOnlineStatus;
+            OrcanodeOnlineStatus newStatus = node.S3StreamStatus;
             if (newStatus != oldStatus)
             {
                 AddHydrophoneStreamStatusEvent(context, node);

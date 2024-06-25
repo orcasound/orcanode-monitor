@@ -18,11 +18,11 @@
             <th>Manifest updated</th>
             <th>Last checked</th>
             -->
-            <th>Dataplicity Status</th>
+            <th>Dataplicity</th>
             <th>Agent Version</th>
             <th>SD Card Util.</th>
-            <th>Stream Status</th>
-            <th>Listen</th>
+            <th>Orcasound</th>
+            <th>S3 Stream</th>
             <!--
             <th>Last OrcaHello Detection</th>
             <th>Confidence</th>
@@ -48,13 +48,13 @@
                 @Html.DisplayFor(modelItem => item.LastCheckedLocal)
             </td>
             -->
-            <td style="background-color: @Model.NodeDataplicityColor(item)">
-                <a href="https://www.dataplicity.com/app/" style="color: @Model.NodeDataplicityContrastColor(item)">
+            <td style="background-color: @Model.NodeDataplicityBackgroundColor(item)">
+                <a href="https://www.dataplicity.com/app/" style="color: @Model.NodeDataplicityTextColor(item)" target="_blank">
                     @Html.DisplayFor(modelItem => item.DataplicityConnectionStatus)
                 </a>
             </td>
             <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
-                <a href="https://www.dataplicity.com/app/">
+                <a href="https://www.dataplicity.com/app/" target="_blank">
                     @Html.DisplayFor(modelItem => item.AgentVersion)
                 </a>
             </td>
@@ -62,24 +62,31 @@
                 @Html.DisplayFor(modelItem => item.DiskUsedInGigs)/@Html.DisplayFor(modelItem => item.DiskCapacityInGigs)G
                 (@Html.DisplayFor(modelItem => item.DiskUsagePercentage)%)
             </td>
-            @if (item.OrcasoundOnlineStatus == Models.OrcanodeOnlineStatus.Absent)
+            @if (item.OrcasoundStatus == Models.OrcanodeOnlineStatus.Absent)
             {
-                    <td style="background-color: @Model.NodeOrcasoundColor(item); color: @Model.NodeOrcasoundContrastColor(item)">
-                    @Html.DisplayFor(modelItem => item.OrcasoundOnlineStatus)
-                </td>
-                <td>
+                <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item); color: @Model.NodeOrcasoundTextColor(item)">
+                    @Html.DisplayFor(modelItem => item.OrcasoundStatus)
                 </td>
             }
             else
             {
-                <td style="background-color: @Model.NodeOrcasoundColor(item)">
-                    <a href="https://open.quiltdata.com/b/streaming-orcasound-net/tree/@item.S3NodeName/" style="color: @Model.NodeOrcasoundContrastColor(item)">
-                        @Html.DisplayFor(modelItem => item.OrcasoundOnlineStatus)
+                <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item)">
+                    <a href="https://live.orcasound.net/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" style="color: @Model.NodeOrcasoundTextColor(item)" target="_blank">
+                        @Html.DisplayFor(modelItem => item.OrcasoundStatus)
                     </a>
                 </td>
-                <td>
-                    <a href="https://live.orcasound.net/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" target="_blank">
-                        <button>Go</button>
+            }
+            @if (item.S3StreamStatus == Models.OrcanodeOnlineStatus.Absent)
+            {
+                    <td style="background-color: @Model.NodeS3BackgroundColor(item); color: @Model.NodeS3TextColor(item)">
+                    @Html.DisplayFor(modelItem => item.S3StreamStatus)
+                </td>
+            }
+            else
+            {
+                <td style="background-color: @Model.NodeS3BackgroundColor(item)">
+                    <a href="https://open.quiltdata.com/b/streaming-orcasound-net/tree/@item.S3NodeName/" style="color: @Model.NodeS3TextColor(item)" target="_blank">
+                        @Html.DisplayFor(modelItem => item.S3StreamStatus)
                     </a>
                 </td>
             }
@@ -90,16 +97,25 @@
     <h4 style="text-align: left;">Legend</h4>
     <ul style="text-align: left;">
         <li>
-            <b>Absent</b>: Dataplicity knows of the node but Orcasound does not know of any audio stream.
+            <b>Dataplicity Offline</b>: Dataplicity connection is down.
         </li>
         <li>
-            <b>Offline</b>: No recent audio is being sent to S3.
+            <b>Dataplicity Online</b>: Dataplicity connection is up.
         </li>
         <li>
-            <b>Online</b>: Audio stream is working normally.
+            <b>Orcasound Absent</b>: live.orcasound.net does not know about the node.
         </li>
         <li>
-            <b>Unintelligible</b>: Audio stream is being sent to S3 but it appears to be bad.
+            <b>Orcasound Online</b>: live.orcasound.net knows about the node.
+        </li>
+        <li>
+            <b>S3 Stream Offline</b>: No recent audio is on S3.
+        </li>
+        <li>
+            <b>S3 Stream Online</b>: Audio stream is working normally.
+        </li>
+        <li>
+            <b>S3 Stream Unintelligible</b>: Audio stream is being sent to S3 but it appears to be bad.
         </li>
     </ul>
     <p/>
