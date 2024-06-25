@@ -22,7 +22,7 @@
             <th>Agent Version</th>
             <th>SD Card Util.</th>
             <th>Stream Status</th>
-            <th></th>
+            <th>Listen</th>
             <!--
             <th>Last OrcaHello Detection</th>
             <th>Confidence</th>
@@ -49,7 +49,7 @@
             </td>
             -->
             <td style="background-color: @Model.NodeDataplicityColor(item)">
-                <a href="https://www.dataplicity.com/app/">
+                <a href="https://www.dataplicity.com/app/" style="color: @Model.NodeDataplicityContrastColor(item)">
                     @Html.DisplayFor(modelItem => item.DataplicityConnectionStatus)
                 </a>
             </td>
@@ -64,7 +64,7 @@
             </td>
             @if (item.OrcasoundOnlineStatus == Models.OrcanodeOnlineStatus.Absent)
             {
-                <td style="background-color: @Model.NodeOrcasoundColor(item)">
+                    <td style="background-color: @Model.NodeOrcasoundColor(item); color: @Model.NodeOrcasoundContrastColor(item)">
                     @Html.DisplayFor(modelItem => item.OrcasoundOnlineStatus)
                 </td>
                 <td>
@@ -73,19 +73,35 @@
             else
             {
                 <td style="background-color: @Model.NodeOrcasoundColor(item)">
-                    <a href="https://open.quiltdata.com/b/streaming-orcasound-net/tree/@item.S3NodeName/">
+                    <a href="https://open.quiltdata.com/b/streaming-orcasound-net/tree/@item.S3NodeName/" style="color: @Model.NodeOrcasoundContrastColor(item)">
                         @Html.DisplayFor(modelItem => item.OrcasoundOnlineStatus)
                     </a>
                 </td>
                 <td>
                     <a href="https://live.orcasound.net/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" target="_blank">
-                        <button>Listen</button>
+                        <button>Go</button>
                     </a>
                 </td>
             }
         </tr>
     }
     </table>
+    <p/>
+    <h4 style="text-align: left;">Legend</h4>
+    <ul style="text-align: left;">
+        <li>
+            <b>Absent</b>: Dataplicity knows of the node but Orcasound does not know of any audio stream.
+        </li>
+        <li>
+            <b>Offline</b>: No recent audio is being sent to S3.
+        </li>
+        <li>
+            <b>Online</b>: Audio stream is working normally.
+        </li>
+        <li>
+            <b>Unintelligible</b>: Audio stream is being sent to S3 but it appears to be bad.
+        </li>
+    </ul>
     <p/>
     <h1 class="display-4"><a href="/api/ifttt/v1/triggers/nodestateevents">Recent State Events</a></h1>
     <table>
