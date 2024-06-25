@@ -17,6 +17,8 @@ namespace OrcanodeMonitor.Core
             var outputStream = new MemoryStream(); // Create an output stream (e.g., MemoryStream)
             var pipeSink = new StreamPipeSink(outputStream);
 
+            GlobalFFOptions.Configure(options => options.BinaryFolder = FFMpegInstaller.InstallationDirectory);
+
             bool ok = await args
                 .OutputToPipe(pipeSink, options => options
                 .WithAudioCodec("pcm_s16le")
