@@ -48,6 +48,16 @@ namespace OrcanodeMonitor.Pages
             return ColorTranslator.ToHtml(Color.Red);
         }
 
+        public string NodeOrcasoundContrastColor(Orcanode node)
+        {
+            OrcanodeOnlineStatus status = node.OrcasoundOnlineStatus;
+            if (status == OrcanodeOnlineStatus.Online)
+            {
+                return ColorTranslator.ToHtml(Color.FromArgb(0, 0, 238));
+            }
+            return ColorTranslator.ToHtml(Color.White);
+        }
+
         public string NodeDataplicityColor(Orcanode node)
         {
             OrcanodeOnlineStatus status = node.DataplicityConnectionStatus;
@@ -56,6 +66,16 @@ namespace OrcanodeMonitor.Pages
                 return ColorTranslator.ToHtml(Color.Red);
             }
             return ColorTranslator.ToHtml(Color.LightGreen);
+        }
+
+        public string NodeDataplicityContrastColor(Orcanode node)
+        {
+            OrcanodeOnlineStatus status = node.DataplicityConnectionStatus;
+            if (status == OrcanodeOnlineStatus.Online)
+            {
+                return ColorTranslator.ToHtml(Color.FromArgb(0, 0, 238));
+            }
+            return ColorTranslator.ToHtml(Color.White);
         }
 
         public string NodeDataplicityUpgradeColor(Orcanode node)
