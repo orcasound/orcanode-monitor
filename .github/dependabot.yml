@@ -15,4 +15,5 @@ updates:
   - package-ecosystem: nuget
     directory: /OrcanodeMonitor
     schedule:
-      interval: daily
+      interval: weekly
+      day: "saturday"
