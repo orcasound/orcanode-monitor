@@ -9,8 +9,14 @@ concurrency:
     group: build-${{ github.event.pull_request.number || github.sha }}
     cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build_windows:
+    permissions:
+      actions: write  # for fkirc/skip-duplicate-actions to skip or stop workflow runs
+      contents: read  # for actions/checkout to fetch code
     strategy:
       matrix:
         configurations: [Debug, Release]
@@ -21,13 +27,18 @@ jobs:
       BUILD_CONFIGURATION: ${{matrix.configurations}}
 
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
+        with:
+          egress-policy: audit
+
       - id: skip_check
-        uses: fkirc/skip-duplicate-actions@v5
+        uses: fkirc/skip-duplicate-actions@f75f66ce1886f00957d99748a42c724f4330bdcf # v5.3.1
         with:
           cancel_others: 'false'
           paths_ignore: '["**.md"]'
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         if: steps.skip_check.outputs.should_skip != 'true'
         with:
           submodules: 'recursive'
