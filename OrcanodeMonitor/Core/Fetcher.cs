@@ -242,16 +242,27 @@ namespace OrcanodeMonitor.Core
                     {
                         string dataplicityName = name.ToString();
                         node.DataplicityName = dataplicityName;
+
                         if (node.DisplayName.IsNullOrEmpty())
                         {
+                            // Fill in a non-authoritative default display name.
+                            // Orcasound is authoritative here since our default is
+                            // just derived from the dataplicity name, but there might be no
+                            // relation.
                             node.DisplayName = Orcanode.DataplicityNameToDisplayName(dataplicityName);
                         }
+
                         if (node.S3Bucket.IsNullOrEmpty())
                         {
                             node.S3Bucket = _defaultS3Bucket;
                         }
+
                         if (node.S3NodeName.IsNullOrEmpty())
                         {
+                            // Fill in a non-authoritative default S3 node name.
+                            // Orcasound is authoritative here since our default is
+                            // just derived from the name, but there might be no
+                            // relation.
                             node.S3NodeName = Orcanode.DataplicityNameToS3Name(dataplicityName);
                         }
                     }
@@ -348,7 +359,32 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
-                    Orcanode node = FindOrCreateOrcanodeByOrcasoundName(context.Orcanodes, name.ToString());
+
+                    Orcanode? node = null;
+                    if (attributes.TryGetProperty("dataplicity_id", out var dataplicity_id))
+                    {
+                        string dataplicitySerial = dataplicity_id.ToString();
+                        if (!dataplicitySerial.IsNullOrEmpty())
+                        {
+                            node = FindOrCreateOrcanodeByDataplicitySerial(context.Orcanodes, dataplicitySerial, out OrcanodeOnlineStatus oldStatus);
+
+                            string orcasoundName = name.ToString();
+                            node.OrcasoundName = orcasoundName;
+                            node.DisplayName = Orcanode.OrcasoundNameToDisplayName(orcasoundName);
+                        }
+                    }
+                    if (node == null)
+                    {
+                        node = FindOrCreateOrcanodeByOrcasoundName(context.Orcanodes, name.ToString());
+
+                        // TODO: a problem can arise here if dataplicity returns a node with one name,
+                        // orcasound returns a node with a different name and null dataplicity id,
+                        // and then later the dataplicity id is filled in, in which case
+                        // we could end up with 2 entries.  A similar issue can arise if the
+                        // name is changed at orcasound, which may require storing the orcasound
+                        // feed id.
+                    }
+
                     if (attributes.TryGetProperty("node_name", out var nodeName))
                     {
                         node.S3NodeName = nodeName.ToString();

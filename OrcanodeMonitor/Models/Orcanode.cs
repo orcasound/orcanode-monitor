@@ -284,7 +284,7 @@ namespace OrcanodeMonitor.Models
         }
 
         /// <summary>
-        /// Derive a human-readable display name from a Dataplcity node name.
+        /// Derive a human-readable display name from a Dataplicity node name.
         /// </summary>
         /// <param name="dataplicityName">The node name at Dataplicity</param>
         /// <returns>Display name string</returns>
