@@ -11,6 +11,10 @@ updates:
     schedule:
       interval: "weekly"
       day: "saturday"
+    groups:
+      actions:
+        patterns:
+          - "*"
 
   - package-ecosystem: nuget
     directory: /OrcanodeMonitor
