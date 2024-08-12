@@ -75,10 +75,17 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         [Required]
         public string DisplayName { get; set; }
+
         /// <summary>
         /// Human-readable name at Orcasound.
         /// </summary>
         public string OrcasoundName { get; set; }
+
+        /// <summary>
+        /// The "id" field from the Orcasound feeds API.
+        /// </summary>
+        public string OrcasoundFeedId { get; set; }
+
         /// <summary>
         /// The URI path component from the "node_name" field obtained from orcasound.net.
         /// </summary>
