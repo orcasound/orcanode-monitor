@@ -378,6 +378,9 @@ namespace OrcanodeMonitor.Core
                         continue;
                     }
 
+                    // First see if we can find a node by dataplicity ID, so that if a node
+                    // shows up in dataplicity first and Orcasite later, we don't create a
+                    // duplicate entry.
                     Orcanode? node = null;
                     if (attributes.TryGetProperty("dataplicity_id", out var dataplicity_id))
                     {

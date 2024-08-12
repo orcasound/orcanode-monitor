@@ -12,6 +12,8 @@ history, and allows real-time notifications via many mechanisms (using [IFTTT](h
 
 For more details, see the [Design note](docs/Design.md).
 
+For troubleshooting info, see the [Debugging note](docs/Debugging.md).
+
 ## Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for
