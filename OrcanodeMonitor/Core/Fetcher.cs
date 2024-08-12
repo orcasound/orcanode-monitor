@@ -79,6 +79,20 @@ namespace OrcanodeMonitor.Core
             return newNode;
         }
 
+        private static Orcanode? FindOrcanodeByOrcasoundFeedId(DbSet<Orcanode> nodeList, string feedId)
+        {
+            List<Orcanode> nodes = nodeList.ToList();
+            foreach (Orcanode node in nodes)
+            {
+                if (node.OrcasoundFeedId == feedId)
+                {
+                    return node;
+                }
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// Look for an Orcanode by Orcasound name in a list and create one if not found.
         /// </summary>
@@ -351,6 +365,10 @@ namespace OrcanodeMonitor.Core
                 }
                 foreach (JsonElement feed in dataArray.EnumerateArray())
                 {
+                    if (!feed.TryGetProperty("id", out var feedId))
+                    {
+                        continue;
+                    }
                     if (!feed.TryGetProperty("attributes", out JsonElement attributes))
                     {
                         continue;
@@ -375,16 +393,32 @@ namespace OrcanodeMonitor.Core
                     }
                     if (node == null)
                     {
-                        node = FindOrCreateOrcanodeByOrcasoundName(context.Orcanodes, name.ToString());
+                        node = FindOrcanodeByOrcasoundFeedId(context.Orcanodes, feedId.ToString());
+                        if (node != null)
+                        {
+                            string orcasoundName = name.ToString();
+                            if (orcasoundName != node.OrcasoundName)
+                            {
+                                // We just detected a name change.
+                                node.OrcasoundName = orcasoundName;
+                                node.DisplayName = Orcanode.OrcasoundNameToDisplayName(orcasoundName);
+                            }
+                        }
+                        else
+                        {
+                            node = FindOrCreateOrcanodeByOrcasoundName(context.Orcanodes, name.ToString());
 
-                        // TODO: a problem can arise here if dataplicity returns a node with one name,
-                        // orcasound returns a node with a different name and null dataplicity id,
-                        // and then later the dataplicity id is filled in, in which case
-                        // we could end up with 2 entries.  A similar issue can arise if the
-                        // name is changed at orcasound, which may require storing the orcasound
-                        // feed id.
+                            // TODO: a problem can arise here if dataplicity returns a node with one name,
+                            // orcasound returns a node with a different name and null dataplicity id,
+                            // and then later the dataplicity id is filled in, in which case
+                            // we could end up with 2 entries.
+                        }
                     }
 
+                    if (node.OrcasoundFeedId.IsNullOrEmpty())
+                    {
+                        node.OrcasoundFeedId = feedId.ToString();
+                    }
                     if (attributes.TryGetProperty("node_name", out var nodeName))
                     {
                         node.S3NodeName = nodeName.ToString();
