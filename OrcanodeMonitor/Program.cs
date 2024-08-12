@@ -5,22 +5,18 @@ using OrcanodeMonitor.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using OrcanodeMonitor.Data;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connection = String.Empty;
-if (builder.Environment.IsDevelopment())
-{
-    builder.Configuration.AddEnvironmentVariables().AddJsonFile("appsettings.Development.json");
-    connection = builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING");
-}
-else
-{
-    connection = Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTIONSTRING");
-}
+// First see if an environment variable specifies a connection string.
+var connection = Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTIONSTRING");
 
-// Remove this line to use the local SQL database instead of the Azure one.
-// connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
+// If we have no override, then fall back to using a local SQL database.
+if (connection.IsNullOrEmpty())
+{
+    connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
+}
 
 // Add services to the container.
 builder.Services.AddRazorPages();
