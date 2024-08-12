@@ -76,6 +76,8 @@ The following state will be stored per orcanode:
 
 ### Configured parameters
 
+**AZURE_SQL_CONNECTIONSTRING**: The connection string for the SQL database to use.  Default: Server=(localdb)\mssqllocaldb;Database=OrcanodeMonitorContext-361a3d40-f3a0-4228-92d0-34532be19b05;Trusted_Connection=True;MultipleActiveResultSets=true
+
 **ORCASOUND_POLL_FREQUENCY_IN_MINUTES**: Service will poll each orcanode at the configured frequency. Default: 5
 
 **ORCASOUND_MAX_UPLOAD_DELAY_MINUTES**: If the manifest file is older than this, the node will be considered offline. Default: 2
