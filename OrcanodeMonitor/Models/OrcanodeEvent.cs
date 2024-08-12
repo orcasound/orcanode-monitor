@@ -32,7 +32,7 @@ namespace OrcanodeMonitor.Models
             Type = type;
             Value = value;
             Meta = new OrcanodeEventIftttMeta(id, timestamp);
-            Description = string.Format("{0} orcanode stream was detected as {1}", nodeName, Value);
+            Description = string.Format("{0} {1} was detected as {2}", nodeName, type, value);
         }
         [JsonPropertyName("slug")]
         public string Slug { get; private set; }
