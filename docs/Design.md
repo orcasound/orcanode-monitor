@@ -76,7 +76,7 @@ The following state will be stored per orcanode:
 
 ### Configured parameters
 
-**AZURE_SQL_CONNECTIONSTRING**: The connection string for the SQL database to use.  Default: Server=(localdb)\mssqllocaldb;Database=OrcanodeMonitorContext-361a3d40-f3a0-4228-92d0-34532be19b05;Trusted_Connection=True;MultipleActiveResultSets=true
+**AZURE_SQL_CONNECTIONSTRING**: The connection string for the SQL database to use.  To minimize costs, it is important that "Pooling" be set to False.  Default: Server=(localdb)\mssqllocaldb;Database=OrcanodeMonitorContext-361a3d40-f3a0-4228-92d0-34532be19b05;Trusted_Connection=True;MultipleActiveResultSets=true;Pooling=False
 
 **ORCASOUND_POLL_FREQUENCY_IN_MINUTES**: Service will poll each orcanode at the configured frequency. Default: 5
 
