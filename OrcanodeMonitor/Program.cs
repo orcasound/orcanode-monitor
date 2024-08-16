@@ -12,10 +12,18 @@ var builder = WebApplication.CreateBuilder(args);
 // First see if an environment variable specifies a connection string.
 var connection = Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTIONSTRING");
 
+// As discussed in https://learn.microsoft.com/en-us/aspnet/core/data/ef-rp/migrations?view=aspnetcore-8.0&source=recommendations&tabs=visual-studio says:
+// We recommend that production apps not call Database.Migrate at application startup. Migrate shouldn't be called from an app that is deployed to a server farm. If the app is scaled out to multiple server instances, it's hard to ensure database schema updates don't happen from multiple servers or conflict with read/write access.
+// Database migration should be done as part of deployment, and in a controlled way.  Instead,
+// from a developer command prompt, do:
+//    dotnet ef database update --connection "Server=tcp:orcasound-server.database.windows.net,1433;Initial Catalog=OrcasoundFreeDatabase;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=\"Active Directory Default\";Pooling=False;"
+bool autoMigrate = false;
+
 // If we have no override, then fall back to using a local SQL database.
 if (connection.IsNullOrEmpty())
 {
     connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
+    autoMigrate = true;
 }
 
 // Add services to the container.
@@ -48,17 +56,10 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
 
     var context = services.GetRequiredService<OrcanodeMonitorContext>();
-#if false
-    // A database that is created by EnsureCreated can't be updated by using migrations.
-    context.Database.EnsureCreated();
-#else
-    // TODO: https://learn.microsoft.com/en-us/aspnet/core/data/ef-rp/migrations?view=aspnetcore-8.0&source=recommendations&tabs=visual-studio says:
-    // We recommend that production apps not call Database.Migrate at application startup. Migrate shouldn't be called from an app that is deployed to a server farm. If the app is scaled out to multiple server instances, it's hard to ensure database schema updates don't happen from multiple servers or conflict with read/write access.
-    // Database migration should be done as part of deployment, and in a controlled way.Production database migration approaches include:
-    // * Using migrations to create SQL scripts and using the SQL scripts in deployment.
-    // * Running "dotnet ef database update" from a controlled environment.
-    context.Database.Migrate(); // Apply pending migrations
-#endif
+    if (autoMigrate)
+    {
+        context.Database.Migrate(); // Apply pending migrations
+    }
     // DbInitializer.Initialize(context); // Optional: Seed data
 }
 
