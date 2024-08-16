@@ -60,7 +60,9 @@ namespace OrcanodeMonitor.Models
         #region persisted
         // Persisted fields.  If any changes are made, the database must go through a migration.
         // See https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/?tabs=vs
-        // for more information.
+        // for more information.  For example, if adding a field called FooBar, then
+        // from Package Manager Console do:
+        // * Add-Migration AddFooBar
 
         /// <summary>
         /// Database key field. This is NOT the dataplicity serial GUID, since a node might first be

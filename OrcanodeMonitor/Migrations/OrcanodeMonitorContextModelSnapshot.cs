@@ -77,10 +77,6 @@ namespace OrcanodeMonitor.Migrations
                     b.Property<long>("DiskUsed")
                         .HasColumnType("bigint");
 
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime?>("LastCheckedUtc")
                         .HasColumnType("datetime2");
 
