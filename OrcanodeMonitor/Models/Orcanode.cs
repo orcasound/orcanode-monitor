@@ -63,6 +63,8 @@ namespace OrcanodeMonitor.Models
         // for more information.  For example, if adding a field called FooBar, then
         // from Package Manager Console do:
         // * Add-Migration AddFooBar
+        // When ready to deploy to an Azure SQL database, do from a developer command shell:
+        // * dotnet ef database update --connection "Server=tcp:orcasound-server.database.windows.net,1433;Initial Catalog=OrcasoundFreeDatabase;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=\"Active Directory Default\";Pooling=False;"
 
         /// <summary>
         /// Database key field. This is NOT the dataplicity serial GUID, since a node might first be
