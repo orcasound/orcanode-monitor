@@ -173,7 +173,6 @@ namespace OrcanodeMonitor.Core
 
             Orcanode newNode = CreateOrcanode(nodeList);
             newNode.OrcasoundName = orcasoundName;
-            newNode.DisplayName = orcasoundName;
             return newNode;
         }
 
@@ -310,15 +309,6 @@ namespace OrcanodeMonitor.Core
                     {
                         string dataplicityName = name.ToString();
                         node.DataplicityName = dataplicityName;
-
-                        if (node.DisplayName.IsNullOrEmpty())
-                        {
-                            // Fill in a non-authoritative default display name.
-                            // Orcasound is authoritative here since our default is
-                            // just derived from the dataplicity name, but there might be no
-                            // relation.
-                            node.DisplayName = Orcanode.DataplicityNameToDisplayName(dataplicityName);
-                        }
 
                         if (node.S3Bucket.IsNullOrEmpty())
                         {
@@ -487,7 +477,6 @@ namespace OrcanodeMonitor.Core
                     {
                         node = CreateOrcanode(context.Orcanodes);
                         node.OrcasoundName = name.ToString();
-                        node.DisplayName = name.ToString();
                     }
 
                     if (!dataplicitySerial.IsNullOrEmpty())
@@ -507,7 +496,6 @@ namespace OrcanodeMonitor.Core
                     {
                         // We just detected a name change.
                         node.OrcasoundName = orcasoundName;
-                        node.DisplayName = orcasoundName;
                     }
                     if (attributes.TryGetProperty("node_name", out var nodeName))
                     {
@@ -752,7 +740,7 @@ namespace OrcanodeMonitor.Core
             if (request.Headers.TryGetValue("IFTTT-Service-Key", out var values) &&
     values.Any())
             {
-                string value = values.First();
+                string value = values.First() ?? String.Empty;
                 if (value == Fetcher.IftttServiceKey)
                 {
                     return null;

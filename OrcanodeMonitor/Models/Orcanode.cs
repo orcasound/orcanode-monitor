@@ -55,7 +55,6 @@ namespace OrcanodeMonitor.Models
             DataplicityDescription = string.Empty;
             DataplicityName = string.Empty;
             DataplicitySerial = string.Empty;
-            DisplayName = string.Empty;
         }
 
         #region persisted
@@ -71,14 +70,6 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ID { get; set; }
-
-        // TODO: Make the DisplayName be derived.  It should be the OrcasoundName
-        // if one exists, else Orcanode.DataplicityNameToDisplayName(dataplicityName).
-        /// <summary>
-        /// Human-readable name to display on the Orcanode Monitor dashboard.
-        /// </summary>
-        [Required]
-        public string DisplayName { get; set; }
 
         /// <summary>
         /// Human-readable name at Orcasound.
@@ -166,6 +157,18 @@ namespace OrcanodeMonitor.Models
         #endregion persisted
 
         #region derived
+        public string DisplayName
+        {
+            get
+            {
+                if (!this.OrcasoundName.IsNullOrEmpty())
+                {
+                    return this.OrcasoundName;
+                }
+                return Orcanode.DataplicityNameToDisplayName(this.DataplicityName);
+            }
+        }
+
         /// <summary>
         /// If the manifest file is older than this, the node will be considered offline.
         /// </summary>

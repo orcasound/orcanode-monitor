@@ -80,7 +80,8 @@ namespace OrcanodeMonitor.Pages
 
         public async Task OnGetAsync()
         {
-            _nodes = await _databaseContext.Orcanodes.OrderBy(n => n.DisplayName).ToListAsync();
+            var nodes = await _databaseContext.Orcanodes.ToListAsync();
+            _nodes = nodes.OrderBy(n => n.DisplayName).ToList();
         }
     }
 }
