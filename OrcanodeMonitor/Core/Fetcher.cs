@@ -53,13 +53,13 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Find or create a node using the serial number value at Dataplicity.
+        /// Find a node using the serial number value at Dataplicity.
         /// </summary>
         /// <param name="nodeList">Database table to look in and potentially update</param>
         /// <param name="serial">Dataplicity serial number to look for</param>
         /// <param name="connectionStatus">Dataplicity connection status</param>
         /// <returns></returns>
-        private static Orcanode FindOrCreateOrcanodeByDataplicitySerial(DbSet<Orcanode> nodeList, string serial, out OrcanodeOnlineStatus connectionStatus)
+        private static Orcanode? FindOrcanodeByDataplicitySerial(DbSet<Orcanode> nodeList, string serial, out OrcanodeOnlineStatus connectionStatus)
         {
             List<Orcanode> nodes = nodeList.ToList();
             foreach (Orcanode node in nodes)
@@ -72,10 +72,39 @@ namespace OrcanodeMonitor.Core
             }
 
             connectionStatus = OrcanodeOnlineStatus.Absent;
-            var newNode = new Orcanode();
-            newNode.DataplicitySerial = serial;
+            return null;
+        }
 
+        /// <summary>
+        /// Create a node.
+        /// </summary>
+        /// <param name="nodeList">Database table to update</param>
+        /// <returns></returns>
+        private static Orcanode CreateOrcanode(DbSet<Orcanode> nodeList)
+        {
+            var newNode = new Orcanode();
             nodeList.Add(newNode);
+            return newNode;
+        }
+
+        /// <summary>
+        /// Find or create a node using the serial number value at Dataplicity.
+        /// </summary>
+        /// <param name="nodeList">Database table to look in and potentially update</param>
+        /// <param name="serial">Dataplicity serial number to look for</param>
+        /// <param name="connectionStatus">Returns the dataplicity connection status</param>
+        /// <returns></returns>
+        private static Orcanode FindOrCreateOrcanodeByDataplicitySerial(DbSet<Orcanode> nodeList, string serial, out OrcanodeOnlineStatus connectionStatus)
+        {
+            Orcanode? node = FindOrcanodeByDataplicitySerial(nodeList, serial, out connectionStatus);
+            if (node != null)
+            {
+                return node;
+            }
+
+            connectionStatus = OrcanodeOnlineStatus.Absent;
+            Orcanode newNode = CreateOrcanode(nodeList);
+            newNode.DataplicitySerial = serial;
             return newNode;
         }
 
@@ -86,6 +115,33 @@ namespace OrcanodeMonitor.Core
             {
                 if (node.OrcasoundFeedId == feedId)
                 {
+                    return node;
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Look for an Orcanode by Orcasound name in a list.
+        /// </summary>
+        /// <param name="nodeList">Orcanode list to look in</param>
+        /// <param name="orcasoundName">Name to look for</param>
+        /// <returns>Node found</returns>
+        private static Orcanode? FindOrcanodeByOrcasoundName(DbSet<Orcanode> nodeList, string orcasoundName)
+        {
+            List<Orcanode> nodes = nodeList.ToList();
+            foreach (Orcanode node in nodes)
+            {
+                if (node.OrcasoundName == orcasoundName)
+                {
+                    return node;
+                }
+
+                // See if we can match a node name derived from dataplicity.
+                if ((node.OrcasoundName.IsNullOrEmpty()) && orcasoundName.Contains(node.DisplayName))
+                {
+                    node.OrcasoundName = orcasoundName;
                     return node;
                 }
             }
@@ -115,11 +171,9 @@ namespace OrcanodeMonitor.Core
                 }
             }
 
-            var newNode = new Orcanode();
+            Orcanode newNode = CreateOrcanode(nodeList);
             newNode.OrcasoundName = orcasoundName;
-            newNode.DisplayName = Orcanode.OrcasoundNameToDisplayName(orcasoundName);
-
-            nodeList.Add(newNode);
+            newNode.DisplayName = orcasoundName;
             return newNode;
         }
 
@@ -276,7 +330,8 @@ namespace OrcanodeMonitor.Core
                             // Fill in a non-authoritative default S3 node name.
                             // Orcasound is authoritative here since our default is
                             // just derived from the name, but there might be no
-                            // relation.
+                            // relation.  We use this to see if an S3 stream exists
+                            // even if Orcasound doesn't know about it.
                             node.S3NodeName = Orcanode.DataplicityNameToS3Name(dataplicityName);
                         }
                     }
@@ -377,50 +432,82 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
-
-                    // First see if we can find a node by dataplicity ID, so that if a node
-                    // shows up in dataplicity first and Orcasite later, we don't create a
-                    // duplicate entry.
-                    Orcanode? node = null;
-                    if (attributes.TryGetProperty("dataplicity_id", out var dataplicity_id))
+                    string orcasoundName = name.ToString();
+                    if (!attributes.TryGetProperty("dataplicity_id", out var dataplicity_id))
                     {
-                        string dataplicitySerial = dataplicity_id.ToString();
-                        if (!dataplicitySerial.IsNullOrEmpty())
-                        {
-                            node = FindOrCreateOrcanodeByDataplicitySerial(context.Orcanodes, dataplicitySerial, out OrcanodeOnlineStatus oldStatus);
-
-                            string orcasoundName = name.ToString();
-                            node.OrcasoundName = orcasoundName;
-                            node.DisplayName = Orcanode.OrcasoundNameToDisplayName(orcasoundName);
-                        }
+                        continue;
                     }
+                    string dataplicitySerial = dataplicity_id.ToString();
+
+                    // TODO: 
+                    // 1. Find node by orcasound feed ID
+                    //    a. If found, and have dataplicity ID and we can find a _different_
+                    //       node by dataplicity ID, merge them.
+                    // 2. Else, find node by dataplicity ID
+                    // 3. Else, if no dataplicity ID exists then find node by name
+
+                    Orcanode? node = null;
+                    node = FindOrcanodeByOrcasoundFeedId(context.Orcanodes, feedId.ToString());
                     if (node == null)
                     {
-                        node = FindOrcanodeByOrcasoundFeedId(context.Orcanodes, feedId.ToString());
-                        if (node != null)
+                        // We didn't used to store the feed ID, only the name, so try again by name.
+                        node = FindOrcanodeByOrcasoundName(context.Orcanodes, orcasoundName);
+                    }
+
+                    // See if we can find a node by dataplicity ID, so that if a node
+                    // shows up in dataplicity first and Orcasite later, we don't create a
+                    // duplicate entry.
+                    Orcanode? dataplicityNode = null;
+                    if (!dataplicitySerial.IsNullOrEmpty())
+                    {
+                        dataplicityNode = FindOrcanodeByDataplicitySerial(context.Orcanodes, dataplicitySerial, out OrcanodeOnlineStatus oldStatus);
+                        if (dataplicityNode != null)
                         {
-                            string orcasoundName = name.ToString();
-                            if (orcasoundName != node.OrcasoundName)
+                            if (node == null)
                             {
-                                // We just detected a name change.
-                                node.OrcasoundName = orcasoundName;
-                                node.DisplayName = Orcanode.OrcasoundNameToDisplayName(orcasoundName);
+                                node = dataplicityNode;
+                            }
+                            else if (node != dataplicityNode)
+                            {
+                                // We have duplicate nodes to merge. In theory we shouldn't have any
+                                // node state for the dataplicity-only node. (TODO: verify this)
+                                node.DataplicityDescription = dataplicityNode.DataplicityDescription;
+                                node.DataplicityName = dataplicityNode.DataplicityName;
+                                node.DataplicityOnline = dataplicityNode.DataplicityOnline;
+                                node.AgentVersion = dataplicityNode.AgentVersion;
+                                node.DiskCapacity = dataplicityNode.DiskCapacity;
+                                node.DiskUsed = dataplicityNode.DiskUsed;
+                                node.DataplicityUpgradeAvailable = dataplicityNode.DataplicityUpgradeAvailable;
+                                context.Orcanodes.Remove(dataplicityNode);
                             }
                         }
-                        else
-                        {
-                            node = FindOrCreateOrcanodeByOrcasoundName(context.Orcanodes, name.ToString());
+                    }
 
-                            // TODO: a problem can arise here if dataplicity returns a node with one name,
-                            // orcasound returns a node with a different name and null dataplicity id,
-                            // and then later the dataplicity id is filled in, in which case
-                            // we could end up with 2 entries.
+                    if (node == null)
+                    {
+                        node = CreateOrcanode(context.Orcanodes);
+                        node.OrcasoundName = name.ToString();
+                        node.DisplayName = name.ToString();
+                    }
+
+                    if (!dataplicitySerial.IsNullOrEmpty())
+                    {
+                        if (!node.DataplicitySerial.IsNullOrEmpty() && dataplicitySerial != node.DataplicitySerial)
+                        {
+                            // TODO: The orcasound entry for the node changed its dataplicity_id.
                         }
+                        node.DataplicitySerial = dataplicitySerial;
                     }
 
                     if (node.OrcasoundFeedId.IsNullOrEmpty())
                     {
                         node.OrcasoundFeedId = feedId.ToString();
+                    }
+                    if (orcasoundName != node.OrcasoundName)
+                    {
+                        // We just detected a name change.
+                        node.OrcasoundName = orcasoundName;
+                        node.DisplayName = orcasoundName;
                     }
                     if (attributes.TryGetProperty("node_name", out var nodeName))
                     {

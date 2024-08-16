@@ -65,13 +65,17 @@ namespace OrcanodeMonitor.Models
 
         /// <summary>
         /// Database key field. This is NOT the dataplicity serial GUID, since a node might first be
-        /// detected via another mechanism before we get the dataplicity serial GUID.
+        /// detected via another mechanism before we get the dataplicity serial GUID.  Nor is it
+        /// the Orcasound feed id, since a node is typically detected by dataplicity first when
+        /// no Orcasound feed id exists.
         /// </summary>
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ID { get; set; }
 
+        // TODO: Make the DisplayName be derived.  It should be the OrcasoundName
+        // if one exists, else Orcanode.DataplicityNameToDisplayName(dataplicityName).
         /// <summary>
-        /// Human-readable name.
+        /// Human-readable name to display on the Orcanode Monitor dashboard.
         /// </summary>
         [Required]
         public string DisplayName { get; set; }
@@ -125,22 +129,27 @@ namespace OrcanodeMonitor.Models
         /// Last time the S3 instance was queried, in UTC.
         /// </summary>
         public DateTime? LastCheckedUtc { get; set; }
+
         /// <summary>
         /// The name of the node at Dataplicity.
         /// </summary>
         public string DataplicityName { get; set; }
+
         /// <summary>
         /// The description at Dataplicity.
         /// </summary>
         public string DataplicityDescription { get; set; }
+
         /// <summary>
         /// The agent version as reported by Dataplicity.
         /// </summary>
         public string AgentVersion { get; set; }
+
         /// <summary>
         /// The disk capacity as reported by Dataplicity.
         /// </summary>
         public long DiskCapacity { get; set; }
+
         /// <summary>
         /// The disk used value as reported by Dataplicity.
         /// </summary>
@@ -278,18 +287,6 @@ namespace OrcanodeMonitor.Models
         #region methods
         public OrcanodeIftttDTO ToIftttDTO() => new OrcanodeIftttDTO(ID, DisplayName);
 
-        public static string OrcasoundNameToDisplayName(string orcasoundName)
-        {
-            // Convert an Orcasound name of "Beach Camp at Sunset Bay" to just "Sunset Bay".)
-            string displayName = orcasoundName;
-            int atIndex = orcasoundName.IndexOf(" at ");
-            if (atIndex >= 0)
-            {
-                displayName = orcasoundName.Substring(atIndex + 4);
-            }
-            return displayName;
-        }
-
         /// <summary>
         /// Derive a human-readable display name from a Dataplicity node name.
         /// </summary>
@@ -334,6 +331,6 @@ namespace OrcanodeMonitor.Models
 
         public override string ToString() => DisplayName;
 
-        #endregion methods
+#endregion methods
     }
 }
