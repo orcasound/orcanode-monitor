@@ -55,26 +55,23 @@ namespace OrcanodeMonitor.Models
             DataplicityDescription = string.Empty;
             DataplicityName = string.Empty;
             DataplicitySerial = string.Empty;
-            DisplayName = string.Empty;
         }
 
         #region persisted
         // Persisted fields.  If any changes are made, the database must go through a migration.
         // See https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/?tabs=vs
-        // for more information.
+        // for more information.  For example, if adding a field called FooBar, then
+        // from Package Manager Console do:
+        // * Add-Migration AddFooBar
 
         /// <summary>
         /// Database key field. This is NOT the dataplicity serial GUID, since a node might first be
-        /// detected via another mechanism before we get the dataplicity serial GUID.
+        /// detected via another mechanism before we get the dataplicity serial GUID.  Nor is it
+        /// the Orcasound feed id, since a node is typically detected by dataplicity first when
+        /// no Orcasound feed id exists.
         /// </summary>
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ID { get; set; }
-
-        /// <summary>
-        /// Human-readable name.
-        /// </summary>
-        [Required]
-        public string DisplayName { get; set; }
 
         /// <summary>
         /// Human-readable name at Orcasound.
@@ -125,22 +122,27 @@ namespace OrcanodeMonitor.Models
         /// Last time the S3 instance was queried, in UTC.
         /// </summary>
         public DateTime? LastCheckedUtc { get; set; }
+
         /// <summary>
         /// The name of the node at Dataplicity.
         /// </summary>
         public string DataplicityName { get; set; }
+
         /// <summary>
         /// The description at Dataplicity.
         /// </summary>
         public string DataplicityDescription { get; set; }
+
         /// <summary>
         /// The agent version as reported by Dataplicity.
         /// </summary>
         public string AgentVersion { get; set; }
+
         /// <summary>
         /// The disk capacity as reported by Dataplicity.
         /// </summary>
         public long DiskCapacity { get; set; }
+
         /// <summary>
         /// The disk used value as reported by Dataplicity.
         /// </summary>
@@ -157,6 +159,18 @@ namespace OrcanodeMonitor.Models
         #endregion persisted
 
         #region derived
+        public string DisplayName
+        {
+            get
+            {
+                if (!this.OrcasoundName.IsNullOrEmpty())
+                {
+                    return this.OrcasoundName;
+                }
+                return Orcanode.DataplicityNameToDisplayName(this.DataplicityName);
+            }
+        }
+
         /// <summary>
         /// If the manifest file is older than this, the node will be considered offline.
         /// </summary>
@@ -278,18 +292,6 @@ namespace OrcanodeMonitor.Models
         #region methods
         public OrcanodeIftttDTO ToIftttDTO() => new OrcanodeIftttDTO(ID, DisplayName);
 
-        public static string OrcasoundNameToDisplayName(string orcasoundName)
-        {
-            // Convert an Orcasound name of "Beach Camp at Sunset Bay" to just "Sunset Bay".)
-            string displayName = orcasoundName;
-            int atIndex = orcasoundName.IndexOf(" at ");
-            if (atIndex >= 0)
-            {
-                displayName = orcasoundName.Substring(atIndex + 4);
-            }
-            return displayName;
-        }
-
         /// <summary>
         /// Derive a human-readable display name from a Dataplicity node name.
         /// </summary>
@@ -334,6 +336,6 @@ namespace OrcanodeMonitor.Models
 
         public override string ToString() => DisplayName;
 
-        #endregion methods
+#endregion methods
     }
 }
