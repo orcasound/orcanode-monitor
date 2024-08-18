@@ -427,14 +427,12 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
+                    bool hidden = false;
+                    if (attributes.TryGetProperty("hidden", out var hiddenElement))
+                    {
+                        hidden = hiddenElement.GetBoolean();
+                    }
                     string dataplicitySerial = dataplicity_id.ToString();
-
-                    // TODO: 
-                    // 1. Find node by orcasound feed ID
-                    //    a. If found, and have dataplicity ID and we can find a _different_
-                    //       node by dataplicity ID, merge them.
-                    // 2. Else, find node by dataplicity ID
-                    // 3. Else, if no dataplicity ID exists then find node by name
 
                     Orcanode? node = null;
                     node = FindOrcanodeByOrcasoundFeedId(context.Orcanodes, feedId.ToString());
@@ -508,6 +506,10 @@ namespace OrcanodeMonitor.Core
                     if (attributes.TryGetProperty("slug", out var slug))
                     {
                         node.OrcasoundSlug = slug.ToString();
+                    }
+                    if (attributes.TryGetProperty("visible", out var visible))
+                    {
+                        node.OrcasoundVisible = visible.GetBoolean();
                     }
                 }
                 await context.SaveChangesAsync();

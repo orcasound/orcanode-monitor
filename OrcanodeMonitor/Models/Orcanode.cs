@@ -16,7 +16,8 @@ namespace OrcanodeMonitor.Models
         Absent = 0,
         Offline,
         Online,
-        Unintelligible
+        Unintelligible,
+        Hidden,
     }
     public enum OrcanodeUpgradeStatus
     {
@@ -154,9 +155,15 @@ namespace OrcanodeMonitor.Models
         /// Whether Dataplicity believes the node is online.
         /// </summary>
         public bool? DataplicityOnline { get; set; }
+
         public bool? DataplicityUpgradeAvailable { get; set; }
 
         public double? AudioStandardDeviation { get; set; }
+
+        /// <summary>
+        /// Whether the node is visible on the orcasound website.
+        /// </summary>
+        public bool? OrcasoundVisible { get; set; }
 
         #endregion persisted
 
@@ -249,6 +256,10 @@ namespace OrcanodeMonitor.Models
                 if (OrcasoundSlug.IsNullOrEmpty())
                 {
                     return OrcanodeOnlineStatus.Absent;
+                }
+                if (!(OrcasoundVisible ?? true))
+                {
+                    return OrcanodeOnlineStatus.Hidden;
                 }
                 return OrcanodeOnlineStatus.Online;
             }
