@@ -44,12 +44,17 @@ namespace OrcanodeMonitor.Pages
             {
                 return ColorTranslator.ToHtml(Color.LightGreen);
             }
+            if (status == OrcanodeOnlineStatus.Hidden)
+            {
+                return ColorTranslator.ToHtml(Color.Yellow);
+            }
             return ColorTranslator.ToHtml(Color.Red);
         }
 
         private string GetTextColor(OrcanodeOnlineStatus status)
         {
-            if (status == OrcanodeOnlineStatus.Online)
+            if (status == OrcanodeOnlineStatus.Online ||
+                status == OrcanodeOnlineStatus.Hidden)
             {
                 return ColorTranslator.ToHtml(Color.FromArgb(0, 0, 238));
             }
