@@ -3,9 +3,11 @@
 using Microsoft.Extensions.Hosting;
 using OrcanodeMonitor.Core;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Cosmos;
 using Microsoft.Extensions.DependencyInjection;
 using OrcanodeMonitor.Data;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Azure.Cosmos;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,10 +30,22 @@ if (connection.IsNullOrEmpty())
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+#if !USE_COSMOS
 builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
     options.UseSqlServer(connection));
-builder.Services.AddHostedService<PeriodicTasks>(); // Register your background service
-builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+#else
+#if true
+/// XXXXXXXXXXXX delete this XXXXXXXXX
+var client = new CosmosClient(connection);
+var container = client.GetDatabase("OrcanodeMonitorDatabase").GetContainer("MonitorState");
+var partitionKey = new PartitionKey("id");
+var response = await container.ReadItemAsync<OrcanodeMonitor.Models.MonitorState>("0", partitionKey);
+#endif
+
+builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
+    options.UseCosmos(connection, "OrcanodeMonitorDatabase"));
+#endif
+builder.Services.AddHostedService<PeriodicTasks>(); // Register your background servicebuilder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 var app = builder.Build();
 

@@ -48,6 +48,7 @@ namespace OrcanodeMonitor.Models
         public Orcanode()
         {
             // Initialize reference types.
+            OrcasoundFeedId = string.Empty;
             OrcasoundName = string.Empty;
             OrcasoundSlug = string.Empty;
             OrcasoundFeedId = string.Empty;
@@ -65,8 +66,12 @@ namespace OrcanodeMonitor.Models
         // for more information.  For example, if adding a field called FooBar, then
         // from Package Manager Console do:
         // * Add-Migration AddFooBar
-        // When ready to deploy to an Azure SQL database, do from a developer command shell:
-        // * dotnet ef database update --connection "Server=tcp:orcasound-server.database.windows.net,1433;Initial Catalog=OrcasoundFreeDatabase;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=\"Active Directory Default\";Pooling=False;"
+        // When ready to deploy to an Azure SQL database:
+        // 1. Stop the remote service.
+        // 2. Apply the migration from a developer command shell:
+        //     dotnet ef database update --connection "Server=tcp:orcasound-server.database.windows.net,1433;Initial Catalog=OrcasoundFreeDatabase;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=\"Active Directory Default\";Pooling=False;"
+        // 3. Publish from Visual Studio using the appropriate publish profile.
+        // 4. Start the remote service.
 
         /// <summary>
         /// Database key field. This is NOT the dataplicity serial GUID, since a node might first be
