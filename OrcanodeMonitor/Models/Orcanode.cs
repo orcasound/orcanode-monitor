@@ -50,6 +50,7 @@ namespace OrcanodeMonitor.Models
             // Initialize reference types.
             OrcasoundName = string.Empty;
             OrcasoundSlug = string.Empty;
+            OrcasoundFeedId = string.Empty;
             S3Bucket = string.Empty;
             S3NodeName = string.Empty;
             AgentVersion = string.Empty;
@@ -231,7 +232,16 @@ namespace OrcanodeMonitor.Models
         public long DiskCapacityInGigs => DiskCapacity / 1000000000;
 
         public OrcanodeUpgradeStatus DataplicityUpgradeStatus => DataplicityUpgradeAvailable ?? false ? OrcanodeUpgradeStatus.UpgradeAvailable : OrcanodeUpgradeStatus.UpToDate;
-        public OrcanodeOnlineStatus DataplicityConnectionStatus => DataplicityOnline ?? false ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Offline;
+        public OrcanodeOnlineStatus DataplicityConnectionStatus {
+            get
+            {
+                if (!DataplicityOnline.HasValue)
+                {
+                    return OrcanodeOnlineStatus.Absent;
+                }
+                return (DataplicityOnline.Value) ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Offline;
+            }
+        }
 
 #if ORCAHELLO
         public string OrcaHelloName

@@ -289,6 +289,9 @@ namespace OrcanodeMonitor.Core
                     jsonArray = await response.Content.ReadAsStringAsync();
                 }
 
+                // Create a list to track what nodes are no longer returned.
+                var unfoundList = context.Orcanodes.ToList();
+
                 dynamic deviceArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
                 if (deviceArray.ValueKind != JsonValueKind.Array)
                 {
@@ -299,6 +302,13 @@ namespace OrcanodeMonitor.Core
                     if (!device.TryGetProperty("serial", out var serial))
                     {
                         continue;
+                    }
+
+                    // Remove the found node from the unfound list.
+                    Orcanode? oldListNode = unfoundList.Find(a => a.DataplicitySerial == serial.ToString());
+                    if (oldListNode != null)
+                    {
+                        unfoundList.Remove(oldListNode);
                     }
 
                     Orcanode node = FindOrCreateOrcanodeByDataplicitySerial(context.Orcanodes, serial.ToString(), out OrcanodeOnlineStatus oldStatus);
@@ -375,6 +385,16 @@ namespace OrcanodeMonitor.Core
                     }
                 }
 
+                // Mark any remaining unfound nodes as absent.
+                foreach (var unfoundNode in unfoundList)
+                {
+                    var oldNode = FindOrcanodeByDataplicitySerial(context.Orcanodes, unfoundNode.DataplicitySerial, out OrcanodeOnlineStatus unfoundNodeStatus);
+                    if (oldNode != null)
+                    {
+                        oldNode.DataplicityOnline = null;
+                    }
+                }
+
                 MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
                 await context.SaveChangesAsync();
             }
@@ -408,6 +428,10 @@ namespace OrcanodeMonitor.Core
                 {
                     return;
                 }
+
+                // Create a list to track what nodes are no longer returned.
+                var unfoundList = context.Orcanodes.ToList();
+
                 foreach (JsonElement feed in dataArray.EnumerateArray())
                 {
                     if (!feed.TryGetProperty("id", out var feedId))
@@ -433,6 +457,13 @@ namespace OrcanodeMonitor.Core
                         hidden = hiddenElement.GetBoolean();
                     }
                     string dataplicitySerial = dataplicity_id.ToString();
+
+                    // Remove the found node from the unfound list.
+                    Orcanode? oldListNode = unfoundList.Find(a => a.OrcasoundFeedId == feedId.ToString());
+                    if (oldListNode != null)
+                    {
+                        unfoundList.Remove(oldListNode);
+                    }
 
                     Orcanode? node = null;
                     node = FindOrcanodeByOrcasoundFeedId(context.Orcanodes, feedId.ToString());
@@ -512,6 +543,17 @@ namespace OrcanodeMonitor.Core
                         node.OrcasoundVisible = visible.GetBoolean();
                     }
                 }
+
+                // Mark any remaining unfound nodes as absent.
+                foreach (var unfoundNode in unfoundList)
+                {
+                    var oldNode = FindOrcanodeByOrcasoundFeedId(context.Orcanodes, unfoundNode.OrcasoundFeedId);
+                    if (oldNode != null)
+                    {
+                        oldNode.OrcasoundFeedId = String.Empty;
+                    }
+                }
+
                 await context.SaveChangesAsync();
             }
             catch (Exception ex)
