@@ -103,7 +103,7 @@ namespace OrcanodeMonitor.Models
         public string OrcasoundSlug { get; set; }
 
         /// <summary>
-        /// Value in the latest.txt file, as a UTC DateTime.
+        /// Value in the S3 latest.txt file, as a UTC DateTime.
         /// </summary>
         public DateTime? LatestRecordedUtc { get; set; }
 
@@ -113,12 +113,12 @@ namespace OrcanodeMonitor.Models
         public string DataplicitySerial { get; set; }
 
         /// <summary>
-        /// Last modified timestamp on the latest.txt file, in UTC.
+        /// Last modified timestamp on the S3 latest.txt file, in UTC.
         /// </summary>
         public DateTime? LatestUploadedUtc { get; set; }
 
         /// <summary>
-        /// Last modified timestamp on the manifest file, in UTC.
+        /// Last modified timestamp on the S3 manifest file, in UTC.
         /// </summary>
         public DateTime? ManifestUpdatedUtc { get; set; }
 
@@ -279,13 +279,13 @@ namespace OrcanodeMonitor.Models
         {
             get
             {
-                if (S3NodeName.IsNullOrEmpty())
+                if (!LatestRecordedUtc.HasValue)
                 {
                     return OrcanodeOnlineStatus.Absent;
                 }
                 if (!ManifestUpdatedUtc.HasValue || !LastCheckedUtc.HasValue)
                 {
-                    return OrcanodeOnlineStatus.Offline;
+                    return OrcanodeOnlineStatus.Absent;
                 }
                 TimeSpan manifestAge = LastCheckedUtc.Value.Subtract(ManifestUpdatedUtc.Value);
                 if (manifestAge > MaxUploadDelay)
