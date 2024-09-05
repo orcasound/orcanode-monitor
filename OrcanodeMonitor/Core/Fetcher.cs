@@ -652,6 +652,12 @@ namespace OrcanodeMonitor.Core
         {
             string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/latest.txt";
             HttpResponseMessage response = await _httpClient.GetAsync(url);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                // Absent.
+                node.LatestRecordedUtc = null;
+                return;
+            }
             if (!response.IsSuccessStatusCode)
             {
                 return;

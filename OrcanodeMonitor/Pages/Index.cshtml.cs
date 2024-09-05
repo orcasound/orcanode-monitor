@@ -86,7 +86,11 @@ namespace OrcanodeMonitor.Pages
         public async Task OnGetAsync()
         {
             var nodes = await _databaseContext.Orcanodes.ToListAsync();
-            _nodes = nodes.OrderBy(n => n.DisplayName).ToList();
+            _nodes = nodes.Where(n => n.DataplicityConnectionStatus != OrcanodeOnlineStatus.Absent ||
+                                          n.OrcasoundStatus != OrcanodeOnlineStatus.Absent ||
+                                          n.S3StreamStatus != OrcanodeOnlineStatus.Absent)
+                              .OrderBy(n => n.DisplayName)
+                              .ToList();
         }
     }
 }
