@@ -23,6 +23,7 @@
             <th>SD Card Util.</th>
             <th>Orcasound</th>
             <th>S3 Stream</th>
+            <th>OrcaHello</th>
             <!--
             <th>Last OrcaHello Detection</th>
             <th>Confidence</th>
@@ -85,8 +86,22 @@
             else
             {
                 <td style="background-color: @Model.NodeS3BackgroundColor(item)">
-                    <a href="https://open.quiltdata.com/b/streaming-orcasound-net/tree/@item.S3NodeName/" style="color: @Model.NodeS3TextColor(item)" target="_blank">
+                    <a href="https://open.quiltdata.com/b/audio-orcasound-net/tree/@item.S3NodeName/" style="color: @Model.NodeS3TextColor(item)" target="_blank">
                         @Html.DisplayFor(modelItem => item.S3StreamStatus)
+                    </a>
+                </td>
+            }
+            @if (item.OrcaHelloStatus == Models.OrcanodeOnlineStatus.Absent)
+            {
+                    <td style="background-color: @Model.NodeOrcaHelloBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
+                    @Html.DisplayFor(modelItem => item.OrcaHelloStatus)
+                </td>
+            }
+            else
+            {
+                <td style="background-color: @Model.NodeOrcaHelloBackgroundColor(item)">
+                    <a href="https://open.quiltdata.com/b/audio-orcasound-net/tree/@item.S3NodeName/" style="color: @Model.NodeOrcaHelloTextColor(item)" target="_blank">
+                        @Html.DisplayFor(modelItem => item.OrcaHelloStatus)
                     </a>
                 </td>
             }
@@ -125,6 +140,12 @@
         </li>
         <li>
             <b>S3 Stream Unintelligible</b>: Audio stream is being sent to S3 but it appears to be bad.
+        </li>
+        <li>
+            <b>OrcaHello Absent</b>: OrcaHello does not know about the node.
+        </li>
+        <li>
+            <b>OrcaHello Online</b>: OrcaHello knows about the node.
         </li>
     </ul>
     <p/>

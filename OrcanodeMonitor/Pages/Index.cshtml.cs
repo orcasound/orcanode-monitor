@@ -65,6 +65,10 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeS3TextColor(Orcanode node) => GetTextColor(node.S3StreamStatus);
 
+        public string NodeOrcaHelloTextColor(Orcanode node) => GetTextColor(node.OrcaHelloStatus);
+
+        public string NodeOrcaHelloBackgroundColor(Orcanode node) => GetBackgroundColor(node.OrcaHelloStatus);
+
         public string NodeDataplicityBackgroundColor(Orcanode node) => GetBackgroundColor(node.DataplicityConnectionStatus);
 
         public string NodeDataplicityTextColor(Orcanode node) => GetTextColor(node.DataplicityConnectionStatus);

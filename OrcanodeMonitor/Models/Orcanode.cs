@@ -57,6 +57,7 @@ namespace OrcanodeMonitor.Models
             DataplicityDescription = string.Empty;
             DataplicityName = string.Empty;
             DataplicitySerial = string.Empty;
+            OrcaHelloId = string.Empty;
         }
 
         #region persisted
@@ -166,6 +167,11 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         public bool? OrcasoundVisible { get; set; }
 
+        /// <summary>
+        /// The "id" field from the OrcaHello hydrophones API.
+        /// </summary>
+        public string OrcaHelloId { get; set; }
+
         #endregion persisted
 
         #region derived
@@ -243,22 +249,8 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-#if ORCAHELLO
-        public string OrcaHelloName
-        {
-            get
-            {
-                if (DisplayName == null) return string.Empty;
+        public OrcanodeOnlineStatus OrcaHelloStatus => OrcaHelloId.IsNullOrEmpty() ? OrcanodeOnlineStatus.Absent : OrcanodeOnlineStatus.Online;
 
-                // Any special cases here, since OrcaHello does not support
-                // node enumeration, nor does it use the same names as
-                // Dataplicity or Orcasound.net.
-                if (DisplayName == "Orcasound Lab") return "Haro Strait";
-
-                return DisplayName;
-            }
-        }
-#endif
         public OrcanodeOnlineStatus OrcasoundStatus
         {
             get
