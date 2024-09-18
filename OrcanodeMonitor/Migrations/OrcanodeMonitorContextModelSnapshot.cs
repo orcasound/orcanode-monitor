@@ -89,6 +89,10 @@ namespace OrcanodeMonitor.Migrations
                     b.Property<DateTime?>("ManifestUpdatedUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("OrcaHelloId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("OrcasoundFeedId")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
