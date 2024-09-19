@@ -69,6 +69,7 @@ namespace OrcanodeMonitor.Models
             Value = value;
             DateTimeUtc = timestamp;
             OrcanodeId = node.ID;
+            Year = DateTime.UtcNow.Year;
         }
 
         #region persisted
@@ -95,6 +96,8 @@ namespace OrcanodeMonitor.Models
         public virtual Orcanode Orcanode { get; set; }
 
         public DateTime DateTimeUtc { get; set; }
+
+        public int Year { get; set; }
 
         #endregion persisted
 
