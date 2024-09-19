@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.VisualBasic;
 using Newtonsoft.Json.Linq;
 using OrcanodeMonitor.Core;
 
@@ -57,6 +58,7 @@ namespace OrcanodeMonitor.Models
             DataplicityDescription = string.Empty;
             DataplicityName = string.Empty;
             DataplicitySerial = string.Empty;
+            Year=DateTime.UtcNow.Year;
         }
 
         #region persisted
@@ -165,6 +167,8 @@ namespace OrcanodeMonitor.Models
         /// Whether the node is visible on the orcasound website.
         /// </summary>
         public bool? OrcasoundVisible { get; set; }
+
+       public int Year { get; set; }
 
         #endregion persisted
 

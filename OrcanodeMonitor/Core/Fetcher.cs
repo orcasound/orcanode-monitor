@@ -430,7 +430,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 // Create a list to track what nodes are no longer returned.
-                var unfoundList = context.Orcanodes.ToList();
+                var unfoundList = context.Orcanodes!=null ?context.Orcanodes.ToList():null;
 
                 foreach (JsonElement feed in dataArray.EnumerateArray())
                 {

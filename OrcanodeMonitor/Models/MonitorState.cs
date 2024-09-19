@@ -24,7 +24,7 @@ namespace OrcanodeMonitor.Models
         /// <summary>
         /// Database key field.
         /// </summary>
-        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int ID { get; set; }
         public DateTime? LastUpdatedTimestampUtc { get; set; }
         #endregion persisted
