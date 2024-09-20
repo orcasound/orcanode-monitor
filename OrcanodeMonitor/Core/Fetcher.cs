@@ -264,6 +264,7 @@ namespace OrcanodeMonitor.Core
                     }
                 }
 
+                MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
                 await context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -569,6 +570,7 @@ namespace OrcanodeMonitor.Core
                     }
                 }
 
+                MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
                 await context.SaveChangesAsync();
             }
             catch (Exception ex)
