@@ -29,13 +29,13 @@ namespace OrcanodeMonitor.Models
 
     public class OrcanodeIftttDTO
     {
-        public OrcanodeIftttDTO(int id, string displayName)
+        public OrcanodeIftttDTO(string id, string displayName)
         {
             ID = id;
             DisplayName = displayName;
         }
         [JsonPropertyName("ID")]
-        public int ID { get; private set; }
+        public string ID { get; private set; }
         [JsonPropertyName("display_name")]
         public string DisplayName { get; private set; }
         public override string ToString() => DisplayName;
@@ -58,7 +58,13 @@ namespace OrcanodeMonitor.Models
             DataplicityDescription = string.Empty;
             DataplicityName = string.Empty;
             DataplicitySerial = string.Empty;
-            Year=DateTime.UtcNow.Year;
+            year=DateTime.UtcNow.Year.ToString();
+            /*S3BucketRegion=string.Empty;
+            LocationPoint= string.Empty;
+            Introhtml = string.Empty;
+            ImageURL = string.Empty;
+            CloudFrontURL = string.Empty;
+            Geocoordinates = string.Empty;*/
         }
 
         #region persisted
@@ -76,8 +82,8 @@ namespace OrcanodeMonitor.Models
         /// the Orcasound feed id, since a node is typically detected by dataplicity first when
         /// no Orcasound feed id exists.
         /// </summary>
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int ID { get; set; }
+       
+        public string ID { get; set; }
 
         /// <summary>
         /// Human-readable name at Orcasound.
@@ -168,7 +174,20 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         public bool? OrcasoundVisible { get; set; }
 
-       public int Year { get; set; }
+       public string year { get; set; }
+
+        /*public string S3BucketRegion { get; set; }
+
+        public string LocationPoint { get; set; }
+
+        public string Introhtml { get; set; }
+
+        public string ImageURL { get; set; }
+
+        public string CloudFrontURL { get; set; }
+
+        public string Geocoordinates { get; set; }*/
+
 
         #endregion persisted
 

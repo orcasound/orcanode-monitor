@@ -69,7 +69,7 @@ namespace OrcanodeMonitor.Models
             Value = value;
             DateTimeUtc = timestamp;
             OrcanodeId = node.ID;
-            Year = DateTime.UtcNow.Year;
+            year = DateTime.UtcNow.Year.ToString();
         }
 
         #region persisted
@@ -90,14 +90,14 @@ namespace OrcanodeMonitor.Models
         /// <summary>
         /// Foreign Key for an Orcanode.
         /// </summary>
-        public int OrcanodeId { get; set; }
+        public string OrcanodeId { get; set; }
 
         // Navigation property that uses OrcanodeId.
         public virtual Orcanode Orcanode { get; set; }
 
         public DateTime DateTimeUtc { get; set; }
 
-        public int Year { get; set; }
+        public string year { get; set; }
 
         #endregion persisted
 
