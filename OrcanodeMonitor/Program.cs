@@ -19,7 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Database migration should be done as part of deployment, and in a controlled way.  Instead,
 // from a developer command prompt, do:
 //    dotnet ef database update --connection "Server=tcp:orcasound-server.database.windows.net,1433;Initial Catalog=OrcasoundFreeDatabase;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=\"Active Directory Default\";Pooling=False;"
-bool autoMigrate = false;
+//bool autoMigrate = false;
 
 // If we have no override, then fall back to using a local SQL database.
 /*if (connection.IsNullOrEmpty())
@@ -31,7 +31,7 @@ var connection = Environment.GetEnvironmentVariable("AZURE_COSMOS_CONNECTIONSTRI
 if(connection.IsNullOrEmpty())
 {
     connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
-    autoMigrate = true;
+    //autoMigrate = true;
 }
 
 builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
@@ -70,10 +70,10 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
 
     var context = services.GetRequiredService<OrcanodeMonitorContext>();
-    if (autoMigrate)
+   /* if (autoMigrate)
     {
         context.Database.Migrate(); // Apply pending migrations
-    }
+    }*/
     // DbInitializer.Initialize(context); // Optional: Seed data
 }
 

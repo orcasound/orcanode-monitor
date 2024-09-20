@@ -31,27 +31,27 @@ namespace OrcanodeMonitor.Data
 
             modelBuilder.Entity<Orcanode>()
                 .ToContainer("Orcanode")
-                .Property(item => item.Year)
+                .Property(item => item.year)
                 .HasConversion<string>();
 
             modelBuilder.Entity<Orcanode>()
                 .ToContainer("Orcanode")
-                .Property(item => item.ID)
-                .HasDefaultValue(1);  
+                .Property(item => item.ID);
+                 
 
             modelBuilder.Entity<Orcanode>()
                 .ToContainer("Orcanode")
-                .HasPartitionKey(item=>item.Year)
+                .HasPartitionKey(item=>item.year)
                 .HasKey(item=>item.ID);
 
             modelBuilder.Entity<OrcanodeEvent>()
                 .ToContainer("OrcanodeEvent")
-                .Property(item => item.Year)
+                .Property(item => item.year)
                 .HasConversion<string>();
 
             modelBuilder.Entity<OrcanodeEvent>()
                 .ToContainer("OrcanodeEvent")
-                .HasPartitionKey(item => item.Year)
+                .HasPartitionKey(item => item.year)
                 .HasOne(item => item.Orcanode)
                 .WithMany()
                 .HasForeignKey(item=>item.OrcanodeId);

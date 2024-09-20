@@ -82,7 +82,11 @@ namespace OrcanodeMonitor.Core
         /// <returns></returns>
         private static Orcanode CreateOrcanode(DbSet<Orcanode> nodeList)
         {
-            var newNode = new Orcanode();
+            var newNode = new Orcanode()
+            {
+                ID = Guid.NewGuid().ToString()
+            };
+            
             nodeList.Add(newNode);
             return newNode;
         }
@@ -105,6 +109,7 @@ namespace OrcanodeMonitor.Core
             connectionStatus = OrcanodeOnlineStatus.Absent;
             Orcanode newNode = CreateOrcanode(nodeList);
             newNode.DataplicitySerial = serial;
+            newNode.year= DateTime.UtcNow.Year.ToString();
             return newNode;
         }
 
@@ -171,6 +176,7 @@ namespace OrcanodeMonitor.Core
 
             Orcanode newNode = CreateOrcanode(nodeList);
             newNode.OrcasoundName = orcasoundName;
+            newNode.year = DateTime.UtcNow.Year.ToString();
             return newNode;
         }
 
@@ -522,6 +528,7 @@ namespace OrcanodeMonitor.Core
                     {
                         node = CreateOrcanode(context.Orcanodes);
                         node.OrcasoundName = name.ToString();
+                        node.year = DateTime.UtcNow.Year.ToString();
                     }
 
                     if (!dataplicitySerial.IsNullOrEmpty())
@@ -558,6 +565,31 @@ namespace OrcanodeMonitor.Core
                     {
                         node.OrcasoundVisible = visible.GetBoolean();
                     }
+                   /* if (attributes.TryGetProperty("bucket_region", out var bucketregion))
+                    {
+                        node.S3BucketRegion = bucketregion.ToString();
+                    }
+                    if (attributes.TryGetProperty("location_point", out var locationpoint))
+                    {
+                        node.LocationPoint = locationpoint.ToString();
+                    }
+                    if (attributes.TryGetProperty("intro_html", out var introhtml))
+                    {
+                        node.Introhtml = introhtml.ToString();
+                    }
+                    if (attributes.TryGetProperty("image_url", out var imageurl))
+                    {
+                        node.ImageURL = imageurl.ToString();
+                    }
+                    if (attributes.TryGetProperty("cloudfront_url", out var cloudfronturl))
+                    {
+                        node.CloudFrontURL = cloudfronturl.ToString();
+                    }
+                    if (attributes.TryGetProperty("lat_lng", out var geocoordinates))
+                    {
+                        node.Geocoordinates = geocoordinates.ToString();
+                    } */
+
                 }
 
                 // Mark any remaining unfound nodes as absent.
