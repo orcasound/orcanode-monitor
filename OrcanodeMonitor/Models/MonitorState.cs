@@ -26,6 +26,7 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         [DatabaseGenerated(DatabaseGeneratedOption.None)]
         public int ID { get; set; }
+
         public DateTime? LastUpdatedTimestampUtc { get; set; }
         #endregion persisted
 

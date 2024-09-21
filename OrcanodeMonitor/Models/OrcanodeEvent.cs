@@ -10,7 +10,7 @@ namespace OrcanodeMonitor.Models
 {
     public class OrcanodeEventIftttMeta
     {
-        public OrcanodeEventIftttMeta(int id, DateTime timestamp)
+        public OrcanodeEventIftttMeta(string id, DateTime timestamp)
         {
             Id = id.ToString();
             UnixTimestamp = Fetcher.DateTimeToUnixTimeStamp(timestamp);
@@ -26,7 +26,7 @@ namespace OrcanodeMonitor.Models
     /// </summary>
     public class OrcanodeIftttEventDTO
     {
-        public OrcanodeIftttEventDTO(int id, string nodeName, string slug, string type, string value, DateTime timestamp)
+        public OrcanodeIftttEventDTO(string id, string nodeName, string slug, string type, string value, DateTime timestamp)
         {
             Slug = slug;
             Type = type;
@@ -69,6 +69,8 @@ namespace OrcanodeMonitor.Models
             Value = value;
             DateTimeUtc = timestamp;
             OrcanodeId = node.ID;
+            Year = timestamp.Year;
+            ID = Guid.NewGuid().ToString();
         }
 
         #region persisted
@@ -79,8 +81,8 @@ namespace OrcanodeMonitor.Models
         /// <summary>
         /// Database key for an event.
         /// </summary>
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int ID { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        public string ID { get; set; }
 
         public string Slug { get; set; }
         public string Type { get; set; }
@@ -89,12 +91,14 @@ namespace OrcanodeMonitor.Models
         /// <summary>
         /// Foreign Key for an Orcanode.
         /// </summary>
-        public int OrcanodeId { get; set; }
+        public string OrcanodeId { get; set; }
 
         // Navigation property that uses OrcanodeId.
         public virtual Orcanode Orcanode { get; set; }
 
         public DateTime DateTimeUtc { get; set; }
+
+        public int Year { get; set; }
 
         #endregion persisted
 

@@ -28,13 +28,13 @@ namespace OrcanodeMonitor.Models
 
     public class OrcanodeIftttDTO
     {
-        public OrcanodeIftttDTO(int id, string displayName)
+        public OrcanodeIftttDTO(string id, string displayName)
         {
             ID = id;
             DisplayName = displayName;
         }
         [JsonPropertyName("ID")]
-        public int ID { get; private set; }
+        public string ID { get; private set; }
         [JsonPropertyName("display_name")]
         public string DisplayName { get; private set; }
         public override string ToString() => DisplayName;
@@ -58,6 +58,7 @@ namespace OrcanodeMonitor.Models
             DataplicityName = string.Empty;
             DataplicitySerial = string.Empty;
             OrcaHelloId = string.Empty;
+            PartitionValue = 1;            
         }
 
         #region persisted
@@ -80,8 +81,8 @@ namespace OrcanodeMonitor.Models
         /// the Orcasound feed id, since a node is typically detected by dataplicity first when
         /// no Orcasound feed id exists.
         /// </summary>
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int ID { get; set; }
+
+        public string ID { get; set; }
 
         /// <summary>
         /// Human-readable name at Orcasound.
@@ -177,6 +178,11 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         public string OrcaHelloId { get; set; }
 
+        /// <summary>
+        /// Partition key fixed value.
+        /// </summary>
+        public int PartitionValue { get; set; }
+        
         #endregion persisted
 
         #region derived

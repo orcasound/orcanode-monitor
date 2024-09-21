@@ -82,7 +82,12 @@ namespace OrcanodeMonitor.Core
         /// <returns></returns>
         private static Orcanode CreateOrcanode(DbSet<Orcanode> nodeList)
         {
-            var newNode = new Orcanode();
+            var newNode = new Orcanode()
+            {
+                ID = Guid.NewGuid().ToString(),
+                PartitionValue = 1
+            };
+            
             nodeList.Add(newNode);
             return newNode;
         }
@@ -710,32 +715,34 @@ namespace OrcanodeMonitor.Core
             return orcanodeEvents;
         }
 
+        private static void AddOrcanodeEvent(OrcanodeMonitorContext context, Orcanode node, string type, string value)
+        {
+            var orcanodeEvent = new OrcanodeEvent(node, type, value, DateTime.UtcNow);
+            context.OrcanodeEvents.Add(orcanodeEvent);
+        }
+
         private static void AddDataplicityConnectionStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = (node.DataplicityConnectionStatus == OrcanodeOnlineStatus.Online) ? "up" : "OFFLINE";
-            var orcanodeEvent = new OrcanodeEvent(node, "dataplicity connection", value, DateTime.UtcNow);
-            context.OrcanodeEvents.Add(orcanodeEvent);
+            AddOrcanodeEvent(context, node, "dataplicity connection", value);
         }
 
         private static void AddDataplicityAgentUpgradeStatusChangeEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = node.DataplicityUpgradeStatus.ToString();
-            var orcanodeEvent = new OrcanodeEvent(node, "agent upgrade status", value, DateTime.UtcNow);
-            context.OrcanodeEvents.Add(orcanodeEvent);
+            AddOrcanodeEvent(context, node, "agent upgrade status", value);
         }
 
         private static void AddDiskCapacityChangeEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = string.Format("{0}G", node.DiskCapacityInGigs);
-            var orcanodeEvent = new OrcanodeEvent(node, "SD card size", value, DateTime.UtcNow);
-            context.OrcanodeEvents.Add(orcanodeEvent);
+            AddOrcanodeEvent(context, node, "SD card size", value);
         }
 
         private static void AddHydrophoneStreamStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = node.OrcasoundOnlineStatusString;
-            var orcanodeEvent = new OrcanodeEvent(node, "hydrophone stream", value, DateTime.UtcNow);
-            context.OrcanodeEvents.Add(orcanodeEvent);
+            AddOrcanodeEvent(context, node, "hydrophone stream", value);
         }
 
         /// <summary>
