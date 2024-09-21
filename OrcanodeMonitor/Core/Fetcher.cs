@@ -109,7 +109,7 @@ namespace OrcanodeMonitor.Core
             connectionStatus = OrcanodeOnlineStatus.Absent;
             Orcanode newNode = CreateOrcanode(nodeList);
             newNode.DataplicitySerial = serial;
-            newNode.partitionvalue = "1";
+            newNode.PartitionValue = 1;
             return newNode;
         }
 
@@ -176,7 +176,7 @@ namespace OrcanodeMonitor.Core
 
             Orcanode newNode = CreateOrcanode(nodeList);
             newNode.OrcasoundName = orcasoundName;
-            newNode.partitionvalue = "1";
+            newNode.PartitionValue = 1;
             return newNode;
         }
 
@@ -528,7 +528,7 @@ namespace OrcanodeMonitor.Core
                     {
                         node = CreateOrcanode(context.Orcanodes);
                         node.OrcasoundName = name.ToString();
-                        node.partitionvalue = "1";
+                        node.PartitionValue = 1;
                     }
 
                     if (!dataplicitySerial.IsNullOrEmpty())
@@ -564,31 +564,7 @@ namespace OrcanodeMonitor.Core
                     if (attributes.TryGetProperty("visible", out var visible))
                     {
                         node.OrcasoundVisible = visible.GetBoolean();
-                    }
-                   /* if (attributes.TryGetProperty("bucket_region", out var bucketregion))
-                    {
-                        node.S3BucketRegion = bucketregion.ToString();
-                    }
-                    if (attributes.TryGetProperty("location_point", out var locationpoint))
-                    {
-                        node.LocationPoint = locationpoint.ToString();
-                    }
-                    if (attributes.TryGetProperty("intro_html", out var introhtml))
-                    {
-                        node.Introhtml = introhtml.ToString();
-                    }
-                    if (attributes.TryGetProperty("image_url", out var imageurl))
-                    {
-                        node.ImageURL = imageurl.ToString();
-                    }
-                    if (attributes.TryGetProperty("cloudfront_url", out var cloudfronturl))
-                    {
-                        node.CloudFrontURL = cloudfronturl.ToString();
-                    }
-                    if (attributes.TryGetProperty("lat_lng", out var geocoordinates))
-                    {
-                        node.Geocoordinates = geocoordinates.ToString();
-                    } */
+                    }           
 
                 }
 

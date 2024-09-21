@@ -59,13 +59,7 @@ namespace OrcanodeMonitor.Models
             DataplicityName = string.Empty;
             DataplicitySerial = string.Empty;
             OrcaHelloId = string.Empty;
-            partitionvalue = "1";
-            /*S3BucketRegion=string.Empty;
-            LocationPoint= string.Empty;
-            Introhtml = string.Empty;
-            ImageURL = string.Empty;
-            CloudFrontURL = string.Empty;
-            Geocoordinates = string.Empty;*/
+            PartitionValue = 1;            
         }
 
         #region persisted
@@ -188,21 +182,8 @@ namespace OrcanodeMonitor.Models
         /// <summary>
         /// partition key fixed value.
         /// </summary>
-        public string partitionvalue { get; set; }
-
-        /*public string S3BucketRegion { get; set; }
-
-        public string LocationPoint { get; set; }
-
-        public string Introhtml { get; set; }
-
-        public string ImageURL { get; set; }
-
-        public string CloudFrontURL { get; set; }
-
-        public string Geocoordinates { get; set; }*/
-
-
+        public int PartitionValue { get; set; }
+        
         #endregion persisted
 
         #region derived

@@ -69,7 +69,7 @@ namespace OrcanodeMonitor.Models
             Value = value;
             DateTimeUtc = timestamp;
             OrcanodeId = node.ID;
-            year = currentYear.ToString();
+            Year = currentYear;
             ID = guidId.ToString();
         }
 
@@ -98,7 +98,7 @@ namespace OrcanodeMonitor.Models
 
         public DateTime DateTimeUtc { get; set; }
 
-        public string year { get; set; }
+        public int Year { get; set; }
 
         #endregion persisted
 
