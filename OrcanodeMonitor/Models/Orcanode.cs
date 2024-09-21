@@ -59,7 +59,7 @@ namespace OrcanodeMonitor.Models
             DataplicityName = string.Empty;
             DataplicitySerial = string.Empty;
             OrcaHelloId = string.Empty;
-            year=DateTime.UtcNow.Year.ToString();
+            partitionvalue = "1";
             /*S3BucketRegion=string.Empty;
             LocationPoint= string.Empty;
             Introhtml = string.Empty;
@@ -88,7 +88,7 @@ namespace OrcanodeMonitor.Models
         /// the Orcasound feed id, since a node is typically detected by dataplicity first when
         /// no Orcasound feed id exists.
         /// </summary>
-       
+
         public string ID { get; set; }
 
         /// <summary>
@@ -180,7 +180,15 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         public bool? OrcasoundVisible { get; set; }
 
-       public string year { get; set; }
+        /// <summary>
+        /// The "id" field from the OrcaHello hydrophones API.
+        /// </summary>
+        public string OrcaHelloId { get; set; }
+
+        /// <summary>
+        /// partition key fixed value.
+        /// </summary>
+        public string partitionvalue { get; set; }
 
         /*public string S3BucketRegion { get; set; }
 

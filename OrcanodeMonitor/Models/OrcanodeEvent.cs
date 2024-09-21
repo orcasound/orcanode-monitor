@@ -10,7 +10,7 @@ namespace OrcanodeMonitor.Models
 {
     public class OrcanodeEventIftttMeta
     {
-        public OrcanodeEventIftttMeta(int id, DateTime timestamp)
+        public OrcanodeEventIftttMeta(string id, DateTime timestamp)
         {
             Id = id.ToString();
             UnixTimestamp = Fetcher.DateTimeToUnixTimeStamp(timestamp);
@@ -26,7 +26,7 @@ namespace OrcanodeMonitor.Models
     /// </summary>
     public class OrcanodeIftttEventDTO
     {
-        public OrcanodeIftttEventDTO(int id, string nodeName, string slug, string type, string value, DateTime timestamp)
+        public OrcanodeIftttEventDTO(string id, string nodeName, string slug, string type, string value, DateTime timestamp)
         {
             Slug = slug;
             Type = type;
@@ -62,14 +62,15 @@ namespace OrcanodeMonitor.Models
         {
         }
 
-        public OrcanodeEvent(Orcanode node, string type, string value, DateTime timestamp)
+        public OrcanodeEvent(Orcanode node, string type, string value, DateTime timestamp,int currentYear,Guid guidId)
         {
             Slug = node.OrcasoundSlug;
             Type = type;
             Value = value;
             DateTimeUtc = timestamp;
             OrcanodeId = node.ID;
-            year = DateTime.UtcNow.Year.ToString();
+            year = currentYear.ToString();
+            ID = guidId.ToString();
         }
 
         #region persisted
@@ -80,8 +81,8 @@ namespace OrcanodeMonitor.Models
         /// <summary>
         /// Database key for an event.
         /// </summary>
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int ID { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        public string ID { get; set; }
 
         public string Slug { get; set; }
         public string Type { get; set; }
