@@ -30,6 +30,7 @@ namespace OrcanodeMonitor.Core
         private static HttpClient _httpClient = new HttpClient();
         private static string _orcasoundFeedsUrl = "https://live.orcasound.net/api/json/feeds";
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
+        private static string _orcaHelloHydrophonesUrl = "https://aifororcasdetections2.azurewebsites.net/api/hydrophones";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         private static string _iftttServiceKey = Environment.GetEnvironmentVariable("IFTTT_SERVICE_KEY") ?? "<unknown>";
         private static string _defaultS3Bucket = "streaming-orcasound-net";
@@ -59,9 +60,9 @@ namespace OrcanodeMonitor.Core
         /// <param name="serial">Dataplicity serial number to look for</param>
         /// <param name="connectionStatus">Dataplicity connection status</param>
         /// <returns></returns>
-        private static Orcanode? FindOrcanodeByDataplicitySerial(DbSet<Orcanode> nodeList, string serial, out OrcanodeOnlineStatus connectionStatus)
+        private static Orcanode? FindOrcanodeByDataplicitySerial(List<Orcanode> nodes, string serial, out OrcanodeOnlineStatus connectionStatus)
         {
-            List<Orcanode> nodes = nodeList.ToList();
+            
             foreach (Orcanode node in nodes)
             {
                 if (node.DataplicitySerial == serial)
@@ -100,7 +101,7 @@ namespace OrcanodeMonitor.Core
         /// <returns></returns>
         private static Orcanode FindOrCreateOrcanodeByDataplicitySerial(DbSet<Orcanode> nodeList, string serial, out OrcanodeOnlineStatus connectionStatus)
         {
-            Orcanode? node = FindOrcanodeByDataplicitySerial(nodeList, serial, out connectionStatus);
+            Orcanode? node = FindOrcanodeByDataplicitySerial(nodeList.ToList(), serial, out connectionStatus);
             if (node != null)
             {
                 return node;
@@ -109,7 +110,7 @@ namespace OrcanodeMonitor.Core
             connectionStatus = OrcanodeOnlineStatus.Absent;
             Orcanode newNode = CreateOrcanode(nodeList);
             newNode.DataplicitySerial = serial;
-            newNode.year= DateTime.UtcNow.Year.ToString();
+            newNode.partitionvalue = "1";
             return newNode;
         }
 
@@ -133,7 +134,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="nodeList">Orcanode list to look in</param>
         /// <param name="orcasoundName">Name to look for</param>
         /// <returns>Node found</returns>
-        private static Orcanode? FindOrcanodeByOrcasoundName(DbSet<Orcanode> nodeList, string orcasoundName)
+        private static Orcanode? FindOrcanodeByOrcasoundName(List<Orcanode> nodeList, string orcasoundName)
         {
             List<Orcanode> nodes = nodeList.ToList();
             foreach (Orcanode node in nodes)
@@ -178,94 +179,109 @@ namespace OrcanodeMonitor.Core
 
             Orcanode newNode = CreateOrcanode(nodeList);
             newNode.OrcasoundName = orcasoundName;
-            newNode.year = DateTime.UtcNow.Year.ToString();
+            newNode.partitionvalue = "1";
             return newNode;
         }
 
-#if ORCAHELLO
         /// <summary>
         /// Update the list of Orcanodes using data from OrcaHello.
-        /// OrcaHello does not currently allow enumerating nodes.
         /// </summary>
         /// <param name="context">Database context to update</param>
         /// <returns></returns>
         public async static Task UpdateOrcaHelloDataAsync(OrcanodeMonitorContext context)
         {
-            List<Orcanode> nodes = await context.Orcanodes.ToListAsync();
-            foreach (Orcanode node in nodes)
-            {
-                await UpdateOrcaHelloDataAsync(context, node);
-            }
-        }
-
-        public async static Task UpdateOrcaHelloDataAsync(OrcanodeMonitorContext context, Orcanode node)
-        {
-            string? name = HttpUtility.UrlEncode(node.OrcaHelloName);
-            if (name == null)
-            {
-                return;
-            }
-            string url = "https://aifororcasdetections.azurewebsites.net/api/detections?Page=1&SortBy=timestamp&SortOrder=desc&Timeframe=all&Location=" + name + "&RecordsPerPage=1";
-            string json = "";
             try
             {
-                json = await _httpClient.GetStringAsync(url);
-                if (json == "")
+                string json = await _httpClient.GetStringAsync(_orcaHelloHydrophonesUrl);
+                if (json.IsNullOrEmpty())
                 {
                     return;
                 }
-                dynamic dataArray = JsonSerializer.Deserialize<JsonElement>(json);
-                if (dataArray.ValueKind != JsonValueKind.Array)
+                dynamic response = JsonSerializer.Deserialize<ExpandoObject>(json);
+                if (response == null)
                 {
                     return;
                 }
-                foreach (JsonElement detection in dataArray.EnumerateArray())
+                JsonElement hydrophoneArray = response.hydrophones;
+                if (hydrophoneArray.ValueKind != JsonValueKind.Array)
                 {
-                    if (!detection.TryGetProperty("timestamp", out var timestampElement))
-                    {
-                        return;
-                    }
-                    if (!DateTime.TryParseExact(timestampElement.ToString(), "yyyy-MM-ddTHH:mm:ss.ffffffZ", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out DateTime timestamp))
-                    {
-                        return;
-                    }
-                    if (timestamp <= node.LastOrcaHelloDetectionTimestamp)
-                    {
-                        // No new detections.
-                        return;
-                    }
-
-                    // Parse other properties.
-                    if (!detection.TryGetProperty("confidence", out var confidenceElement))
-                    {
-                        return;
-                    }
-                    if (!confidenceElement.TryGetDouble(out double confidence))
-                    {
-                        return;
-                    }
-                    if (!detection.TryGetProperty("comments", out var comments))
-                    {
-                        return;
-                    }
-                    if (!detection.TryGetProperty("found", out var found))
-                    {
-                        return;
-                    }
-
-                    node.LastOrcaHelloDetectionTimestamp = timestamp;
-                    node.LastOrcaHelloDetectionFound = found.ToString() == "yes";
-                    node.LastOrcaHelloDetectionComments = comments.ToString();
-                    node.LastOrcaHelloDetectionConfidence = (int)(confidence + 0.5);
+                    return;
                 }
 
+                // Get a snapshot to use during the loop to avoid multiple queries.
+                var foundList = context.Orcanodes.ToList();
+
+                // Create a list to track what nodes are no longer returned.
+                var unfoundList = foundList.ToList();
+
+                foreach (JsonElement hydrophone in hydrophoneArray.EnumerateArray())
+                {
+                    // "id" holds the OrcaHello id which is also the S3NodeName.
+                    if (!hydrophone.TryGetProperty("id", out var hydrophoneId))
+                    {
+                        continue;
+                    }
+
+                    // "name" holds the display name.
+                    if (!hydrophone.TryGetProperty("name", out var name))
+                    {
+                        continue;
+                    }
+
+                    // Remove the returned node from the unfound list.
+                    Orcanode? oldListNode = unfoundList.Find(a => a.OrcaHelloId == hydrophoneId.ToString());
+                    if (oldListNode == null)
+                    {
+                        oldListNode = unfoundList.Find(a => a.S3NodeName == hydrophoneId.ToString());
+                    }
+                    if (oldListNode == null)
+                    {
+                        oldListNode = unfoundList.Find(a => a.OrcasoundName == name.ToString());
+                    }
+                    if (oldListNode != null)
+                    {
+                        unfoundList.Remove(oldListNode);
+                    }
+
+                    // TODO: we should have a unique id, independent of S3.
+                    Orcanode? node = FindOrcanodeByOrcasoundName(foundList, name.ToString());
+                    if (node == null)
+                    {
+                        node = CreateOrcanode(context.Orcanodes);
+                        node.OrcasoundName = name.ToString();
+                        node.S3NodeName = hydrophoneId.ToString();
+                    }
+
+                    node.OrcaHelloId = hydrophoneId.ToString();
+                }
+
+                // Mark any remaining unfound nodes as absent.
+                foreach (var unfoundNode in unfoundList)
+                {
+                    Orcanode? oldNode = null;
+                    if (!unfoundNode.OrcasoundName.IsNullOrEmpty())
+                    {
+                        oldNode = FindOrcanodeByOrcasoundName(foundList, unfoundNode.OrcasoundName);
+                    }
+                    else if (!unfoundNode.DataplicitySerial.IsNullOrEmpty())
+                    {
+                        oldNode = FindOrcanodeByDataplicitySerial(foundList, unfoundNode.DataplicitySerial, out OrcanodeOnlineStatus connectionStatus);
+                    }
+                    if (oldNode != null)
+                    {
+                        oldNode.OrcaHelloId = String.Empty;
+                    }
+                }
+
+                MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
                 await context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
+                string msg = ex.ToString();
             }
         }
-#endif
+
 
         /// <summary>
         /// Update Orcanode state by querying dataplicity.com.
@@ -295,8 +311,10 @@ namespace OrcanodeMonitor.Core
                     jsonArray = await response.Content.ReadAsStringAsync();
                 }
 
+                var foundList = context.Orcanodes.ToList();
+
                 // Create a list to track what nodes are no longer returned.
-                var unfoundList = context.Orcanodes.ToList();
+                var unfoundList = foundList.ToList();
 
                 dynamic deviceArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
                 if (deviceArray.ValueKind != JsonValueKind.Array)
@@ -394,7 +412,7 @@ namespace OrcanodeMonitor.Core
                 // Mark any remaining unfound nodes as absent.
                 foreach (var unfoundNode in unfoundList)
                 {
-                    var oldNode = FindOrcanodeByDataplicitySerial(context.Orcanodes, unfoundNode.DataplicitySerial, out OrcanodeOnlineStatus unfoundNodeStatus);
+                    var oldNode = FindOrcanodeByDataplicitySerial(foundList, unfoundNode.DataplicitySerial, out OrcanodeOnlineStatus unfoundNodeStatus);
                     if (oldNode != null)
                     {
                         oldNode.DataplicityOnline = null;
@@ -476,7 +494,7 @@ namespace OrcanodeMonitor.Core
                     if (node == null)
                     {
                         // We didn't used to store the feed ID, only the name, so try again by name.
-                        node = FindOrcanodeByOrcasoundName(context.Orcanodes, orcasoundName);
+                        node = FindOrcanodeByOrcasoundName(context.Orcanodes.ToList(), orcasoundName);
                     }
 
                     // See if we can find a node by dataplicity ID, so that if a node
@@ -485,7 +503,7 @@ namespace OrcanodeMonitor.Core
                     Orcanode? dataplicityNode = null;
                     if (!dataplicitySerial.IsNullOrEmpty())
                     {
-                        dataplicityNode = FindOrcanodeByDataplicitySerial(context.Orcanodes, dataplicitySerial, out OrcanodeOnlineStatus oldStatus);
+                        dataplicityNode = FindOrcanodeByDataplicitySerial(context.Orcanodes.ToList(), dataplicitySerial, out OrcanodeOnlineStatus oldStatus);
                         if (dataplicityNode != null)
                         {
                             if (node == null)
@@ -512,7 +530,7 @@ namespace OrcanodeMonitor.Core
                     {
                         node = CreateOrcanode(context.Orcanodes);
                         node.OrcasoundName = name.ToString();
-                        node.year = DateTime.UtcNow.Year.ToString();
+                        node.partitionvalue = "1";
                     }
 
                     if (!dataplicitySerial.IsNullOrEmpty())
@@ -585,7 +603,7 @@ namespace OrcanodeMonitor.Core
                         oldNode.OrcasoundFeedId = String.Empty;
                     }
                 }
-
+                MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
                 await context.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -728,28 +746,28 @@ namespace OrcanodeMonitor.Core
         private static void AddDataplicityConnectionStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = (node.DataplicityConnectionStatus == OrcanodeOnlineStatus.Online) ? "up" : "OFFLINE";
-            var orcanodeEvent = new OrcanodeEvent(node, "dataplicity connection", value, DateTime.UtcNow);
+            var orcanodeEvent = new OrcanodeEvent(node, "dataplicity connection", value, DateTime.UtcNow,DateTime.UtcNow.Year,Guid.NewGuid());
             context.OrcanodeEvents.Add(orcanodeEvent);
         }
 
         private static void AddDataplicityAgentUpgradeStatusChangeEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = node.DataplicityUpgradeStatus.ToString();
-            var orcanodeEvent = new OrcanodeEvent(node, "agent upgrade status", value, DateTime.UtcNow);
+            var orcanodeEvent = new OrcanodeEvent(node, "agent upgrade status", value, DateTime.UtcNow, DateTime.UtcNow.Year, Guid.NewGuid());
             context.OrcanodeEvents.Add(orcanodeEvent);
         }
 
         private static void AddDiskCapacityChangeEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = string.Format("{0}G", node.DiskCapacityInGigs);
-            var orcanodeEvent = new OrcanodeEvent(node, "SD card size", value, DateTime.UtcNow);
+            var orcanodeEvent = new OrcanodeEvent(node, "SD card size", value, DateTime.UtcNow, DateTime.UtcNow.Year, Guid.NewGuid());
             context.OrcanodeEvents.Add(orcanodeEvent);
         }
 
         private static void AddHydrophoneStreamStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = node.OrcasoundOnlineStatusString;
-            var orcanodeEvent = new OrcanodeEvent(node, "hydrophone stream", value, DateTime.UtcNow);
+            var orcanodeEvent = new OrcanodeEvent(node, "hydrophone stream", value, DateTime.UtcNow, DateTime.UtcNow.Year, Guid.NewGuid());
             context.OrcanodeEvents.Add(orcanodeEvent);
         }
 

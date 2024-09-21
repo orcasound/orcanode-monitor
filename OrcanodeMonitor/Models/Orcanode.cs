@@ -58,7 +58,8 @@ namespace OrcanodeMonitor.Models
             DataplicityDescription = string.Empty;
             DataplicityName = string.Empty;
             DataplicitySerial = string.Empty;
-            year=DateTime.UtcNow.Year.ToString();
+            OrcaHelloId = string.Empty;
+            partitionvalue = "1";
             /*S3BucketRegion=string.Empty;
             LocationPoint= string.Empty;
             Introhtml = string.Empty;
@@ -73,8 +74,12 @@ namespace OrcanodeMonitor.Models
         // for more information.  For example, if adding a field called FooBar, then
         // from Package Manager Console do:
         // * Add-Migration AddFooBar
-        // When ready to deploy to an Azure SQL database, do from a developer command shell:
-        // * dotnet ef database update --connection "Server=tcp:orcasound-server.database.windows.net,1433;Initial Catalog=OrcasoundFreeDatabase;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=\"Active Directory Default\";Pooling=False;"
+        // When ready to deploy to an Azure SQL database:
+        // 1. Stop the remote service.
+        // 2. Apply the migration from a developer command shell:
+        //     dotnet ef database update --connection "Server=tcp:orcasound-server.database.windows.net,1433;Initial Catalog=OrcasoundFreeDatabase;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=\"Active Directory Default\";Pooling=False;"
+        // 3. Publish from Visual Studio using the appropriate publish profile.
+        // 4. Start the remote service.
 
         /// <summary>
         /// Database key field. This is NOT the dataplicity serial GUID, since a node might first be
@@ -82,7 +87,7 @@ namespace OrcanodeMonitor.Models
         /// the Orcasound feed id, since a node is typically detected by dataplicity first when
         /// no Orcasound feed id exists.
         /// </summary>
-       
+
         public string ID { get; set; }
 
         /// <summary>
@@ -174,7 +179,15 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         public bool? OrcasoundVisible { get; set; }
 
-       public string year { get; set; }
+        /// <summary>
+        /// The "id" field from the OrcaHello hydrophones API.
+        /// </summary>
+        public string OrcaHelloId { get; set; }
+
+        /// <summary>
+        /// partition key fixed value.
+        /// </summary>
+        public string partitionvalue { get; set; }
 
         /*public string S3BucketRegion { get; set; }
 
@@ -266,22 +279,8 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-#if ORCAHELLO
-        public string OrcaHelloName
-        {
-            get
-            {
-                if (DisplayName == null) return string.Empty;
+        public OrcanodeOnlineStatus OrcaHelloStatus => OrcaHelloId.IsNullOrEmpty() ? OrcanodeOnlineStatus.Absent : OrcanodeOnlineStatus.Online;
 
-                // Any special cases here, since OrcaHello does not support
-                // node enumeration, nor does it use the same names as
-                // Dataplicity or Orcasound.net.
-                if (DisplayName == "Orcasound Lab") return "Haro Strait";
-
-                return DisplayName;
-            }
-        }
-#endif
         public OrcanodeOnlineStatus OrcasoundStatus
         {
             get

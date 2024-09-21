@@ -21,17 +21,17 @@ namespace OrcanodeMonitor.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<MonitorState>()
-                .ToContainer("MonitorState")
-                .Property(item => item.ID)
-                .HasConversion<string>();
+               .ToContainer("MonitorState")
+               .Property(item => item.id)
+               .HasConversion<string>();
 
             modelBuilder.Entity<MonitorState>()
                 .ToContainer("MonitorState")
-                .HasPartitionKey(item=>item.ID);
+                .HasPartitionKey(item=>item.id);
 
             modelBuilder.Entity<Orcanode>()
                 .ToContainer("Orcanode")
-                .Property(item => item.year)
+                .Property(item => item.partitionvalue)
                 .HasConversion<string>();
 
             modelBuilder.Entity<Orcanode>()
@@ -41,7 +41,7 @@ namespace OrcanodeMonitor.Data
 
             modelBuilder.Entity<Orcanode>()
                 .ToContainer("Orcanode")
-                .HasPartitionKey(item=>item.year)
+                .HasPartitionKey(item=>item.partitionvalue)
                 .HasKey(item=>item.ID);
 
             modelBuilder.Entity<OrcanodeEvent>()

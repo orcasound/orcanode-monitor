@@ -13,7 +13,8 @@ namespace OrcanodeMonitor.Models
 
         public MonitorState()
         {
-            ID = _singletonKey;
+            id = _singletonKey;
+            
         }
 
         #region persisted
@@ -24,8 +25,9 @@ namespace OrcanodeMonitor.Models
         /// <summary>
         /// Database key field.
         /// </summary>
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int ID { get; set; }
+        [DatabaseGenerated(DatabaseGeneratedOption.None)]
+        public int id { get; set; }
+
         public DateTime? LastUpdatedTimestampUtc { get; set; }
         #endregion persisted
 
