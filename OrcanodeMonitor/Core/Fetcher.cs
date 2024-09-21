@@ -84,7 +84,8 @@ namespace OrcanodeMonitor.Core
         {
             var newNode = new Orcanode()
             {
-                ID = Guid.NewGuid().ToString()
+                ID = Guid.NewGuid().ToString(),
+                PartitionValue = "1"
             };
             
             nodeList.Add(newNode);
@@ -109,7 +110,6 @@ namespace OrcanodeMonitor.Core
             connectionStatus = OrcanodeOnlineStatus.Absent;
             Orcanode newNode = CreateOrcanode(nodeList);
             newNode.DataplicitySerial = serial;
-            newNode.partitionvalue = "1";
             return newNode;
         }
 
@@ -176,7 +176,6 @@ namespace OrcanodeMonitor.Core
 
             Orcanode newNode = CreateOrcanode(nodeList);
             newNode.OrcasoundName = orcasoundName;
-            newNode.partitionvalue = "1";
             return newNode;
         }
 
@@ -528,7 +527,6 @@ namespace OrcanodeMonitor.Core
                     {
                         node = CreateOrcanode(context.Orcanodes);
                         node.OrcasoundName = name.ToString();
-                        node.partitionvalue = "1";
                     }
 
                     if (!dataplicitySerial.IsNullOrEmpty())
@@ -565,31 +563,6 @@ namespace OrcanodeMonitor.Core
                     {
                         node.OrcasoundVisible = visible.GetBoolean();
                     }
-                   /* if (attributes.TryGetProperty("bucket_region", out var bucketregion))
-                    {
-                        node.S3BucketRegion = bucketregion.ToString();
-                    }
-                    if (attributes.TryGetProperty("location_point", out var locationpoint))
-                    {
-                        node.LocationPoint = locationpoint.ToString();
-                    }
-                    if (attributes.TryGetProperty("intro_html", out var introhtml))
-                    {
-                        node.Introhtml = introhtml.ToString();
-                    }
-                    if (attributes.TryGetProperty("image_url", out var imageurl))
-                    {
-                        node.ImageURL = imageurl.ToString();
-                    }
-                    if (attributes.TryGetProperty("cloudfront_url", out var cloudfronturl))
-                    {
-                        node.CloudFrontURL = cloudfronturl.ToString();
-                    }
-                    if (attributes.TryGetProperty("lat_lng", out var geocoordinates))
-                    {
-                        node.Geocoordinates = geocoordinates.ToString();
-                    } */
-
                 }
 
                 // Mark any remaining unfound nodes as absent.
@@ -742,32 +715,34 @@ namespace OrcanodeMonitor.Core
             return orcanodeEvents;
         }
 
+        private static void AddOrcanodeEvent(OrcanodeMonitorContext context, Orcanode node, string type, string value)
+        {
+            var orcanodeEvent = new OrcanodeEvent(node, type, value, DateTime.UtcNow);
+            context.OrcanodeEvents.Add(orcanodeEvent);
+        }
+
         private static void AddDataplicityConnectionStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = (node.DataplicityConnectionStatus == OrcanodeOnlineStatus.Online) ? "up" : "OFFLINE";
-            var orcanodeEvent = new OrcanodeEvent(node, "dataplicity connection", value, DateTime.UtcNow,DateTime.UtcNow.Year,Guid.NewGuid());
-            context.OrcanodeEvents.Add(orcanodeEvent);
+            AddOrcanodeEvent(context, node, "dataplicity connection", value);
         }
 
         private static void AddDataplicityAgentUpgradeStatusChangeEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = node.DataplicityUpgradeStatus.ToString();
-            var orcanodeEvent = new OrcanodeEvent(node, "agent upgrade status", value, DateTime.UtcNow, DateTime.UtcNow.Year, Guid.NewGuid());
-            context.OrcanodeEvents.Add(orcanodeEvent);
+            AddOrcanodeEvent(context, node, "agent upgrade status", value);
         }
 
         private static void AddDiskCapacityChangeEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = string.Format("{0}G", node.DiskCapacityInGigs);
-            var orcanodeEvent = new OrcanodeEvent(node, "SD card size", value, DateTime.UtcNow, DateTime.UtcNow.Year, Guid.NewGuid());
-            context.OrcanodeEvents.Add(orcanodeEvent);
+            AddOrcanodeEvent(context, node, "SD card size", value);
         }
 
         private static void AddHydrophoneStreamStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = node.OrcasoundOnlineStatusString;
-            var orcanodeEvent = new OrcanodeEvent(node, "hydrophone stream", value, DateTime.UtcNow, DateTime.UtcNow.Year, Guid.NewGuid());
-            context.OrcanodeEvents.Add(orcanodeEvent);
+            AddOrcanodeEvent(context, node, "hydrophone stream", value);
         }
 
         /// <summary>

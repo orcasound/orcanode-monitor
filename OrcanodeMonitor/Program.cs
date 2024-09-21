@@ -12,26 +12,10 @@ using Microsoft.Azure.Cosmos;
 var builder = WebApplication.CreateBuilder(args);
 
 // First see if an environment variable specifies a connection string.
-//var connection = Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTIONSTRING");
-
-// As discussed in https://learn.microsoft.com/en-us/aspnet/core/data/ef-rp/migrations?view=aspnetcore-8.0&source=recommendations&tabs=visual-studio says:
-// We recommend that production apps not call Database.Migrate at application startup. Migrate shouldn't be called from an app that is deployed to a server farm. If the app is scaled out to multiple server instances, it's hard to ensure database schema updates don't happen from multiple servers or conflict with read/write access.
-// Database migration should be done as part of deployment, and in a controlled way.  Instead,
-// from a developer command prompt, do:
-//    dotnet ef database update --connection "Server=tcp:orcasound-server.database.windows.net,1433;Initial Catalog=OrcasoundFreeDatabase;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=\"Active Directory Default\";Pooling=False;"
-//bool autoMigrate = false;
-
-// If we have no override, then fall back to using a local SQL database.
-/*if (connection.IsNullOrEmpty())
-{
-    connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
-    autoMigrate = true;
-}*/
 var connection = Environment.GetEnvironmentVariable("AZURE_COSMOS_CONNECTIONSTRING");
-if(connection.IsNullOrEmpty())
+if (connection.IsNullOrEmpty())
 {
     connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
-    //autoMigrate = true;
 }
 
 builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
@@ -43,7 +27,6 @@ builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-//builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>options.UseSqlServer(connection));
 builder.Services.AddHostedService<PeriodicTasks>(); // Register your background service
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -70,11 +53,6 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
 
     var context = services.GetRequiredService<OrcanodeMonitorContext>();
-   /* if (autoMigrate)
-    {
-        context.Database.Migrate(); // Apply pending migrations
-    }*/
-    // DbInitializer.Initialize(context); // Optional: Seed data
 }
 
 app.UseHttpsRedirection();

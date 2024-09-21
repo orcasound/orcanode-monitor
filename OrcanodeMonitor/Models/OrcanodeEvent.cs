@@ -62,15 +62,15 @@ namespace OrcanodeMonitor.Models
         {
         }
 
-        public OrcanodeEvent(Orcanode node, string type, string value, DateTime timestamp,int currentYear,Guid guidId)
+        public OrcanodeEvent(Orcanode node, string type, string value, DateTime timestamp)
         {
             Slug = node.OrcasoundSlug;
             Type = type;
             Value = value;
             DateTimeUtc = timestamp;
             OrcanodeId = node.ID;
-            year = currentYear.ToString();
-            ID = guidId.ToString();
+            Year = timestamp.Year.ToString();
+            ID = Guid.NewGuid().ToString();
         }
 
         #region persisted
@@ -98,7 +98,7 @@ namespace OrcanodeMonitor.Models
 
         public DateTime DateTimeUtc { get; set; }
 
-        public string year { get; set; }
+        public string Year { get; set; }
 
         #endregion persisted
 

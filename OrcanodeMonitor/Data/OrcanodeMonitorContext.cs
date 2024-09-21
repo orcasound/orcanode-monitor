@@ -22,16 +22,16 @@ namespace OrcanodeMonitor.Data
         {
             modelBuilder.Entity<MonitorState>()
                .ToContainer("MonitorState")
-               .Property(item => item.id)
+               .Property(item => item.ID)
                .HasConversion<string>();
 
             modelBuilder.Entity<MonitorState>()
                 .ToContainer("MonitorState")
-                .HasPartitionKey(item=>item.id);
+                .HasPartitionKey(item=>item.ID);
 
             modelBuilder.Entity<Orcanode>()
                 .ToContainer("Orcanode")
-                .Property(item => item.partitionvalue)
+                .Property(item => item.PartitionValue)
                 .HasConversion<string>();
 
             modelBuilder.Entity<Orcanode>()
@@ -40,28 +40,22 @@ namespace OrcanodeMonitor.Data
 
             modelBuilder.Entity<Orcanode>()
                 .ToContainer("Orcanode")
-                .HasPartitionKey(item=>item.partitionvalue)
+                .HasPartitionKey(item => item.PartitionValue)
                 .HasKey(item=>item.ID);
 
             modelBuilder.Entity<OrcanodeEvent>()
                 .ToContainer("OrcanodeEvent")
-                .Property(item => item.year)
+                .Property(item => item.Year)
                 .HasConversion<string>();
 
             modelBuilder.Entity<OrcanodeEvent>()
                 .ToContainer("OrcanodeEvent")
-                .HasPartitionKey(item => item.year)
+                .HasPartitionKey(item => item.Year)
                 .HasOne(item => item.Orcanode)
                 .WithMany()
                 .HasForeignKey(item=>item.OrcanodeId);
-
-            /*modelBuilder.Entity<OrcanodeEvent>()
-                .HasOne(e => e.Orcanode) // Navigation property
-                .WithMany() // Configure the inverse navigation property if needed
-                .HasForeignKey(e => e.OrcanodeId); // Foreign key */
-
-            
         }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseLazyLoadingProxies();
