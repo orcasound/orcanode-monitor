@@ -37,7 +37,6 @@ namespace OrcanodeMonitor.Data
             modelBuilder.Entity<Orcanode>()
                 .ToContainer("Orcanode")
                 .Property(item => item.ID);
-                 
 
             modelBuilder.Entity<Orcanode>()
                 .ToContainer("Orcanode")
