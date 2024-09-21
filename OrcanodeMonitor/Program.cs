@@ -21,7 +21,7 @@ if (connection.IsNullOrEmpty())
 builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
     options.UseCosmos(
         connection,
-        databaseName: "OrcaNodeMonitor",
+        databaseName: "orcasound-cosmosdb",
         options =>
         { options.ConnectionMode(ConnectionMode.Gateway); }));
 

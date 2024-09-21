@@ -69,7 +69,7 @@ namespace OrcanodeMonitor.Models
             Value = value;
             DateTimeUtc = timestamp;
             OrcanodeId = node.ID;
-            Year = timestamp.Year.ToString();
+            Year = timestamp.Year;
             ID = Guid.NewGuid().ToString();
         }
 

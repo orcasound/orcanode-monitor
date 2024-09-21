@@ -85,7 +85,7 @@ namespace OrcanodeMonitor.Core
             var newNode = new Orcanode()
             {
                 ID = Guid.NewGuid().ToString(),
-                PartitionValue = "1"
+                PartitionValue = 1
             };
             
             nodeList.Add(newNode);
