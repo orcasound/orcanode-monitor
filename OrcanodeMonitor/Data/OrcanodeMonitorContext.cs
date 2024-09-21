@@ -40,7 +40,7 @@ namespace OrcanodeMonitor.Data
 
             modelBuilder.Entity<Orcanode>()
                 .ToContainer("Orcanode")
-                .HasPartitionKey(item=>item.PartitionValue)
+                .HasPartitionKey(item => item.PartitionValue)
                 .HasKey(item=>item.ID);
 
             modelBuilder.Entity<OrcanodeEvent>()
@@ -54,14 +54,8 @@ namespace OrcanodeMonitor.Data
                 .HasOne(item => item.Orcanode)
                 .WithMany()
                 .HasForeignKey(item=>item.OrcanodeId);
-
-            /*modelBuilder.Entity<OrcanodeEvent>()
-                .HasOne(e => e.Orcanode) // Navigation property
-                .WithMany() // Configure the inverse navigation property if needed
-                .HasForeignKey(e => e.OrcanodeId); // Foreign key */
-
-            
         }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseLazyLoadingProxies();

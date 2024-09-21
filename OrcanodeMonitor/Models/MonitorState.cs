@@ -14,7 +14,6 @@ namespace OrcanodeMonitor.Models
         public MonitorState()
         {
             ID = _singletonKey;
-            
         }
 
         #region persisted

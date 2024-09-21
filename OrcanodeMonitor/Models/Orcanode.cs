@@ -6,7 +6,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 using System.Xml.Linq;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.VisualBasic;
 using Newtonsoft.Json.Linq;
 using OrcanodeMonitor.Core;
 
@@ -180,7 +179,7 @@ namespace OrcanodeMonitor.Models
         public string OrcaHelloId { get; set; }
 
         /// <summary>
-        /// partition key fixed value.
+        /// Partition key fixed value.
         /// </summary>
         public int PartitionValue { get; set; }
         
