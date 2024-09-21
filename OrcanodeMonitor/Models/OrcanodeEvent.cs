@@ -98,7 +98,7 @@ namespace OrcanodeMonitor.Models
 
         public DateTime DateTimeUtc { get; set; }
 
-        public string Year { get; set; }
+        public int Year { get; set; }
 
         #endregion persisted
 

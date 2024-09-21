@@ -58,7 +58,7 @@ namespace OrcanodeMonitor.Models
             DataplicityName = string.Empty;
             DataplicitySerial = string.Empty;
             OrcaHelloId = string.Empty;
-            PartitionValue = "1";
+            PartitionValue = 1;            
         }
 
         #region persisted
@@ -181,8 +181,8 @@ namespace OrcanodeMonitor.Models
         /// <summary>
         /// Partition key fixed value.
         /// </summary>
-        public string PartitionValue { get; set; }
-
+        public int PartitionValue { get; set; }
+        
         #endregion persisted
 
         #region derived
