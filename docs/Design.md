@@ -37,10 +37,15 @@ configured by an administrator, the service will do the following:
    d. Download the 2nd most recent .ts file listed in the manifest (the most recent one may not be accessible
       yet) and analyze the stream to find the standard deviation of audio, to detect unintelligible streams.
 
+5. Enumerate the orcanodes known by OrcaHello by fetching
+   "https://aifororcasdetections2.azurewebsites.net/api/hydrophones" and update the internal list of nodes.
+
 The following state will be stored per orcanode:
 
   * **DisplayName**: The human-readable name to display on the web page.  This name is derived from the names
     obtained from Dataplicity and live.orcasound.net.
+
+  * **OrcasoundFeedId**: The unique ID used by live.orcasound.net.
 
   * **OrcasoundName**: The human-readable name used by live.orcasound.net.
 
@@ -49,6 +54,8 @@ The following state will be stored per orcanode:
   * **S3Bucket**: The hostname component from the “bucket” obtained from live.orcasound.net.
 
   * **OrcasoundSlug**: The URI path component from the “slug” obtained from live.orcasound.net.
+
+  * **OrcasoundVisible**: Whether the node is visible on the live.orcasound.net web page.
 
   * **LatestRecordedUtc**: The timestamp recorded in the latest.txt file on S3.
 
@@ -74,9 +81,20 @@ The following state will be stored per orcanode:
 
   * **AudioStandardDeviation**: The standard deviation of the audio stream obtained in step 4d.
 
+  * **OrcaHelloId**: The ID of the node at OrcaHello.
+
+  * **PartitionValue**: Always has the value 1.  This is used because Cosmos requires all tables to have
+    a partition key, but there are not enough nodes to make it worth partitioning the table.
+
 ### Configured parameters
 
-**AZURE_SQL_CONNECTIONSTRING**: The connection string for the SQL database to use.  To minimize costs, it is important that "Pooling" be set to False.  Default: Server=(localdb)\mssqllocaldb;Database=OrcanodeMonitorContext-361a3d40-f3a0-4228-92d0-34532be19b05;Trusted_Connection=True;MultipleActiveResultSets=true;Pooling=False
+**AZURE_COSMOS_DATABASENAME**: The name of the Azure Cosmos database to use.
+
+**AZURE_COSMOS_CONNECTIONSTRING**: The connection string for the Cosmos database to use.
+
+**IFTTT_SERVICE_KEY**: If-This-Then-That service key as provided via the ifttt.com service.
+
+**ORCASOUND_DATAPLICITY_TOKEN**: Security token that allows reading state from Dataplicity.
 
 **ORCASOUND_POLL_FREQUENCY_IN_MINUTES**: Service will poll each orcanode at the configured frequency. Default: 5
 
