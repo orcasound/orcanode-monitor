@@ -47,3 +47,8 @@ jobs:
         if: steps.skip_check.outputs.should_skip != 'true'
         run: |
           dotnet build OrcanodeMonitor.sln /p:Configuration=${{env.BUILD_CONFIGURATION}} /p:Platform="Any CPU"
+
+      - name: Test
+        if: steps.skip_check.outputs.should_skip != 'true'
+        run: |
+          dotnet test --no-build --verbosity normal --configuration ${{env.BUILD_CONFIGURATION}} --property:Platform="Any CPU"
