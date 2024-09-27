@@ -295,11 +295,7 @@ namespace OrcanodeMonitor.Models
                 {
                     return OrcanodeOnlineStatus.Offline;
                 }
-                if (AudioStandardDeviation.HasValue && (AudioStandardDeviation < MinIntelligibleStreamDeviation))
-                {
-                    return OrcanodeOnlineStatus.Unintelligible;
-                }
-                return OrcanodeOnlineStatus.Online;
+                return (IsUnintelligible(AudioStandardDeviation)) ? OrcanodeOnlineStatus.Unintelligible : OrcanodeOnlineStatus.Online;
             }
         }
 
@@ -316,6 +312,16 @@ namespace OrcanodeMonitor.Models
         #endregion derived
 
         #region methods
+
+        public static bool IsUnintelligible(double? audioStandardDeviation)
+        {
+            if (audioStandardDeviation.HasValue && (audioStandardDeviation < MinIntelligibleStreamDeviation))
+            {
+                return true;
+            }
+            return false;
+        }
+
         public OrcanodeIftttDTO ToIftttDTO() => new OrcanodeIftttDTO(ID, DisplayName);
 
         /// <summary>
