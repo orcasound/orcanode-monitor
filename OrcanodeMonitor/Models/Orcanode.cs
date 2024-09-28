@@ -58,7 +58,7 @@ namespace OrcanodeMonitor.Models
             DataplicityName = string.Empty;
             DataplicitySerial = string.Empty;
             OrcaHelloId = string.Empty;
-            PartitionValue = 1;            
+            PartitionValue = 1;
         }
 
         #region persisted
@@ -182,6 +182,11 @@ namespace OrcanodeMonitor.Models
         /// Partition key fixed value.
         /// </summary>
         public int PartitionValue { get; set; }
+
+        /// <summary>
+        /// Audio stream status of most recent sample (defaults to absent).
+        /// </summary>
+        public OrcanodeOnlineStatus? AudioStreamStatus { get; set;  }
         
         #endregion persisted
 
@@ -295,7 +300,14 @@ namespace OrcanodeMonitor.Models
                 {
                     return OrcanodeOnlineStatus.Offline;
                 }
-                return (IsUnintelligible(AudioStandardDeviation)) ? OrcanodeOnlineStatus.Unintelligible : OrcanodeOnlineStatus.Online;
+
+                if (AudioStreamStatus == OrcanodeOnlineStatus.Absent && AudioStandardDeviation != 0.0)
+                {
+                    // Fall back to legacy algorithm.
+                    AudioStreamStatus = (IsUnintelligible(AudioStandardDeviation)) ? OrcanodeOnlineStatus.Unintelligible : OrcanodeOnlineStatus.Online;
+                }
+
+                return AudioStreamStatus ?? OrcanodeOnlineStatus.Absent;
             }
         }
 
@@ -313,6 +325,12 @@ namespace OrcanodeMonitor.Models
 
         #region methods
 
+        /// <summary>
+        /// Function used for backwards compatibility when reading a database
+        /// entry with no AudioStreamStatus.
+        /// </summary>
+        /// <param name="audioStandardDeviation"></param>
+        /// <returns></returns>
         public static bool IsUnintelligible(double? audioStandardDeviation)
         {
             if (audioStandardDeviation.HasValue && (audioStandardDeviation < MinIntelligibleStreamDeviation))

@@ -40,6 +40,11 @@ namespace OrcanodeMonitor.Data
 
             modelBuilder.Entity<Orcanode>()
                 .ToContainer("Orcanode")
+                .Property(item => item.AudioStreamStatus)
+                .HasDefaultValue(OrcanodeOnlineStatus.Absent);
+
+            modelBuilder.Entity<Orcanode>()
+                .ToContainer("Orcanode")
                 .HasPartitionKey(item => item.PartitionValue)
                 .HasKey(item=>item.ID);
 

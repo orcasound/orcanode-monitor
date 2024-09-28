@@ -788,8 +788,8 @@ namespace OrcanodeMonitor.Core
             try
             {
                 using Stream stream = await _httpClient.GetStreamAsync(newUri);
-                OrcanodeOnlineStatus status = await FfmpegCoreAnalyzer.AnalyzeAudioStreamAsync(stream);
-                node.AudioStandardDeviation = (status == OrcanodeOnlineStatus.Unintelligible) ? 0 : 10000;
+                node.AudioStreamStatus = await FfmpegCoreAnalyzer.AnalyzeAudioStreamAsync(stream);
+                node.AudioStandardDeviation = 0.0;
             } catch (Exception ex)
             {
                 // We couldn't fetch the stream audio so could not update the
