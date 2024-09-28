@@ -12,7 +12,7 @@ namespace Test
     [TestClass]
     public class UnintelligibilityTests
     {
-        private async Task TestSampleAsync(string filename, bool expected_result)
+        private async Task TestSampleAsync(string filename, OrcanodeOnlineStatus expected_status)
         {
             // Get the current directory (where the test assembly is located)
             string currentDirectory = Directory.GetCurrentDirectory();
@@ -23,9 +23,8 @@ namespace Test
             string filePath = Path.Combine(rootDirectory, "Test\\samples", filename);
             try
             {
-                double audioStandardDeviation = await FfmpegCoreAnalyzer.AnalyzeFileAsync(filePath);
-                bool normal = !Orcanode.IsUnintelligible(audioStandardDeviation);
-                Assert.IsTrue(normal ==  expected_result);
+                OrcanodeOnlineStatus status = await FfmpegCoreAnalyzer.AnalyzeFileAsync(filePath);
+                Assert.IsTrue(status ==  expected_status);
             }
             catch (Exception ex)
             {
@@ -39,17 +38,18 @@ namespace Test
         [TestMethod]
         public async Task TestUnintelligibleSample()
         {
-            await TestSampleAsync("unintelligible\\live1791.ts", false);
-            await TestSampleAsync("unintelligible\\live1815.ts", false);
-            await TestSampleAsync("unintelligible\\live1816.ts", false);
+            await TestSampleAsync("unintelligible\\live1816b.ts", OrcanodeOnlineStatus.Unintelligible);
+            await TestSampleAsync("unintelligible\\live1791.ts", OrcanodeOnlineStatus.Unintelligible);
+            await TestSampleAsync("unintelligible\\live1815.ts", OrcanodeOnlineStatus.Unintelligible);
+            await TestSampleAsync("unintelligible\\live1816.ts", OrcanodeOnlineStatus.Unintelligible);
         }
 
         [TestMethod]
         public async Task TestNormalSample()
         {
-            await TestSampleAsync("normal\\live385.ts", true);
-            await TestSampleAsync("normal\\live839.ts", true);
-            await TestSampleAsync("normal\\live1184.ts", true);
+            await TestSampleAsync("normal\\live385.ts", OrcanodeOnlineStatus.Online);
+            await TestSampleAsync("normal\\live839.ts", OrcanodeOnlineStatus.Online);
+            await TestSampleAsync("normal\\live1184.ts", OrcanodeOnlineStatus.Online);
         }
     }
 }
