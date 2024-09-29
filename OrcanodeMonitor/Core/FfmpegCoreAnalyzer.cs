@@ -11,8 +11,11 @@ namespace OrcanodeMonitor.Core
 {
     public class FfmpegCoreAnalyzer
     {
-        // We consider anything below this amplitude as silence.
+        // We consider anything below this average amplitude as silence.
         const double MaxSilenceAmplitude = 20.0;
+
+        // We consider anything above this frequency amplitude as signal.
+        const double MinSignalAmplitude = 200.0;
 
         // Microphone audio hum typically falls within the 50 Hz to 60 Hz
         // range. This hum is often caused by electrical interference from
@@ -40,15 +43,15 @@ namespace OrcanodeMonitor.Core
 
             // Look for signal in frequencies other than the audio hum range.
             double halfOfMax = amplitudes.Max() / 2.0;
-            var majorOtherIndices = new List<int>();
+            var majorOtherIndices = new Dictionary<double, double>();
             for (int i = 0; i < amplitudes.Length; i++)
             {
-                if (amplitudes[i] > halfOfMax)
+                if (amplitudes[i] > MinSignalAmplitude)
                 {
                     double frequency = (((double)i) * sampleRate) / n;
                     if (frequency < MinHumFrequency || frequency > MaxHumFrequency)
                     {
-                        majorOtherIndices.Add(i);
+                        majorOtherIndices[frequency] = amplitudes[i];
                     }
                 }
             }
