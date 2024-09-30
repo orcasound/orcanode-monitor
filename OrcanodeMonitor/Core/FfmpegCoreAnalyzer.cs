@@ -14,14 +14,19 @@ namespace OrcanodeMonitor.Core
         // We consider anything below this average amplitude as silence.
         const double MaxSilenceAmplitude = 20.0;
 
-        // We consider anything above this frequency amplitude as signal.
-        const double MinSignalAmplitude = 200.0;
+        // Minimum ratio of amplitude outside the hum range to amplitude
+        // within the hum range.  So far the max in a known-unintelligible
+        // sample is 10% and the min in a known-good sample is 50%.  So for
+        // now we use 20%.
+        const double MinSignalRatio = 0.20;
 
         // Microphone audio hum typically falls within the 50 Hz to 60 Hz
         // range. This hum is often caused by electrical interference from
         // power lines and other electronic devices.
         const double MinHumFrequency = 50.0; // Hz
         const double MaxHumFrequency = 60.0; // Hz
+
+        private static bool IsHumFrequency(double frequency) => (frequency >= MinHumFrequency && frequency <= MaxHumFrequency);
 
         private static OrcanodeOnlineStatus AnalyzeFrequencies(float[] data, int sampleRate)
         {
@@ -41,27 +46,28 @@ namespace OrcanodeMonitor.Core
                 return OrcanodeOnlineStatus.Unintelligible;
             }
 
-            // Look for signal in frequencies other than the audio hum range.
-            double halfOfMax = amplitudes.Max() / 2.0;
-            var majorOtherIndices = new Dictionary<double, double>();
+            // Find the maximum amplitude outside the audio hum range.
+            double maxNonHumAmplitude = 0;
             for (int i = 0; i < amplitudes.Length; i++)
             {
-                if (amplitudes[i] > MinSignalAmplitude)
+                double frequency = (((double)i) * sampleRate) / n;
+                double amplitude = amplitudes[i];
+                if (!IsHumFrequency(frequency))
                 {
-                    double frequency = (((double)i) * sampleRate) / n;
-                    if (frequency < MinHumFrequency || frequency > MaxHumFrequency)
+                    if (maxNonHumAmplitude < amplitude)
                     {
-                        majorOtherIndices[frequency] = amplitudes[i];
+                        maxNonHumAmplitude = amplitude;
                     }
                 }
             }
 
-            if (majorOtherIndices.Count == 0)
+            if (maxNonHumAmplitude / max < MinSignalRatio)
             {
                 // Essentially just silence outside the hum range, no signal.
                 return OrcanodeOnlineStatus.Unintelligible;
             }
 
+            // Signal outside the hum range.
             return OrcanodeOnlineStatus.Online;
         }
 
