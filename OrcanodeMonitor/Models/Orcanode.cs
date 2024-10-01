@@ -216,16 +216,6 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        private static double MinIntelligibleStreamDeviation
-        {
-            get
-            {
-                string? minIntelligibleStreamDeviationString = Environment.GetEnvironmentVariable("ORCASOUND_MIN_INTELLIGIBLE_STREAM_DEVIATION");
-                double minIntelligibleStreamDeviation = double.TryParse(minIntelligibleStreamDeviationString, out var deviation) ? deviation : _defaultMinIntelligibleStreamDeviation;
-                return minIntelligibleStreamDeviation;
-            }
-        }
-
         /// <summary>
         /// Value in the latest.txt file, as a Local DateTime.
         /// </summary>
@@ -303,8 +293,7 @@ namespace OrcanodeMonitor.Models
 
                 if (AudioStreamStatus == OrcanodeOnlineStatus.Absent && AudioStandardDeviation != 0.0)
                 {
-                    // Fall back to legacy algorithm.
-                    AudioStreamStatus = (IsUnintelligible(AudioStandardDeviation)) ? OrcanodeOnlineStatus.Unintelligible : OrcanodeOnlineStatus.Online;
+                    AudioStreamStatus = OrcanodeOnlineStatus.Online;
                 }
 
                 return AudioStreamStatus ?? OrcanodeOnlineStatus.Absent;
@@ -324,21 +313,6 @@ namespace OrcanodeMonitor.Models
         #endregion derived
 
         #region methods
-
-        /// <summary>
-        /// Function used for backwards compatibility when reading a database
-        /// entry with no AudioStreamStatus.
-        /// </summary>
-        /// <param name="audioStandardDeviation"></param>
-        /// <returns></returns>
-        public static bool IsUnintelligible(double? audioStandardDeviation)
-        {
-            if (audioStandardDeviation.HasValue && (audioStandardDeviation < MinIntelligibleStreamDeviation))
-            {
-                return true;
-            }
-            return false;
-        }
 
         public OrcanodeIftttDTO ToIftttDTO() => new OrcanodeIftttDTO(ID, DisplayName);
 
