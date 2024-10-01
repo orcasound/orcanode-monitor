@@ -24,7 +24,7 @@ namespace Test
             try
             {
                 OrcanodeOnlineStatus status = await FfmpegCoreAnalyzer.AnalyzeFileAsync(filePath);
-                Assert.IsTrue(status ==  expected_status);
+                Assert.IsTrue(status == expected_status);
             }
             catch (Exception ex)
             {
@@ -38,6 +38,7 @@ namespace Test
         [TestMethod]
         public async Task TestUnintelligibleSample()
         {
+            await TestSampleAsync("unintelligible\\live4869.ts", OrcanodeOnlineStatus.Unintelligible);
             await TestSampleAsync("unintelligible\\live1816b.ts", OrcanodeOnlineStatus.Unintelligible);
             await TestSampleAsync("unintelligible\\live1791.ts", OrcanodeOnlineStatus.Unintelligible);
             await TestSampleAsync("unintelligible\\live1815.ts", OrcanodeOnlineStatus.Unintelligible);
