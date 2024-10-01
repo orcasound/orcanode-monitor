@@ -16,9 +16,17 @@ namespace OrcanodeMonitor.Core
 
         // Minimum ratio of amplitude outside the hum range to amplitude
         // within the hum range.  So far the max in a known-unintelligible
-        // sample is 10% and the min in a known-good sample is 50%.  So for
-        // now we use 20%.
-        const double MinSignalRatio = 0.20;
+        // sample is 21% and the min in a known-good sample is 50%.
+        const double _defaultMinSignalPercent = 30;
+        private static double MinSignalRatio
+        {
+            get
+            {
+                string? minSignalPercentString = Environment.GetEnvironmentVariable("ORCASOUND_MIN_INTELLIGIBLE_SIGNAL_PERCENT");
+                double minSignalPercent = double.TryParse(minSignalPercentString, out var percent) ? percent : _defaultMinSignalPercent;
+                return minSignalPercent / 100.0;
+            }
+        }
 
         // Microphone audio hum typically falls within the 50 Hz to 60 Hz
         // range. This hum is often caused by electrical interference from

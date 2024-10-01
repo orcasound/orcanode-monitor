@@ -100,6 +100,8 @@ The following state will be stored per orcanode:
 
 **ORCASOUND_MAX_UPLOAD_DELAY_MINUTES**: If the manifest file is older than this, the node will be considered offline. Default: 2
 
+**ORCASOUND_MIN_INTELLIGIBLE_SIGNAL_PERCENT**: The minimum percentage of max amplitude across all frequencies of amplitude outside the 50-60 Hz range needed to determine that an audio stream is intelligible. Default: 30
+
 **ORCASOUND_MIN_INTELLIGIBLE_STREAM_DEVIATION**: The minimum standard deviation needed to determine that an audio stream is intelligible. Default: 175
 
 ## Web page front end
