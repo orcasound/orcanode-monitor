@@ -323,7 +323,7 @@ namespace OrcanodeMonitor.Core
             try
             {
                 string? orcasound_dataplicity_token = Environment.GetEnvironmentVariable("ORCASOUND_DATAPLICITY_TOKEN");
-                if (orcasound_dataplicity_token == null)
+                if (orcasound_dataplicity_token == null || orcasound_dataplicity_token.IsNullOrEmpty())
                 {
                     return;
                 }
