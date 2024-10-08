@@ -278,6 +278,41 @@ namespace OrcanodeMonitor.Core
             }
         }
 
+        public async static Task<string> GetDataplicityDataAsync(string serial)
+        {
+            try
+            {
+                string? orcasound_dataplicity_token = Environment.GetEnvironmentVariable("ORCASOUND_DATAPLICITY_TOKEN");
+                if (orcasound_dataplicity_token == null)
+                {
+                    return string.Empty;
+                }
+
+                string url = _dataplicityDevicesUrl;
+                if (!serial.IsNullOrEmpty())
+                {
+                    url += serial + "/";
+                }
+
+                using (var request = new HttpRequestMessage
+                {
+                    RequestUri = new Uri(url),
+                    Method = HttpMethod.Get,
+                })
+                {
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_dataplicity_token);
+                    HttpResponseMessage response = await _httpClient.SendAsync(request);
+                    response.EnsureSuccessStatusCode();
+                    return await response.Content.ReadAsStringAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                string msg = ex.ToString();
+                return string.Empty;
+            }
+        }
+
         /// <summary>
         /// Update Orcanode state by querying dataplicity.com.
         /// </summary>
@@ -288,23 +323,12 @@ namespace OrcanodeMonitor.Core
             try
             {
                 string? orcasound_dataplicity_token = Environment.GetEnvironmentVariable("ORCASOUND_DATAPLICITY_TOKEN");
-                if (orcasound_dataplicity_token == null)
+                if (orcasound_dataplicity_token == null || orcasound_dataplicity_token.IsNullOrEmpty())
                 {
                     return;
                 }
 
-                string jsonArray;
-                using (var request = new HttpRequestMessage
-                {
-                    RequestUri = new Uri(_dataplicityDevicesUrl),
-                    Method = HttpMethod.Get,
-                })
-                {
-                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_dataplicity_token);
-                    HttpResponseMessage response = await _httpClient.SendAsync(request);
-                    response.EnsureSuccessStatusCode();
-                    jsonArray = await response.Content.ReadAsStringAsync();
-                }
+                string jsonArray = await GetDataplicityDataAsync(string.Empty);
 
                 var foundList = context.Orcanodes.ToList();
 
