@@ -1,0 +1,13 @@
+﻿@page "{serial}"
+@model OrcanodeMonitor.Pages.DataplicityNodeModel
+@{
+    ViewData["Title"] = "Dataplicity Node";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Current <a href="https://www.dataplicity.com/app/" target="_blank">Dataplicity</a> State</h1>
+    <h2>JSON Data</h2>
+    <div style="border: 1px solid #ccc; padding: 10px; text-align: left;">
+        <pre>@Model.JsonData</pre>
+    </div>
+</div>

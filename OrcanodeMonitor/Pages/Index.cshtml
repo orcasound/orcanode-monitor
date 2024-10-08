@@ -18,7 +18,7 @@
             <th>Manifest updated</th>
             <th>Last checked</th>
             -->
-            <th>Dataplicity</th>
+            <th><a href="https://www.dataplicity.com/app/" target="_blank">Dataplicity</a></th>
             <th>Agent Version</th>
             <th>SD Card Util.</th>
             <th>Orcasound</th>
@@ -50,14 +50,12 @@
             </td>
             -->
             <td style="background-color: @Model.NodeDataplicityBackgroundColor(item)">
-                <a href="https://www.dataplicity.com/app/" style="color: @Model.NodeDataplicityTextColor(item)" target="_blank">
+                <a asp-page="/DataplicityNode" asp-route-serial="@item.DataplicitySerial" style="color: @Model.NodeDataplicityTextColor(item)" target="_blank">
                     @Html.DisplayFor(modelItem => item.DataplicityConnectionStatus)
                 </a>
             </td>
             <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
-                <a href="https://www.dataplicity.com/app/" target="_blank">
-                    @Html.DisplayFor(modelItem => item.AgentVersion)
-                </a>
+                @Html.DisplayFor(modelItem => item.AgentVersion)
             </td>
             <td>
                 @Html.DisplayFor(modelItem => item.DiskUsedInGigs)/@Html.DisplayFor(modelItem => item.DiskCapacityInGigs)G
