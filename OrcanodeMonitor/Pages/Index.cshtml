@@ -88,7 +88,7 @@
             else
             {
                 <td style="background-color: @Model.NodeS3BackgroundColor(item)">
-                    <a href="https://open.quiltdata.com/b/audio-orcasound-net/tree/@item.S3NodeName/" style="color: @Model.NodeS3TextColor(item)" target="_blank">
+                    <a href="https://open.quiltdata.com/b/@item.S3Bucket/tree/@item.S3NodeName/" style="color: @Model.NodeS3TextColor(item)" target="_blank">
                         @Html.DisplayFor(modelItem => item.S3StreamStatus)
                     </a>
                 </td>

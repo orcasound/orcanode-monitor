@@ -35,7 +35,8 @@ namespace OrcanodeMonitor.Core
         private static string _orcaHelloHydrophonesUrl = "https://aifororcasdetections2.azurewebsites.net/api/hydrophones";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         private static string _iftttServiceKey = Environment.GetEnvironmentVariable("IFTTT_SERVICE_KEY") ?? "<unknown>";
-        private static string _defaultS3Bucket = "streaming-orcasound-net";
+        private static string _defaultProdS3Bucket = "audio-orcasound-net";
+        private static string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
         public static string IftttServiceKey => _iftttServiceKey;
 
         /// <summary>
@@ -365,12 +366,12 @@ namespace OrcanodeMonitor.Core
                         string dataplicityName = name.ToString();
                         node.DataplicityName = dataplicityName;
 
-                        if (node.S3Bucket.IsNullOrEmpty())
+                        if (node.S3Bucket.IsNullOrEmpty() || (node.OrcasoundStatus == OrcanodeOnlineStatus.Absent))
                         {
-                            node.S3Bucket = _defaultS3Bucket;
+                            node.S3Bucket = dataplicityName.ToLower().StartsWith("dev") ? _defaultDevS3Bucket : _defaultProdS3Bucket;
                         }
 
-                        if (node.S3NodeName.IsNullOrEmpty())
+                        if (node.S3NodeName.IsNullOrEmpty() || (node.OrcasoundStatus == OrcanodeOnlineStatus.Absent))
                         {
                             // Fill in a non-authoritative default S3 node name.
                             // Orcasound is authoritative here since our default is
@@ -745,6 +746,12 @@ namespace OrcanodeMonitor.Core
             {
                 // Absent.
                 node.LatestRecordedUtc = null;
+                return;
+            }
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                // Access denied.
+                node.LatestRecordedUtc = DateTime.MinValue;
                 return;
             }
             if (!response.IsSuccessStatusCode)
