@@ -18,6 +18,7 @@ namespace OrcanodeMonitor.Models
         Online,
         Unintelligible,
         Hidden,
+        Unauthorized,
     }
     public enum OrcanodeUpgradeStatus
     {
@@ -286,6 +287,10 @@ namespace OrcanodeMonitor.Models
                 if (!LatestRecordedUtc.HasValue)
                 {
                     return OrcanodeOnlineStatus.Absent;
+                }
+                if (LatestRecordedUtc == DateTime.MinValue)
+                {
+                    return OrcanodeOnlineStatus.Unauthorized;
                 }
                 if (!ManifestUpdatedUtc.HasValue || !LastCheckedUtc.HasValue)
                 {

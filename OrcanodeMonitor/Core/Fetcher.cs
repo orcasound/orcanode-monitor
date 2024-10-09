@@ -748,6 +748,12 @@ namespace OrcanodeMonitor.Core
                 node.LatestRecordedUtc = null;
                 return;
             }
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                // Access denied.
+                node.LatestRecordedUtc = DateTime.MinValue;
+                return;
+            }
             if (!response.IsSuccessStatusCode)
             {
                 return;
