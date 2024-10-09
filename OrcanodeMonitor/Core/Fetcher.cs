@@ -28,7 +28,8 @@ namespace OrcanodeMonitor.Core
     {
         private static TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
         private static HttpClient _httpClient = new HttpClient();
-        private static string _orcasoundFeedsUrl = "https://live.orcasound.net/api/json/feeds";
+        private static string _orcasoundProdFeedsUrl = "https://live.orcasound.net/api/json/feeds";
+        private static string _orcasoundDevFeedsUrl = "https://dev.orcasound.net/api/json/feeds";
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
         private static string _orcaHelloHydrophonesUrl = "https://aifororcasdetections2.azurewebsites.net/api/hydrophones";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
@@ -447,6 +448,167 @@ namespace OrcanodeMonitor.Core
             }
         }
 
+        private async static Task<JsonElement?> GetOrcasoundDataAsync(OrcanodeMonitorContext context, string url)
+        {
+            try
+            {
+                string json = await _httpClient.GetStringAsync(url);
+                if (json.IsNullOrEmpty())
+                {
+                    return null;
+                }
+                dynamic response = JsonSerializer.Deserialize<ExpandoObject>(json);
+                if (response == null)
+                {
+                    return null;
+                }
+                JsonElement dataArray = response.data;
+                if (dataArray.ValueKind != JsonValueKind.Array)
+                {
+                    return null;
+                }
+                return dataArray;
+            }
+            catch (Exception ex)
+            {
+                string msg = ex.ToString();
+                return null;
+            }
+        }
+
+        private static void UpdateOrcasoundNode(JsonElement feed, List<Orcanode> foundList, List<Orcanode> unfoundList, OrcanodeMonitorContext context)
+        {
+            if (!feed.TryGetProperty("id", out var feedId))
+            {
+                return;
+            }
+            if (!feed.TryGetProperty("attributes", out JsonElement attributes))
+            {
+                return;
+            }
+            if (!attributes.TryGetProperty("name", out var name))
+            {
+                return;
+            }
+            string orcasoundName = name.ToString();
+            if (!attributes.TryGetProperty("dataplicity_id", out var dataplicity_id))
+            {
+                return;
+            }
+            bool hidden = false;
+            if (attributes.TryGetProperty("hidden", out var hiddenElement))
+            {
+                hidden = hiddenElement.GetBoolean();
+            }
+            string dataplicitySerial = dataplicity_id.ToString();
+
+            // Remove the found node from the unfound list.
+            Orcanode? oldListNode = unfoundList.Find(a => a.OrcasoundFeedId == feedId.ToString());
+            if (oldListNode != null)
+            {
+                unfoundList.Remove(oldListNode);
+            }
+
+            Orcanode? node = null;
+            node = FindOrcanodeByOrcasoundFeedId(foundList, feedId.ToString());
+            if (node == null)
+            {
+                // We didn't used to store the feed ID, only the name, so try again by name.
+                Orcanode? possibleNode = FindOrcanodeByOrcasoundName(foundList, orcasoundName);
+                if ((possibleNode != null) && possibleNode.OrcasoundFeedId.IsNullOrEmpty())
+                {
+                    node = possibleNode;
+                    oldListNode = unfoundList.Find(a => a.OrcasoundName == orcasoundName);
+                    if (oldListNode != null)
+                    {
+                        unfoundList.Remove(oldListNode);
+                    }
+                }
+            }
+
+            // See if we can find a node by dataplicity ID, so that if a node
+            // shows up in dataplicity first and Orcasite later, we don't create a
+            // duplicate entry.
+            Orcanode? dataplicityNode = null;
+            if (!dataplicitySerial.IsNullOrEmpty())
+            {
+                dataplicityNode = FindOrcanodeByDataplicitySerial(foundList, dataplicitySerial, out OrcanodeOnlineStatus oldStatus);
+                if (dataplicityNode != null)
+                {
+                    if (node == null)
+                    {
+                        node = dataplicityNode;
+                    }
+                    else if (node != dataplicityNode)
+                    {
+                        // We have duplicate nodes to merge. In theory we shouldn't have any
+                        // node state for the dataplicity-only node. (TODO: verify this)
+                        node.DataplicityDescription = dataplicityNode.DataplicityDescription;
+                        node.DataplicityName = dataplicityNode.DataplicityName;
+                        node.DataplicityOnline = dataplicityNode.DataplicityOnline;
+                        node.AgentVersion = dataplicityNode.AgentVersion;
+                        node.DiskCapacity = dataplicityNode.DiskCapacity;
+                        node.DiskUsed = dataplicityNode.DiskUsed;
+                        node.DataplicityUpgradeAvailable = dataplicityNode.DataplicityUpgradeAvailable;
+                        context.Orcanodes.Remove(dataplicityNode);
+                    }
+                }
+            }
+
+            if (node == null)
+            {
+                node = CreateOrcanode(context.Orcanodes);
+                node.OrcasoundName = name.ToString();
+            }
+
+            if (!dataplicitySerial.IsNullOrEmpty())
+            {
+                if (!node.DataplicitySerial.IsNullOrEmpty() && dataplicitySerial != node.DataplicitySerial)
+                {
+                    // TODO: The orcasound entry for the node changed its dataplicity_id.
+                }
+                node.DataplicitySerial = dataplicitySerial;
+            }
+
+            if (node.OrcasoundFeedId.IsNullOrEmpty())
+            {
+                node.OrcasoundFeedId = feedId.ToString();
+            }
+            if (orcasoundName != node.OrcasoundName)
+            {
+                // We just detected a name change.
+                node.OrcasoundName = orcasoundName;
+            }
+            if (attributes.TryGetProperty("node_name", out var nodeName))
+            {
+                node.S3NodeName = nodeName.ToString();
+            }
+            if (attributes.TryGetProperty("bucket", out var bucket))
+            {
+                node.S3Bucket = bucket.ToString();
+            }
+            if (attributes.TryGetProperty("slug", out var slug))
+            {
+                node.OrcasoundSlug = slug.ToString();
+            }
+            if (attributes.TryGetProperty("visible", out var visible))
+            {
+                node.OrcasoundVisible = visible.GetBoolean();
+            }
+        }
+
+        private async static Task UpdateOrcasoundSiteDataAsync(OrcanodeMonitorContext context, string url, List<Orcanode> foundList, List<Orcanode> unfoundList)
+        {
+            JsonElement? dataArray = await GetOrcasoundDataAsync(context, url);
+            if (dataArray.HasValue)
+            {
+                foreach (JsonElement feed in dataArray.Value.EnumerateArray())
+                {
+                    UpdateOrcasoundNode(feed, foundList, unfoundList, context);
+                }
+            }
+        }
+
         /// <summary>
         /// Update the current list of Orcanodes using data from orcasound.net.
         /// </summary>
@@ -454,140 +616,15 @@ namespace OrcanodeMonitor.Core
         /// <returns></returns>
         public async static Task UpdateOrcasoundDataAsync(OrcanodeMonitorContext context)
         {
+            var foundList = context.Orcanodes.ToList();
+
+            // Create a list to track what nodes are no longer returned.
+            var unfoundList = foundList.ToList();
+
             try
             {
-                string json = await _httpClient.GetStringAsync(_orcasoundFeedsUrl);
-                if (json.IsNullOrEmpty())
-                {
-                    return;
-                }
-                dynamic response = JsonSerializer.Deserialize<ExpandoObject>(json);
-                if (response == null)
-                {
-                    return;
-                }
-                JsonElement dataArray = response.data;
-                if (dataArray.ValueKind != JsonValueKind.Array)
-                {
-                    return;
-                }
-
-                var foundList = context.Orcanodes.ToList();
-
-                // Create a list to track what nodes are no longer returned.
-                var unfoundList = foundList.ToList();
-
-                foreach (JsonElement feed in dataArray.EnumerateArray())
-                {
-                    if (!feed.TryGetProperty("id", out var feedId))
-                    {
-                        continue;
-                    }
-                    if (!feed.TryGetProperty("attributes", out JsonElement attributes))
-                    {
-                        continue;
-                    }
-                    if (!attributes.TryGetProperty("name", out var name))
-                    {
-                        continue;
-                    }
-                    string orcasoundName = name.ToString();
-                    if (!attributes.TryGetProperty("dataplicity_id", out var dataplicity_id))
-                    {
-                        continue;
-                    }
-                    bool hidden = false;
-                    if (attributes.TryGetProperty("hidden", out var hiddenElement))
-                    {
-                        hidden = hiddenElement.GetBoolean();
-                    }
-                    string dataplicitySerial = dataplicity_id.ToString();
-
-                    // Remove the found node from the unfound list.
-                    Orcanode? oldListNode = unfoundList.Find(a => a.OrcasoundFeedId == feedId.ToString());
-                    if (oldListNode != null)
-                    {
-                        unfoundList.Remove(oldListNode);
-                    }
-
-                    Orcanode? node = null;
-                    node = FindOrcanodeByOrcasoundFeedId(foundList, feedId.ToString());
-                    if (node == null)
-                    {
-                        // We didn't used to store the feed ID, only the name, so try again by name.
-                        node = FindOrcanodeByOrcasoundName(foundList, orcasoundName);
-                    }
-
-                    // See if we can find a node by dataplicity ID, so that if a node
-                    // shows up in dataplicity first and Orcasite later, we don't create a
-                    // duplicate entry.
-                    Orcanode? dataplicityNode = null;
-                    if (!dataplicitySerial.IsNullOrEmpty())
-                    {
-                        dataplicityNode = FindOrcanodeByDataplicitySerial(foundList, dataplicitySerial, out OrcanodeOnlineStatus oldStatus);
-                        if (dataplicityNode != null)
-                        {
-                            if (node == null)
-                            {
-                                node = dataplicityNode;
-                            }
-                            else if (node != dataplicityNode)
-                            {
-                                // We have duplicate nodes to merge. In theory we shouldn't have any
-                                // node state for the dataplicity-only node. (TODO: verify this)
-                                node.DataplicityDescription = dataplicityNode.DataplicityDescription;
-                                node.DataplicityName = dataplicityNode.DataplicityName;
-                                node.DataplicityOnline = dataplicityNode.DataplicityOnline;
-                                node.AgentVersion = dataplicityNode.AgentVersion;
-                                node.DiskCapacity = dataplicityNode.DiskCapacity;
-                                node.DiskUsed = dataplicityNode.DiskUsed;
-                                node.DataplicityUpgradeAvailable = dataplicityNode.DataplicityUpgradeAvailable;
-                                context.Orcanodes.Remove(dataplicityNode);
-                            }
-                        }
-                    }
-
-                    if (node == null)
-                    {
-                        node = CreateOrcanode(context.Orcanodes);
-                        node.OrcasoundName = name.ToString();
-                    }
-
-                    if (!dataplicitySerial.IsNullOrEmpty())
-                    {
-                        if (!node.DataplicitySerial.IsNullOrEmpty() && dataplicitySerial != node.DataplicitySerial)
-                        {
-                            // TODO: The orcasound entry for the node changed its dataplicity_id.
-                        }
-                        node.DataplicitySerial = dataplicitySerial;
-                    }
-
-                    if (node.OrcasoundFeedId.IsNullOrEmpty())
-                    {
-                        node.OrcasoundFeedId = feedId.ToString();
-                    }
-                    if (orcasoundName != node.OrcasoundName)
-                    {
-                        // We just detected a name change.
-                        node.OrcasoundName = orcasoundName;
-                    }
-                    if (attributes.TryGetProperty("node_name", out var nodeName))
-                    {
-                        node.S3NodeName = nodeName.ToString();
-                    }
-                    if (attributes.TryGetProperty("bucket", out var bucket))
-                    {
-                        node.S3Bucket = bucket.ToString();
-                    }
-                    if (attributes.TryGetProperty("slug", out var slug))
-                    {
-                        node.OrcasoundSlug = slug.ToString();
-                    }
-                    if (attributes.TryGetProperty("visible", out var visible))
-                    {
-                        node.OrcasoundVisible = visible.GetBoolean();
-                    }
-                }
+                await UpdateOrcasoundSiteDataAsync(context, _orcasoundProdFeedsUrl, foundList, unfoundList);
+                await UpdateOrcasoundSiteDataAsync(context, _orcasoundDevFeedsUrl, foundList, unfoundList);
 
                 // Mark any remaining unfound nodes as absent.
                 foreach (var unfoundNode in unfoundList)

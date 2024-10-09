@@ -300,6 +300,26 @@ namespace OrcanodeMonitor.Models
             }
         }
 
+        private bool IsDev
+        {
+            get
+            {
+                if (this.S3Bucket.StartsWith("dev"))
+                {
+                    return true;
+                }
+                if (this.DataplicityName.ToLower().StartsWith("dev"))
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        public string OrcasoundHost => IsDev ? "dev.orcasound.net" : "live.orcasound.net";
+
+        public string Type => IsDev ? "Dev" : "Prod";
+
         public string OrcasoundOnlineStatusString {
             get
             {

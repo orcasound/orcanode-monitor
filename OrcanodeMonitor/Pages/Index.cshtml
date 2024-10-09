@@ -12,6 +12,7 @@
     <table>
         <tr>
             <th>Location</th>
+            <th>Type</th>
             <!--
             <th>Latest recorded</th>
             <th>Latest uploaded</th>
@@ -21,9 +22,9 @@
             <th><a href="https://www.dataplicity.com/app/" target="_blank">Dataplicity</a></th>
             <th>Agent Version</th>
             <th>SD Card Util.</th>
-            <th>Orcasound</th>
+            <th><a href="https://live.orcasound.net/listen" target="_blank">Orcasound</a></th>
             <th>S3 Stream</th>
-            <th>OrcaHello</th>
+            <th><a href="https://aifororcas2.azurewebsites.net/hydrophones" target="_blank">OrcaHello</a></th>
             <!--
             <th>Last OrcaHello Detection</th>
             <th>Confidence</th>
@@ -34,6 +35,9 @@
         <tr>
             <td title="@Html.DisplayFor(modelItem => item.DataplicityDescription)">
                 @Html.DisplayFor(modelItem => item.DisplayName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Type)
             </td>
             <!--
             <td>
@@ -70,7 +74,7 @@
             else
             {
                 <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item)">
-                    <a href="https://live.orcasound.net/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" style="color: @Model.NodeOrcasoundTextColor(item)" target="_blank">
+                    <a href="https://@Html.DisplayFor(modelItem => item.OrcasoundHost)/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" style="color: @Model.NodeOrcasoundTextColor(item)" target="_blank">
                         @Html.DisplayFor(modelItem => item.OrcasoundStatus)
                     </a>
                 </td>
@@ -119,13 +123,13 @@
             <b>Dataplicity Online</b>: Dataplicity connection is up.
         </li>
         <li>
-            <b>Orcasound Absent</b>: live.orcasound.net does not know about the node.
+            <b>Orcasound Absent</b>: orcasound.net does not know about the node.
         </li>
         <li>
-            <b>Orcasound Hidden</b>: live.orcasound.net knows about but does not display the node.
+            <b>Orcasound Hidden</b>: orcasound.net knows about but does not display the node.
         </li>
         <li>
-            <b>Orcasound Online</b>: live.orcasound.net knows about the node.
+            <b>Orcasound Online</b>: orcasound.net knows about the node.
         </li>
         <li>
             <b>S3 Stream Absent</b>: No latest.txt file exists on S3 for this node.
