@@ -51,6 +51,7 @@ namespace OrcanodeMonitor.Models
             OrcasoundName = string.Empty;
             OrcasoundSlug = string.Empty;
             OrcasoundFeedId = string.Empty;
+            OrcasoundHost = string.Empty;
             S3Bucket = string.Empty;
             S3NodeName = string.Empty;
             AgentVersion = string.Empty;
@@ -187,6 +188,11 @@ namespace OrcanodeMonitor.Models
         /// Audio stream status of most recent sample (defaults to absent).
         /// </summary>
         public OrcanodeOnlineStatus? AudioStreamStatus { get; set;  }
+
+        /// <summary>
+        /// Orcasound site host (defaults to empty).
+        /// </summary>
+        public string OrcasoundHost { get; set; }
         
         #endregion persisted
 
@@ -315,8 +321,6 @@ namespace OrcanodeMonitor.Models
                 return false;
             }
         }
-
-        public string OrcasoundHost => IsDev ? "dev.orcasound.net" : "live.orcasound.net";
 
         public string Type => IsDev ? "Dev" : "Prod";
 

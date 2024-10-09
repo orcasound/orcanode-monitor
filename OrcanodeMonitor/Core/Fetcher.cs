@@ -28,8 +28,9 @@ namespace OrcanodeMonitor.Core
     {
         private static TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
         private static HttpClient _httpClient = new HttpClient();
-        private static string _orcasoundProdFeedsUrl = "https://live.orcasound.net/api/json/feeds";
-        private static string _orcasoundDevFeedsUrl = "https://dev.orcasound.net/api/json/feeds";
+        private static string _orcasoundProdSite = "live.orcasound.net";
+        private static string _orcasoundDevSite = "dev.orcasound.net";
+        private static string _orcasoundFeedsUrlPath = "/api/json/feeds";
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
         private static string _orcaHelloHydrophonesUrl = "https://aifororcasdetections2.azurewebsites.net/api/hydrophones";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
@@ -448,10 +449,11 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        private async static Task<JsonElement?> GetOrcasoundDataAsync(OrcanodeMonitorContext context, string url)
+        private async static Task<JsonElement?> GetOrcasoundDataAsync(OrcanodeMonitorContext context, string site)
         {
             try
             {
+                string url = "https://" + site + _orcasoundFeedsUrlPath;
                 string json = await _httpClient.GetStringAsync(url);
                 if (json.IsNullOrEmpty())
                 {
@@ -476,7 +478,7 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        private static void UpdateOrcasoundNode(JsonElement feed, List<Orcanode> foundList, List<Orcanode> unfoundList, OrcanodeMonitorContext context)
+        private static void UpdateOrcasoundNode(JsonElement feed, List<Orcanode> foundList, List<Orcanode> unfoundList, OrcanodeMonitorContext context, string site)
         {
             if (!feed.TryGetProperty("id", out var feedId))
             {
@@ -574,6 +576,10 @@ namespace OrcanodeMonitor.Core
             {
                 node.OrcasoundFeedId = feedId.ToString();
             }
+            if (!site.IsNullOrEmpty())
+            {
+                node.OrcasoundHost = site;
+            }
             if (orcasoundName != node.OrcasoundName)
             {
                 // We just detected a name change.
@@ -597,14 +603,14 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        private async static Task UpdateOrcasoundSiteDataAsync(OrcanodeMonitorContext context, string url, List<Orcanode> foundList, List<Orcanode> unfoundList)
+        private async static Task UpdateOrcasoundSiteDataAsync(OrcanodeMonitorContext context, string site, List<Orcanode> foundList, List<Orcanode> unfoundList)
         {
-            JsonElement? dataArray = await GetOrcasoundDataAsync(context, url);
+            JsonElement? dataArray = await GetOrcasoundDataAsync(context, site);
             if (dataArray.HasValue)
             {
                 foreach (JsonElement feed in dataArray.Value.EnumerateArray())
                 {
-                    UpdateOrcasoundNode(feed, foundList, unfoundList, context);
+                    UpdateOrcasoundNode(feed, foundList, unfoundList, context, site);
                 }
             }
         }
@@ -623,8 +629,8 @@ namespace OrcanodeMonitor.Core
 
             try
             {
-                await UpdateOrcasoundSiteDataAsync(context, _orcasoundProdFeedsUrl, foundList, unfoundList);
-                await UpdateOrcasoundSiteDataAsync(context, _orcasoundDevFeedsUrl, foundList, unfoundList);
+                await UpdateOrcasoundSiteDataAsync(context, _orcasoundProdSite, foundList, unfoundList);
+                await UpdateOrcasoundSiteDataAsync(context, _orcasoundDevSite, foundList, unfoundList);
 
                 // Mark any remaining unfound nodes as absent.
                 foreach (var unfoundNode in unfoundList)
