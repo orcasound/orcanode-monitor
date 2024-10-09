@@ -11,8 +11,8 @@
     </p>
     <table>
         <tr>
-            <th>Location</th>
             <th>Type</th>
+            <th>Location</th>
             <!--
             <th>Latest recorded</th>
             <th>Latest uploaded</th>
@@ -33,11 +33,11 @@
     @foreach (Models.Orcanode item in Model.Nodes)
     {
         <tr>
-            <td title="@Html.DisplayFor(modelItem => item.DataplicityDescription)">
-                @Html.DisplayFor(modelItem => item.DisplayName)
-            </td>
             <td>
                 @Html.DisplayFor(modelItem => item.Type)
+            </td>
+            <td title="@Html.DisplayFor(modelItem => item.DataplicityDescription)">
+                @Html.DisplayFor(modelItem => item.DisplayName)
             </td>
             <!--
             <td>
