@@ -51,6 +51,7 @@ namespace OrcanodeMonitor.Models
             OrcasoundName = string.Empty;
             OrcasoundSlug = string.Empty;
             OrcasoundFeedId = string.Empty;
+            OrcasoundHost = string.Empty;
             S3Bucket = string.Empty;
             S3NodeName = string.Empty;
             AgentVersion = string.Empty;
@@ -187,6 +188,11 @@ namespace OrcanodeMonitor.Models
         /// Audio stream status of most recent sample (defaults to absent).
         /// </summary>
         public OrcanodeOnlineStatus? AudioStreamStatus { get; set;  }
+
+        /// <summary>
+        /// Orcasound site host (defaults to empty).
+        /// </summary>
+        public string OrcasoundHost { get; set; }
         
         #endregion persisted
 
@@ -299,6 +305,24 @@ namespace OrcanodeMonitor.Models
                 return AudioStreamStatus ?? OrcanodeOnlineStatus.Absent;
             }
         }
+
+        private bool IsDev
+        {
+            get
+            {
+                if (this.S3Bucket.StartsWith("dev"))
+                {
+                    return true;
+                }
+                if (this.DataplicityName.ToLower().StartsWith("dev"))
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        public string Type => IsDev ? "Dev" : "Prod";
 
         public string OrcasoundOnlineStatusString {
             get
