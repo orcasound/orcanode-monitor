@@ -93,7 +93,8 @@ namespace OrcanodeMonitor.Pages
             _nodes = nodes.Where(n => n.DataplicityConnectionStatus != OrcanodeOnlineStatus.Absent ||
                                           n.OrcasoundStatus != OrcanodeOnlineStatus.Absent ||
                                           n.S3StreamStatus != OrcanodeOnlineStatus.Absent)
-                              .OrderBy(n => n.DisplayName)
+                              .OrderByDescending(n => n.Type)
+                              .ThenBy(n => n.DisplayName)
                               .ToList();
         }
     }
