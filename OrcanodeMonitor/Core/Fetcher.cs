@@ -258,9 +258,9 @@ namespace OrcanodeMonitor.Core
                 foreach (var unfoundNode in unfoundList)
                 {
                     Orcanode? oldNode = null;
-                    if (!unfoundNode.OrcasoundName.IsNullOrEmpty())
+                    if (!unfoundNode.OrcasoundFeedId.IsNullOrEmpty())
                     {
-                        oldNode = FindOrcanodeByOrcasoundName(foundList, unfoundNode.OrcasoundName);
+                        oldNode = FindOrcanodeByOrcasoundFeedId(foundList, unfoundNode.OrcasoundFeedId);
                     }
                     else if (!unfoundNode.DataplicitySerial.IsNullOrEmpty())
                     {
