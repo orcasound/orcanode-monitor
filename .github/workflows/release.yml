@@ -4,8 +4,8 @@ on:
     tags:
     - 'v[0-9]+.[0-9]+.[0-9]+'
 env:
-  AZURE_WEBAPP_NAME: OrcanodeMonitor
-  AZURE_WEBAPP_PACKAGE_PATH: OrcanodeMonitor\published
+  AZURE_WEBAPP_NAME: OrcanodeMonitor2
+  AZURE_WEBAPP_PACKAGE_PATH: OrcanodeMonitor2\published
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 8.0.x
   WORKING_DIRECTORY: OrcanodeMonitor
