@@ -92,7 +92,8 @@ namespace OrcanodeMonitor.Pages
             var nodes = await _databaseContext.Orcanodes.ToListAsync();
             _nodes = nodes.Where(n => n.DataplicityConnectionStatus != OrcanodeOnlineStatus.Absent ||
                                           n.OrcasoundStatus != OrcanodeOnlineStatus.Absent ||
-                                          n.S3StreamStatus != OrcanodeOnlineStatus.Absent)
+                                          (n.S3StreamStatus != OrcanodeOnlineStatus.Absent &&
+                                          n.S3StreamStatus != OrcanodeOnlineStatus.Unauthorized))
                               .OrderByDescending(n => n.Type)
                               .ThenBy(n => n.DisplayName)
                               .ToList();
