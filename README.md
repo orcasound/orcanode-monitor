@@ -2,7 +2,7 @@
 
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/orcasound/orcanode-monitor/badge)](https://scorecard.dev/viewer/?uri=github.com/orcasound/orcanode-monitor)
 
-[Orcanode Monitor](https://orcanodemonitor.azurewebsites.net/) is a web service for monitoring liveness of [orcanode](https://github.com/orcasound/orcanode) audio streaming.
+[Orcanode Monitor](https://orcanodemonitor2.azurewebsites.net/) is a web service for monitoring liveness of [orcanode](https://github.com/orcasound/orcanode) audio streaming.
 
 The troubleshooting guide at
 [Administration of network nodes](https://github.com/orcasound/orcanode/wiki/Administration-of-network-nodes#general-trouble-shooting-strategies-for-orcasound-nodes)
