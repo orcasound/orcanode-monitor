@@ -26,13 +26,14 @@ namespace OrcanodeMonitor.Models
     /// </summary>
     public class OrcanodeIftttEventDTO
     {
-        public OrcanodeIftttEventDTO(string id, string nodeName, string slug, string type, string value, DateTime timestamp)
+        public OrcanodeIftttEventDTO(string id, string nodeName, string slug, string type, string value, DateTime timestamp, int severity)
         {
             Slug = slug;
             Type = type;
             Value = value;
             Meta = new OrcanodeEventIftttMeta(id, timestamp);
             Description = string.Format("{0} {1} was detected as {2}", nodeName, type, value);
+            Severity = severity;
         }
         [JsonPropertyName("slug")]
         public string Slug { get; private set; }
@@ -50,6 +51,8 @@ namespace OrcanodeMonitor.Models
         public DateTime? CreatedAt => Fetcher.UnixTimeStampToDateTimeUtc(Meta.UnixTimestamp);
         [JsonPropertyName("description")]
         public string Description { get; private set; }
+        [JsonPropertyName("severity")]
+        public int Severity { get; private set; }
     }
 
     // Instances of this class are persisted in a SQL database.  If any changes
@@ -124,10 +127,25 @@ namespace OrcanodeMonitor.Models
             }
         }
 
+        public int DerivedSeverity
+        {
+            get
+            {
+                // Changing to offline or unintelligible is considered critical.
+                if (Value == "OFFLINE" || Value == "UNINTELLIGIBLE")
+                {
+                    return 2;
+                }
+
+                // Other values are informational.
+                return 0;
+            }
+        }
+
         #endregion derived
 
         #region methods
-        public OrcanodeIftttEventDTO ToIftttEventDTO() => new OrcanodeIftttEventDTO(ID, NodeName, Slug, Type, Value, DateTimeUtc);
+        public OrcanodeIftttEventDTO ToIftttEventDTO() => new OrcanodeIftttEventDTO(ID, NodeName, Slug, Type, Value, DateTimeUtc, DerivedSeverity);
 
         public override string ToString()
         {
