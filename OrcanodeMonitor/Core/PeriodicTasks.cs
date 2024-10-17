@@ -63,6 +63,8 @@ namespace OrcanodeMonitor.Core
 
             await Fetcher.UpdateOrcasoundDataAsync(context);
 
+            await Fetcher.UpdateMezmoDataAsync(context);
+
             await Fetcher.UpdateS3DataAsync(context);
 
             await Fetcher.UpdateOrcaHelloDataAsync(context);
