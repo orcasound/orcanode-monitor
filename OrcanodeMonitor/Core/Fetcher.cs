@@ -471,7 +471,7 @@ namespace OrcanodeMonitor.Core
                 string[] jsonObjects = jsonString.Split('\n', StringSplitOptions.RemoveEmptyEntries);
                 string jsonArray = "[" + string.Join(",", jsonObjects) + "]";
 
-                dynamic logArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
+                JsonElement logArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
                 if (logArray.ValueKind != JsonValueKind.Array)
                 {
                     return null;
@@ -604,7 +604,7 @@ namespace OrcanodeMonitor.Core
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = originalList.ToList();
 
-                dynamic viewsArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
+                JsonElement viewsArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
                 if (viewsArray.ValueKind != JsonValueKind.Array)
                 {
                     return;
