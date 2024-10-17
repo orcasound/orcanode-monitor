@@ -50,7 +50,7 @@ namespace OrcanodeMonitor.Core
             {
                 int seconds;
                 bool success = int.TryParse(_mezmoLogSeconds, out seconds);
-                return (success) ? seconds : DEFAULT_MEZMO_LOG_SECONDS;
+                return (success && seconds > 0) ? seconds : DEFAULT_MEZMO_LOG_SECONDS;
             }
         }
 
