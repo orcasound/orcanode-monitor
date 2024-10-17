@@ -40,7 +40,19 @@ namespace OrcanodeMonitor.Core
         private static string _defaultProdS3Bucket = "audio-orcasound-net";
         private static string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
         public static string IftttServiceKey => _iftttServiceKey;
-        const int MEZMO_LOG_SECONDS = 30;
+        const int DEFAULT_MEZMO_LOG_SECONDS = 60;
+        private static string _mezmoLogSeconds = Environment.GetEnvironmentVariable("MEZMO_LOG_SECONDS") ?? string.Empty;
+
+
+        private static int MezmoLogSeconds
+        {
+            get
+            {
+                int seconds;
+                bool success = int.TryParse(_mezmoLogSeconds, out seconds);
+                return (success && seconds > 0) ? seconds : DEFAULT_MEZMO_LOG_SECONDS;
+            }
+        }
 
         /// <summary>
         /// Test for a match between a human-readable name at Orcasound, and
@@ -459,7 +471,7 @@ namespace OrcanodeMonitor.Core
             try
             {
                 int to = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                int from = to - MEZMO_LOG_SECONDS;
+                int from = to - MezmoLogSeconds;
                 string url = $"{_mezmoLogUrl}?from={from}&to={to}&hosts={node.S3NodeName}";
                 string jsonString = await GetMezmoDataAsync(url);
                 if (jsonString.IsNullOrEmpty())
@@ -564,7 +576,10 @@ namespace OrcanodeMonitor.Core
                     }
 
                     OrcanodeOnlineStatus newStatus = node.MezmoStatus;
-                    // TODO: Trigger any event changes.
+                    if (newStatus != oldStatus)
+                    {
+                        AddMezmoStatusEvent(context, node);
+                    }
                 }
 
                 // Mark any remaining unfound nodes as absent.
@@ -657,7 +672,10 @@ namespace OrcanodeMonitor.Core
                         }
 
                         OrcanodeOnlineStatus newStatus = node.MezmoStatus;
-                        // TODO: Trigger any event changes.
+                        if (newStatus != oldStatus)
+                        {
+                            AddMezmoStatusEvent(context, node);
+                        }
                     }
                 }
 
@@ -1030,6 +1048,12 @@ namespace OrcanodeMonitor.Core
         {
             var orcanodeEvent = new OrcanodeEvent(node, type, value, DateTime.UtcNow);
             context.OrcanodeEvents.Add(orcanodeEvent);
+        }
+
+        private static void AddMezmoStatusEvent(OrcanodeMonitorContext context, Orcanode node)
+        {
+            string value = (node.MezmoStatus == OrcanodeOnlineStatus.Online) ? "up" : "OFFLINE";
+            AddOrcanodeEvent(context, node, "Mezmo logging", value);
         }
 
         private static void AddDataplicityConnectionStatusEvent(OrcanodeMonitorContext context, Orcanode node)
