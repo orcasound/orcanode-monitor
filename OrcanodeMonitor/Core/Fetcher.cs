@@ -449,6 +449,7 @@ namespace OrcanodeMonitor.Core
             catch (Exception ex)
             {
                 string msg = ex.ToString();
+                Console.Error.WriteLine($"Exception in GetMezmoDataAsync: {msg}");
                 return string.Empty;
             }
         }
@@ -488,6 +489,7 @@ namespace OrcanodeMonitor.Core
             catch (Exception ex)
             {
                 string msg = ex.ToString();
+                Console.Error.WriteLine($"Exception in GetMezmoRecentLogAsync: {msg}");
                 return null;
             }
         }
@@ -512,7 +514,7 @@ namespace OrcanodeMonitor.Core
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = originalList.ToList();
 
-                dynamic hostsArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
+                JsonElement hostsArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
                 if (hostsArray.ValueKind != JsonValueKind.Array)
                 {
                     return;
@@ -581,6 +583,7 @@ namespace OrcanodeMonitor.Core
             catch (Exception ex)
             {
                 string msg = ex.ToString();
+                Console.Error.WriteLine($"Exception in UpdateMezmoHostsAsync: {msg}");
             }
         }
 
@@ -674,6 +677,7 @@ namespace OrcanodeMonitor.Core
             catch (Exception ex)
             {
                 string msg = ex.ToString();
+                Console.Error.WriteLine($"Exception in UpdateMezmoViewsAsync: {msg}");
             }
         }
 
