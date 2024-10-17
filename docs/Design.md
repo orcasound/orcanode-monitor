@@ -40,6 +40,9 @@ configured by an administrator, the service will do the following:
 5. Enumerate the orcanodes known by OrcaHello by fetching
    "https://aifororcasdetections2.azurewebsites.net/api/hydrophones" and update the internal list of nodes.
 
+6. Enumerate the orcanodes known by Mezmo by fetching
+   "https://api.mezmo.com/v1/usage/hosts" and update the internal list of nodes.
+
 The following state will be stored per orcanode:
 
   * **DisplayName**: The human-readable name to display on the web page.  This name is derived from the names
@@ -79,12 +82,20 @@ The following state will be stored per orcanode:
 
   * **DataplicityOnline**: The value of the "online" field obtained from Dataplicity.
 
-  * **AudioStandardDeviation**: The standard deviation of the audio stream obtained in step 4d.
+  * **AudioStandardDeviation**: The standard deviation of the audio stream obtained in step 4d. (Obsolete)
+
+  * **AudioStreamStatus**: Audio stream status of most recent sample.
+
+  * **OrcasoundHost**: Orcasound site host.
 
   * **OrcaHelloId**: The ID of the node at OrcaHello.
 
   * **PartitionValue**: Always has the value 1.  This is used because Cosmos requires all tables to have
     a partition key, but there are not enough nodes to make it worth partitioning the table.
+
+  * **MezmoViewId**: Mezmo view ID for logs for this host.
+
+  * **MezmoLogSize**: Number of log entries within the last MEZMO_LOG_SECONDS.
 
 ### Configured parameters
 
@@ -101,6 +112,8 @@ The following state will be stored per orcanode:
 **ORCASOUND_MAX_UPLOAD_DELAY_MINUTES**: If the manifest file is older than this, the node will be considered offline. Default: 2
 
 **ORCASOUND_MIN_INTELLIGIBLE_SIGNAL_PERCENT**: The minimum percentage of max amplitude across all frequencies of amplitude outside the 50-60 Hz range needed to determine that an audio stream is intelligible. Default: 30
+
+**MEZMO_LOG_SECONDS**: The number of seconds of Mezmo logs to check for activity. Default: 60
 
 ## Web page front end
 

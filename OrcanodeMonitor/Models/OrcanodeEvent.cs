@@ -111,21 +111,7 @@ namespace OrcanodeMonitor.Models
 
         public DateTime DateTimeLocal => Fetcher.UtcToLocalDateTime(DateTimeUtc).Value;
 
-        public string Description
-        {
-            get
-            {
-                // Convert type from old value to new value.
-                // TODO: do a migration in the database itself and remove this code.
-                string type = Type;
-                if (type == "stream status")
-                {
-                    type = "hydrophone stream";
-                }
-
-                return string.Format("{0} {1} was detected as {2}", NodeName, type, Value);
-            }
-        }
+        public string Description => string.Format("{0} {1} was detected as {2}", NodeName, Type, Value);
 
         public int DerivedSeverity
         {
@@ -135,6 +121,12 @@ namespace OrcanodeMonitor.Models
                 if (Value == "OFFLINE" || Value == "UNINTELLIGIBLE")
                 {
                     return 2;
+                }
+
+                // Changing to "NOVIEW" is a warning.
+                if (Value == "NOVIEW")
+                {
+                    return 1;
                 }
 
                 // Other values are informational.
