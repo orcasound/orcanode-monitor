@@ -25,10 +25,7 @@
             <th><a href="https://live.orcasound.net/listen" target="_blank">Orcasound</a></th>
             <th>S3 Stream</th>
             <th><a href="https://aifororcas2.azurewebsites.net/hydrophones" target="_blank">OrcaHello</a></th>
-            <!--
-            <th>Last OrcaHello Detection</th>
-            <th>Confidence</th>
-            -->
+            <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Mezmo</a></th>
         </tr>
     @foreach (Models.Orcanode item in Model.Nodes)
     {
@@ -107,6 +104,20 @@
                     </a>
                 </td>
             }
+            @if (item.MezmoStatus == Models.OrcanodeOnlineStatus.Absent)
+            {
+                    <td style="background-color: @Model.NodeMezmoBackgroundColor(item); color: @Model.NodeMezmoTextColor(item)">
+                    @Html.DisplayFor(modelItem => item.MezmoStatus)
+                </td>
+            }
+            else
+            {
+                <td style="background-color: @Model.NodeMezmoBackgroundColor(item)">
+                    <a href="https://app.mezmo.com/313dbd82f3/logs/view?hosts=@Html.DisplayFor(modelItem => item.S3NodeName)" style="color: @Model.NodeMezmoTextColor(item)" target="_blank">
+                        @Html.DisplayFor(modelItem => item.MezmoStatus)
+                    </a>
+                </td>
+            }
         </tr>
     }
     </table>
@@ -151,6 +162,18 @@
         </li>
         <li>
             <b>OrcaHello Online</b>: OrcaHello knows about the node.
+        </li>
+        <li>
+            <b>Mezmo Absent</b>: Mezmo does not know about the node.
+        </li>
+        <li>
+            <b>Mezmo NoView</b>: Mezmo has no view configured for the node.
+        </li>
+        <li>
+            <b>Mezmo Offline</b>: Mezmo has no recent log entries for the node.
+        </li>
+        <li>
+            <b>Mezmo Online</b>: Mezmo knows about the node.
         </li>
     </ul>
     <p/>

@@ -44,7 +44,7 @@ namespace OrcanodeMonitor.Pages
             {
                 return ColorTranslator.ToHtml(Color.LightGreen);
             }
-            if (status == OrcanodeOnlineStatus.Hidden)
+            if (status == OrcanodeOnlineStatus.Hidden || status == OrcanodeOnlineStatus.NoView)
             {
                 return ColorTranslator.ToHtml(Color.Yellow);
             }
@@ -54,7 +54,8 @@ namespace OrcanodeMonitor.Pages
         private string GetTextColor(OrcanodeOnlineStatus status)
         {
             if (status == OrcanodeOnlineStatus.Online ||
-                status == OrcanodeOnlineStatus.Hidden)
+                status == OrcanodeOnlineStatus.Hidden ||
+                status == OrcanodeOnlineStatus.NoView)
             {
                 return ColorTranslator.ToHtml(Color.FromArgb(0, 0, 238));
             }
@@ -68,6 +69,10 @@ namespace OrcanodeMonitor.Pages
         public string NodeOrcaHelloTextColor(Orcanode node) => GetTextColor(node.OrcaHelloStatus);
 
         public string NodeOrcaHelloBackgroundColor(Orcanode node) => GetBackgroundColor(node.OrcaHelloStatus);
+
+        public string NodeMezmoTextColor(Orcanode node) => GetTextColor(node.MezmoStatus);
+
+        public string NodeMezmoBackgroundColor(Orcanode node) => GetBackgroundColor(node.MezmoStatus);
 
         public string NodeDataplicityBackgroundColor(Orcanode node) => GetBackgroundColor(node.DataplicityConnectionStatus);
 

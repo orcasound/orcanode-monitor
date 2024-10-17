@@ -19,6 +19,7 @@ namespace OrcanodeMonitor.Models
         Unintelligible,
         Hidden,
         Unauthorized,
+        NoView,
     }
     public enum OrcanodeUpgradeStatus
     {
@@ -61,6 +62,8 @@ namespace OrcanodeMonitor.Models
             DataplicitySerial = string.Empty;
             OrcaHelloId = string.Empty;
             PartitionValue = 1;
+            MezmoLogSize = 0;
+            MezmoViewId = string.Empty;
         }
 
         #region persisted
@@ -194,10 +197,45 @@ namespace OrcanodeMonitor.Models
         /// Orcasound site host (defaults to empty).
         /// </summary>
         public string OrcasoundHost { get; set; }
-        
+
+        /// <summary>
+        /// Mezmo view ID.
+        /// </summary>
+        public string MezmoViewId { get; set; }
+
+        /// <summary>
+        /// Mezmo log size.
+        /// </summary>
+        public int? MezmoLogSize { get; set; }
+
         #endregion persisted
 
         #region derived
+
+
+        /// <summary>
+        /// Mezmo status of the node.
+        /// </summary>
+        public OrcanodeOnlineStatus MezmoStatus
+        {
+            get
+            {
+                if (!this.MezmoLogSize.HasValue)
+                {
+                    return OrcanodeOnlineStatus.Absent;
+                }
+                if (this.MezmoLogSize.Value == 0)
+                {
+                    return OrcanodeOnlineStatus.Offline;
+                }
+                if (this.MezmoViewId.IsNullOrEmpty())
+                {
+                    return OrcanodeOnlineStatus.NoView;
+                }
+                return OrcanodeOnlineStatus.Online;
+            }
+        }
+
         public string DisplayName
         {
             get
