@@ -13,12 +13,6 @@
         <tr>
             <th>Type</th>
             <th>Location</th>
-            <!--
-            <th>Latest recorded</th>
-            <th>Latest uploaded</th>
-            <th>Manifest updated</th>
-            <th>Last checked</th>
-            -->
             <th><a href="https://www.dataplicity.com/app/" target="_blank">Dataplicity</a></th>
             <th>Agent Version</th>
             <th>SD Card Util.</th>
@@ -36,20 +30,6 @@
             <td title="@Html.DisplayFor(modelItem => item.DataplicityDescription)">
                 @Html.DisplayFor(modelItem => item.DisplayName)
             </td>
-            <!--
-            <td>
-                @Html.DisplayFor(modelItem => item.LatestRecordedLocal)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.LatestUploadedLocal)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ManifestUpdatedLocal)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.LastCheckedLocal)
-            </td>
-            -->
             <td style="background-color: @Model.NodeDataplicityBackgroundColor(item)">
                 <a asp-page="/DataplicityNode" asp-route-serial="@item.DataplicitySerial" style="color: @Model.NodeDataplicityTextColor(item)" target="_blank">
                     @Html.DisplayFor(modelItem => item.DataplicityConnectionStatus)
@@ -173,7 +153,7 @@
             <b>Mezmo Offline</b>: Mezmo has no recent log entries for the node.
         </li>
         <li>
-            <b>Mezmo Online</b>: Mezmo knows about the node.
+            <b>Mezmo Online</b>: Mezmo is receiving recent log entries from the node.
         </li>
     </ul>
     <p/>

@@ -226,6 +226,7 @@ namespace OrcanodeMonitor.Models
                 }
                 if (this.MezmoLogSize.Value == 0)
                 {
+                    // No recent log entries, so the logger must be offline.
                     return OrcanodeOnlineStatus.Offline;
                 }
                 if (this.MezmoViewId.IsNullOrEmpty())

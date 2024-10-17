@@ -70,8 +70,18 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeOrcaHelloBackgroundColor(Orcanode node) => GetBackgroundColor(node.OrcaHelloStatus);
 
+        /// <summary>
+        /// Gets the text color for the Mezmo status of the specified node.
+        /// </summary>
+        /// <param name="node">The Orcanode instance.</param>
+        /// <returns>A string representation of the text color.</returns>
         public string NodeMezmoTextColor(Orcanode node) => GetTextColor(node.MezmoStatus);
 
+        /// <summary>
+        /// Gets the background color for the Mezmo status of the specified node.
+        /// </summary>
+        /// <param name="node">The Orcanode instance.</param>
+        /// <returns>A string representation of the background color.</returns>
         public string NodeMezmoBackgroundColor(Orcanode node) => GetBackgroundColor(node.MezmoStatus);
 
         public string NodeDataplicityBackgroundColor(Orcanode node) => GetBackgroundColor(node.DataplicityConnectionStatus);
