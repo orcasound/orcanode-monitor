@@ -358,15 +358,15 @@ namespace OrcanodeMonitor.Models
                 {
                     return "Dev";
                 }
-                if (this.DataplicityName.ToLower().StartsWith("live"))
+                if (this.DataplicityName.StartsWith("live", StringComparison.OrdinalIgnoreCase))
                 {
                     return "Prod";
                 }
-                if (this.DataplicityName.ToLower().StartsWith("dev"))
+                if (this.DataplicityName.StartsWith("dev", StringComparison.OrdinalIgnoreCase))
                 {
                     return "Dev";
                 }
-                if (this.DataplicityName.ToLower().StartsWith("beta"))
+                if (this.DataplicityName.StartsWith("beta", StringComparison.OrdinalIgnoreCase))
                 {
                     return "Beta";
                 }
