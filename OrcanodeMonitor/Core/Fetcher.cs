@@ -28,7 +28,6 @@ namespace OrcanodeMonitor.Core
         private static TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
         private static HttpClient _httpClient = new HttpClient();
         private static string _orcasoundProdSite = "live.orcasound.net";
-        private static string _orcasoundDevSite = "dev.orcasound.net";
         private static string _orcasoundFeedsUrlPath = "/api/json/feeds";
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
         private static string _mezmoViewsUrl = "https://api.mezmo.com/v1/config/view";
@@ -886,7 +885,6 @@ namespace OrcanodeMonitor.Core
             try
             {
                 await UpdateOrcasoundSiteDataAsync(context, _orcasoundProdSite, foundList, unfoundList);
-                await UpdateOrcasoundSiteDataAsync(context, _orcasoundDevSite, foundList, unfoundList);
 
                 // Mark any remaining unfound nodes as absent.
                 foreach (var unfoundNode in unfoundList)

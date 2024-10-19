@@ -105,13 +105,13 @@ namespace OrcanodeMonitor.Pages
         public async Task OnGetAsync()
         {
             var nodes = await _databaseContext.Orcanodes.ToListAsync();
-            _nodes = nodes.Where(n => n.DataplicityConnectionStatus != OrcanodeOnlineStatus.Absent ||
-                                          n.OrcasoundStatus != OrcanodeOnlineStatus.Absent ||
-                                          (n.S3StreamStatus != OrcanodeOnlineStatus.Absent &&
-                                          n.S3StreamStatus != OrcanodeOnlineStatus.Unauthorized))
-                              .OrderByDescending(n => n.Type)
-                              .ThenBy(n => n.DisplayName)
-                              .ToList();
+            _nodes = nodes.Where(n => ((n.DataplicityConnectionStatus != OrcanodeOnlineStatus.Absent) ||
+                                       (n.OrcasoundStatus != OrcanodeOnlineStatus.Absent) ||
+                                       (n.S3StreamStatus != OrcanodeOnlineStatus.Absent &&
+                                        n.S3StreamStatus != OrcanodeOnlineStatus.Unauthorized)) &&
+                                      (n.OrcasoundHost != "dev.orcasound.net"))
+                          .OrderBy(n => n.DisplayName)
+                          .ToList();
         }
     }
 }
