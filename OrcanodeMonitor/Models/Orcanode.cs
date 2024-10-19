@@ -350,23 +350,29 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        private bool IsDev
+        public string Type
         {
             get
             {
                 if (this.S3Bucket.StartsWith("dev"))
                 {
-                    return true;
+                    return "Dev";
                 }
-                if (this.DataplicityName.ToLower().StartsWith("dev"))
+                if (this.DataplicityName.StartsWith("live", StringComparison.OrdinalIgnoreCase))
                 {
-                    return true;
+                    return "Prod";
                 }
-                return false;
+                if (this.DataplicityName.StartsWith("dev", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "Dev";
+                }
+                if (this.DataplicityName.StartsWith("beta", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "Beta";
+                }
+                return "Unknown";
             }
         }
-
-        public string Type => IsDev ? "Dev" : "Prod";
 
         public string OrcasoundOnlineStatusString {
             get
