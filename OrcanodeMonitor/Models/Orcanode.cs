@@ -360,7 +360,7 @@ namespace OrcanodeMonitor.Models
                 }
                 if (this.DataplicityName.StartsWith("live", StringComparison.OrdinalIgnoreCase))
                 {
-                    return "Prod";
+                    return "Live";
                 }
                 if (this.DataplicityName.StartsWith("dev", StringComparison.OrdinalIgnoreCase))
                 {

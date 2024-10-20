@@ -16,10 +16,10 @@
             <th><a href="https://www.dataplicity.com/app/" target="_blank">Dataplicity</a></th>
             <th>Agent Version</th>
             <th>SD Card Util.</th>
-            <th><a href="https://live.orcasound.net/listen" target="_blank">Orcasound</a></th>
-            <th>S3 Stream</th>
-            <th><a href="https://aifororcas2.azurewebsites.net/hydrophones" target="_blank">OrcaHello</a></th>
             <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Mezmo</a></th>
+            <th><a href="https://open.quiltdata.com/b/audio-orcasound-net/tree/" target="_blank">S3 Stream</a></th>
+            <th><a href="https://live.orcasound.net/listen" target="_blank">Orcasound</a></th>
+            <th><a href="https://aifororcas2.azurewebsites.net/hydrophones" target="_blank">OrcaHello</a></th>
         </tr>
     @foreach (Models.Orcanode item in Model.Nodes)
     {
@@ -42,17 +42,17 @@
                 @Html.DisplayFor(modelItem => item.DiskUsedInGigs)/@Html.DisplayFor(modelItem => item.DiskCapacityInGigs)G
                 (@Html.DisplayFor(modelItem => item.DiskUsagePercentage)%)
             </td>
-            @if (item.OrcasoundStatus == Models.OrcanodeOnlineStatus.Absent)
+            @if (item.MezmoStatus == Models.OrcanodeOnlineStatus.Absent)
             {
-                <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item); color: @Model.NodeOrcasoundTextColor(item)">
-                    @Html.DisplayFor(modelItem => item.OrcasoundStatus)
+                    <td style="background-color: @Model.NodeMezmoBackgroundColor(item); color: @Model.NodeMezmoTextColor(item)">
+                    @Html.DisplayFor(modelItem => item.MezmoStatus)
                 </td>
             }
             else
             {
-                <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item)">
-                    <a href="https://@Html.DisplayFor(modelItem => item.OrcasoundHost)/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" style="color: @Model.NodeOrcasoundTextColor(item)" target="_blank">
-                        @Html.DisplayFor(modelItem => item.OrcasoundStatus)
+                <td style="background-color: @Model.NodeMezmoBackgroundColor(item)">
+                    <a href="https://app.mezmo.com/313dbd82f3/logs/view?hosts=@Html.DisplayFor(modelItem => item.S3NodeName)" style="color: @Model.NodeMezmoTextColor(item)" target="_blank">
+                        @Html.DisplayFor(modelItem => item.MezmoStatus)
                     </a>
                 </td>
             }
@@ -70,6 +70,20 @@
                     </a>
                 </td>
             }
+            @if (item.OrcasoundStatus == Models.OrcanodeOnlineStatus.Absent)
+            {
+                <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item); color: @Model.NodeOrcasoundTextColor(item)">
+                    @Html.DisplayFor(modelItem => item.OrcasoundStatus)
+                </td>
+            }
+            else
+            {
+                <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item)">
+                    <a href="https://@Html.DisplayFor(modelItem => item.OrcasoundHost)/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" style="color: @Model.NodeOrcasoundTextColor(item)" target="_blank">
+                        @Html.DisplayFor(modelItem => item.OrcasoundStatus)
+                    </a>
+                </td>
+            }
             @if (item.OrcaHelloStatus == Models.OrcanodeOnlineStatus.Absent)
             {
                     <td style="background-color: @Model.NodeOrcaHelloBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
@@ -81,20 +95,6 @@
                 <td style="background-color: @Model.NodeOrcaHelloBackgroundColor(item)">
                     <a href="https://aifororcas2.azurewebsites.net/hydrophones" style="color: @Model.NodeOrcaHelloTextColor(item)" target="_blank">
                         @Html.DisplayFor(modelItem => item.OrcaHelloStatus)
-                    </a>
-                </td>
-            }
-            @if (item.MezmoStatus == Models.OrcanodeOnlineStatus.Absent)
-            {
-                    <td style="background-color: @Model.NodeMezmoBackgroundColor(item); color: @Model.NodeMezmoTextColor(item)">
-                    @Html.DisplayFor(modelItem => item.MezmoStatus)
-                </td>
-            }
-            else
-            {
-                <td style="background-color: @Model.NodeMezmoBackgroundColor(item)">
-                    <a href="https://app.mezmo.com/313dbd82f3/logs/view?hosts=@Html.DisplayFor(modelItem => item.S3NodeName)" style="color: @Model.NodeMezmoTextColor(item)" target="_blank">
-                        @Html.DisplayFor(modelItem => item.MezmoStatus)
                     </a>
                 </td>
             }
@@ -111,7 +111,7 @@
             <b>Type Dev</b>: The node is a developer node.
         </li>
         <li>
-            <b>Type Prod</b>: The node is a production node.
+            <b>Type Live</b>: The node is a production node.
         </li>
         <li>
             <b>Type Unknown</b>: The node is type is unknown.
@@ -126,13 +126,16 @@
             <b>Dataplicity Online</b>: Dataplicity connection is up.
         </li>
         <li>
-            <b>Orcasound Absent</b>: orcasound.net does not know about the node.
+            <b>Mezmo Absent</b>: Mezmo does not know about the node.
         </li>
         <li>
-            <b>Orcasound Hidden</b>: orcasound.net knows about but does not display the node.
+            <b>Mezmo NoView</b>: Mezmo has no view configured for the node.
         </li>
         <li>
-            <b>Orcasound Online</b>: orcasound.net knows about the node.
+            <b>Mezmo Offline</b>: Mezmo has no recent log entries for the node.
+        </li>
+        <li>
+            <b>Mezmo Online</b>: Mezmo is receiving recent log entries from the node.
         </li>
         <li>
             <b>S3 Stream Absent</b>: No latest.txt file exists on S3 for this node.
@@ -150,22 +153,19 @@
             <b>S3 Stream Unintelligible</b>: Audio stream is being sent to S3 but it appears to be bad.
         </li>
         <li>
+            <b>Orcasound Absent</b>: orcasound.net does not know about the node.
+        </li>
+        <li>
+            <b>Orcasound Hidden</b>: orcasound.net knows about but does not display the node.
+        </li>
+        <li>
+            <b>Orcasound Online</b>: orcasound.net knows about the node.
+        </li>
+        <li>
             <b>OrcaHello Absent</b>: OrcaHello does not know about the node.
         </li>
         <li>
             <b>OrcaHello Online</b>: OrcaHello knows about the node.
-        </li>
-        <li>
-            <b>Mezmo Absent</b>: Mezmo does not know about the node.
-        </li>
-        <li>
-            <b>Mezmo NoView</b>: Mezmo has no view configured for the node.
-        </li>
-        <li>
-            <b>Mezmo Offline</b>: Mezmo has no recent log entries for the node.
-        </li>
-        <li>
-            <b>Mezmo Online</b>: Mezmo is receiving recent log entries from the node.
         </li>
     </ul>
     <p/>
