@@ -140,7 +140,13 @@ namespace OrcanodeMonitor.Pages
                 down += DateTime.UtcNow - start;
             }
 
-            return (int)((100.0 * up) / _uptimeEvaluationPeriod + 0.5);
+            TimeSpan totalTime = up + down;
+            if (totalTime == TimeSpan.Zero)
+            {
+                return 0;
+            }
+            int percentage = (int)((100.0 * up) / totalTime + 0.5);
+            return percentage;
         }
 
         public string NodeUptimePercentageBackgroundColor(Orcanode node)
