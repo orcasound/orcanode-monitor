@@ -121,7 +121,7 @@ namespace OrcanodeMonitor.Pages
                     continue;
                 }
                 DateTime current = e.DateTimeUtc;
-                if (lastValue == "up")
+                if (lastValue == Orcanode.OnlineString)
                 {
                     up += (current - start);
                 }
@@ -132,7 +132,7 @@ namespace OrcanodeMonitor.Pages
                 start = current;
                 lastValue = e.Value;
             }
-            if (lastValue == "up")
+            if (lastValue == Orcanode.OnlineString)
             {
                 up += DateTime.UtcNow - start;
             } else
