@@ -106,8 +106,14 @@ namespace OrcanodeMonitor.Pages
             DateTime start = DateTime.UtcNow - _uptimeEvaluationPeriod;
             string lastValue = string.Empty;
 
+            // Get events sorted by date to ensure correct chronological processing
+            var nodeEvents = _events
+                   .Where(e => e.Orcanode == node)
+                   .OrderBy(e => e.DateTimeUtc)
+                   .ToList();
+
             // Compute uptime percentage by looking at OrcanodeEvents over the past week.
-            foreach (OrcanodeEvent e in _events.Where(e => (e.Orcanode == node)))
+            foreach (OrcanodeEvent e in nodeEvents)
             {
                 if (DateTime.UtcNow - e.DateTimeUtc >= _uptimeEvaluationPeriod) {
                     // More than a week old.
