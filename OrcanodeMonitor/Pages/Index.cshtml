@@ -71,7 +71,7 @@
                     </a>
                 </td>
             }
-            <td>
+            <td style="background-color: @Model.NodeUptimePercentageBackgroundColor(item); color: @Model.NodeUptimePercentageTextColor(item)">
                 @Model.GetUptimePercentage(item)%
             </td>
             @if (item.OrcasoundStatus == Models.OrcanodeOnlineStatus.Absent)

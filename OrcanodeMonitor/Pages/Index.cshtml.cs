@@ -137,6 +137,29 @@ namespace OrcanodeMonitor.Pages
             return (int)((100.0 * up) / _uptimeEvaluationPeriod + 0.5);
         }
 
+        public string NodeUptimePercentageBackgroundColor(Orcanode node)
+        {
+            int value = GetUptimePercentage(node);
+            if (value < 1)
+            {
+                return ColorTranslator.ToHtml(Color.Red);
+            }
+            else if (value > 99)
+            {
+                return ColorTranslator.ToHtml(Color.LightGreen);
+            }
+
+            return ColorTranslator.ToHtml(Color.Yellow);
+        }
+        public string NodeUptimePercentageTextColor(Orcanode node)
+        {
+            if (NodeUptimePercentageBackgroundColor(node) == ColorTranslator.ToHtml(Color.Red))
+            {
+                return ColorTranslator.ToHtml(Color.White);
+            }
+            return ColorTranslator.ToHtml(Color.FromArgb(0, 0, 238));
+        }
+
         public string NodeDataplicityUpgradeColor(Orcanode node)
         {
             OrcanodeUpgradeStatus status = node.DataplicityUpgradeStatus;
