@@ -14,10 +14,12 @@ namespace OrcanodeMonitor.Pages
     {
         private OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<IndexModel> _logger;
+        private List<OrcanodeEvent> _events;
         private List<Orcanode> _nodes;
         public List<Orcanode> Nodes => _nodes;
         private const int _maxEventCountToDisplay = 20;
         public List<OrcanodeEvent> RecentEvents => Fetcher.GetEvents(_databaseContext, _maxEventCountToDisplay);
+        private TimeSpan _uptimeEvaluationPeriod = TimeSpan.FromDays(7); // 1 week.
 
         public IndexModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger)
         {
@@ -92,6 +94,49 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeOrcasoundTextColor(Orcanode node) => GetTextColor(node.OrcasoundStatus);
 
+        public int GetUptimePercentage(Orcanode node)
+        {
+            if (_events == null)
+            {
+                return 0;
+            }
+
+            TimeSpan up = TimeSpan.Zero;
+            TimeSpan down = TimeSpan.Zero;
+            DateTime start = DateTime.UtcNow - _uptimeEvaluationPeriod;
+            string lastValue = string.Empty;
+
+            // Compute uptime percentage by looking at OrcanodeEvents over the past week.
+            foreach (OrcanodeEvent e in _events.Where(e => (e.Orcanode == node)))
+            {
+                if (DateTime.UtcNow - e.DateTimeUtc >= _uptimeEvaluationPeriod) {
+                    // More than a week old.
+                    lastValue = e.Value;
+                    continue;
+                }
+                DateTime current = e.DateTimeUtc;
+                if (lastValue == "up")
+                {
+                    up += (current - start);
+                }
+                else
+                {
+                    down += (current - start);
+                }
+                start = current;
+                lastValue = e.Value;
+            }
+            if (lastValue == "up")
+            {
+                up += DateTime.UtcNow - start;
+            } else
+            {
+                down += DateTime.UtcNow - start;
+            }
+
+            return (int)((100.0 * up) / _uptimeEvaluationPeriod + 0.5);
+        }
+
         public string NodeDataplicityUpgradeColor(Orcanode node)
         {
             OrcanodeUpgradeStatus status = node.DataplicityUpgradeStatus;
@@ -104,6 +149,7 @@ namespace OrcanodeMonitor.Pages
 
         public async Task OnGetAsync()
         {
+            // Fetch nodes for display.
             var nodes = await _databaseContext.Orcanodes.ToListAsync();
             _nodes = nodes.Where(n => ((n.DataplicityConnectionStatus != OrcanodeOnlineStatus.Absent) ||
                                        (n.OrcasoundStatus != OrcanodeOnlineStatus.Absent) ||
@@ -112,6 +158,10 @@ namespace OrcanodeMonitor.Pages
                                       (n.OrcasoundHost != "dev.orcasound.net"))
                           .OrderBy(n => n.DisplayName)
                           .ToList();
+
+            // Fetch events for uptime computation.
+            var events = await _databaseContext.OrcanodeEvents.ToListAsync();
+            _events = events.Where(e => e.Type == "hydrophone stream").ToList();
         }
     }
 }

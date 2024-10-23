@@ -18,6 +18,7 @@
             <th>SD Card Util.</th>
             <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Mezmo</a></th>
             <th><a href="https://open.quiltdata.com/b/audio-orcasound-net/tree/" target="_blank">S3 Stream</a></th>
+            <th>Up%</th>
             <th><a href="https://live.orcasound.net/listen" target="_blank">Orcasound</a></th>
             <th><a href="https://aifororcas2.azurewebsites.net/hydrophones" target="_blank">OrcaHello</a></th>
         </tr>
@@ -70,6 +71,9 @@
                     </a>
                 </td>
             }
+            <td>
+                @Model.GetUptimePercentage(item)%
+            </td>
             @if (item.OrcasoundStatus == Models.OrcanodeOnlineStatus.Absent)
             {
                 <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item); color: @Model.NodeOrcasoundTextColor(item)">
