@@ -392,6 +392,63 @@ namespace OrcanodeMonitor.Models
 
         public OrcanodeIftttDTO ToIftttDTO() => new OrcanodeIftttDTO(ID, DisplayName);
 
+        public static int GetUptimePercentage(string orcanodeId, List<OrcanodeEvent> events, DateTime since)
+        {
+            if (events == null)
+            {
+                return 0;
+            }
+
+            TimeSpan up = TimeSpan.Zero;
+            TimeSpan down = TimeSpan.Zero;
+            DateTime start = since;
+            string lastValue = string.Empty;
+
+            // Get events sorted by date to ensure correct chronological processing
+            var nodeEvents = events
+                   .Where(e => e.OrcanodeId == orcanodeId)
+                   .OrderBy(e => e.DateTimeUtc)
+                   .ToList();
+
+            // Compute uptime percentage by looking at OrcanodeEvents over the past week.
+            foreach (OrcanodeEvent e in nodeEvents)
+            {
+                if (e.DateTimeUtc <= since)
+                {
+                    // Event is too old.
+                    lastValue = e.Value;
+                    continue;
+                }
+                DateTime current = e.DateTimeUtc;
+                if (lastValue == Orcanode.OnlineString)
+                {
+                    up += (current - start);
+                }
+                else
+                {
+                    down += (current - start);
+                }
+                start = current;
+                lastValue = e.Value;
+            }
+            if (lastValue == Orcanode.OnlineString)
+            {
+                up += DateTime.UtcNow - start;
+            }
+            else
+            {
+                down += DateTime.UtcNow - start;
+            }
+
+            TimeSpan totalTime = up + down;
+            if (totalTime == TimeSpan.Zero)
+            {
+                return 0;
+            }
+            int percentage = (int)((100.0 * up) / totalTime + 0.5);
+            return percentage;
+        }
+
         /// <summary>
         /// Derive a human-readable display name from a Dataplicity node name.
         /// </summary>

@@ -19,12 +19,13 @@ namespace OrcanodeMonitor.Pages
         public List<Orcanode> Nodes => _nodes;
         private const int _maxEventCountToDisplay = 20;
         public List<OrcanodeEvent> RecentEvents => Fetcher.GetEvents(_databaseContext, _maxEventCountToDisplay);
-        private TimeSpan _uptimeEvaluationPeriod = TimeSpan.FromDays(7); // 1 week.
 
         public IndexModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger)
         {
             _databaseContext = context;
             _logger = logger;
+            _events = new List<OrcanodeEvent>();
+            _nodes = new List<Orcanode>();
         }
         public string LastChecked
         {
@@ -94,64 +95,13 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeOrcasoundTextColor(Orcanode node) => GetTextColor(node.OrcasoundStatus);
 
-        public int GetUptimePercentage(Orcanode node)
-        {
-            if (_events == null)
-            {
-                return 0;
-            }
+        private DateTime SinceTime => DateTime.UtcNow.AddDays(-7);
 
-            TimeSpan up = TimeSpan.Zero;
-            TimeSpan down = TimeSpan.Zero;
-            DateTime start = DateTime.UtcNow - _uptimeEvaluationPeriod;
-            string lastValue = string.Empty;
-
-            // Get events sorted by date to ensure correct chronological processing
-            var nodeEvents = _events
-                   .Where(e => e.Orcanode == node)
-                   .OrderBy(e => e.DateTimeUtc)
-                   .ToList();
-
-            // Compute uptime percentage by looking at OrcanodeEvents over the past week.
-            foreach (OrcanodeEvent e in nodeEvents)
-            {
-                if (DateTime.UtcNow - e.DateTimeUtc >= _uptimeEvaluationPeriod) {
-                    // More than a week old.
-                    lastValue = e.Value;
-                    continue;
-                }
-                DateTime current = e.DateTimeUtc;
-                if (lastValue == Orcanode.OnlineString)
-                {
-                    up += (current - start);
-                }
-                else
-                {
-                    down += (current - start);
-                }
-                start = current;
-                lastValue = e.Value;
-            }
-            if (lastValue == Orcanode.OnlineString)
-            {
-                up += DateTime.UtcNow - start;
-            } else
-            {
-                down += DateTime.UtcNow - start;
-            }
-
-            TimeSpan totalTime = up + down;
-            if (totalTime == TimeSpan.Zero)
-            {
-                return 0;
-            }
-            int percentage = (int)((100.0 * up) / totalTime + 0.5);
-            return percentage;
-        }
+        public int GetUptimePercentage(Orcanode node) => Orcanode.GetUptimePercentage(node.ID, _events, SinceTime);
 
         public string NodeUptimePercentageBackgroundColor(Orcanode node)
         {
-            int value = GetUptimePercentage(node);
+            int value = Orcanode.GetUptimePercentage(node.ID, _events, SinceTime);
             if (value < 1)
             {
                 return ColorTranslator.ToHtml(Color.Red);

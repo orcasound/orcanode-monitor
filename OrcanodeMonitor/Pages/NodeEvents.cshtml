@@ -1,0 +1,41 @@
+﻿@page "{id}"
+@model OrcanodeMonitor.Pages.NodeEventsModel
+@{
+    ViewData["Title"] = "Node Events";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Node Events</h1>
+    <form method="post">
+       <input type="hidden" name="Id" value="@Model.Id" />
+       <button type="submit" name="Selected" value="week" class="@(Model.Selected == "week" ? "selected" : "")">Past Week</button>
+       <button type="submit" name="Selected" value="month" class="@(Model.Selected == "month" ? "selected" : "")">Past Month</button>
+    </form>
+    <p>
+        Uptime percentage: @Model.UptimePercentage%
+    </p>
+    <table>
+        <tr>
+            <th>Timestamp</th>
+            <th>Event</th>
+        </tr>
+        @foreach (Models.OrcanodeEvent item in Model.RecentEvents)
+        {
+            <tr>
+                <td>
+                    @item.DateTimeLocal
+                </td>
+                <td>
+                    @item.Description
+                </td>
+            </tr>
+        }
+    </table>
+</div>
+
+<style>
+    .selected {
+        background-color: blue;
+        color: white;
+    }
+</style>
