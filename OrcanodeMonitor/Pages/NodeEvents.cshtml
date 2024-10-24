@@ -1,0 +1,26 @@
+﻿@page "{id}"
+@model OrcanodeMonitor.Pages.NodeEventsModel
+@{
+    ViewData["Title"] = "Node Events";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Node Events</h1>
+    <table>
+        <tr>
+            <th>Timestamp</th>
+            <th>Event</th>
+        </tr>
+        @foreach (Models.OrcanodeEvent item in Model.RecentEvents)
+        {
+            <tr>
+                <td>
+                    @item.DateTimeLocal
+                </td>
+                <td>
+                    @item.Description
+                </td>
+            </tr>
+        }
+    </table>
+</div>

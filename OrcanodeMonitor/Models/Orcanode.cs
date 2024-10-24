@@ -46,6 +46,7 @@ namespace OrcanodeMonitor.Models
     {
         const int _defaultMaxUploadDelayMinutes = 2;
         const double _defaultMinIntelligibleStreamDeviation = 175;
+        public static TimeSpan UptimeEvaluationPeriod = TimeSpan.FromDays(7); // 1 week.
 
         public Orcanode()
         {

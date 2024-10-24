@@ -141,7 +141,7 @@ namespace OrcanodeMonitor.Models
 
         public override string ToString()
         {
-            return string.Format("{0} {1} => {2} at {3}", Slug, Type, Value, Fetcher.UtcToLocalDateTime(DateTimeUtc));
+            return string.Format("{0} {1} => {2} at {3}", NodeName, Type, Value, Fetcher.UtcToLocalDateTime(DateTimeUtc));
         }
 
         #endregion methods

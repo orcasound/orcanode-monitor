@@ -19,12 +19,13 @@ namespace OrcanodeMonitor.Pages
         public List<Orcanode> Nodes => _nodes;
         private const int _maxEventCountToDisplay = 20;
         public List<OrcanodeEvent> RecentEvents => Fetcher.GetEvents(_databaseContext, _maxEventCountToDisplay);
-        private TimeSpan _uptimeEvaluationPeriod = TimeSpan.FromDays(7); // 1 week.
 
         public IndexModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger)
         {
             _databaseContext = context;
             _logger = logger;
+            _events = new List<OrcanodeEvent>();
+            _nodes = new List<Orcanode>();
         }
         public string LastChecked
         {
@@ -103,7 +104,7 @@ namespace OrcanodeMonitor.Pages
 
             TimeSpan up = TimeSpan.Zero;
             TimeSpan down = TimeSpan.Zero;
-            DateTime start = DateTime.UtcNow - _uptimeEvaluationPeriod;
+            DateTime start = DateTime.UtcNow - Orcanode.UptimeEvaluationPeriod;
             string lastValue = string.Empty;
 
             // Get events sorted by date to ensure correct chronological processing
@@ -115,7 +116,7 @@ namespace OrcanodeMonitor.Pages
             // Compute uptime percentage by looking at OrcanodeEvents over the past week.
             foreach (OrcanodeEvent e in nodeEvents)
             {
-                if (DateTime.UtcNow - e.DateTimeUtc >= _uptimeEvaluationPeriod) {
+                if (DateTime.UtcNow - e.DateTimeUtc >= Orcanode.UptimeEvaluationPeriod) {
                     // More than a week old.
                     lastValue = e.Value;
                     continue;

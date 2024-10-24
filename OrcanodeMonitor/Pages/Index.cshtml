@@ -71,8 +71,10 @@
                     </a>
                 </td>
             }
-            <td style="background-color: @Model.NodeUptimePercentageBackgroundColor(item); color: @Model.NodeUptimePercentageTextColor(item)">
-                @Model.GetUptimePercentage(item)%
+            <td style="background-color: @Model.NodeUptimePercentageBackgroundColor(item)">
+                    <a asp-page="/NodeEvents" asp-route-id="@item.ID" style="color: @Model.NodeUptimePercentageTextColor(item)" target="_blank">
+                    @Model.GetUptimePercentage(item)%
+                </a>
             </td>
             @if (item.OrcasoundStatus == Models.OrcanodeOnlineStatus.Absent)
             {
