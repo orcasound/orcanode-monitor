@@ -63,6 +63,13 @@ namespace OrcanodeMonitor.Models
     {
         public OrcanodeEvent()
         {
+            Slug = string.Empty;
+            Type = string.Empty;
+            Value = string.Empty;
+            OrcanodeId = string.Empty;
+            ID = string.Empty;
+            DateTimeUtc = DateTime.UtcNow;
+            Year = DateTimeUtc.Year;
         }
 
         public OrcanodeEvent(Orcanode node, string type, string value, DateTime timestamp)
@@ -97,7 +104,7 @@ namespace OrcanodeMonitor.Models
         public string OrcanodeId { get; set; }
 
         // Navigation property that uses OrcanodeId.
-        public virtual Orcanode Orcanode { get; set; }
+        public virtual Orcanode? Orcanode { get; set; }
 
         public DateTime DateTimeUtc { get; set; }
 
@@ -141,7 +148,7 @@ namespace OrcanodeMonitor.Models
 
         public override string ToString()
         {
-            return string.Format("{0} {1} => {2} at {3}", Slug, Type, Value, Fetcher.UtcToLocalDateTime(DateTimeUtc));
+            return string.Format("{0} {1} => {2} at {3}", NodeName, Type, Value, Fetcher.UtcToLocalDateTime(DateTimeUtc));
         }
 
         #endregion methods

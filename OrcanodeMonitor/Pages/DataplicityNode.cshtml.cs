@@ -22,6 +22,8 @@ namespace OrcanodeMonitor.Pages
         {
             _databaseContext = context;
             _logger = logger;
+            _serial = string.Empty;
+            _jsonData = string.Empty;
         }
 
         public string LastChecked

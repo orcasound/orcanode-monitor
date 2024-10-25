@@ -1042,6 +1042,18 @@ namespace OrcanodeMonitor.Core
             return orcanodeEvents;
         }
 
+        public static List<OrcanodeEvent> GetRecentEventsForNode(OrcanodeMonitorContext context, string id, DateTime since)
+        {
+            List<OrcanodeEvent> events = context.OrcanodeEvents.Where(e => e.OrcanodeId == id).OrderByDescending(e => e.DateTimeUtc).ToList();
+            List<OrcanodeEvent> orcanodeEvents = events.Where(e => e.DateTimeUtc >= since).ToList();
+            OrcanodeEvent? olderEvent = events.Where(e => (e.DateTimeUtc < since)).FirstOrDefault();
+            if (olderEvent != null)
+            {
+                return orcanodeEvents.Append(olderEvent).ToList();
+            }
+            return orcanodeEvents;
+        }
+
         private static void AddOrcanodeEvent(OrcanodeMonitorContext context, Orcanode node, string type, string value)
         {
             var orcanodeEvent = new OrcanodeEvent(node, type, value, DateTime.UtcNow);

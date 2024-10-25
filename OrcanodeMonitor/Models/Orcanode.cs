@@ -393,6 +393,82 @@ namespace OrcanodeMonitor.Models
         public OrcanodeIftttDTO ToIftttDTO() => new OrcanodeIftttDTO(ID, DisplayName);
 
         /// <summary>
+        /// Calculates the uptime percentage for a node based on its events since a specified date.
+        /// </summary>
+        /// <param name="orcanodeId">The ID of the node to calculate uptime for</param>
+        /// <param name="events">List of node events</param>
+        /// <param name="since">The start date for uptime calculation</param>
+        /// <returns>Uptime percentage as an integer between 0 and 100</returns>
+        /// <exception cref="ArgumentException">Thrown when orcanodeId is null or empty</exception>         
+        public static int GetUptimePercentage(string orcanodeId, List<OrcanodeEvent> events, DateTime since)
+        {
+            if (string.IsNullOrEmpty(orcanodeId))
+            {
+                throw new ArgumentException("Node ID cannot be null or empty", nameof(orcanodeId));
+            }
+            if (since > DateTime.UtcNow)
+            {
+                throw new ArgumentException("Start date cannot be in the future", nameof(since));
+            }
+            if (events == null)
+            {
+                return 0;
+            }
+
+            TimeSpan up = TimeSpan.Zero;
+            TimeSpan down = TimeSpan.Zero;
+            DateTime start = since;
+            string lastValue = string.Empty;
+
+            // Get events sorted by date to ensure correct chronological processing.
+            var nodeEvents = events
+                   .Where(e => e.OrcanodeId == orcanodeId)
+                   .OrderBy(e => e.DateTimeUtc)
+                   .ToList();
+
+            // Compute uptime percentage by looking at OrcanodeEvents over the past week.
+            foreach (OrcanodeEvent e in nodeEvents)
+            {
+                if (e.DateTimeUtc <= since)
+                {
+                    // Event is too old.
+                    lastValue = e.Value;
+                    continue;
+                }
+                DateTime current = e.DateTimeUtc;
+                if (lastValue == OnlineString)
+                {
+                    up += (current - start);
+                }
+                else
+                {
+                    down += (current - start);
+                }
+                start = current;
+                lastValue = e.Value;
+            }
+
+            // Account for the reminder of the time until now.
+            DateTime now = DateTime.UtcNow;
+            if (lastValue == OnlineString)
+            {
+                up += now - start;
+            }
+            else
+            {
+                down += now - start;
+            }
+
+            TimeSpan totalTime = up + down;
+            if (totalTime == TimeSpan.Zero)
+            {
+                return 0;
+            }
+            int percentage = (int)((100.0 * up) / totalTime + 0.5);
+            return percentage;
+        }
+
+        /// <summary>
         /// Derive a human-readable display name from a Dataplicity node name.
         /// </summary>
         /// <param name="dataplicityName">The node name at Dataplicity</param>

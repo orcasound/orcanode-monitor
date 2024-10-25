@@ -1,0 +1,51 @@
+﻿@page "{id}"
+@model OrcanodeMonitor.Pages.NodeEventsModel
+@{
+    ViewData["Title"] = "Node Events";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Node Events</h1>
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="Id" value="@Model.Id" />
+        <div role="group" aria-label="Time period selection">
+            <button type="submit" name="Selected" value="week"
+                    class="btn @(Model.Selected == "week" ? "selected" : "unselected")"
+                    aria-pressed="@(Model.Selected == "week" ? "true" : "false")" >
+                Past Week
+            </button>
+            <button type="submit" name="Selected" value="month"
+                    class="btn @(Model.Selected == "month" ? "selected" : "unselected")"
+                    aria-pressed="@(Model.Selected == "month" ? "true" : "false")">
+                Past Month
+            </button>
+        </div>
+ </form>
+    <p>
+        Uptime percentage: @Model.UptimePercentage%
+    </p>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Event</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.RecentEvents.Any())
+            {
+                <tr>
+                    <td colspan="2" class="text-center">No events found for this time period.</td>
+                </tr>
+            }
+            @foreach (Models.OrcanodeEvent item in Model.RecentEvents)
+            {
+                <tr>
+                    <td>@item.DateTimeLocal.ToString("g")</td>
+                    <td align="left">@item.Description</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

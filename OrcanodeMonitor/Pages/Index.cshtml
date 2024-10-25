@@ -71,8 +71,11 @@
                     </a>
                 </td>
             }
-            <td style="background-color: @Model.NodeUptimePercentageBackgroundColor(item); color: @Model.NodeUptimePercentageTextColor(item)">
-                @Model.GetUptimePercentage(item)%
+            <td style="background-color: @Model.NodeUptimePercentageBackgroundColor(item)">
+                    <a asp-page="/NodeEvents" asp-route-id="@item.ID" style="color: @Model.NodeUptimePercentageTextColor(item)" target="_blank"
+                       aria-label="View events for @item.DisplayName (opens in new tab)">
+                    @Model.GetUptimePercentage(item)%
+                </a>
             </td>
             @if (item.OrcasoundStatus == Models.OrcanodeOnlineStatus.Absent)
             {
@@ -175,20 +178,20 @@
     <p/>
     <h1 class="display-4"><a href="/api/ifttt/v1/triggers/nodestateevents">Recent State Events</a></h1>
     <table>
-        <tr>
-            <th>Timestamp</th>
-            <th>Event</th>
-        </tr>
-        @foreach (Models.OrcanodeEvent item in Model.RecentEvents)
-        {
+        <thead>
             <tr>
-                <td>
-                    @item.DateTimeLocal
-                </td>
-                <td>
-                    @item.Description
-                </td>
+                <th>Timestamp</th>
+                <th>Event</th>
             </tr>
-        }
+        </thead>
+        <tbody>
+            @foreach (Models.OrcanodeEvent item in Model.RecentEvents)
+            {
+                <tr>
+                    <td>@item.DateTimeLocal.ToString("g")</td>
+                    <td align="left">@item.Description</td>
+                </tr>
+            }
+        </tbody>
     </table>
  </div>
