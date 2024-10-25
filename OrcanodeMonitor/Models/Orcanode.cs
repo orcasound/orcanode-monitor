@@ -422,7 +422,7 @@ namespace OrcanodeMonitor.Models
 
             // Get events sorted by date to ensure correct chronological processing.
             var nodeEvents = events
-                   .Where(e => e.OrcanodeId == orcanodeId)
+                   .Where(e => e.OrcanodeId == orcanodeId && e.Type == "hydrophone stream")
                    .OrderBy(e => e.DateTimeUtc)
                    .ToList();
 
