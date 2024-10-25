@@ -16,12 +16,12 @@ namespace OrcanodeMonitor.Api
 {
     public class ErrorResponse
     {
-        public List<ErrorItem> Errors { get; set; }
+        public List<ErrorItem> Errors { get; set; } = new List<ErrorItem>();
     }
 
     public class ErrorItem
     {
-        public string Message { get; set; }
+        public string Message { get; set; } = string.Empty;
     }
 
     [Route("api/ifttt/v1/queries/[controller]")]

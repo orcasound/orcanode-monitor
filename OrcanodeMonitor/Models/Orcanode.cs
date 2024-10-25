@@ -50,6 +50,7 @@ namespace OrcanodeMonitor.Models
         public Orcanode()
         {
             // Initialize reference types.
+            ID = string.Empty;
             OrcasoundName = string.Empty;
             OrcasoundSlug = string.Empty;
             OrcasoundFeedId = string.Empty;
