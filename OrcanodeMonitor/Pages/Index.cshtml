@@ -72,7 +72,8 @@
                 </td>
             }
             <td style="background-color: @Model.NodeUptimePercentageBackgroundColor(item)">
-                    <a asp-page="/NodeEvents" asp-route-id="@item.ID" style="color: @Model.NodeUptimePercentageTextColor(item)" target="_blank">
+                    <a asp-page="/NodeEvents" asp-route-id="@item.ID" style="color: @Model.NodeUptimePercentageTextColor(item)" target="_blank"
+                       aria-label="View events for @item.DisplayName (opens in new tab)">
                     @Model.GetUptimePercentage(item)%
                 </a>
             </td>

@@ -101,7 +101,7 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeUptimePercentageBackgroundColor(Orcanode node)
         {
-            int value = Orcanode.GetUptimePercentage(node.ID, _events, SinceTime);
+            int value = GetUptimePercentage(node);
             if (value < 1)
             {
                 return ColorTranslator.ToHtml(Color.Red);
