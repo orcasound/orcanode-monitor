@@ -10,3 +10,11 @@ th, td {
 h1 {
     font-size: 32px;
 }
+
+.selected {
+    background-color: blue;
+    color: white;
+}
+.unselected {
+    border-color: blue;
+}

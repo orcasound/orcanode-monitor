@@ -12,7 +12,7 @@ namespace OrcanodeMonitor.Pages
     public class NodeEventsModel : PageModel
     {
         private OrcanodeMonitorContext _databaseContext;
-        private readonly ILogger<IndexModel> _logger;
+        private readonly ILogger<NodeEventsModel> _logger;
         private string _nodeId;
         public string Id => _nodeId;
         [BindProperty]
@@ -22,7 +22,7 @@ namespace OrcanodeMonitor.Pages
         public List<OrcanodeEvent> RecentEvents => _events;
         public int UptimePercentage => Orcanode.GetUptimePercentage(_nodeId, _events, SinceTime);
 
-        public NodeEventsModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger)
+        public NodeEventsModel(OrcanodeMonitorContext context, ILogger<NodeEventsModel> logger)
         {
             _databaseContext = context;
             _logger = logger;
@@ -30,18 +30,30 @@ namespace OrcanodeMonitor.Pages
             _events = new List<OrcanodeEvent>();
         }
 
+        private void FetchEvents()
+        {
+            try
+            {
+                _events = Fetcher.GetRecentEventsForNode(_databaseContext, _nodeId, SinceTime);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch events for node {NodeId}", _nodeId);
+                _events = new List<OrcanodeEvent>();
+            }
+        }
+
         public void OnGet(string id)
         {
             _nodeId = id;
-            _events = Fetcher.GetRecentEventsForNode(_databaseContext, _nodeId, SinceTime);
+            FetchEvents();
         }
 
-        public IActionResult OnPost(string selected, string id)
+        public void OnPost(string selected, string id)
         {
             Selected = selected;
             _nodeId = id;
-            _events = Fetcher.GetRecentEventsForNode(_databaseContext, _nodeId, SinceTime);
-            return Page();
+            FetchEvents();
         }
     }
 }

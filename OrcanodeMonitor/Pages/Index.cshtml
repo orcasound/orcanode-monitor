@@ -177,20 +177,20 @@
     <p/>
     <h1 class="display-4"><a href="/api/ifttt/v1/triggers/nodestateevents">Recent State Events</a></h1>
     <table>
-        <tr>
-            <th>Timestamp</th>
-            <th>Event</th>
-        </tr>
-        @foreach (Models.OrcanodeEvent item in Model.RecentEvents)
-        {
+        <thead>
             <tr>
-                <td>
-                    @item.DateTimeLocal
-                </td>
-                <td>
-                    @item.Description
-                </td>
+                <th>Timestamp</th>
+                <th>Event</th>
             </tr>
-        }
+        </thead>
+        <tbody>
+            @foreach (Models.OrcanodeEvent item in Model.RecentEvents)
+            {
+                <tr>
+                    <td>@item.DateTimeLocal.ToString("g")</td>
+                    <td align="left">@item.Description</td>
+                </tr>
+            }
+        </tbody>
     </table>
  </div>
