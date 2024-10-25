@@ -10,7 +10,7 @@ namespace OrcanodeMonitor.Pages
 {
     public class NodeEventsModel : PageModel
     {
-        private OrcanodeMonitorContext _databaseContext;
+        private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<NodeEventsModel> _logger;
         private string _nodeId;
         public string Id => _nodeId;
@@ -48,11 +48,17 @@ namespace OrcanodeMonitor.Pages
             FetchEvents();
         }
 
-        public void OnPost(string selected, string id)
+        public IActionResult OnPost(string selected, string id)
         {
+            if (selected != "week" && selected != "month")
+            {
+                _logger.LogWarning("Invalid time range selected: {selected}", selected);
+                return BadRequest("Invalid time range");
+            }
             Selected = selected;
             _nodeId = id;
             FetchEvents();
+            return Page();
         }
     }
 }
