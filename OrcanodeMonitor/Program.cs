@@ -18,11 +18,7 @@ if (connection.IsNullOrEmpty())
     connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
 }
 
-var databaseName = Environment.GetEnvironmentVariable("AZURE_COSMOS_DATABASENAME");
-if (databaseName.IsNullOrEmpty())
-{
-    databaseName = "orcasound-cosmosdb";
-}
+string databaseName = Environment.GetEnvironmentVariable("AZURE_COSMOS_DATABASENAME") ?? "orcasound-cosmosdb";
 
 // Add services to the container.
 builder.Services.AddRazorPages();
