@@ -1062,13 +1062,13 @@ namespace OrcanodeMonitor.Core
 
         private static void AddMezmoStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
-            string value = (node.MezmoStatus == OrcanodeOnlineStatus.Online) ? "up" : "OFFLINE";
+            string value = node.MezmoStatus.ToString();
             AddOrcanodeEvent(context, node, "Mezmo logging", value);
         }
 
         private static void AddDataplicityConnectionStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
-            string value = (node.DataplicityConnectionStatus == OrcanodeOnlineStatus.Online) ? "up" : "OFFLINE";
+            string value = node.DataplicityConnectionStatus.ToString();
             AddOrcanodeEvent(context, node, "dataplicity connection", value);
         }
 
