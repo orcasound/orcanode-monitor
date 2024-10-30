@@ -29,23 +29,15 @@ namespace OrcanodeMonitor.Pages
             _events = new List<OrcanodeEvent>();
         }
 
-        private void FetchEvents()
+        private void FetchEvents(ILogger logger)
         {
-            try
-            {
-                _events = Fetcher.GetRecentEventsForNode(_databaseContext, _nodeId, SinceTime);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to fetch events for node {NodeId}", _nodeId);
-                _events = new List<OrcanodeEvent>();
-            }
+            _events = Fetcher.GetRecentEventsForNode(_databaseContext, _nodeId, SinceTime, logger) ?? new List<OrcanodeEvent>();
         }
 
         public void OnGet(string id)
         {
             _nodeId = id;
-            FetchEvents();
+            FetchEvents(_logger);
         }
 
         public IActionResult OnPost(string selected, string id)
@@ -57,7 +49,7 @@ namespace OrcanodeMonitor.Pages
             }
             Selected = selected;
             _nodeId = id;
-            FetchEvents();
+            FetchEvents(_logger);
             return Page();
         }
     }

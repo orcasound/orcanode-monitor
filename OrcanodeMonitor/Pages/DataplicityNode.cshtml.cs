@@ -45,7 +45,7 @@ namespace OrcanodeMonitor.Pages
         public async Task<IActionResult> OnGetAsync(string serial)
         {
             _serial = serial;
-            string rawJson = await Fetcher.GetDataplicityDataAsync(serial);
+            string rawJson = await Fetcher.GetDataplicityDataAsync(serial, _logger);
             var formatter = new JsonFormatter();
             _jsonData = formatter.FormatJson(rawJson);
             return Page();

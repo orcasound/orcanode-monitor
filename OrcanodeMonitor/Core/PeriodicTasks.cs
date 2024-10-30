@@ -59,15 +59,15 @@ namespace OrcanodeMonitor.Core
             using var scope = _scopeFactory.CreateScope();
             OrcanodeMonitorContext context = scope.ServiceProvider.GetRequiredService<OrcanodeMonitorContext>();
 
-            await Fetcher.UpdateDataplicityDataAsync(context);
+            await Fetcher.UpdateDataplicityDataAsync(context, _logger);
 
-            await Fetcher.UpdateOrcasoundDataAsync(context);
+            await Fetcher.UpdateOrcasoundDataAsync(context, _logger);
 
-            await Fetcher.UpdateMezmoDataAsync(context);
+            await MezmoFetcher.UpdateMezmoDataAsync(context, _logger);
 
-            await Fetcher.UpdateS3DataAsync(context);
+            await Fetcher.UpdateS3DataAsync(context, _logger);
 
-            await Fetcher.UpdateOrcaHelloDataAsync(context);
+            await Fetcher.UpdateOrcaHelloDataAsync(context, _logger);
         }
     }
 }
