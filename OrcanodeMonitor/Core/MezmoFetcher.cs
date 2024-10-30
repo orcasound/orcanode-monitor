@@ -33,7 +33,7 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="url">URL to get content from</param>
         /// <returns>String content.  An empty string may mean empty content or an HTTP error.</returns>
-        public async static Task<string> GetMezmoDataAsync(string url)
+        public async static Task<string?> GetMezmoDataAsync(string url)
         {
             try
             {
@@ -41,7 +41,7 @@ namespace OrcanodeMonitor.Core
                 if (string.IsNullOrEmpty(service_key))
                 {
                     Console.Error.WriteLine($"MEZMO_SERVICE_KEY not configured");
-                    return string.Empty; // No content.
+                    return null;
                 }
 
                 using (var request = new HttpRequestMessage
@@ -60,7 +60,7 @@ namespace OrcanodeMonitor.Core
             {
                 string msg = ex.ToString();
                 Console.Error.WriteLine($"Exception in GetMezmoDataAsync: {msg}");
-                return string.Empty; // No content.
+                return null;
             }
         }
 
@@ -82,10 +82,10 @@ namespace OrcanodeMonitor.Core
                 }
                 int from = to - MezmoLogSeconds;
                 string url = $"{_mezmoLogUrl}?from={from}&to={to}&hosts={node.S3NodeName}";
-                string jsonString = await GetMezmoDataAsync(url);
-                if (jsonString.IsNullOrEmpty())
+                string? jsonString = await GetMezmoDataAsync(url);
+                if (jsonString == null)
                 {
-                    // Error.
+                    logger.LogDebug($"Failed to fetch Mezmo logs for {node.S3NodeName} between {from} and {to}");
                     return null;
                 }
 
@@ -126,8 +126,8 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                string jsonArray = await GetMezmoDataAsync(_mezmoHostsUrl);
-                if (jsonArray.IsNullOrEmpty())
+                string? jsonArray = await GetMezmoDataAsync(_mezmoHostsUrl);
+                if (jsonArray == null)
                 {
                     // Error so do nothing.
                     return;
@@ -236,8 +236,8 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                string jsonArray = await GetMezmoDataAsync(_mezmoViewsUrl);
-                if (jsonArray.IsNullOrEmpty())
+                string? jsonArray = await GetMezmoDataAsync(_mezmoViewsUrl);
+                if (jsonArray == null)
                 {
                     // Error so do nothing.
                     return;
@@ -258,7 +258,7 @@ namespace OrcanodeMonitor.Core
                 {
                     if (!view.TryGetProperty("hosts", out var hostsArray))
                     {
-                        logger.LogError($"Missing hosts in UpdateMezmoViewsAsync result");
+                        // Not an error, since there are other types of views.
                         continue;
                     }
                     if (hostsArray.ValueKind != JsonValueKind.Array)
