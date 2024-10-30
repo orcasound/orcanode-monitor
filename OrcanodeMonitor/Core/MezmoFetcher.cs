@@ -74,6 +74,11 @@ namespace OrcanodeMonitor.Core
             try
             {
                 int to = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                if (to < MezmoLogSeconds)
+                {
+                    logger.LogError("MezmoLogSeconds is greater than the current Unix time.");
+                    return null;
+                }
                 int from = to - MezmoLogSeconds;
                 string url = $"{_mezmoLogUrl}?from={from}&to={to}&hosts={node.S3NodeName}";
                 string jsonString = await GetMezmoDataAsync(url);
