@@ -325,7 +325,7 @@ namespace OrcanodeMonitor.Core
                 {
                     if (!device.TryGetProperty("serial", out var serial))
                     {
-                        logger.LogError($"Empty serial in UpdateDataplicityDataAsync result");
+                        logger.LogError($"Missing serial in UpdateDataplicityDataAsync result");
                         continue;
                     }
                     if (serial.ToString().IsNullOrEmpty())
@@ -766,7 +766,7 @@ namespace OrcanodeMonitor.Core
             DateTime? latestRecorded = UnixTimeStampStringToDateTimeUtc(unixTimestampString);
             if (latestRecorded.HasValue)
             {
-                node.LatestRecordedUtc = latestRecorded.HasValue ? latestRecorded.Value.ToUniversalTime() : null;
+                node.LatestRecordedUtc = latestRecorded?.ToUniversalTime();
 
                 DateTimeOffset? offset = response.Content.Headers.LastModified;
                 if (offset.HasValue)

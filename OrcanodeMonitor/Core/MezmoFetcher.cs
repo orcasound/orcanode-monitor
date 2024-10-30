@@ -68,8 +68,9 @@ namespace OrcanodeMonitor.Core
         /// Fetch Mezmo recent Mezmo log entries for a given node.
         /// </summary>
         /// <param name="node">Node to fetch log entries for</param>
+        /// <param name="logger"></param>
         /// <returns>Null on error, or a list of 0 or more JSON elements on success</returns>
-        private async static Task<List<JsonElement>?> GetMezmoRecentLogAsync(Orcanode node)
+        private async static Task<List<JsonElement>?> GetMezmoRecentLogAsync(Orcanode node, ILogger logger)
         {
             try
             {
@@ -96,7 +97,7 @@ namespace OrcanodeMonitor.Core
                 JsonElement logArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
                 if (logArray.ValueKind != JsonValueKind.Array)
                 {
-                    Console.Error.WriteLine($"Invalid logArray kind in GetMezmoRecentLogAsync: {logArray.ValueKind}");
+                    logger.LogError($"Invalid logArray kind in GetMezmoRecentLogAsync: {logArray.ValueKind}");
                     return null;
                 }
 
@@ -110,8 +111,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                string msg = ex.ToString();
-                Console.Error.WriteLine($"Exception in GetMezmoRecentLogAsync: {msg}");
+                logger.LogError(ex, "Exception in GetMezmoRecentLogAsync");
                 return null;
             }
         }
@@ -183,7 +183,7 @@ namespace OrcanodeMonitor.Core
                     }
                     OrcanodeOnlineStatus oldStatus = node.MezmoStatus;
 
-                    List<JsonElement>? log = await GetMezmoRecentLogAsync(node);
+                    List<JsonElement>? log = await GetMezmoRecentLogAsync(node, logger);
                     if (log == null)
                     {
                         // Mezmo error, so results are indeterminate.
