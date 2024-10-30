@@ -38,7 +38,7 @@ namespace OrcanodeMonitor.Core
             try
             {
                 string? service_key = Environment.GetEnvironmentVariable("MEZMO_SERVICE_KEY");
-                if (service_key == null || service_key.IsNullOrEmpty())
+                if (string.IsNullOrEmpty(service_key))
                 {
                     Console.Error.WriteLine($"MEZMO_SERVICE_KEY not configured");
                     return string.Empty; // No content.

@@ -42,6 +42,11 @@ namespace OrcanodeMonitor.Pages
 
         public IActionResult OnPost(string selected, string id)
         {
+            if (string.IsNullOrEmpty(id))
+            {
+                _logger.LogError("Node ID cannot be empty");
+                return BadRequest("Invalid node ID");
+            }
             if (selected != "week" && selected != "month")
             {
                 _logger.LogWarning("Invalid time range selected: {selected}", selected);
