@@ -85,7 +85,7 @@ namespace OrcanodeMonitor.Core
                 string? jsonString = await GetMezmoDataAsync(url);
                 if (jsonString == null)
                 {
-                    // Error.
+                    logger.LogDebug($"Failed to fetch Mezmo logs for {node.S3NodeName} between {from} and {to}");
                     return null;
                 }
 
@@ -127,7 +127,7 @@ namespace OrcanodeMonitor.Core
             try
             {
                 string? jsonArray = await GetMezmoDataAsync(_mezmoHostsUrl);
-                if (string.IsNullOrEmpty(jsonArray))
+                if (jsonArray == null)
                 {
                     // Error so do nothing.
                     return;
@@ -237,7 +237,7 @@ namespace OrcanodeMonitor.Core
             try
             {
                 string? jsonArray = await GetMezmoDataAsync(_mezmoViewsUrl);
-                if (string.IsNullOrEmpty(jsonArray))
+                if (jsonArray == null)
                 {
                     // Error so do nothing.
                     return;
