@@ -30,28 +30,12 @@ namespace OrcanodeMonitor.Core
         private static string _orcasoundProdSite = "live.orcasound.net";
         private static string _orcasoundFeedsUrlPath = "/api/json/feeds";
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
-        private static string _mezmoViewsUrl = "https://api.mezmo.com/v1/config/view";
-        private static string _mezmoHostsUrl = "https://api.mezmo.com/v1/usage/hosts";
-        private static string _mezmoLogUrl = "https://api.mezmo.com/v1/export";
         private static string _orcaHelloHydrophonesUrl = "https://aifororcasdetections2.azurewebsites.net/api/hydrophones";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         private static string _iftttServiceKey = Environment.GetEnvironmentVariable("IFTTT_SERVICE_KEY") ?? "<unknown>";
         private static string _defaultProdS3Bucket = "audio-orcasound-net";
         private static string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
         public static string IftttServiceKey => _iftttServiceKey;
-        const int DEFAULT_MEZMO_LOG_SECONDS = 60;
-        private static string _mezmoLogSeconds = Environment.GetEnvironmentVariable("MEZMO_LOG_SECONDS") ?? string.Empty;
-
-
-        private static int MezmoLogSeconds
-        {
-            get
-            {
-                int seconds;
-                bool success = int.TryParse(_mezmoLogSeconds, out seconds);
-                return (success && seconds > 0) ? seconds : DEFAULT_MEZMO_LOG_SECONDS;
-            }
-        }
 
         /// <summary>
         /// Test for a match between a human-readable name at Orcasound, and
@@ -173,8 +157,9 @@ namespace OrcanodeMonitor.Core
         /// Update the list of Orcanodes using data from OrcaHello.
         /// </summary>
         /// <param name="context">Database context to update</param>
+        /// <param name="logger"></param>
         /// <returns></returns>
-        public async static Task UpdateOrcaHelloDataAsync(OrcanodeMonitorContext context)
+        public async static Task UpdateOrcaHelloDataAsync(OrcanodeMonitorContext context, ILogger logger)
         {
             try
             {
@@ -186,11 +171,13 @@ namespace OrcanodeMonitor.Core
                 dynamic response = JsonSerializer.Deserialize<ExpandoObject>(json);
                 if (response == null)
                 {
+                    logger.LogError("UpdateOrcaHelloDataAsync couldn't deserialize JSON");
                     return;
                 }
                 JsonElement hydrophoneArray = response.hydrophones;
                 if (hydrophoneArray.ValueKind != JsonValueKind.Array)
                 {
+                    logger.LogError($"Invalid hydrophoneArray kind in UpdateOrcaHelloDataAsync: {hydrophoneArray.ValueKind}");
                     return;
                 }
 
@@ -205,12 +192,14 @@ namespace OrcanodeMonitor.Core
                     // "id" holds the OrcaHello id which is also the S3NodeName.
                     if (!hydrophone.TryGetProperty("id", out var hydrophoneId))
                     {
+                        logger.LogError("No id inUpdateOrcaHelloDataAsync result");
                         continue;
                     }
 
                     // "name" holds the display name.
                     if (!hydrophone.TryGetProperty("name", out var name))
                     {
+                        logger.LogError("No name in UpdateOrcaHelloDataAsync result");
                         continue;
                     }
 
@@ -264,17 +253,18 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                string msg = ex.ToString();
+                logger.LogError(ex, "Exception in UpdateOrcaHelloDataAsync");
             }
         }
 
-        public async static Task<string> GetDataplicityDataAsync(string serial)
+        public async static Task<string> GetDataplicityDataAsync(string serial, ILogger logger)
         {
             try
             {
                 string? orcasound_dataplicity_token = Environment.GetEnvironmentVariable("ORCASOUND_DATAPLICITY_TOKEN");
                 if (orcasound_dataplicity_token == null)
                 {
+                    logger.LogError("ORCASOUND_DATAPLICITY_TOKEN not found");
                     return string.Empty;
                 }
 
@@ -291,14 +281,14 @@ namespace OrcanodeMonitor.Core
                 })
                 {
                     request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_dataplicity_token);
-                    HttpResponseMessage response = await _httpClient.SendAsync(request);
+                    using HttpResponseMessage response = await _httpClient.SendAsync(request);
                     response.EnsureSuccessStatusCode();
                     return await response.Content.ReadAsStringAsync();
                 }
             }
             catch (Exception ex)
             {
-                string msg = ex.ToString();
+                logger.LogError(ex, "Exception in GetDataplicityDataAsync");
                 return string.Empty;
             }
         }
@@ -307,14 +297,16 @@ namespace OrcanodeMonitor.Core
         /// Update Orcanode state by querying dataplicity.com.
         /// </summary>
         /// <param name="context">Database context to update</param>
+        /// <param name="logger"></param>
         /// <returns></returns>
-        public async static Task UpdateDataplicityDataAsync(OrcanodeMonitorContext context)
+        public async static Task UpdateDataplicityDataAsync(OrcanodeMonitorContext context, ILogger logger)
         {
             try
             {
-                string jsonArray = await GetDataplicityDataAsync(string.Empty);
+                string jsonArray = await GetDataplicityDataAsync(string.Empty, logger);
                 if (jsonArray.IsNullOrEmpty())
                 {
+                    // Indeterminate result, so don't update anything.
                     return;
                 }
 
@@ -326,12 +318,19 @@ namespace OrcanodeMonitor.Core
                 dynamic deviceArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
                 if (deviceArray.ValueKind != JsonValueKind.Array)
                 {
+                    logger.LogError($"Invalid deviceArray kind in UpdateDataplicityDataAsync: {deviceArray.ValueKind}");
                     return;
                 }
                 foreach (JsonElement device in deviceArray.EnumerateArray())
                 {
                     if (!device.TryGetProperty("serial", out var serial))
                     {
+                        logger.LogError($"Missing serial in UpdateDataplicityDataAsync result");
+                        continue;
+                    }
+                    if (serial.ToString().IsNullOrEmpty())
+                    {
+                        logger.LogError($"Empty serial in UpdateDataplicityDataAsync result");
                         continue;
                     }
 
@@ -431,280 +430,18 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                string msg = ex.ToString();
-            }
-        }
-
-        public async static Task<string> GetMezmoDataAsync(string url)
-        {
-            try
-            {
-                string? service_key = Environment.GetEnvironmentVariable("MEZMO_SERVICE_KEY");
-                if (service_key == null || service_key.IsNullOrEmpty())
-                {
-                    return string.Empty;
-                }
-
-                using (var request = new HttpRequestMessage
-                {
-                    RequestUri = new Uri(url),
-                    Method = HttpMethod.Get,
-                })
-                {
-                    request.Headers.Add("servicekey", service_key);
-                    HttpResponseMessage response = await _httpClient.SendAsync(request);
-                    response.EnsureSuccessStatusCode();
-                    return await response.Content.ReadAsStringAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                string msg = ex.ToString();
-                Console.Error.WriteLine($"Exception in GetMezmoDataAsync: {msg}");
-                return string.Empty;
-            }
-        }
-
-        private async static Task<List<JsonElement>?> GetMezmoRecentLogAsync(Orcanode node)
-        {
-            try
-            {
-                int to = (int)DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                int from = to - MezmoLogSeconds;
-                string url = $"{_mezmoLogUrl}?from={from}&to={to}&hosts={node.S3NodeName}";
-                string jsonString = await GetMezmoDataAsync(url);
-                if (jsonString.IsNullOrEmpty())
-                {
-                    return null;
-                }
-
-                // Mezmo does not return a legal JSON array, but instead a newline-separated
-                // set of JSON objects.  Convert them to a JSON array now.
-                string[] jsonObjects = jsonString.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-                string jsonArray = "[" + string.Join(",", jsonObjects) + "]";
-
-                JsonElement logArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
-                if (logArray.ValueKind != JsonValueKind.Array)
-                {
-                    return null;
-                }
-
-                List<JsonElement> result = new List<JsonElement>();
-                foreach (var item in logArray.EnumerateArray())
-                {
-                    result.Add(item);
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                string msg = ex.ToString();
-                Console.Error.WriteLine($"Exception in GetMezmoRecentLogAsync: {msg}");
-                return null;
+                logger.LogError(ex, "Exception in UpdateDataplicityDataAsync");
             }
         }
 
         /// <summary>
-        /// Update Orcanode state by querying mezmo.com hosts usage.
+        /// Get Orcasound data
         /// </summary>
-        /// <param name="context">Database context to update</param>
-        /// <returns></returns>
-        public async static Task UpdateMezmoHostsAsync(OrcanodeMonitorContext context)
-        {
-            try
-            {
-                string jsonArray = await GetMezmoDataAsync(_mezmoHostsUrl);
-                if (jsonArray.IsNullOrEmpty())
-                {
-                    return;
-                }
-
-                var originalList = context.Orcanodes.ToList();
-
-                // Create a list to track what nodes are no longer returned.
-                var unfoundList = originalList.ToList();
-
-                JsonElement hostsArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
-                if (hostsArray.ValueKind != JsonValueKind.Array)
-                {
-                    return;
-                }
-                foreach (JsonElement view in hostsArray.EnumerateArray())
-                {
-                    if (!view.TryGetProperty("name", out var name))
-                    {
-                        continue;
-                    }
-                    if (name.ValueKind != JsonValueKind.String)
-                    {
-                        continue;
-                    }
-                    if (!view.TryGetProperty("current_total", out var currentTotal))
-                    {
-                        continue;
-                    }
-                    if (currentTotal.ValueKind != JsonValueKind.Number)
-                    {
-                        continue;
-                    }
-
-                    // Remove any matching nodes from the unfound list.
-                    List<Orcanode> oldListNodes = unfoundList.FindAll(a => a.S3NodeName == name.ToString());
-                    foreach (Orcanode oldListNode in oldListNodes)
-                    {
-                        unfoundList.Remove(oldListNode);
-                    }
-
-                    Orcanode? node = originalList.Find(a => a.S3NodeName == name.ToString());
-                    if (node == null)
-                    {
-                        // TODO: create a node?
-                        continue;
-                    }
-                    OrcanodeOnlineStatus oldStatus = node.MezmoStatus;
-
-                    List<JsonElement>? log = await GetMezmoRecentLogAsync(node);
-                    node.MezmoLogSize = (log == null) ? 0 : log.Count;
-
-                    if (oldStatus == OrcanodeOnlineStatus.Absent)
-                    {
-                        // Save changes to make the node have an ID before we can
-                        // possibly generate any events.
-                        await context.SaveChangesAsync();
-                    }
-
-                    OrcanodeOnlineStatus newStatus = node.MezmoStatus;
-                    if (newStatus != oldStatus)
-                    {
-                        AddMezmoStatusEvent(context, node);
-                    }
-                }
-
-                // Mark any remaining unfound nodes as absent.
-                foreach (var unfoundNode in unfoundList)
-                {
-                    Orcanode? oldNode = originalList.Find(a => a.S3NodeName == unfoundNode.S3NodeName);
-                    if (oldNode != null)
-                    {
-                        oldNode.MezmoLogSize = 0;
-                    }
-                }
-
-                MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
-                await context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                string msg = ex.ToString();
-                Console.Error.WriteLine($"Exception in UpdateMezmoHostsAsync: {msg}");
-            }
-        }
-
-        /// <summary>
-        /// Update Orcanode state by querying mezmo.com views.
-        /// </summary>
-        /// <param name="context">Database context to update</param>
-        /// <returns></returns>
-        public async static Task UpdateMezmoViewsAsync(OrcanodeMonitorContext context)
-        {
-            try
-            {
-                string jsonArray = await GetMezmoDataAsync(_mezmoViewsUrl);
-                if (jsonArray.IsNullOrEmpty())
-                {
-                    return;
-                }
-
-                var originalList = context.Orcanodes.ToList();
-
-                // Create a list to track what nodes are no longer returned.
-                var unfoundList = originalList.ToList();
-
-                JsonElement viewsArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
-                if (viewsArray.ValueKind != JsonValueKind.Array)
-                {
-                    return;
-                }
-                foreach (JsonElement view in viewsArray.EnumerateArray())
-                {
-                    if (!view.TryGetProperty("hosts", out var hostsArray))
-                    {
-                        continue;
-                    }
-                    if (hostsArray.ValueKind != JsonValueKind.Array)
-                    {
-                        continue;
-                    }
-                    if (!view.TryGetProperty("viewid", out var viewid))
-                    {
-                        continue;
-                    }
-                    foreach (JsonElement host in hostsArray.EnumerateArray())
-                    {
-                        if (host.ValueKind != JsonValueKind.String)
-                        {
-                            continue;
-                        }
-
-                        // Remove any matching nodes from the unfound list.
-                        List<Orcanode> oldListNodes = unfoundList.FindAll(a => a.S3NodeName == host.ToString());
-                        foreach (Orcanode oldListNode in oldListNodes)
-                        {
-                            unfoundList.Remove(oldListNode);
-                        }
-
-                        Orcanode? node = originalList.Find(a => a.S3NodeName == host.ToString());
-                        if (node == null)
-                        {
-                            // TODO: create a node?
-                            continue;
-                        }
-                        OrcanodeOnlineStatus oldStatus = node.MezmoStatus;
-                        node.MezmoViewId = viewid.ToString();
-
-                        if (oldStatus == OrcanodeOnlineStatus.Absent)
-                        {
-                            // Save changes to make the node have an ID before we can
-                            // possibly generate any events.
-                            await context.SaveChangesAsync();
-                        }
-
-                        OrcanodeOnlineStatus newStatus = node.MezmoStatus;
-                        if (newStatus != oldStatus)
-                        {
-                            AddMezmoStatusEvent(context, node);
-                        }
-                    }
-                }
-
-                // Mark any remaining unfound nodes as absent.
-                foreach (var unfoundNode in unfoundList)
-                {
-                    Orcanode? oldNode = originalList.Find(a => a.S3NodeName == unfoundNode.S3NodeName);
-                    if (oldNode != null)
-                    {
-                        oldNode.MezmoViewId = string.Empty;
-                    }
-                }
-
-                MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
-                await context.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                string msg = ex.ToString();
-                Console.Error.WriteLine($"Exception in UpdateMezmoViewsAsync: {msg}");
-            }
-        }
-
-        public async static Task UpdateMezmoDataAsync(OrcanodeMonitorContext context)
-        {
-            await UpdateMezmoHostsAsync(context);
-            await UpdateMezmoViewsAsync(context);
-        }
-
-        private async static Task<JsonElement?> GetOrcasoundDataAsync(OrcanodeMonitorContext context, string site)
+        /// <param name="context"></param>
+        /// <param name="site"></param>
+        /// <param name="logger"></param>
+        /// <returns>null on error, or JsonElement on success</returns>
+        private async static Task<JsonElement?> GetOrcasoundDataAsync(OrcanodeMonitorContext context, string site, ILogger logger)
         {
             try
             {
@@ -712,44 +449,53 @@ namespace OrcanodeMonitor.Core
                 string json = await _httpClient.GetStringAsync(url);
                 if (json.IsNullOrEmpty())
                 {
+                    // Error.
                     return null;
                 }
                 dynamic response = JsonSerializer.Deserialize<ExpandoObject>(json);
                 if (response == null)
                 {
+                    // Error.
+                    logger.LogError("Couldn't deserialize JSON in GetOrcasoundDataAsync");
                     return null;
                 }
                 JsonElement dataArray = response.data;
                 if (dataArray.ValueKind != JsonValueKind.Array)
                 {
+                    // Error.
+                    logger.LogError($"Invalid dataArray kind in GetOrcasoundDataAsync: {dataArray.ValueKind}");
                     return null;
                 }
                 return dataArray;
             }
             catch (Exception ex)
             {
-                string msg = ex.ToString();
+                logger.LogError(ex, "Exception in GetOrcasoundDataAsync");
                 return null;
             }
         }
 
-        private static void UpdateOrcasoundNode(JsonElement feed, List<Orcanode> foundList, List<Orcanode> unfoundList, OrcanodeMonitorContext context, string site)
+        private static void UpdateOrcasoundNode(JsonElement feed, List<Orcanode> foundList, List<Orcanode> unfoundList, OrcanodeMonitorContext context, string site, ILogger logger)
         {
             if (!feed.TryGetProperty("id", out var feedId))
             {
+                logger.LogError($"Missing id in UpdateOrcasoundNode");
                 return;
             }
             if (!feed.TryGetProperty("attributes", out JsonElement attributes))
             {
+                logger.LogError($"Missing attributes in UpdateOrcasoundNode");
                 return;
             }
             if (!attributes.TryGetProperty("name", out var name))
             {
+                logger.LogError($"Missing name in UpdateOrcasoundNode");
                 return;
             }
             string orcasoundName = name.ToString();
             if (!attributes.TryGetProperty("dataplicity_id", out var dataplicity_id))
             {
+                logger.LogError($"Missing dataplicity_id in UpdateOrcasoundNode");
                 return;
             }
             bool hidden = false;
@@ -823,6 +569,7 @@ namespace OrcanodeMonitor.Core
                 if (!node.DataplicitySerial.IsNullOrEmpty() && dataplicitySerial != node.DataplicitySerial)
                 {
                     // TODO: The orcasound entry for the node changed its dataplicity_id.
+                    logger.LogWarning($"dataplicity_id changed for {node.DisplayName} from {node.DataplicitySerial} to {dataplicitySerial}");
                 }
                 node.DataplicitySerial = dataplicitySerial;
             }
@@ -858,14 +605,14 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        private async static Task UpdateOrcasoundSiteDataAsync(OrcanodeMonitorContext context, string site, List<Orcanode> foundList, List<Orcanode> unfoundList)
+        private async static Task UpdateOrcasoundSiteDataAsync(OrcanodeMonitorContext context, string site, List<Orcanode> foundList, List<Orcanode> unfoundList, ILogger logger)
         {
-            JsonElement? dataArray = await GetOrcasoundDataAsync(context, site);
+            JsonElement? dataArray = await GetOrcasoundDataAsync(context, site, logger);
             if (dataArray.HasValue)
             {
                 foreach (JsonElement feed in dataArray.Value.EnumerateArray())
                 {
-                    UpdateOrcasoundNode(feed, foundList, unfoundList, context, site);
+                    UpdateOrcasoundNode(feed, foundList, unfoundList, context, site, logger);
                 }
             }
         }
@@ -874,17 +621,18 @@ namespace OrcanodeMonitor.Core
         /// Update the current list of Orcanodes using data from orcasound.net.
         /// </summary>
         /// <param name="context">Database context to update</param>
+        /// <param name="logger"></param>
         /// <returns></returns>
-        public async static Task UpdateOrcasoundDataAsync(OrcanodeMonitorContext context)
+        public async static Task UpdateOrcasoundDataAsync(OrcanodeMonitorContext context, ILogger logger)
         {
-            var foundList = context.Orcanodes.ToList();
-
-            // Create a list to track what nodes are no longer returned.
-            var unfoundList = foundList.ToList();
-
             try
             {
-                await UpdateOrcasoundSiteDataAsync(context, _orcasoundProdSite, foundList, unfoundList);
+                var foundList = context.Orcanodes.ToList();
+
+                // Create a list to track what nodes are no longer returned.
+                var unfoundList = foundList.ToList();
+
+                await UpdateOrcasoundSiteDataAsync(context, _orcasoundProdSite, foundList, unfoundList, logger);
 
                 // Mark any remaining unfound nodes as absent.
                 foreach (var unfoundNode in unfoundList)
@@ -901,20 +649,20 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                string msg = ex.ToString();
+                logger.LogError(ex, "Exception in UpdateOrcasoundDataAsync");
             }
         }
 
-        public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context)
+        public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, ILogger logger)
         {
             try
             {
-                List<Orcanode> nodes = await context.Orcanodes.ToListAsync();
+                List<Orcanode> nodes = context.Orcanodes.ToList();
                 foreach (Orcanode node in nodes)
                 {
                     if (!node.S3NodeName.IsNullOrEmpty())
                     {
-                        await Fetcher.UpdateS3DataAsync(context, node);
+                        await Fetcher.UpdateS3DataAsync(context, node, logger);
                     }
                 }
 
@@ -923,7 +671,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                string msg = ex.ToString();
+                logger.LogError(ex, "Exception in UpdateS3DataAsync");
             }
         }
 
@@ -990,11 +738,12 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="context">Database context</param>
         /// <param name="node">Orcanode to update</param>
+        /// <param name="logger"></param>
         /// <returns></returns>
-        public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, Orcanode node)
+        public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
             string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/latest.txt";
-            HttpResponseMessage response = await _httpClient.GetAsync(url);
+            using HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 // Absent.
@@ -1017,7 +766,7 @@ namespace OrcanodeMonitor.Core
             DateTime? latestRecorded = UnixTimeStampStringToDateTimeUtc(unixTimestampString);
             if (latestRecorded.HasValue)
             {
-                node.LatestRecordedUtc = latestRecorded.HasValue ? latestRecorded.Value.ToUniversalTime() : null;
+                node.LatestRecordedUtc = latestRecorded?.ToUniversalTime();
 
                 DateTimeOffset? offset = response.Content.Headers.LastModified;
                 if (offset.HasValue)
@@ -1026,7 +775,7 @@ namespace OrcanodeMonitor.Core
                 }
             }
 
-            await UpdateManifestTimestampAsync(context, node, unixTimestampString);
+            await UpdateManifestTimestampAsync(context, node, unixTimestampString, logger);
         }
 
         /// <summary>
@@ -1042,28 +791,37 @@ namespace OrcanodeMonitor.Core
             return orcanodeEvents;
         }
 
-        public static List<OrcanodeEvent> GetRecentEventsForNode(OrcanodeMonitorContext context, string id, DateTime since)
+        /// <summary>
+        /// Get recent events for a node
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="id">ID of node to get events for</param>
+        /// <param name="since">Time to get events since</param>
+        /// <param name="logger"></param>
+        /// <returns>null on error, or list of events on success</returns>
+        public static List<OrcanodeEvent>? GetRecentEventsForNode(OrcanodeMonitorContext context, string id, DateTime since, ILogger logger)
         {
-            List<OrcanodeEvent> events = context.OrcanodeEvents.Where(e => e.OrcanodeId == id).OrderByDescending(e => e.DateTimeUtc).ToList();
-            List<OrcanodeEvent> orcanodeEvents = events.Where(e => e.DateTimeUtc >= since).ToList();
-            OrcanodeEvent? olderEvent = events.Where(e => (e.DateTimeUtc < since)).FirstOrDefault();
-            if (olderEvent != null)
+            try
             {
-                return orcanodeEvents.Append(olderEvent).ToList();
+                List<OrcanodeEvent> events = context.OrcanodeEvents.Where(e => e.OrcanodeId == id).OrderByDescending(e => e.DateTimeUtc).ToList();
+                List<OrcanodeEvent> orcanodeEvents = events.Where(e => e.DateTimeUtc >= since).ToList();
+                OrcanodeEvent? olderEvent = events.Where(e => (e.DateTimeUtc < since)).FirstOrDefault();
+                if (olderEvent != null)
+                {
+                    return orcanodeEvents.Append(olderEvent).ToList();
+                }
+                return orcanodeEvents;
+            } catch (Exception ex)
+            {
+                logger.LogError(ex, $"Failed to fetch events for node {id}");
+                return null;
             }
-            return orcanodeEvents;
         }
 
-        private static void AddOrcanodeEvent(OrcanodeMonitorContext context, Orcanode node, string type, string value)
+        public static void AddOrcanodeEvent(OrcanodeMonitorContext context, Orcanode node, string type, string value)
         {
             var orcanodeEvent = new OrcanodeEvent(node, type, value, DateTime.UtcNow);
             context.OrcanodeEvents.Add(orcanodeEvent);
-        }
-
-        private static void AddMezmoStatusEvent(OrcanodeMonitorContext context, Orcanode node)
-        {
-            string value = node.MezmoStatus.ToString();
-            AddOrcanodeEvent(context, node, "Mezmo logging", value);
         }
 
         private static void AddDataplicityConnectionStatusEvent(OrcanodeMonitorContext context, Orcanode node)
@@ -1096,13 +854,14 @@ namespace OrcanodeMonitor.Core
         /// <param name="context">Database context</param>
         /// <param name="node">Orcanode to update</param>
         /// <param name="unixTimestampString">Value in the latest.txt file</param>
+        /// <param name="logger">Logger</param>
         /// <returns></returns>
-        public async static Task UpdateManifestTimestampAsync(OrcanodeMonitorContext context, Orcanode node, string unixTimestampString)
+        public async static Task UpdateManifestTimestampAsync(OrcanodeMonitorContext context, Orcanode node, string unixTimestampString, ILogger logger)
         {
             OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
 
             string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/hls/" + unixTimestampString + "/live.m3u8";
-            HttpResponseMessage response = await _httpClient.GetAsync(url);
+            using HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (!response.IsSuccessStatusCode)
             {
                 return;
@@ -1139,7 +898,7 @@ namespace OrcanodeMonitor.Core
             {
                 // We couldn't fetch the stream audio so could not update the
                 // audio standard deviation. Just ignore this for now.
-                var msg = ex.ToString();
+                logger.LogError(ex, "Exception in UpdateManifestTimestampAsync");
             }
 
             OrcanodeOnlineStatus newStatus = node.S3StreamStatus;

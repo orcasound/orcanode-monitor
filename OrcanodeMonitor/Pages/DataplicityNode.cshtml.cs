@@ -14,11 +14,11 @@ namespace OrcanodeMonitor.Pages
     public class DataplicityNodeModel : PageModel
     {
         private OrcanodeMonitorContext _databaseContext;
-        private readonly ILogger<IndexModel> _logger;
+        private readonly ILogger<DataplicityNodeModel> _logger;
         private string _serial;
         private string _jsonData;
 
-        public DataplicityNodeModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger)
+        public DataplicityNodeModel(OrcanodeMonitorContext context, ILogger<DataplicityNodeModel> logger)
         {
             _databaseContext = context;
             _logger = logger;
@@ -45,7 +45,7 @@ namespace OrcanodeMonitor.Pages
         public async Task<IActionResult> OnGetAsync(string serial)
         {
             _serial = serial;
-            string rawJson = await Fetcher.GetDataplicityDataAsync(serial);
+            string rawJson = await Fetcher.GetDataplicityDataAsync(serial, _logger);
             var formatter = new JsonFormatter();
             _jsonData = formatter.FormatJson(rawJson);
             return Page();
