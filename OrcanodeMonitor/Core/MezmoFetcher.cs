@@ -51,7 +51,7 @@ namespace OrcanodeMonitor.Core
                 })
                 {
                     request.Headers.Add("servicekey", service_key);
-                    HttpResponseMessage response = await _httpClient.SendAsync(request);
+                    using HttpResponseMessage response = await _httpClient.SendAsync(request);
                     response.EnsureSuccessStatusCode();
                     return await response.Content.ReadAsStringAsync();
                 }

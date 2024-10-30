@@ -281,7 +281,7 @@ namespace OrcanodeMonitor.Core
                 })
                 {
                     request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_dataplicity_token);
-                    HttpResponseMessage response = await _httpClient.SendAsync(request);
+                    using HttpResponseMessage response = await _httpClient.SendAsync(request);
                     response.EnsureSuccessStatusCode();
                     return await response.Content.ReadAsStringAsync();
                 }
@@ -743,7 +743,7 @@ namespace OrcanodeMonitor.Core
         public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
             string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/latest.txt";
-            HttpResponseMessage response = await _httpClient.GetAsync(url);
+            using HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 // Absent.
@@ -791,6 +791,14 @@ namespace OrcanodeMonitor.Core
             return orcanodeEvents;
         }
 
+        /// <summary>
+        /// Get recent events for a node
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="id">ID of node to get events for</param>
+        /// <param name="since">Time to get events since</param>
+        /// <param name="logger"></param>
+        /// <returns>null on error, or list of events on success</returns>
         public static List<OrcanodeEvent>? GetRecentEventsForNode(OrcanodeMonitorContext context, string id, DateTime since, ILogger logger)
         {
             try
@@ -853,7 +861,7 @@ namespace OrcanodeMonitor.Core
             OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
 
             string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/hls/" + unixTimestampString + "/live.m3u8";
-            HttpResponseMessage response = await _httpClient.GetAsync(url);
+            using HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (!response.IsSuccessStatusCode)
             {
                 return;
@@ -890,7 +898,7 @@ namespace OrcanodeMonitor.Core
             {
                 // We couldn't fetch the stream audio so could not update the
                 // audio standard deviation. Just ignore this for now.
-                logger.LogError(ex, "Exception in UpdateS3DataAsync");
+                logger.LogError(ex, "Exception in UpdateManifestTimestampAsync");
             }
 
             OrcanodeOnlineStatus newStatus = node.S3StreamStatus;
