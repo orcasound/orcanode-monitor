@@ -32,7 +32,7 @@
                 @Html.DisplayFor(modelItem => item.DisplayName)
             </td>
             <td style="background-color: @Model.NodeDataplicityBackgroundColor(item)">
-                <a asp-page="/DataplicityNode" asp-route-serial="@item.DataplicitySerial" style="color: @Model.NodeDataplicityTextColor(item)" target="_blank">
+                <a asp-page="/DataplicityNode" asp-route-serial="@item.DataplicitySerial" style="color: @Model.NodeDataplicityTextColor(item)">
                     @Html.DisplayFor(modelItem => item.DataplicityConnectionStatus)
                 </a>
             </td>
@@ -72,8 +72,8 @@
                 </td>
             }
             <td style="background-color: @Model.NodeUptimePercentageBackgroundColor(item)">
-                    <a asp-page="/NodeEvents" asp-route-id="@item.ID" style="color: @Model.NodeUptimePercentageTextColor(item)" target="_blank"
-                       aria-label="View events for @item.DisplayName (opens in new tab)">
+                    <a asp-page="/NodeEvents" asp-route-id="@item.ID" style="color: @Model.NodeUptimePercentageTextColor(item)"
+                       aria-label="View events for @item.DisplayName">
                     @Model.GetUptimePercentage(item)%
                 </a>
             </td>
