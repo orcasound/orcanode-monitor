@@ -546,6 +546,7 @@ namespace OrcanodeMonitor.Core
                     {
                         // We have duplicate nodes to merge. In theory we shouldn't have any
                         // node state for the dataplicity-only node. (TODO: verify this)
+                        logger.LogWarning($"Merging duplicate nodes for {node.DataplicitySerial}");
                         node.DataplicityDescription = dataplicityNode.DataplicityDescription;
                         node.DataplicityName = dataplicityNode.DataplicityName;
                         node.DataplicityOnline = dataplicityNode.DataplicityOnline;

@@ -212,7 +212,7 @@ namespace OrcanodeMonitor.Core
                     Orcanode? oldNode = originalList.Find(a => a.S3NodeName == unfoundNode.S3NodeName);
                     if (oldNode != null)
                     {
-                        logger.LogInformation($"Mezmo node no longer found: {unfoundNode.S3NodeName}");
+                        logger.LogInformation($"Mezmo node not found: {unfoundNode.S3NodeName}");
                         oldNode.MezmoLogSize = 0;
                     }
                 }
