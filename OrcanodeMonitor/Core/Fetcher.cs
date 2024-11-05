@@ -829,25 +829,25 @@ namespace OrcanodeMonitor.Core
         private static void AddDataplicityConnectionStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = node.DataplicityConnectionStatus.ToString();
-            AddOrcanodeEvent(context, node, "dataplicity connection", value);
+            AddOrcanodeEvent(context, node, OrcanodeEventTypes.DataplicityConnection, value);
         }
 
         private static void AddDataplicityAgentUpgradeStatusChangeEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = node.DataplicityUpgradeStatus.ToString();
-            AddOrcanodeEvent(context, node, "agent upgrade status", value);
+            AddOrcanodeEvent(context, node, OrcanodeEventTypes.AgentUpgradeStatus, value);
         }
 
         private static void AddDiskCapacityChangeEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = string.Format("{0}G", node.DiskCapacityInGigs);
-            AddOrcanodeEvent(context, node, "SD card size", value);
+            AddOrcanodeEvent(context, node, OrcanodeEventTypes.SDCardSize, value);
         }
 
         private static void AddHydrophoneStreamStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = node.OrcasoundOnlineStatusString;
-            AddOrcanodeEvent(context, node, "hydrophone stream", value);
+            AddOrcanodeEvent(context, node, OrcanodeEventTypes.HydrophoneStream, value);
         }
 
         /// <summary>

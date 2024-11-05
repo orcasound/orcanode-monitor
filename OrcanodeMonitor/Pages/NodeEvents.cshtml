@@ -8,6 +8,7 @@
     <h1 class="display-4">Node Events</h1>
     <form method="post">
         @Html.AntiForgeryToken()
+        <input type="hidden" name="eventType" value="@Model.EventType" />
         <input type="hidden" name="Id" value="@Model.Id" />
         <div role="group" aria-label="Time period selection">
             <button type="submit" name="timePeriod" value="week"
@@ -21,7 +22,12 @@
                 Past Month
             </button>
         </div>
-        <p/>
+    </form>
+    <p/>
+    <form method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="timePeriod" value="@Model.TimePeriod" />
+        <input type="hidden" name="Id" value="@Model.Id" />
         <div role="group" aria-label="Event type selection">
             <button type="submit" name="eventType" value="all"
                     class="btn @(Model.EventType == "all" ? "selected" : "unselected")"
@@ -44,7 +50,7 @@
                 Mezmo Logging
             </button>
         </div>
- </form>
+    </form>
     <p>
         Uptime percentage: @Model.UptimePercentage%
     </p>

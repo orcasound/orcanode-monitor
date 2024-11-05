@@ -66,7 +66,7 @@ namespace OrcanodeMonitor.Pages
                 _logger.LogWarning($"Invalid time range selected: {timePeriod}");
                 return BadRequest("Invalid time range");
             }
-            if (eventType != "all" && eventType != "hydrophone stream" && eventType != "Mezmo logging" && eventType != "dataplicity connection")
+            if (eventType != "all" && eventType != OrcanodeEventTypes.HydrophoneStream && eventType != OrcanodeEventTypes.MezmoLogging && eventType != OrcanodeEventTypes.DataplicityConnection)
             {
                 _logger.LogWarning($"Invalid event type selected: {eventType}");
                 return BadRequest("Invalid event type");
