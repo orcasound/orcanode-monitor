@@ -798,13 +798,14 @@ namespace OrcanodeMonitor.Core
         /// <param name="context"></param>
         /// <param name="id">ID of node to get events for</param>
         /// <param name="since">Time to get events since</param>
+        /// <param name="eventType">Type of events to get, or empty string for all</param>
         /// <param name="logger"></param>
         /// <returns>null on error, or list of events on success</returns>
-        public static List<OrcanodeEvent>? GetRecentEventsForNode(OrcanodeMonitorContext context, string id, DateTime since, ILogger logger)
+        public static List<OrcanodeEvent>? GetRecentEventsForNode(OrcanodeMonitorContext context, string id, DateTime since, string eventType, ILogger logger)
         {
             try
             {
-                List<OrcanodeEvent> events = context.OrcanodeEvents.Where(e => e.OrcanodeId == id).OrderByDescending(e => e.DateTimeUtc).ToList();
+                List<OrcanodeEvent> events = context.OrcanodeEvents.Where(e => e.OrcanodeId == id && (eventType.IsNullOrEmpty() || eventType == e.Type)).OrderByDescending(e => e.DateTimeUtc).ToList();
                 List<OrcanodeEvent> orcanodeEvents = events.Where(e => e.DateTimeUtc >= since).ToList();
                 OrcanodeEvent? olderEvent = events.Where(e => (e.DateTimeUtc < since)).FirstOrDefault();
                 if (olderEvent != null)
@@ -828,25 +829,25 @@ namespace OrcanodeMonitor.Core
         private static void AddDataplicityConnectionStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = node.DataplicityConnectionStatus.ToString();
-            AddOrcanodeEvent(context, node, "dataplicity connection", value);
+            AddOrcanodeEvent(context, node, OrcanodeEventTypes.DataplicityConnection, value);
         }
 
         private static void AddDataplicityAgentUpgradeStatusChangeEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = node.DataplicityUpgradeStatus.ToString();
-            AddOrcanodeEvent(context, node, "agent upgrade status", value);
+            AddOrcanodeEvent(context, node, OrcanodeEventTypes.AgentUpgradeStatus, value);
         }
 
         private static void AddDiskCapacityChangeEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = string.Format("{0}G", node.DiskCapacityInGigs);
-            AddOrcanodeEvent(context, node, "SD card size", value);
+            AddOrcanodeEvent(context, node, OrcanodeEventTypes.SDCardSize, value);
         }
 
         private static void AddHydrophoneStreamStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = node.OrcasoundOnlineStatusString;
-            AddOrcanodeEvent(context, node, "hydrophone stream", value);
+            AddOrcanodeEvent(context, node, OrcanodeEventTypes.HydrophoneStream, value);
         }
 
         /// <summary>

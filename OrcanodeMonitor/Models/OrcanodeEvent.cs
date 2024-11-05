@@ -153,4 +153,14 @@ namespace OrcanodeMonitor.Models
 
         #endregion methods
     }
+
+    public static class OrcanodeEventTypes
+    {
+        public const string All = "all";
+        public const string HydrophoneStream = "hydrophone stream";
+        public const string MezmoLogging = "Mezmo logging";
+        public const string DataplicityConnection = "dataplicity connection";
+        public const string AgentUpgradeStatus = "agent upgrade status";
+        public const string SDCardSize = "SD card size";
+    }
 }
