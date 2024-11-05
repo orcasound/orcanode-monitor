@@ -32,15 +32,16 @@ namespace OrcanodeMonitor.Core
         /// Fetch string content from a Mezmo URL.
         /// </summary>
         /// <param name="url">URL to get content from</param>
+        /// <param name="logger"></param>
         /// <returns>String content.  An empty string may mean empty content or an HTTP error.</returns>
-        public async static Task<string?> GetMezmoDataAsync(string url)
+        public async static Task<string?> GetMezmoDataAsync(string url, ILogger logger)
         {
             try
             {
                 string? service_key = Environment.GetEnvironmentVariable("MEZMO_SERVICE_KEY");
                 if (string.IsNullOrEmpty(service_key))
                 {
-                    Console.Error.WriteLine($"MEZMO_SERVICE_KEY not configured");
+                    logger.LogError($"MEZMO_SERVICE_KEY not configured");
                     return null;
                 }
 
@@ -58,8 +59,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                string msg = ex.ToString();
-                Console.Error.WriteLine($"Exception in GetMezmoDataAsync: {msg}");
+                logger.LogError(ex, "Exception in GetMezmoDataAsync");
                 return null;
             }
         }
@@ -82,7 +82,7 @@ namespace OrcanodeMonitor.Core
                 }
                 int from = to - MezmoLogSeconds;
                 string url = $"{_mezmoLogUrl}?from={from}&to={to}&hosts={node.S3NodeName}";
-                string? jsonString = await GetMezmoDataAsync(url);
+                string? jsonString = await GetMezmoDataAsync(url, logger);
                 if (jsonString == null)
                 {
                     logger.LogDebug($"Failed to fetch Mezmo logs for {node.S3NodeName} between {from} and {to}");
@@ -126,7 +126,7 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                string? jsonArray = await GetMezmoDataAsync(_mezmoHostsUrl);
+                string? jsonArray = await GetMezmoDataAsync(_mezmoHostsUrl, logger);
                 if (jsonArray == null)
                 {
                     // Error so do nothing.
@@ -236,7 +236,7 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                string? jsonArray = await GetMezmoDataAsync(_mezmoViewsUrl);
+                string? jsonArray = await GetMezmoDataAsync(_mezmoViewsUrl, logger);
                 if (jsonArray == null)
                 {
                     // Error so do nothing.

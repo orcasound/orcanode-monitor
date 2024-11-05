@@ -10,15 +10,38 @@
         @Html.AntiForgeryToken()
         <input type="hidden" name="Id" value="@Model.Id" />
         <div role="group" aria-label="Time period selection">
-            <button type="submit" name="Selected" value="week"
-                    class="btn @(Model.Selected == "week" ? "selected" : "unselected")"
-                    aria-pressed="@(Model.Selected == "week" ? "true" : "false")" >
+            <button type="submit" name="timePeriod" value="week"
+                    class="btn @(Model.TimePeriod == "week" ? "selected" : "unselected")"
+                    aria-pressed="@(Model.TimePeriod == "week" ? "true" : "false")" >
                 Past Week
             </button>
-            <button type="submit" name="Selected" value="month"
-                    class="btn @(Model.Selected == "month" ? "selected" : "unselected")"
-                    aria-pressed="@(Model.Selected == "month" ? "true" : "false")">
+            <button type="submit" name="timePeriod" value="month"
+                    class="btn @(Model.TimePeriod == "month" ? "selected" : "unselected")"
+                    aria-pressed="@(Model.TimePeriod == "month" ? "true" : "false")">
                 Past Month
+            </button>
+        </div>
+        <p/>
+        <div role="group" aria-label="Event type selection">
+            <button type="submit" name="eventType" value="all"
+                    class="btn @(Model.EventType == "all" ? "selected" : "unselected")"
+                    aria-pressed="@(Model.EventType == "all" ? "true" : "false")">
+                All
+            </button>
+            <button type="submit" name="eventType" value="hydrophone stream"
+                    class="btn @(Model.EventType == "hydrophone stream" ? "selected" : "unselected")"
+                    aria-pressed="@(Model.EventType == "hydrophone stream" ? "true" : "false")">
+                Hydrophone Stream
+            </button>
+            <button type="submit" name="eventType" value="dataplicity connection"
+                    class="btn @(Model.EventType == "dataplicity connection" ? "selected" : "unselected")"
+                    aria-pressed="@(Model.EventType == "dataplicity connection" ? "true" : "false")">
+                Dataplicity Connection
+            </button>
+            <button type="submit" name="eventType" value="Mezmo logging"
+                    class="btn @(Model.EventType == "Mezmo logging" ? "selected" : "unselected")"
+                    aria-pressed="@(Model.EventType == "Mezmo logging" ? "true" : "false")">
+                Mezmo Logging
             </button>
         </div>
  </form>

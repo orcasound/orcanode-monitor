@@ -798,13 +798,14 @@ namespace OrcanodeMonitor.Core
         /// <param name="context"></param>
         /// <param name="id">ID of node to get events for</param>
         /// <param name="since">Time to get events since</param>
+        /// <param name="eventType">Type of events to get, or empty string for all</param>
         /// <param name="logger"></param>
         /// <returns>null on error, or list of events on success</returns>
-        public static List<OrcanodeEvent>? GetRecentEventsForNode(OrcanodeMonitorContext context, string id, DateTime since, ILogger logger)
+        public static List<OrcanodeEvent>? GetRecentEventsForNode(OrcanodeMonitorContext context, string id, DateTime since, string eventType, ILogger logger)
         {
             try
             {
-                List<OrcanodeEvent> events = context.OrcanodeEvents.Where(e => e.OrcanodeId == id).OrderByDescending(e => e.DateTimeUtc).ToList();
+                List<OrcanodeEvent> events = context.OrcanodeEvents.Where(e => e.OrcanodeId == id && (eventType.IsNullOrEmpty() || eventType == e.Type)).OrderByDescending(e => e.DateTimeUtc).ToList();
                 List<OrcanodeEvent> orcanodeEvents = events.Where(e => e.DateTimeUtc >= since).ToList();
                 OrcanodeEvent? olderEvent = events.Where(e => (e.DateTimeUtc < since)).FirstOrDefault();
                 if (olderEvent != null)
