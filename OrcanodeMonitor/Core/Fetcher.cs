@@ -20,6 +20,7 @@ using OrcanodeMonitor.Api;
 using Newtonsoft.Json.Linq;
 using System.Threading.Channels;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.Extensions.Logging;
 
 namespace OrcanodeMonitor.Core
 {
@@ -792,26 +793,39 @@ namespace OrcanodeMonitor.Core
             return orcanodeEvents;
         }
 
+        private static List<OrcanodeEvent> AddOlderEvent(List<OrcanodeEvent> orcanodeEvents, List<OrcanodeEvent> events, DateTime since, string type)
+        {
+            OrcanodeEvent? olderEvent = events.Where(e => (e.DateTimeUtc < since) && (e.Type == type)).FirstOrDefault();
+            if (olderEvent == null)
+            {
+                return orcanodeEvents;
+            }
+            else
+            {
+                return orcanodeEvents.Append(olderEvent).OrderByDescending(e => e.DateTimeUtc).ToList();
+            }
+        }
+
         /// <summary>
         /// Get recent events for a node
         /// </summary>
         /// <param name="context"></param>
         /// <param name="id">ID of node to get events for</param>
         /// <param name="since">Time to get events since</param>
-        /// <param name="eventType">Type of events to get, or empty string for all</param>
         /// <param name="logger"></param>
         /// <returns>null on error, or list of events on success</returns>
-        public static List<OrcanodeEvent>? GetRecentEventsForNode(OrcanodeMonitorContext context, string id, DateTime since, string eventType, ILogger logger)
+        public static List<OrcanodeEvent>? GetRecentEventsForNode(OrcanodeMonitorContext context, string id, DateTime since, ILogger logger)
         {
             try
             {
-                List<OrcanodeEvent> events = context.OrcanodeEvents.Where(e => e.OrcanodeId == id && (eventType.IsNullOrEmpty() || eventType == e.Type)).OrderByDescending(e => e.DateTimeUtc).ToList();
+                List<OrcanodeEvent> events = context.OrcanodeEvents.Where(e => e.OrcanodeId == id).OrderByDescending(e => e.DateTimeUtc).ToList();
                 List<OrcanodeEvent> orcanodeEvents = events.Where(e => e.DateTimeUtc >= since).ToList();
-                OrcanodeEvent? olderEvent = events.Where(e => (e.DateTimeUtc < since)).FirstOrDefault();
-                if (olderEvent != null)
-                {
-                    return orcanodeEvents.Append(olderEvent).ToList();
-                }
+
+                // Add one older event per type we can filter on.
+                orcanodeEvents = AddOlderEvent(orcanodeEvents, events, since, OrcanodeEventTypes.HydrophoneStream);
+                orcanodeEvents = AddOlderEvent(orcanodeEvents, events, since, OrcanodeEventTypes.DataplicityConnection);
+                orcanodeEvents = AddOlderEvent(orcanodeEvents, events, since, OrcanodeEventTypes.MezmoLogging);
+
                 return orcanodeEvents;
             } catch (Exception ex)
             {

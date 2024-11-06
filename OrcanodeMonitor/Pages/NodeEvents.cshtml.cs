@@ -19,12 +19,12 @@ namespace OrcanodeMonitor.Pages
         [BindProperty]
         public string TimePeriod { get; set; } = "week"; // Default to 'week'
         [BindProperty]
-        public string EventType { get; set; } = "all"; // Default to 'all'
+        public string EventType { get; set; } = OrcanodeEventTypes.All; // Default to 'all'
 
         private DateTime SinceTime => (TimePeriod == "week") ? DateTime.UtcNow.AddDays(-7) : DateTime.UtcNow.AddMonths(-1);
         private List<OrcanodeEvent> _events;
         public List<OrcanodeEvent> RecentEvents => _events;
-        public int UptimePercentage => Orcanode.GetUptimePercentage(_nodeId, _events, SinceTime);
+        public int UptimePercentage => Orcanode.GetUptimePercentage(_nodeId, _events, SinceTime, (EventType == OrcanodeEventTypes.All) ? OrcanodeEventTypes.HydrophoneStream : EventType);
 
         public NodeEventsModel(OrcanodeMonitorContext context, ILogger<NodeEventsModel> logger)
         {
@@ -36,8 +36,7 @@ namespace OrcanodeMonitor.Pages
 
         private void FetchEvents(ILogger logger)
         {
-            string eventType = (EventType == "all") ? string.Empty : EventType;
-            _events = Fetcher.GetRecentEventsForNode(_databaseContext, _nodeId, SinceTime, eventType, logger) ?? new List<OrcanodeEvent>();
+            _events = Fetcher.GetRecentEventsForNode(_databaseContext, _nodeId, SinceTime, logger).Where(e => e.Type == EventType || EventType == OrcanodeEventTypes.All).ToList() ?? new List<OrcanodeEvent>();
         }
 
         public void OnGet(string id)
@@ -66,7 +65,7 @@ namespace OrcanodeMonitor.Pages
                 _logger.LogWarning($"Invalid time range selected: {timePeriod}");
                 return BadRequest("Invalid time range");
             }
-            if (eventType != "all" && eventType != OrcanodeEventTypes.HydrophoneStream && eventType != OrcanodeEventTypes.MezmoLogging && eventType != OrcanodeEventTypes.DataplicityConnection)
+            if (eventType != OrcanodeEventTypes.All && eventType != OrcanodeEventTypes.HydrophoneStream && eventType != OrcanodeEventTypes.MezmoLogging && eventType != OrcanodeEventTypes.DataplicityConnection)
             {
                 _logger.LogWarning($"Invalid event type selected: {eventType}");
                 return BadRequest("Invalid event type");

@@ -393,6 +393,8 @@ namespace OrcanodeMonitor.Models
 
         public OrcanodeIftttDTO ToIftttDTO() => new OrcanodeIftttDTO(ID, DisplayName);
 
+        private static bool IsStateOnline(string state) => (state == "up" || state == "Online");
+
         /// <summary>
         /// Calculates the uptime percentage for a node based on its events since a specified date.
         /// Only events of type "hydrophone stream" are considered when calculating uptime.
@@ -401,9 +403,10 @@ namespace OrcanodeMonitor.Models
         /// <param name="orcanodeId">The ID of the node to calculate uptime for</param>
         /// <param name="events">List of node events</param>
         /// <param name="since">The start date for uptime calculation</param>
+        /// <param name="type">Event type to get uptime for</param>
         /// <returns>Uptime percentage as an integer between 0 and 100</returns>
         /// <exception cref="ArgumentException">Thrown when orcanodeId is null or empty</exception>
-        public static int GetUptimePercentage(string orcanodeId, List<OrcanodeEvent> events, DateTime since)
+        public static int GetUptimePercentage(string orcanodeId, List<OrcanodeEvent> events, DateTime since, string type)
         {
             if (string.IsNullOrEmpty(orcanodeId))
             {
@@ -425,7 +428,7 @@ namespace OrcanodeMonitor.Models
 
             // Get events sorted by date to ensure correct chronological processing.
             var nodeEvents = events
-                   .Where(e => e.OrcanodeId == orcanodeId && e.Type == "hydrophone stream")
+                   .Where(e => e.OrcanodeId == orcanodeId && e.Type == type)
                    .OrderBy(e => e.DateTimeUtc)
                    .ToList();
 
@@ -439,7 +442,7 @@ namespace OrcanodeMonitor.Models
                     continue;
                 }
                 DateTime current = e.DateTimeUtc;
-                if (lastValue == OnlineString)
+                if (IsStateOnline(lastValue))
                 {
                     up += (current - start);
                 }
@@ -453,7 +456,7 @@ namespace OrcanodeMonitor.Models
 
             // Account for the reminder of the time until now.
             DateTime now = DateTime.UtcNow;
-            if (lastValue == OnlineString)
+            if (IsStateOnline(lastValue))
             {
                 up += now - start;
             }

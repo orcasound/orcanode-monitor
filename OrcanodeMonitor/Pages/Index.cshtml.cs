@@ -97,7 +97,7 @@ namespace OrcanodeMonitor.Pages
 
         private DateTime SinceTime => DateTime.UtcNow.AddDays(-7);
 
-        public int GetUptimePercentage(Orcanode node) => Orcanode.GetUptimePercentage(node.ID, _events, SinceTime);
+        public int GetUptimePercentage(Orcanode node) => Orcanode.GetUptimePercentage(node.ID, _events, SinceTime, OrcanodeEventTypes.HydrophoneStream);
 
         public string NodeUptimePercentageBackgroundColor(Orcanode node)
         {
