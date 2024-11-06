@@ -146,7 +146,7 @@ namespace OrcanodeMonitor.Pages
 
             // Fetch events for uptime computation.
             var events = await _databaseContext.OrcanodeEvents.ToListAsync();
-            _events = events.Where(e => e.Type == "hydrophone stream").ToList();
+            _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
         }
     }
 }
