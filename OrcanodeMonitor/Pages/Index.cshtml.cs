@@ -97,7 +97,7 @@ namespace OrcanodeMonitor.Pages
 
         private DateTime SinceTime => DateTime.UtcNow.AddDays(-7);
 
-        public int GetUptimePercentage(Orcanode node) => Orcanode.GetUptimePercentage(node.ID, _events, SinceTime);
+        public int GetUptimePercentage(Orcanode node) => Orcanode.GetUptimePercentage(node.ID, _events, SinceTime, OrcanodeEventTypes.HydrophoneStream);
 
         public string NodeUptimePercentageBackgroundColor(Orcanode node)
         {
@@ -146,7 +146,7 @@ namespace OrcanodeMonitor.Pages
 
             // Fetch events for uptime computation.
             var events = await _databaseContext.OrcanodeEvents.ToListAsync();
-            _events = events.Where(e => e.Type == "hydrophone stream").ToList();
+            _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
         }
     }
 }
