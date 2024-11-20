@@ -38,7 +38,7 @@ configured by an administrator, the service will do the following:
       yet) and analyze the stream to find the standard deviation of audio, to detect unintelligible streams.
 
 5. Enumerate the orcanodes known by OrcaHello by fetching
-   "https://aifororcasdetections2.azurewebsites.net/api/hydrophones" and update the internal list of nodes.
+   "https://aifororcasdetections.azurewebsites.net/api/hydrophones" and update the internal list of nodes.
 
 6. Enumerate the orcanodes known by Mezmo by fetching
    "https://api.mezmo.com/v1/usage/hosts" and update the internal list of nodes.
@@ -154,13 +154,13 @@ An IFTTT-compatible service can implement:
 
 ### Production server
 
-The production server is online at: https://orcanodemonitor2.azurewebsites.net/
+The production server is online at: https://orcanodemonitor.azurewebsites.net/
 
 The production server is automatically updated if a Git tag with a [SemVer](https://semver.org) format version
 (e.g., "v0.1.0") is pushed to GitHub.
 
 ### Staging server
 
-The staging server is online at: https://orcanodemonitorstaging2.azurewebsites.net/
+The staging server is online at: https://orcanodemonitorstaging.azurewebsites.net/
 
 The staging server is automatically updated every time a GitHub pull request is merged.

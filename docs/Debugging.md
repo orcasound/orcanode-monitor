@@ -23,7 +23,7 @@
 
 ### Method 3
 
-1. Go to https://orcanodemonitor2.scm.azurewebsites.net.
+1. Go to https://orcanodemonitor.scm.azurewebsites.net.
 2. Under the "Debug console" drop down menu, select "CMD".
 3. Cd to C:\home\site\wwwroot.  Note: steps 1-3 here seem to be equivalent to steps 1-2 in method 2.
 4. Type in: dotnet OrcanodeMonitor.dll
@@ -44,7 +44,7 @@ or to connect to the local database:
 
 ## Links
 
-* [Production site](https://orcanodemonitor2.azurewebsites.net/)
-* [Staging site](https://orcanodemonitorstaging2.azurewebsites.net/)
+* [Production site](https://orcanodemonitor.azurewebsites.net/)
+* [Staging site](https://orcanodemonitorstaging.azurewebsites.net/)
 * [Azure portal](https://portal.azure.com/)
 * [Blog on how to troubleshoot error 500.30](https://zimmergren.net/solving-asp-net-core-3-on-azure-app-service-causing-500-30-in-process-startup-failure/)
