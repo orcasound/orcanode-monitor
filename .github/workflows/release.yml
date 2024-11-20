@@ -1,11 +1,11 @@
 ---
-name: Build and deploy .NET Core application to Web App OrcanodeMonitor
+name: Build and deploy .NET Core application to Web App orcanodemonitor
 on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
 env:
-  AZURE_WEBAPP_NAME: OrcanodeMonitor
+  AZURE_WEBAPP_NAME: orcanodemonitor
   AZURE_WEBAPP_PACKAGE_PATH: OrcanodeMonitor\published
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 8.0.x

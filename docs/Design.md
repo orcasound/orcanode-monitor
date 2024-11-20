@@ -38,7 +38,7 @@ configured by an administrator, the service will do the following:
       yet) and analyze the stream to find the standard deviation of audio, to detect unintelligible streams.
 
 5. Enumerate the orcanodes known by OrcaHello by fetching
-   "https://aifororcasdetections.azurewebsites.net/api/hydrophones" and update the internal list of nodes.
+   "https://aifororcasdetections2.azurewebsites.net/api/hydrophones" and update the internal list of nodes.
 
 6. Enumerate the orcanodes known by Mezmo by fetching
    "https://api.mezmo.com/v1/usage/hosts" and update the internal list of nodes.
