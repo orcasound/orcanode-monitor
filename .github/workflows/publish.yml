@@ -1,12 +1,12 @@
 ---
-name: Build and deploy .NET Core application to Web App OrcanodeMonitorStaging
+name: Build and deploy .NET Core application to Web App orcanodemonitorstaging
 on:
   push:
     branches:
       - main
 env:
-  AZURE_WEBAPP_NAME: OrcanodeMonitorStaging2
-  AZURE_WEBAPP_PACKAGE_PATH: OrcanodeMonitor2\published
+  AZURE_WEBAPP_NAME: orcanodemonitorstaging
+  AZURE_WEBAPP_PACKAGE_PATH: OrcanodeMonitor\published
   CONFIGURATION: Release
   DOTNET_CORE_VERSION: 8.0.x
   WORKING_DIRECTORY: OrcanodeMonitor

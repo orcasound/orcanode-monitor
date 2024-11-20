@@ -154,13 +154,13 @@ An IFTTT-compatible service can implement:
 
 ### Production server
 
-The production server is online at: https://orcanodemonitor2.azurewebsites.net/
+The production server is online at: https://orcanodemonitor.azurewebsites.net/
 
 The production server is automatically updated if a Git tag with a [SemVer](https://semver.org) format version
 (e.g., "v0.1.0") is pushed to GitHub.
 
 ### Staging server
 
-The staging server is online at: https://orcanodemonitorstaging2.azurewebsites.net/
+The staging server is online at: https://orcanodemonitorstaging.azurewebsites.net/
 
 The staging server is automatically updated every time a GitHub pull request is merged.
