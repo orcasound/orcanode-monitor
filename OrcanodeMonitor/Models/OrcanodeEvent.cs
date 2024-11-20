@@ -28,6 +28,7 @@ namespace OrcanodeMonitor.Models
     {
         public OrcanodeIftttEventDTO(string id, string nodeName, string slug, string type, string value, DateTime timestamp, int severity)
         {
+            NodeName = nodeName;
             Slug = slug;
             Type = type;
             Value = value;
@@ -37,6 +38,13 @@ namespace OrcanodeMonitor.Models
         }
         [JsonPropertyName("slug")]
         public string Slug { get; private set; }
+
+        /// <summary>
+        /// The node name used in IFTTT event identification.
+        /// </summary>
+        [JsonPropertyName("node_name")]
+        public string NodeName { get; private set; }
+
         [JsonPropertyName("type")]
         public string Type { get; private set; }
         [JsonPropertyName("value")]
