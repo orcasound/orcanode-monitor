@@ -12,7 +12,7 @@ namespace OrcanodeMonitor.Core
     public class FfmpegCoreAnalyzer
     {
         // We consider anything below this average amplitude as silence.
-        const double MaxSilenceAmplitude = 20.0;
+        const double MaxSilenceAmplitude = 17.0;
 
         // Minimum ratio of amplitude outside the hum range to amplitude
         // within the hum range.  So far the max in a known-unintelligible

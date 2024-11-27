@@ -54,6 +54,9 @@ namespace Test
             await TestSampleAsync("normal\\live385.ts", OrcanodeOnlineStatus.Online);
             await TestSampleAsync("normal\\live839.ts", OrcanodeOnlineStatus.Online);
             await TestSampleAsync("normal\\live1184.ts", OrcanodeOnlineStatus.Online);
+
+            // Bush Point file from arond 5pm 11/18/2024 is relatively quiet (max amplitude 17.46).
+            await TestSampleAsync("normal\\live6079.ts", OrcanodeOnlineStatus.Online);
         }
     }
 }
