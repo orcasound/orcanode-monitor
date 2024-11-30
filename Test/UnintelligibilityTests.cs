@@ -23,7 +23,8 @@ namespace Test
             string filePath = Path.Combine(rootDirectory, "Test\\samples", filename);
             try
             {
-                OrcanodeOnlineStatus status = await FfmpegCoreAnalyzer.AnalyzeFileAsync(filePath);
+                OrcanodeOnlineStatus oldStatus = expected_status;
+                OrcanodeOnlineStatus status = await FfmpegCoreAnalyzer.AnalyzeFileAsync(filePath, oldStatus);
                 Assert.IsTrue(status == expected_status);
             }
             catch (Exception ex)
@@ -43,6 +44,10 @@ namespace Test
             await TestSampleAsync("unintelligible\\live1791.ts", OrcanodeOnlineStatus.Unintelligible);
             await TestSampleAsync("unintelligible\\live1815.ts", OrcanodeOnlineStatus.Unintelligible);
             await TestSampleAsync("unintelligible\\live1816.ts", OrcanodeOnlineStatus.Unintelligible);
+
+            // Bush Point file from arond 5pm 11/18/2024 is relatively quiet (max amplitude 17.46).
+            // Stay unintelligible if it was online before.
+            await TestSampleAsync("normal\\live6079.ts", OrcanodeOnlineStatus.Unintelligible);
         }
 
         [TestMethod]
@@ -56,6 +61,7 @@ namespace Test
             await TestSampleAsync("normal\\live1184.ts", OrcanodeOnlineStatus.Online);
 
             // Bush Point file from arond 5pm 11/18/2024 is relatively quiet (max amplitude 17.46).
+            // Stay online if it was online before.
             await TestSampleAsync("normal\\live6079.ts", OrcanodeOnlineStatus.Online);
         }
     }

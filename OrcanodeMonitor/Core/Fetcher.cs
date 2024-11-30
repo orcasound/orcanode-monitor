@@ -908,7 +908,7 @@ namespace OrcanodeMonitor.Core
             try
             {
                 using Stream stream = await _httpClient.GetStreamAsync(newUri);
-                node.AudioStreamStatus = await FfmpegCoreAnalyzer.AnalyzeAudioStreamAsync(stream);
+                node.AudioStreamStatus = await FfmpegCoreAnalyzer.AnalyzeAudioStreamAsync(stream, oldStatus);
                 node.AudioStandardDeviation = 0.0;
             } catch (Exception ex)
             {
