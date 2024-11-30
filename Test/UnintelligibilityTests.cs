@@ -12,7 +12,7 @@ namespace Test
     [TestClass]
     public class UnintelligibilityTests
     {
-        private async Task TestSampleAsync(string filename, OrcanodeOnlineStatus expected_status)
+        private async Task TestSampleAsync(string filename, OrcanodeOnlineStatus expected_status, OrcanodeOnlineStatus? oldStatus = null)
         {
             // Get the current directory (where the test assembly is located)
             string currentDirectory = Directory.GetCurrentDirectory();
@@ -23,7 +23,8 @@ namespace Test
             string filePath = Path.Combine(rootDirectory, "Test\\samples", filename);
             try
             {
-                OrcanodeOnlineStatus status = await FfmpegCoreAnalyzer.AnalyzeFileAsync(filePath);
+                OrcanodeOnlineStatus previousStatus = oldStatus ?? expected_status;
+                OrcanodeOnlineStatus status = await FfmpegCoreAnalyzer.AnalyzeFileAsync(filePath, previousStatus);
                 Assert.IsTrue(status == expected_status);
             }
             catch (Exception ex)
@@ -54,9 +55,20 @@ namespace Test
             await TestSampleAsync("normal\\live385.ts", OrcanodeOnlineStatus.Online);
             await TestSampleAsync("normal\\live839.ts", OrcanodeOnlineStatus.Online);
             await TestSampleAsync("normal\\live1184.ts", OrcanodeOnlineStatus.Online);
+        }
 
+        [TestMethod]
+        public async Task TestHysteresisBehavior()
+        {
             // Bush Point file from arond 5pm 11/18/2024 is relatively quiet (max amplitude 17.46).
-            await TestSampleAsync("normal\\live6079.ts", OrcanodeOnlineStatus.Online);
+            // Test state retention when transitioning from Online to borderline Unintelligible.
+            await TestSampleAsync("normal/live6079.ts", OrcanodeOnlineStatus.Online, OrcanodeOnlineStatus.Online);
+
+            // Test state retention when transitioning from Unintelligible to borderline Online.
+            await TestSampleAsync("normal/live6079.ts", OrcanodeOnlineStatus.Unintelligible, OrcanodeOnlineStatus.Unintelligible);
+
+            // Test clear state changes (should override hysteresis).
+            await TestSampleAsync("unintelligible/live4869.ts", OrcanodeOnlineStatus.Unintelligible, OrcanodeOnlineStatus.Online);
         }
     }
 }

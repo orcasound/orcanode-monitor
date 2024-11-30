@@ -11,8 +11,29 @@ namespace OrcanodeMonitor.Core
 {
     public class FfmpegCoreAnalyzer
     {
+        // We consider anything above this average amplitude as not silence.
+        const double _defaultMaxSilenceAmplitude = 20.0;
+        private static double MaxSilenceAmplitude
+        {
+            get
+            {
+                string? maxSilenceAmplitudeString = Environment.GetEnvironmentVariable("ORCASOUND_MAX_SILENCE_AMPLITUDE");
+                double maxSilenceAmplitude = double.TryParse(maxSilenceAmplitudeString, out var amplitude) ? amplitude : _defaultMaxSilenceAmplitude;
+                return maxSilenceAmplitude;
+            }
+        }
+
         // We consider anything below this average amplitude as silence.
-        const double MaxSilenceAmplitude = 17.0;
+        const double _defaultMinNoiseAmplitude = 15.0;
+        private static double MinNoiseAmplitude
+        {
+            get
+            {
+                string? minNoiseAmplitudeString = Environment.GetEnvironmentVariable("ORCASOUND_MIN_NOISE_AMPLITUDE");
+                double minNoiseAmplitude = double.TryParse(minNoiseAmplitudeString, out var amplitude) ? amplitude : _defaultMinNoiseAmplitude;
+                return minNoiseAmplitude;
+            }
+        }
 
         // Minimum ratio of amplitude outside the hum range to amplitude
         // within the hum range.  So far the max in a known-unintelligible
@@ -36,7 +57,7 @@ namespace OrcanodeMonitor.Core
 
         private static bool IsHumFrequency(double frequency) => (frequency >= MinHumFrequency && frequency <= MaxHumFrequency);
 
-        private static OrcanodeOnlineStatus AnalyzeFrequencies(float[] data, int sampleRate)
+        private static OrcanodeOnlineStatus AnalyzeFrequencies(float[] data, int sampleRate, OrcanodeOnlineStatus oldStatus)
         {
             int n = data.Length;
             Complex[] complexData = data.Select(d => new Complex(d, 0)).ToArray();
@@ -48,9 +69,15 @@ namespace OrcanodeMonitor.Core
             }
 
             double max = amplitudes.Max();
-            if (max < MaxSilenceAmplitude)
+            if (max < MinNoiseAmplitude)
             {
                 // File contains mostly silence across all frequencies.
+                return OrcanodeOnlineStatus.Unintelligible;
+            }
+
+            if ((max <= MaxSilenceAmplitude) && (oldStatus == OrcanodeOnlineStatus.Unintelligible))
+            {
+                // In between the min and max unintelligibility range, so keep previous status.
                 return OrcanodeOnlineStatus.Unintelligible;
             }
 
@@ -83,8 +110,9 @@ namespace OrcanodeMonitor.Core
         /// Get the status of the most recent audio stream sample.
         /// </summary>
         /// <param name="args">FFMpeg arguments</param>
+        /// <param name="oldStatus">Previous online status</param>
         /// <returns>Status of the most recent audio samples</returns>
-        private static async Task<OrcanodeOnlineStatus> AnalyzeAsync(FFMpegArguments args)
+        private static async Task<OrcanodeOnlineStatus> AnalyzeAsync(FFMpegArguments args, OrcanodeOnlineStatus oldStatus)
         {
             var outputStream = new MemoryStream(); // Create an output stream (e.g., MemoryStream)
             var pipeSink = new StreamPipeSink(outputStream);
@@ -115,21 +143,21 @@ namespace OrcanodeMonitor.Core
             }
 
             // Perform FFT and analyze frequencies
-            var status = AnalyzeFrequencies(floatBuffer, waveFormat.SampleRate);
+            var status = AnalyzeFrequencies(floatBuffer, waveFormat.SampleRate, oldStatus);
             return status;
         }
 
-        public static async Task<OrcanodeOnlineStatus> AnalyzeFileAsync(string filename)
+        public static async Task<OrcanodeOnlineStatus> AnalyzeFileAsync(string filename, OrcanodeOnlineStatus oldStatus)
         {
             var args = FFMpegArguments.FromFileInput(filename);
-            return await AnalyzeAsync(args);
+            return await AnalyzeAsync(args, oldStatus);
         }
 
-        public static async Task<OrcanodeOnlineStatus> AnalyzeAudioStreamAsync(Stream stream)
+        public static async Task<OrcanodeOnlineStatus> AnalyzeAudioStreamAsync(Stream stream, OrcanodeOnlineStatus oldStatus)
         {
             StreamPipeSource streamPipeSource = new StreamPipeSource(stream);
             var args = FFMpegArguments.FromPipeInput(streamPipeSource);
-            return await AnalyzeAsync(args);
+            return await AnalyzeAsync(args, oldStatus);
         }
     }
 }
