@@ -111,13 +111,18 @@ The following state will be stored per orcanode:
 
 **ORCASOUND_MAX_UPLOAD_DELAY_MINUTES**: If the manifest file is older than this, the node will be considered offline. Default: 2
 
+**MEZMO_LOG_SECONDS**: The number of seconds of Mezmo logs to check for activity. Default: 60
+
 **ORCASOUND_MIN_INTELLIGIBLE_SIGNAL_PERCENT**: The minimum percentage of max amplitude across all frequencies of amplitude outside the 50-60 Hz range needed to determine that an audio stream is intelligible. Default: 30
 
 **ORCASOUND_MAX_SILENCE_AMPLITUDE**: The maximum amplitude at which an stream stream might still be considered unintelligible due to silence. Default: 20
 
 **ORCASOUND_MIN_NOISE_AMPLITUDE**: The minimum amplitude at which an stream stream might still be considered intelligible. Default: 15
 
-**MEZMO_LOG_SECONDS**: The number of seconds of Mezmo logs to check for activity. Default: 60
+These amplitude thresholds work together to implement hysteresis in the noise detection:
+- Amplitudes below MIN_NOISE_AMPLITUDE are always considered silent.
+- Amplitudes above MAX_SILENCE_AMPLITUDE are always considered noisy.
+- Amplitudes between these thresholds maintain their previous state to prevent rapid oscillation between states.
 
 ## Web page front end
 
