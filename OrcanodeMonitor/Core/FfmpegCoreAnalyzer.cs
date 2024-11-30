@@ -110,7 +110,7 @@ namespace OrcanodeMonitor.Core
         /// Get the status of the most recent audio stream sample.
         /// </summary>
         /// <param name="args">FFMpeg arguments</param>
-        /// <param name="oldStatus"Previous online status</param>
+        /// <param name="oldStatus">Previous online status</param>
         /// <returns>Status of the most recent audio samples</returns>
         private static async Task<OrcanodeOnlineStatus> AnalyzeAsync(FFMpegArguments args, OrcanodeOnlineStatus oldStatus)
         {
