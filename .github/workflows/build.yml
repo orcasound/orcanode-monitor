@@ -55,17 +55,17 @@ jobs:
            echo "env.TESTZ: $env:TESTZ"
 
       # https://stackoverflow.com/questions/61858388/how-do-i-set-an-enviroment-variable-in-github-action-on-a-windows-server/65110357#65110357
-      - name: Set environment variables
-        if: steps.skip_check.outputs.should_skip != 'true'
-        shell: pwsh
-        run: |
-          Add-Content -Path $env:GITHUB_ENV -Value "AZURE_COSMOS_CONNECTIONSTRING=${{ secrets.AZURE_COSMOS_CONNECTIONSTRING }}"
-          Add-Content -Path $env:GITHUB_ENV -Value "AZURE_COSMOS_DATABASENAME=${{ secrets.AZURE_COSMOS_DATABASENAME }}"
+      #- name: Set environment variables
+      #  if: steps.skip_check.outputs.should_skip != 'true'
+      #  shell: pwsh
+      #  run: |
+      #    Add-Content -Path $env:GITHUB_ENV -Value "AZURE_COSMOS_CONNECTIONSTRING=${{ secrets.AZURE_COSMOS_CONNECTIONSTRING }}"
+      #    Add-Content -Path $env:GITHUB_ENV -Value "AZURE_COSMOS_DATABASENAME=${{ secrets.AZURE_COSMOS_DATABASENAME }}"
 
-      - name: Check environment variable
-        if: steps.skip_check.outputs.should_skip != 'true'
-        run: |
-           echo "env.AZURE_COSMOS_DATABASENAME: $env:AZURE_COSMOS_DATABASENAME"
+      #- name: Check environment variable
+      #  if: steps.skip_check.outputs.should_skip != 'true'
+      #  run: |
+      #     echo "env.AZURE_COSMOS_DATABASENAME: $env:AZURE_COSMOS_DATABASENAME"
 
       - name: Set environment variables
         if: steps.skip_check.outputs.should_skip != 'true'
