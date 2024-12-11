@@ -26,8 +26,6 @@ jobs:
       # Configuration type to build.  For documentation on how build matrices work, see
       # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
       BUILD_CONFIGURATION: ${{matrix.configurations}}
-      AZURE_COSMOS_CONNECTIONSTRING: ${{secrets.AZURE_COSMOS_CONNECTIONSTRING}}
-      AZURE_COSMOS_DATABASENAME: ${{secrets.AZURE_COSMOS_DATABASENAME}}
 
     steps:
       - name: Harden Runner
@@ -53,5 +51,8 @@ jobs:
 
       - name: Test
         if: steps.skip_check.outputs.should_skip != 'true'
+        env:
+          AZURE_COSMOS_CONNECTIONSTRING: ${{secrets.AZURE_COSMOS_CONNECTIONSTRING}}
+          AZURE_COSMOS_DATABASENAME: ${{secrets.AZURE_COSMOS_DATABASENAME}}
         run: |
           dotnet test --no-build --verbosity normal --configuration ${{env.BUILD_CONFIGURATION}} --property:Platform="Any CPU"
