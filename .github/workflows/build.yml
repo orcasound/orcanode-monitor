@@ -41,6 +41,19 @@ jobs:
 
       - name: Set environment variables
         if: steps.skip_check.outputs.should_skip != 'true'
+        shell: pwsh
+        run: |
+          Add-Content -Path $env:GITHUB_ENV -Value "AZURE_COSMOS_CONNECTIONSTRING=${{ secrets.AZURE_COSMOS_CONNECTIONSTRING }}"
+          Add-Content -Path $env:GITHUB_ENV -Value "AZURE_COSMOS_DATABASENAME=${{ secrets.AZURE_COSMOS_DATABASENAME }}"
+
+      - name: Check environment variable
+        if: steps.skip_check.outputs.should_skip != 'true'
+        run: |
+           echo "env.AZURE_COSMOS_DATABASEMENT: $env:AZURE_COSMOS_DATABASENAME"
+
+      - name: Set environment variables
+        if: steps.skip_check.outputs.should_skip != 'true'
+        shell: pwsh
         run: |
            echo "AZURE_COSMOS_CONNECTIONSTRING=${{ secrets.AZURE_COSMOS_CONNECTIONSTRING }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
            echo "{{ secrets.AZURE_COSMOS_DATABASENAME }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
