@@ -26,6 +26,8 @@ jobs:
       # Configuration type to build.  For documentation on how build matrices work, see
       # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
       BUILD_CONFIGURATION: ${{matrix.configurations}}
+      AZURE_COSMOS_CONNECTIONSTRING: ${{secrets.AZURE_COSMOS_CONNECTIONSTRING}}
+      AZURE_COSMOS_DATABASENAME: ${{secrets.AZURE_COSMOS_DATABASENAME}}
 
     steps:
       - name: Harden Runner
@@ -38,41 +40,6 @@ jobs:
         with:
           cancel_others: 'false'
           paths_ignore: '["**.md"]'
-
-      - name: Set environment variables
-        if: steps.skip_check.outputs.should_skip != 'true'
-        shell: pwsh
-        run: |
-          Add-Content -Path $env:GITHUB_ENV -Value "TESTX=testx"
-          echo "TESTY=testy" >> $env:GITHUB_ENV
-          echo "TESTZ=testz" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
-      - name: Check environment variables
-        if: steps.skip_check.outputs.should_skip != 'true'
-        run: |
-           echo "env.TESTX: $env:TESTX"
-           echo "env.TESTY: $env:TESTY"
-           echo "env.TESTZ: $env:TESTZ"
-
-      # https://stackoverflow.com/questions/61858388/how-do-i-set-an-enviroment-variable-in-github-action-on-a-windows-server/65110357#65110357
-      #- name: Set environment variables
-      #  if: steps.skip_check.outputs.should_skip != 'true'
-      #  shell: pwsh
-      #  run: |
-      #    Add-Content -Path $env:GITHUB_ENV -Value "AZURE_COSMOS_CONNECTIONSTRING=${{ secrets.AZURE_COSMOS_CONNECTIONSTRING }}"
-      #    Add-Content -Path $env:GITHUB_ENV -Value "AZURE_COSMOS_DATABASENAME=${{ secrets.AZURE_COSMOS_DATABASENAME }}"
-
-      #- name: Check environment variable
-      #  if: steps.skip_check.outputs.should_skip != 'true'
-      #  run: |
-      #     echo "env.AZURE_COSMOS_DATABASENAME: $env:AZURE_COSMOS_DATABASENAME"
-
-      - name: Set environment variables
-        if: steps.skip_check.outputs.should_skip != 'true'
-        shell: pwsh
-        run: |
-           echo "AZURE_COSMOS_CONNECTIONSTRING=${{ secrets.AZURE_COSMOS_CONNECTIONSTRING }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-           echo "AZURE_COSMOS_DATABASENAME=${{ secrets.AZURE_COSMOS_DATABASENAME }}" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Check environment variable
         if: steps.skip_check.outputs.should_skip != 'true'
