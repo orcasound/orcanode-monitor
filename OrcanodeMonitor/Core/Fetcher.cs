@@ -744,6 +744,8 @@ namespace OrcanodeMonitor.Core
         /// <returns></returns>
         public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
+            await SanityCheckLastS3StreamEvent(context, node);
+
             string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/latest.txt";
             using HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (response.StatusCode == HttpStatusCode.NotFound)
@@ -862,6 +864,17 @@ namespace OrcanodeMonitor.Core
         {
             string value = node.OrcasoundOnlineStatusString;
             AddOrcanodeEvent(context, node, OrcanodeEventTypes.HydrophoneStream, value);
+        }
+
+        private async static Task SanityCheckLastS3StreamEvent(OrcanodeMonitorContext context, Orcanode node)
+        {
+            string oldStatusString = node.OrcasoundOnlineStatusString;
+            OrcanodeEvent? lastEvent = context.OrcanodeEvents.Where(e => e.OrcanodeId == node.ID && e.Type == "hydrophone stream").OrderByDescending(e => e.DateTimeUtc).First();
+            string oldStatus2String = lastEvent?.Value ?? "ABSENT";
+            if (oldStatusString != oldStatus2String)
+            {
+                AddOrcanodeEvent(context, node, OrcanodeEventTypes.HydrophoneStream, oldStatus2String);
+            }
         }
 
         /// <summary>
