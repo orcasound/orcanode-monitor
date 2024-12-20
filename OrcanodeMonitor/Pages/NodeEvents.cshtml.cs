@@ -48,36 +48,44 @@ namespace OrcanodeMonitor.Pages
             FetchEvents(_logger);
         }
 
-        public IActionResult OnPost(string timePeriod, string eventType, string id)
+        public string GetTypeClass(OrcanodeEvent item)
         {
-            if (string.IsNullOrEmpty(id))
+            if (item.Type == OrcanodeEventTypes.HydrophoneStream)
             {
-                _logger.LogError("Node ID cannot be empty");
-                return BadRequest("Invalid node ID");
+                return "hydrophoneStream";
             }
-            if (timePeriod.IsNullOrEmpty())
+            else if (item.Type == OrcanodeEventTypes.DataplicityConnection)
             {
-                timePeriod = TimePeriod;
+                return "dataplicityConnection";
             }
-            if (eventType.IsNullOrEmpty())
+            else if (item.Type == OrcanodeEventTypes.MezmoLogging)
             {
-                eventType = EventType;
+                return "mezmoLogging";
             }
-            if (timePeriod != "week" && timePeriod != "month")
+            else if (item.Type == OrcanodeEventTypes.AgentUpgradeStatus)
             {
-                _logger.LogWarning($"Invalid time range selected: {timePeriod}");
-                return BadRequest("Invalid time range");
+                return "agentUpgradeStatus";
             }
-            if (eventType != OrcanodeEventTypes.All && eventType != OrcanodeEventTypes.HydrophoneStream && eventType != OrcanodeEventTypes.MezmoLogging && eventType != OrcanodeEventTypes.DataplicityConnection)
+            else if (item.Type == OrcanodeEventTypes.SDCardSize)
             {
-                _logger.LogWarning($"Invalid event type selected: {eventType}");
-                return BadRequest("Invalid event type");
+                return "sdCardSize";
             }
-            TimePeriod = timePeriod;
-            EventType = eventType;
-            _node = _databaseContext.Orcanodes.Where(n => n.ID == id).First();
-            FetchEvents(_logger);
-            return Page();
+            else
+            {
+                return string.Empty;
+            }
+        }
+
+        public string GetTimeRangeClass(OrcanodeEvent item)
+        {
+            DateTime OneWeekAgo = DateTime.UtcNow.AddDays(-7);
+            return (item.DateTimeUtc > OneWeekAgo) ? "pastWeek" : string.Empty;
+        }
+
+        public string GetEventClasses(OrcanodeEvent item)
+        {
+            string classes = GetTypeClass(item) + " " + GetTimeRangeClass(item);
+            return classes;
         }
     }
 }
