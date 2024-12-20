@@ -9,6 +9,12 @@ using System.Numerics;
 
 namespace OrcanodeMonitor.Core
 {
+    public class FrequencyInfo
+    {
+        public Dictionary<double, double> FrequencyAmplitudes { get; set; }
+        public OrcanodeOnlineStatus Status { get; set; }
+    }
+
     public class FfmpegCoreAnalyzer
     {
         // We consider anything above this average amplitude as not silence.
@@ -57,36 +63,47 @@ namespace OrcanodeMonitor.Core
 
         private static bool IsHumFrequency(double frequency) => (frequency >= MinHumFrequency && frequency <= MaxHumFrequency);
 
-        private static OrcanodeOnlineStatus AnalyzeFrequencies(float[] data, int sampleRate, OrcanodeOnlineStatus oldStatus)
+        public static Dictionary<double, double> ComputeFrequencyAmplitudes(float[] data, int sampleRate)
         {
+            var result = new Dictionary<double, double>();
             int n = data.Length;
             Complex[] complexData = data.Select(d => new Complex(d, 0)).ToArray();
             Fourier.Forward(complexData, FourierOptions.Matlab);
-            double[] amplitudes = new double[n / 2];
             for (int i = 0; i < n / 2; i++)
             {
-                amplitudes[i] = complexData[i].Magnitude;
+                double amplitude = complexData[i].Magnitude;
+                double frequency = (((double)i) * sampleRate) / n;
+                result[frequency] = amplitude;
             }
+            return result;
+        }
 
-            double max = amplitudes.Max();
+        private static FrequencyInfo AnalyzeFrequencies(float[] data, int sampleRate, OrcanodeOnlineStatus oldStatus)
+        {
+            int n = data.Length;
+            FrequencyInfo frequencyInfo = new FrequencyInfo();
+            frequencyInfo.FrequencyAmplitudes = ComputeFrequencyAmplitudes(data, sampleRate);
+
+            double max = frequencyInfo.FrequencyAmplitudes.Values.Max();
             if (max < MinNoiseAmplitude)
             {
                 // File contains mostly silence across all frequencies.
-                return OrcanodeOnlineStatus.Unintelligible;
+                frequencyInfo.Status = OrcanodeOnlineStatus.Unintelligible;
+                return frequencyInfo;
             }
 
             if ((max <= MaxSilenceAmplitude) && (oldStatus == OrcanodeOnlineStatus.Unintelligible))
             {
                 // In between the min and max unintelligibility range, so keep previous status.
-                return OrcanodeOnlineStatus.Unintelligible;
+                frequencyInfo.Status = OrcanodeOnlineStatus.Unintelligible;
+                return frequencyInfo;
             }
 
             // Find the maximum amplitude outside the audio hum range.
             double maxNonHumAmplitude = 0;
-            for (int i = 0; i < amplitudes.Length; i++)
-            {
-                double frequency = (((double)i) * sampleRate) / n;
-                double amplitude = amplitudes[i];
+            foreach (var pair in frequencyInfo.FrequencyAmplitudes) {
+                double frequency = pair.Key;
+                double amplitude = pair.Value;
                 if (!IsHumFrequency(frequency))
                 {
                     if (maxNonHumAmplitude < amplitude)
@@ -99,11 +116,13 @@ namespace OrcanodeMonitor.Core
             if (maxNonHumAmplitude / max < MinSignalRatio)
             {
                 // Essentially just silence outside the hum range, no signal.
-                return OrcanodeOnlineStatus.Unintelligible;
+                frequencyInfo.Status = OrcanodeOnlineStatus.Unintelligible;
+                return frequencyInfo;
             }
 
             // Signal outside the hum range.
-            return OrcanodeOnlineStatus.Online;
+            frequencyInfo.Status = OrcanodeOnlineStatus.Online;
+            return frequencyInfo;
         }
 
         /// <summary>
@@ -112,7 +131,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="args">FFMpeg arguments</param>
         /// <param name="oldStatus">Previous online status</param>
         /// <returns>Status of the most recent audio samples</returns>
-        private static async Task<OrcanodeOnlineStatus> AnalyzeAsync(FFMpegArguments args, OrcanodeOnlineStatus oldStatus)
+        private static async Task<FrequencyInfo> AnalyzeAsync(FFMpegArguments args, OrcanodeOnlineStatus oldStatus)
         {
             var outputStream = new MemoryStream(); // Create an output stream (e.g., MemoryStream)
             var pipeSink = new StreamPipeSink(outputStream);
@@ -142,18 +161,18 @@ namespace OrcanodeMonitor.Core
                 floatBuffer[i] = BitConverter.ToInt16(byteBuffer, i * sizeof(short)) / 32768f;
             }
 
-            // Perform FFT and analyze frequencies
+            // Perform FFT and analyze frequencies.
             var status = AnalyzeFrequencies(floatBuffer, waveFormat.SampleRate, oldStatus);
             return status;
         }
 
-        public static async Task<OrcanodeOnlineStatus> AnalyzeFileAsync(string filename, OrcanodeOnlineStatus oldStatus)
+        public static async Task<FrequencyInfo> AnalyzeFileAsync(string filename, OrcanodeOnlineStatus oldStatus)
         {
             var args = FFMpegArguments.FromFileInput(filename);
             return await AnalyzeAsync(args, oldStatus);
         }
 
-        public static async Task<OrcanodeOnlineStatus> AnalyzeAudioStreamAsync(Stream stream, OrcanodeOnlineStatus oldStatus)
+        public static async Task<FrequencyInfo> AnalyzeAudioStreamAsync(Stream stream, OrcanodeOnlineStatus oldStatus)
         {
             StreamPipeSource streamPipeSource = new StreamPipeSource(stream);
             var args = FFMpegArguments.FromPipeInput(streamPipeSource);

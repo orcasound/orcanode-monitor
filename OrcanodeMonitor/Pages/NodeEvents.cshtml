@@ -5,7 +5,14 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4">Node Events</h1>
+    <h1 class="display-4">@Model.NodeName</h1>
+
+    <!-- Navigation Button -->
+    <button onclick="location.href='@Url.Page("/SpectralDensity", new { id = Model.Id })'" class="btn btn-primary">
+        View Most Recent Spectral Density
+    </button>
+    <p></p>
+
     <form method="post">
         @Html.AntiForgeryToken()
         <input type="hidden" name="eventType" value="@Model.EventType" />
