@@ -738,8 +738,13 @@ namespace OrcanodeMonitor.Core
 
         public class TimestampResult
         {
-            public string UnixTimestampString = string.Empty;
-            public DateTimeOffset? Offset = null;
+            public string UnixTimestampString { get; }
+            public DateTimeOffset? Offset { get; }
+            public TimestampResult(string unixTimestampString, DateTimeOffset? offset)
+            {
+                UnixTimestampString = unixTimestampString;
+                Offset = offset;
+            }
         }
 
         public async static Task<TimestampResult?> GetLatestS3TimestampAsync(Orcanode node, bool updateNode, ILogger logger)
@@ -777,9 +782,7 @@ namespace OrcanodeMonitor.Core
 
             string content = await response.Content.ReadAsStringAsync();
             string unixTimestampString = content.TrimEnd();
-            var result = new TimestampResult();
-            result.UnixTimestampString = unixTimestampString;
-            result.Offset = response.Content.Headers.LastModified;
+            var result = new TimestampResult(unixTimestampString, response.Content.Headers.LastModified);
             return result;
         }
 

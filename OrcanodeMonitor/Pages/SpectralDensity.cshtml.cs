@@ -34,6 +34,7 @@ namespace OrcanodeMonitor.Pages
             Orcanode? node = _databaseContext.Orcanodes.Where(n => n.ID == _nodeId).FirstOrDefault();
             if (node == null)
             {
+                _logger.LogWarning("Node not found with ID: {NodeId}", _nodeId);
                 return;
             }
             TimestampResult? result = await GetLatestS3TimestampAsync(node, false, _logger);
