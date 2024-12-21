@@ -21,6 +21,7 @@ using Newtonsoft.Json.Linq;
 using System.Threading.Channels;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Diagnostics;
 
 namespace OrcanodeMonitor.Core
 {
@@ -735,6 +736,56 @@ namespace OrcanodeMonitor.Core
             return unixTime;
         }
 
+        public class TimestampResult
+        {
+            public string UnixTimestampString { get; }
+            public DateTimeOffset? Offset { get; }
+            public TimestampResult(string unixTimestampString, DateTimeOffset? offset)
+            {
+                UnixTimestampString = unixTimestampString;
+                Offset = offset;
+            }
+        }
+
+        public async static Task<TimestampResult?> GetLatestS3TimestampAsync(Orcanode node, bool updateNode, ILogger logger)
+        {
+            string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/latest.txt";
+            using HttpResponseMessage response = await _httpClient.GetAsync(url);
+            if (response.StatusCode == HttpStatusCode.NotFound)
+            {
+                logger.LogError($"{node.S3NodeName} not found on S3");
+
+                // Absent.
+                if (updateNode)
+                {
+                    node.LatestRecordedUtc = null;
+                }
+                return null;
+            }
+            if (response.StatusCode == HttpStatusCode.Forbidden)
+            {
+                logger.LogError($"{node.S3NodeName} got access denied on S3");
+
+                // Access denied.
+                if (updateNode)
+                {
+                    node.LatestRecordedUtc = DateTime.MinValue;
+                }
+                return null;
+            }
+            if (!response.IsSuccessStatusCode)
+            {
+                logger.LogError($"{node.S3NodeName} got status {response.StatusCode} on S3");
+
+                return null;
+            }
+
+            string content = await response.Content.ReadAsStringAsync();
+            string unixTimestampString = content.TrimEnd();
+            var result = new TimestampResult(unixTimestampString, response.Content.Headers.LastModified);
+            return result;
+        }
+
         /// <summary>
         /// Update the timestamps for a given Orcanode by querying files on S3.
         /// </summary>
@@ -744,33 +795,18 @@ namespace OrcanodeMonitor.Core
         /// <returns></returns>
         public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
-            string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/latest.txt";
-            using HttpResponseMessage response = await _httpClient.GetAsync(url);
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                // Absent.
-                node.LatestRecordedUtc = null;
-                return;
-            }
-            if (response.StatusCode == HttpStatusCode.Forbidden)
-            {
-                // Access denied.
-                node.LatestRecordedUtc = DateTime.MinValue;
-                return;
-            }
-            if (!response.IsSuccessStatusCode)
+            TimestampResult? result = await GetLatestS3TimestampAsync(node, true, logger);
+            if (result == null)
             {
                 return;
             }
-
-            string content = await response.Content.ReadAsStringAsync();
-            string unixTimestampString = content.TrimEnd();
+            string unixTimestampString = result.UnixTimestampString;
             DateTime? latestRecorded = UnixTimeStampStringToDateTimeUtc(unixTimestampString);
             if (latestRecorded.HasValue)
             {
                 node.LatestRecordedUtc = latestRecorded?.ToUniversalTime();
 
-                DateTimeOffset? offset = response.Content.Headers.LastModified;
+                DateTimeOffset? offset = result.Offset;
                 if (offset.HasValue)
                 {
                     node.LatestUploadedUtc = offset.Value.UtcDateTime;
@@ -864,15 +900,7 @@ namespace OrcanodeMonitor.Core
             AddOrcanodeEvent(context, node, OrcanodeEventTypes.HydrophoneStream, value);
         }
 
-        /// <summary>
-        /// Update the ManifestUpdated timestamp for a given Orcanode by querying S3.
-        /// </summary>
-        /// <param name="context">Database context</param>
-        /// <param name="node">Orcanode to update</param>
-        /// <param name="unixTimestampString">Value in the latest.txt file</param>
-        /// <param name="logger">Logger</param>
-        /// <returns></returns>
-        public async static Task UpdateManifestTimestampAsync(OrcanodeMonitorContext context, Orcanode node, string unixTimestampString, ILogger logger)
+        public async static Task<FrequencyInfo?> GetLatestAudioSampleAsync(Orcanode node, string unixTimestampString, bool updateNode, ILogger logger)
         {
             OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
 
@@ -880,18 +908,24 @@ namespace OrcanodeMonitor.Core
             using HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (!response.IsSuccessStatusCode)
             {
-                return;
+                return null;
             }
 
             DateTimeOffset? offset = response.Content.Headers.LastModified;
             if (!offset.HasValue)
             {
-                node.LastCheckedUtc = DateTime.UtcNow;
-                return;
+                if (updateNode)
+                {
+                    node.LastCheckedUtc = DateTime.UtcNow;
+                }
+                return null;
             }
 
-            node.ManifestUpdatedUtc = offset.Value.UtcDateTime;
-            node.LastCheckedUtc = DateTime.UtcNow;
+            if (updateNode)
+            {
+                node.ManifestUpdatedUtc = offset.Value.UtcDateTime;
+                node.LastCheckedUtc = DateTime.UtcNow;
+            }
 
             // Download manifest.
             Uri baseUri = new Uri(url);
@@ -908,14 +942,38 @@ namespace OrcanodeMonitor.Core
             try
             {
                 using Stream stream = await _httpClient.GetStreamAsync(newUri);
-                node.AudioStreamStatus = await FfmpegCoreAnalyzer.AnalyzeAudioStreamAsync(stream, oldStatus);
-                node.AudioStandardDeviation = 0.0;
-            } catch (Exception ex)
+                FrequencyInfo frequencyInfo = await FfmpegCoreAnalyzer.AnalyzeAudioStreamAsync(stream, oldStatus);
+                return frequencyInfo;
+            }
+            catch (Exception ex)
             {
                 // We couldn't fetch the stream audio so could not update the
                 // audio standard deviation. Just ignore this for now.
                 logger.LogError(ex, "Exception in UpdateManifestTimestampAsync");
             }
+            return null;
+        }
+
+        /// <summary>
+        /// Update the ManifestUpdated timestamp for a given Orcanode by querying S3.
+        /// </summary>
+        /// <param name="context">Database context</param>
+        /// <param name="node">Orcanode to update</param>
+        /// <param name="unixTimestampString">Value in the latest.txt file</param>
+        /// <param name="logger">Logger</param>
+        /// <returns></returns>
+        public async static Task UpdateManifestTimestampAsync(OrcanodeMonitorContext context, Orcanode node, string unixTimestampString, ILogger logger)
+        {
+            OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
+
+            FrequencyInfo? frequencyInfo = await GetLatestAudioSampleAsync(node, unixTimestampString, true, logger);
+            if (frequencyInfo == null)
+            {
+                return;
+            }
+
+            node.AudioStreamStatus = frequencyInfo.Status;
+            node.AudioStandardDeviation = 0.0;
 
             OrcanodeOnlineStatus newStatus = node.S3StreamStatus;
             if (newStatus != oldStatus)

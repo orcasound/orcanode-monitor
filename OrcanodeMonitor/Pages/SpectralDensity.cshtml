@@ -1,0 +1,48 @@
+﻿@page "{id}"
+@model OrcanodeMonitor.Pages.SpectralDensityModel
+@{
+    ViewData["Title"] = "Spectral Density";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Spectral Density</h1>
+
+    <!-- Include Chart.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Canvas for Chart.js -->
+    <canvas id="frequencyChart" width="400" height="200"></canvas>
+    <script>
+        var ctx = document.getElementById('frequencyChart').getContext('2d');
+        var myBarChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: @Html.Raw(Json.Serialize(Model.Labels)),
+                datasets: [{
+                    label: 'Last Sample Spectral Density',
+                    data: @Html.Raw(Json.Serialize(Model.Data)),
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Frequency'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Amplitude'
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</div>

@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: MIT
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
+using static OrcanodeMonitor.Core.Fetcher;
 
 namespace OrcanodeMonitor.Pages
 {
@@ -13,8 +13,9 @@ namespace OrcanodeMonitor.Pages
     {
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<NodeEventsModel> _logger;
-        private string _nodeId;
-        public string Id => _nodeId;
+        private Orcanode? _node = null;
+        public string Id => _node?.ID ?? string.Empty;
+        public string NodeName => _node?.DisplayName ?? "Unknown";
 
         [BindProperty]
         public string TimePeriod { get; set; } = "week"; // Default to 'week'
@@ -24,57 +25,59 @@ namespace OrcanodeMonitor.Pages
         private DateTime SinceTime => (TimePeriod == "week") ? DateTime.UtcNow.AddDays(-7) : DateTime.UtcNow.AddMonths(-1);
         private List<OrcanodeEvent> _events;
         public List<OrcanodeEvent> RecentEvents => _events;
-        public int UptimePercentage => Orcanode.GetUptimePercentage(_nodeId, _events, SinceTime, (EventType == OrcanodeEventTypes.All) ? OrcanodeEventTypes.HydrophoneStream : EventType);
+        public int GetUptimePercentage(string type, string timeRange)
+        {
+            DateTime sinceTime = (timeRange == "pastWeek") ? DateTime.UtcNow.AddDays(-7) : DateTime.UtcNow.AddMonths(-1);
+            string eventType = type switch
+            {
+                "hydrophoneStream" => OrcanodeEventTypes.HydrophoneStream,
+                "dataplicityConnection" => OrcanodeEventTypes.DataplicityConnection,
+                "mezmoLogging" => OrcanodeEventTypes.MezmoLogging,
+                _ => OrcanodeEventTypes.HydrophoneStream
+            };
+            return Orcanode.GetUptimePercentage(Id, _events, sinceTime, eventType);
+        }
 
         public NodeEventsModel(OrcanodeMonitorContext context, ILogger<NodeEventsModel> logger)
         {
             _databaseContext = context;
             _logger = logger;
-            _nodeId = string.Empty;
             _events = new List<OrcanodeEvent>();
         }
 
         private void FetchEvents(ILogger logger)
         {
-            _events = Fetcher.GetRecentEventsForNode(_databaseContext, _nodeId, SinceTime, logger).Where(e => e.Type == EventType || EventType == OrcanodeEventTypes.All).ToList() ?? new List<OrcanodeEvent>();
+            _events = Fetcher.GetRecentEventsForNode(_databaseContext, Id, SinceTime, logger)
+                .Where(e => e.Type == EventType || EventType == OrcanodeEventTypes.All)
+                .ToList() ?? new List<OrcanodeEvent>();
         }
 
-        public void OnGet(string id)
+        public async Task OnGetAsync(string id)
         {
-            _nodeId = id;
+            _node = _databaseContext.Orcanodes.Where(n => n.ID == id).First();
             FetchEvents(_logger);
         }
 
-        public IActionResult OnPost(string timePeriod, string eventType, string id)
+        public string GetTypeClass(OrcanodeEvent item) => item.Type switch
         {
-            if (string.IsNullOrEmpty(id))
-            {
-                _logger.LogError("Node ID cannot be empty");
-                return BadRequest("Invalid node ID");
-            }
-            if (timePeriod.IsNullOrEmpty())
-            {
-                timePeriod = TimePeriod;
-            }
-            if (eventType.IsNullOrEmpty())
-            {
-                eventType = EventType;
-            }
-            if (timePeriod != "week" && timePeriod != "month")
-            {
-                _logger.LogWarning($"Invalid time range selected: {timePeriod}");
-                return BadRequest("Invalid time range");
-            }
-            if (eventType != OrcanodeEventTypes.All && eventType != OrcanodeEventTypes.HydrophoneStream && eventType != OrcanodeEventTypes.MezmoLogging && eventType != OrcanodeEventTypes.DataplicityConnection)
-            {
-                _logger.LogWarning($"Invalid event type selected: {eventType}");
-                return BadRequest("Invalid event type");
-            }
-            TimePeriod = timePeriod;
-            EventType = eventType;
-            _nodeId = id;
-            FetchEvents(_logger);
-            return Page();
+            OrcanodeEventTypes.HydrophoneStream => "hydrophoneStream",
+            OrcanodeEventTypes.DataplicityConnection => "dataplicityConnection",
+            OrcanodeEventTypes.MezmoLogging => "mezmoLogging",
+            OrcanodeEventTypes.AgentUpgradeStatus => "agentUpgradeStatus",
+            OrcanodeEventTypes.SDCardSize => "sdCardSize",
+            _ => string.Empty
+        };
+
+        public string GetTimeRangeClass(OrcanodeEvent item)
+        {
+            DateTime OneWeekAgo = DateTime.UtcNow.AddDays(-7);
+            return (item.DateTimeUtc > OneWeekAgo) ? "pastWeek" : string.Empty;
+        }
+
+        public string GetEventClasses(OrcanodeEvent item)
+        {
+            string classes = GetTypeClass(item) + " " + GetTimeRangeClass(item);
+            return classes;
         }
     }
 }
