@@ -6,8 +6,6 @@ using MathNet.Numerics.IntegralTransforms;
 using NAudio.Wave;
 using OrcanodeMonitor.Models;
 using System.Numerics;
-using System.Security.Permissions;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace OrcanodeMonitor.Core
 {
