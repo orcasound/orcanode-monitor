@@ -738,8 +738,8 @@ namespace OrcanodeMonitor.Core
 
         public class TimestampResult
         {
-            public string UnixTimestampString;
-            public DateTimeOffset? Offset;
+            public string UnixTimestampString = string.Empty;
+            public DateTimeOffset? Offset = null;
         }
 
         public async static Task<TimestampResult?> GetLatestS3TimestampAsync(Orcanode node, bool updateNode, ILogger logger)
@@ -748,6 +748,8 @@ namespace OrcanodeMonitor.Core
             using HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
+                logger.LogError($"{node.S3NodeName} not found on S3");
+
                 // Absent.
                 if (updateNode)
                 {
@@ -757,6 +759,8 @@ namespace OrcanodeMonitor.Core
             }
             if (response.StatusCode == HttpStatusCode.Forbidden)
             {
+                logger.LogError($"{node.S3NodeName} got access denied on S3");
+
                 // Access denied.
                 if (updateNode)
                 {
@@ -766,6 +770,8 @@ namespace OrcanodeMonitor.Core
             }
             if (!response.IsSuccessStatusCode)
             {
+                logger.LogError($"{node.S3NodeName} got status {response.StatusCode} on S3");
+
                 return null;
             }
 

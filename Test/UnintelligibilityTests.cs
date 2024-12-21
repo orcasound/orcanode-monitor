@@ -24,7 +24,8 @@ namespace Test
             try
             {
                 OrcanodeOnlineStatus previousStatus = oldStatus ?? expected_status;
-                OrcanodeOnlineStatus status = await FfmpegCoreAnalyzer.AnalyzeFileAsync(filePath, previousStatus);
+                FrequencyInfo frequencyInfo = await FfmpegCoreAnalyzer.AnalyzeFileAsync(filePath, previousStatus);
+                OrcanodeOnlineStatus status = frequencyInfo.Status;
                 Assert.IsTrue(status == expected_status);
             }
             catch (Exception ex)

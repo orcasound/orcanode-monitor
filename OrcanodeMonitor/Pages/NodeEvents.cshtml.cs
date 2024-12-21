@@ -48,33 +48,15 @@ namespace OrcanodeMonitor.Pages
             FetchEvents(_logger);
         }
 
-        public string GetTypeClass(OrcanodeEvent item)
+        public string GetTypeClass(OrcanodeEvent item) => item.Type switch
         {
-            if (item.Type == OrcanodeEventTypes.HydrophoneStream)
-            {
-                return "hydrophoneStream";
-            }
-            else if (item.Type == OrcanodeEventTypes.DataplicityConnection)
-            {
-                return "dataplicityConnection";
-            }
-            else if (item.Type == OrcanodeEventTypes.MezmoLogging)
-            {
-                return "mezmoLogging";
-            }
-            else if (item.Type == OrcanodeEventTypes.AgentUpgradeStatus)
-            {
-                return "agentUpgradeStatus";
-            }
-            else if (item.Type == OrcanodeEventTypes.SDCardSize)
-            {
-                return "sdCardSize";
-            }
-            else
-            {
-                return string.Empty;
-            }
-        }
+            OrcanodeEventTypes.HydrophoneStream => "hydrophoneStream",
+            OrcanodeEventTypes.DataplicityConnection => "dataplicityConnection",
+            OrcanodeEventTypes.MezmoLogging => "mezmoLogging",
+            OrcanodeEventTypes.AgentUpgradeStatus => "agentUpgradeStatus",
+            OrcanodeEventTypes.SDCardSize => "sdCardSize",
+            _ => string.Empty
+        };
 
         public string GetTimeRangeClass(OrcanodeEvent item)
         {

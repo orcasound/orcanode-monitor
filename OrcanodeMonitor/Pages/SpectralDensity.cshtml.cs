@@ -12,7 +12,7 @@ namespace OrcanodeMonitor.Pages
     public class SpectralDensityModel : PageModel
     {
         private readonly OrcanodeMonitorContext _databaseContext;
-        private readonly ILogger<NodeEventsModel> _logger;
+        private readonly ILogger<SpectralDensityModel> _logger;
         private string _nodeId;
         public string Id => _nodeId;
         private List<string> _labels;
@@ -20,7 +20,7 @@ namespace OrcanodeMonitor.Pages
         public List<string> Labels => _labels;
         public List<int> Data => _data;
 
-        public SpectralDensityModel(OrcanodeMonitorContext context, ILogger<NodeEventsModel> logger)
+        public SpectralDensityModel(OrcanodeMonitorContext context, ILogger<SpectralDensityModel> logger)
         {
             _databaseContext = context;
             _logger = logger;
@@ -31,7 +31,11 @@ namespace OrcanodeMonitor.Pages
         {
             _labels = new List<string> { };
             _data = new List<int> { };
-            Orcanode node = _databaseContext.Orcanodes.Where(n => n.ID == _nodeId).First();
+            Orcanode? node = _databaseContext.Orcanodes.Where(n => n.ID == _nodeId).FirstOrDefault();
+            if (node == null)
+            {
+                return;
+            }
             TimestampResult? result = await GetLatestS3TimestampAsync(node, false, _logger);
             if (result != null)
             {
