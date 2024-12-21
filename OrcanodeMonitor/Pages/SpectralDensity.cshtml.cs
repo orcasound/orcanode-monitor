@@ -9,6 +9,10 @@ using static OrcanodeMonitor.Core.Fetcher;
 
 namespace OrcanodeMonitor.Pages
 {
+    /// <summary>
+    /// Razor Page model for spectral density visualization.
+    /// Handles retrieval and processing of frequency data for display.
+    /// </summary>
     public class SpectralDensityModel : PageModel
     {
         private readonly OrcanodeMonitorContext _databaseContext;

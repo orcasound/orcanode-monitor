@@ -1,13 +1,10 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using MathNet.Numerics.Statistics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
-using System.Xml.Linq;
 using static OrcanodeMonitor.Core.Fetcher;
 
 namespace OrcanodeMonitor.Pages
@@ -50,7 +47,9 @@ namespace OrcanodeMonitor.Pages
 
         private void FetchEvents(ILogger logger)
         {
-            _events = Fetcher.GetRecentEventsForNode(_databaseContext, Id, SinceTime, logger).Where(e => e.Type == EventType || EventType == OrcanodeEventTypes.All).ToList() ?? new List<OrcanodeEvent>();
+            _events = Fetcher.GetRecentEventsForNode(_databaseContext, Id, SinceTime, logger)
+                .Where(e => e.Type == EventType || EventType == OrcanodeEventTypes.All)
+                .ToList() ?? new List<OrcanodeEvent>();
         }
 
         public async Task OnGetAsync(string id)
