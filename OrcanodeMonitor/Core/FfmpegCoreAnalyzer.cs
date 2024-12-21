@@ -88,14 +88,14 @@ namespace OrcanodeMonitor.Core
             if (max < MinNoiseAmplitude)
             {
                 // File contains mostly silence across all frequencies.
-                frequencyInfo.Status = OrcanodeOnlineStatus.Unintelligible;
+                frequencyInfo.Status = OrcanodeOnlineStatus.Silent;
                 return frequencyInfo;
             }
 
-            if ((max <= MaxSilenceAmplitude) && (oldStatus == OrcanodeOnlineStatus.Unintelligible))
+            if ((max <= MaxSilenceAmplitude) && (oldStatus == OrcanodeOnlineStatus.Silent))
             {
-                // In between the min and max unintelligibility range, so keep previous status.
-                frequencyInfo.Status = OrcanodeOnlineStatus.Unintelligible;
+                // In between the min and max silence range, so keep previous status.
+                frequencyInfo.Status = oldStatus;
                 return frequencyInfo;
             }
 

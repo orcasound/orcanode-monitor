@@ -20,6 +20,7 @@ namespace OrcanodeMonitor.Models
         Hidden,
         Unauthorized,
         NoView,
+        Silent,
     }
     public enum OrcanodeUpgradeStatus
     {
