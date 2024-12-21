@@ -23,6 +23,10 @@ namespace OrcanodeMonitor.Pages
         private List<int> _data;
         public List<string> Labels => _labels;
         public List<int> Data => _data;
+        public int MaxAmplitude { get; private set; }
+        public int MaxNonHumAmplitude { get; private set; }
+        public int SignalRatio { get; private set; }
+        public string Status { get; private set; }
 
         public SpectralDensityModel(OrcanodeMonitorContext context, ILogger<SpectralDensityModel> logger)
         {
@@ -54,7 +58,7 @@ namespace OrcanodeMonitor.Pages
                     double b = Math.Pow(MaxFrequency, 1.0 / PointCount);
                     double logb = Math.Log(b);
 
-                    double maxAmplitude = frequencyInfo.FrequencyAmplitudes.Values.Max();
+                    double maxAmplitude = frequencyInfo.MaxAmplitude;
                     var sums = new double[PointCount];
                     var count = new int[PointCount];
 
@@ -78,6 +82,12 @@ namespace OrcanodeMonitor.Pages
                             _data.Add(amplitude);
                         }
                     }
+
+                    double maxNonHumAmplitude = frequencyInfo.GetMaxNonHumAmplitude();
+                    MaxAmplitude = (int)maxAmplitude;
+                    MaxNonHumAmplitude = (int)maxNonHumAmplitude;
+                    SignalRatio = (int)Math.Round(100 * maxNonHumAmplitude / maxAmplitude);
+                    Status = Orcanode.GetStatusString(frequencyInfo.Status);
                 }
             }
         }

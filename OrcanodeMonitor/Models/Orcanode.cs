@@ -378,6 +378,9 @@ namespace OrcanodeMonitor.Models
 
         public static string OnlineString => "up";
 
+        // Convert to a display string.
+        public static string GetStatusString(OrcanodeOnlineStatus status) => (status == OrcanodeOnlineStatus.Online) ? OnlineString : status.ToString().ToUpper();
+
         public string OrcasoundOnlineStatusString {
             get
             {
@@ -385,7 +388,7 @@ namespace OrcanodeMonitor.Models
                 OrcanodeOnlineStatus status = S3StreamStatus;
 
                 // Convert to a display string.
-                return (status == OrcanodeOnlineStatus.Online) ? OnlineString : S3StreamStatus.ToString().ToUpper();
+                return GetStatusString(status);
             }
         }
         #endregion derived
