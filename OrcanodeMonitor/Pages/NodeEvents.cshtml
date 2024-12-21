@@ -14,7 +14,15 @@
     <p></p>
 
     <div>
-        Uptime percentage: @Model.UptimePercentage%
+        Uptime percentage:
+        <span id="uptime-all-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("all", "pastWeek")%</span>
+        <span id="uptime-hydrophoneStream-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("hydrophoneStream", "pastWeek")%</span>
+        <span id="uptime-dataplicityConnection-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("dataplicityConnection", "pastWeek")%</span>
+        <span id="uptime-mezmoLogging-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("mezmoLogging", "pastWeek")%</span>
+        <span id="uptime-all-pastMonth" class="uptime-percentage">@Model.GetUptimePercentage("all", "pastMonth")%</span>
+        <span id="uptime-hydrophoneStream-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("hydrophoneStream", "pastMonth")%</span>
+        <span id="uptime-dataplicityConnection-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("dataplicityConnection", "pastMonth")%</span>
+        <span id="uptime-mezmoLogging-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("mezmoLogging", "pastMonth")%</span>
         <p></p>
     </div>
 
@@ -22,7 +30,7 @@
     <div>
         Filter by Time Range:
         <button id="btn-timeRange-pastWeek" class="btn unselected" onclick="updateFilter('timeRange', 'pastWeek')">Past Week</button>
-        <button id="btn-timeRange-allTime" class="btn selected" onclick="updateFilter('timeRange', 'allTime')">Past Month</button>
+        <button id="btn-timeRange-pastMonth" class="btn selected" onclick="updateFilter('timeRange', 'pastMonth')">Past Month</button>
         <p></p>
     </div>
 
@@ -62,7 +70,7 @@
 
     <script>
         var currentFilters = {
-            timeRange: 'allTime',
+            timeRange: 'pastMonth',
             type: 'all' };
 
         function updateFilter(filterType, filterValue) {
@@ -97,6 +105,7 @@
             }
 
             filterTable();
+            showUptimePercentage("uptime-" + currentFilters.type + "-" + currentFilters.timeRange);
         }
 
         function filterTable() {
@@ -106,7 +115,7 @@
             // Loop through each row.
             rows.forEach(function(row) {
                 // Check if the row matches the selected time range and type
-                var matchesTimeRange = (currentFilters.timeRange === 'allTime' || row.classList.contains(currentFilters.timeRange));
+                var matchesTimeRange = (currentFilters.timeRange === 'pastMonth' || row.classList.contains(currentFilters.timeRange));
                 var matchesType = (currentFilters.type === 'all' || row.classList.contains(currentFilters.type));
                 
                 if (matchesTimeRange && matchesType) {
@@ -115,6 +124,17 @@
                     row.style.display = 'none'; // Hide non-matching rows.
                 }
             });
+        }
+
+        function showUptimePercentage(id) {
+            // Hide all uptime percentage elements.
+            var elements = document.querySelectorAll('.uptime-percentage');
+            elements.forEach(function(element) {
+                element.style.display = 'none';
+            });
+
+            // Show the selected uptime percentage.
+            document.getElementById(id).style.display = '';
         }
     </script>
 </div>

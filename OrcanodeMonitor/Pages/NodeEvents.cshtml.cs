@@ -28,7 +28,18 @@ namespace OrcanodeMonitor.Pages
         private DateTime SinceTime => (TimePeriod == "week") ? DateTime.UtcNow.AddDays(-7) : DateTime.UtcNow.AddMonths(-1);
         private List<OrcanodeEvent> _events;
         public List<OrcanodeEvent> RecentEvents => _events;
-        public int UptimePercentage => Orcanode.GetUptimePercentage(Id, _events, SinceTime, (EventType == OrcanodeEventTypes.All) ? OrcanodeEventTypes.HydrophoneStream : EventType);
+        public int GetUptimePercentage(string type, string timeRange)
+        {
+            DateTime sinceTime = (timeRange == "pastWeek") ? DateTime.UtcNow.AddDays(-7) : DateTime.UtcNow.AddMonths(-1);
+            string eventType = type switch
+            {
+                "hydrophoneStream" => OrcanodeEventTypes.HydrophoneStream,
+                "dataplicityConnection" => OrcanodeEventTypes.DataplicityConnection,
+                "mezmoLogging" => OrcanodeEventTypes.MezmoLogging,
+                _ => OrcanodeEventTypes.HydrophoneStream
+            };
+            return Orcanode.GetUptimePercentage(Id, _events, sinceTime, eventType);
+        }
 
         public NodeEventsModel(OrcanodeMonitorContext context, ILogger<NodeEventsModel> logger)
         {
