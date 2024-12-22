@@ -908,6 +908,14 @@ namespace OrcanodeMonitor.Core
             using HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (!response.IsSuccessStatusCode)
             {
+                if (updateNode)
+                {
+                    // Set the manifest updated time to be old, since it would be the timestamp of the
+                    // previous manifest file. The actual value doesn't matter, just that it's older than
+                    // MaxUploadDelay ago so the stream will appear as offline.
+                    node.ManifestUpdatedUtc = DateTime.MinValue;
+                    node.LastCheckedUtc = DateTime.UtcNow;
+                }
                 return null;
             }
 
@@ -967,12 +975,10 @@ namespace OrcanodeMonitor.Core
             OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
 
             FrequencyInfo? frequencyInfo = await GetLatestAudioSampleAsync(node, unixTimestampString, true, logger);
-            if (frequencyInfo == null)
+            if (frequencyInfo != null)
             {
-                return;
+                node.AudioStreamStatus = frequencyInfo.Status;
             }
-
-            node.AudioStreamStatus = frequencyInfo.Status;
             node.AudioStandardDeviation = 0.0;
 
             OrcanodeOnlineStatus newStatus = node.S3StreamStatus;
