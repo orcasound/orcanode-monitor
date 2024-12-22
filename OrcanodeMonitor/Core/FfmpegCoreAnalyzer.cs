@@ -11,12 +11,27 @@ namespace OrcanodeMonitor.Core
 {
     public class FrequencyInfo
     {
-        public Dictionary<double, double> FrequencyAmplitudes { get; set; }
-        public OrcanodeOnlineStatus Status { get; set; }
-    }
+        public FrequencyInfo(float[] data, int sampleRate, OrcanodeOnlineStatus oldStatus)
+        {
+            FrequencyAmplitudes = ComputeFrequencyAmplitudes(data, sampleRate);
+            Status = GetStatus(oldStatus);
+        }
 
-    public class FfmpegCoreAnalyzer
-    {
+        private static Dictionary<double, double> ComputeFrequencyAmplitudes(float[] data, int sampleRate)
+        {
+            var result = new Dictionary<double, double>();
+            int n = data.Length;
+            Complex[] complexData = data.Select(d => new Complex(d, 0)).ToArray();
+            Fourier.Forward(complexData, FourierOptions.Matlab);
+            for (int i = 0; i < n / 2; i++)
+            {
+                double amplitude = complexData[i].Magnitude;
+                double frequency = (((double)i) * sampleRate) / n;
+                result[frequency] = amplitude;
+            }
+            return result;
+        }
+
         // We consider anything above this average amplitude as not silence.
         const double _defaultMaxSilenceAmplitude = 20.0;
         private static double MaxSilenceAmplitude
@@ -55,6 +70,10 @@ namespace OrcanodeMonitor.Core
             }
         }
 
+        public Dictionary<double, double> FrequencyAmplitudes { get; }
+        public OrcanodeOnlineStatus Status { get; }
+        public double MaxAmplitude => FrequencyAmplitudes.Values.Max();
+
         // Microphone audio hum typically falls within the 50 Hz to 60 Hz
         // range. This hum is often caused by electrical interference from
         // power lines and other electronic devices.
@@ -63,45 +82,15 @@ namespace OrcanodeMonitor.Core
 
         private static bool IsHumFrequency(double frequency) => (frequency >= MinHumFrequency && frequency <= MaxHumFrequency);
 
-        public static Dictionary<double, double> ComputeFrequencyAmplitudes(float[] data, int sampleRate)
+        /// <summary>
+        /// Find the maximum amplitude outside the audio hum range.
+        /// </summary>
+        /// <returns>Amplitude</returns>
+        public double GetMaxNonHumAmplitude()
         {
-            var result = new Dictionary<double, double>();
-            int n = data.Length;
-            Complex[] complexData = data.Select(d => new Complex(d, 0)).ToArray();
-            Fourier.Forward(complexData, FourierOptions.Matlab);
-            for (int i = 0; i < n / 2; i++)
-            {
-                double amplitude = complexData[i].Magnitude;
-                double frequency = (((double)i) * sampleRate) / n;
-                result[frequency] = amplitude;
-            }
-            return result;
-        }
-
-        private static FrequencyInfo AnalyzeFrequencies(float[] data, int sampleRate, OrcanodeOnlineStatus oldStatus)
-        {
-            int n = data.Length;
-            FrequencyInfo frequencyInfo = new FrequencyInfo();
-            frequencyInfo.FrequencyAmplitudes = ComputeFrequencyAmplitudes(data, sampleRate);
-
-            double max = frequencyInfo.FrequencyAmplitudes.Values.Max();
-            if (max < MinNoiseAmplitude)
-            {
-                // File contains mostly silence across all frequencies.
-                frequencyInfo.Status = OrcanodeOnlineStatus.Silent;
-                return frequencyInfo;
-            }
-
-            if ((max <= MaxSilenceAmplitude) && (oldStatus == OrcanodeOnlineStatus.Silent))
-            {
-                // In between the min and max silence range, so keep previous status.
-                frequencyInfo.Status = oldStatus;
-                return frequencyInfo;
-            }
-
-            // Find the maximum amplitude outside the audio hum range.
             double maxNonHumAmplitude = 0;
-            foreach (var pair in frequencyInfo.FrequencyAmplitudes) {
+            foreach (var pair in FrequencyAmplitudes)
+            {
                 double frequency = pair.Key;
                 double amplitude = pair.Value;
                 if (!IsHumFrequency(frequency))
@@ -112,16 +101,44 @@ namespace OrcanodeMonitor.Core
                     }
                 }
             }
+            return maxNonHumAmplitude;
+        }
+
+        private OrcanodeOnlineStatus GetStatus(OrcanodeOnlineStatus oldStatus)
+        {
+            double max = MaxAmplitude;
+            if (max < MinNoiseAmplitude)
+            {
+                // File contains mostly silence across all frequencies.
+                return OrcanodeOnlineStatus.Silent;
+            }
+
+            if ((max <= MaxSilenceAmplitude) && (oldStatus == OrcanodeOnlineStatus.Silent))
+            {
+                // In between the min and max silence range, so keep previous status.
+                return oldStatus;
+            }
+
+            // Find the maximum amplitude outside the audio hum range.
+            double maxNonHumAmplitude = GetMaxNonHumAmplitude();
 
             if (maxNonHumAmplitude / max < MinSignalRatio)
             {
                 // Essentially just silence outside the hum range, no signal.
-                frequencyInfo.Status = OrcanodeOnlineStatus.Unintelligible;
-                return frequencyInfo;
+                return OrcanodeOnlineStatus.Unintelligible;
             }
 
             // Signal outside the hum range.
-            frequencyInfo.Status = OrcanodeOnlineStatus.Online;
+            return OrcanodeOnlineStatus.Online;
+        }
+    }
+
+    public class FfmpegCoreAnalyzer
+    {
+        private static FrequencyInfo AnalyzeFrequencies(float[] data, int sampleRate, OrcanodeOnlineStatus oldStatus)
+        {
+            int n = data.Length;
+            FrequencyInfo frequencyInfo = new FrequencyInfo(data, sampleRate, oldStatus);
             return frequencyInfo;
         }
 
