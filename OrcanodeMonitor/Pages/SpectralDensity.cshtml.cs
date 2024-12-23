@@ -19,10 +19,11 @@ namespace OrcanodeMonitor.Pages
         private readonly ILogger<SpectralDensityModel> _logger;
         private string _nodeId;
         public string Id => _nodeId;
+        public string NodeName { get; private set; }
         private List<string> _labels;
-        private List<int> _data;
+        private List<double> _maxBucketAmplitude;
         public List<string> Labels => _labels;
-        public List<int> Data => _data;
+        public List<double> MaxBucketAmplitude => _maxBucketAmplitude;
         public int MaxAmplitude { get; private set; }
         public int MaxNonHumAmplitude { get; private set; }
         public int SignalRatio { get; private set; }
@@ -33,18 +34,20 @@ namespace OrcanodeMonitor.Pages
             _databaseContext = context;
             _logger = logger;
             _nodeId = string.Empty;
+            NodeName = "Unknown";
         }
 
         private async Task UpdateFrequencyDataAsync()
         {
             _labels = new List<string> { };
-            _data = new List<int> { };
+            _maxBucketAmplitude = new List<double> { };
             Orcanode? node = _databaseContext.Orcanodes.Where(n => n.ID == _nodeId).FirstOrDefault();
             if (node == null)
             {
                 _logger.LogWarning("Node not found with ID: {NodeId}", _nodeId);
                 return;
             }
+            NodeName = node.DisplayName;
             TimestampResult? result = await GetLatestS3TimestampAsync(node, false, _logger);
             if (result != null)
             {
@@ -59,33 +62,34 @@ namespace OrcanodeMonitor.Pages
                     double logb = Math.Log(b);
 
                     double maxAmplitude = frequencyInfo.MaxAmplitude;
-                    var sums = new double[PointCount];
-                    var count = new int[PointCount];
+                    var maxBucketAmplitude = new double[PointCount];
+                    var maxBucketFrequency = new int[PointCount];
 
                     foreach (var pair in frequencyInfo.FrequencyAmplitudes)
                     {
                         double frequency = pair.Key;
                         double amplitude = pair.Value;
                         int bucket = (frequency < 1) ? 0 : (int)(Math.Log(frequency) / logb);
-                        count[bucket]++;
-                        sums[bucket] += amplitude;
+                        if (maxBucketAmplitude[bucket] < amplitude)
+                        {
+                            maxBucketAmplitude[bucket] = amplitude;
+                            maxBucketFrequency[bucket] = (int)Math.Round(frequency);
+                        }
                     }
 
                     // Fill in graph points.
                     for (int i = 0; i < PointCount; i++)
                     {
-                        if (count[i] > 0)
+                        if (maxBucketAmplitude[i] > 0)
                         {
-                            int frequency = (int)Math.Pow(b, i);
-                            int amplitude = (int)(sums[i] / count[i]);
-                            _labels.Add(frequency.ToString());
-                            _data.Add(amplitude);
+                            _labels.Add(maxBucketFrequency[i].ToString());
+                            _maxBucketAmplitude.Add(maxBucketAmplitude[i]);
                         }
                     }
 
                     double maxNonHumAmplitude = frequencyInfo.GetMaxNonHumAmplitude();
-                    MaxAmplitude = (int)maxAmplitude;
-                    MaxNonHumAmplitude = (int)maxNonHumAmplitude;
+                    MaxAmplitude = (int)Math.Round(maxAmplitude);
+                    MaxNonHumAmplitude = (int)Math.Round(maxNonHumAmplitude);
                     SignalRatio = (int)Math.Round(100 * maxNonHumAmplitude / maxAmplitude);
                     Status = Orcanode.GetStatusString(frequencyInfo.Status);
                 }

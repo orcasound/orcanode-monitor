@@ -5,7 +5,7 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4">Spectral Density</h1>
+    <h1 class="display-4">Spectral Density of Audio From @Model.NodeName</h1>
 
     <!-- Include Chart.js from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -19,8 +19,8 @@
             data: {
                 labels: @Html.Raw(Json.Serialize(Model.Labels)),
                 datasets: [{
-                    label: 'Last Sample Spectral Density',
-                    data: @Html.Raw(Json.Serialize(Model.Data)),
+                    label: 'Last Sample',
+                    data: @Html.Raw(Json.Serialize(Model.MaxBucketAmplitude)),
                     backgroundColor: 'rgba(75, 192, 192, 0.2)',
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 1
