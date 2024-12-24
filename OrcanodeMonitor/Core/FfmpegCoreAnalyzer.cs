@@ -8,29 +8,70 @@ using OrcanodeMonitor.Models;
 using System.Diagnostics;
 using System.IO;
 using System.Numerics;
+using System.Runtime.InteropServices;
 
 namespace OrcanodeMonitor.Core
 {
     public class FrequencyInfo
     {
-        public FrequencyInfo(float[] data, int sampleRate, OrcanodeOnlineStatus oldStatus)
+        public FrequencyInfo(float[] data, int sampleRate, int channels, OrcanodeOnlineStatus oldStatus)
         {
-            FrequencyMagnitudes = ComputeFrequencyMagnitudes(data, sampleRate);
+            FrequencyMagnitudes = ComputeFrequencyMagnitudes(data, sampleRate, channels);
             Status = GetStatus(oldStatus);
         }
 
-        private static Dictionary<double, double> ComputeFrequencyMagnitudes(float[] data, int sampleRate)
+        private static Dictionary<double, double> ComputeFrequencyMagnitudes(float[] data, int sampleRate, int channels)
         {
             var result = new Dictionary<double, double>();
-            int n = data.Length;
-            Complex[] complexData = data.Select(d => new Complex(d, 0)).ToArray();
-            Fourier.Forward(complexData, FourierOptions.Matlab);
-            for (int i = 0; i < n / 2; i++)
+            int n = data.Length / channels;
+
+            // Create an array of complex data for each channel.
+            Complex[][] complexData = new Complex[channels][];
+            for (int ch = 0; ch < channels; ch++)
             {
-                double magnitude = complexData[i].Magnitude;
-                double frequency = (((double)i) * sampleRate) / n;
-                result[frequency] = magnitude;
+                complexData[ch] = new Complex[n];
             }
+
+            // Populate the complex arrays with channel data.
+            for (int i = 0; i < n; i++)
+            {
+                for (int ch = 0; ch < channels; ch++)
+                {
+                    complexData[ch][i] = new Complex(data[i * channels + ch], 0);
+                }
+            }
+
+            // Perform Fourier transform for each channel.
+            var channelResults = new List<Dictionary<double, double>>();
+            for (int ch = 0; ch < channels; ch++)
+            {
+                Fourier.Forward(complexData[ch], FourierOptions.Matlab);
+                var channelResult = new Dictionary<double, double>();
+                for (int i = 0; i < n / 2; i++)
+                {
+                    double magnitude = complexData[ch][i].Magnitude;
+                    double frequency = (((double)i) * sampleRate) / n;
+                    channelResult[frequency] = magnitude;
+                }
+                channelResults.Add(channelResult);
+            }
+
+            // Combine results from all channels.
+            foreach (var channelResult in channelResults)
+            {
+                foreach (var kvp in channelResult)
+                {
+                    if (!result.ContainsKey(kvp.Key))
+                    {
+                        result[kvp.Key] = 0;
+                    }
+                    if (result[kvp.Key] < kvp.Value)
+                    {
+                        result[kvp.Key] = kvp.Value;
+                    }
+                }
+            }
+
             return result;
         }
 
@@ -137,10 +178,18 @@ namespace OrcanodeMonitor.Core
 
     public class FfmpegCoreAnalyzer
     {
-        private static FrequencyInfo AnalyzeFrequencies(float[] data, int sampleRate, OrcanodeOnlineStatus oldStatus)
+        /// <summary>
+        /// Analyze frequencies.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="sampleRate">Sample rate</param>
+        /// <param name="channels">Number of channels</param>
+        /// <param name="oldStatus">Old status</param>
+        /// <returns>Frequency info</returns>
+        private static FrequencyInfo AnalyzeFrequencies(float[] data, int sampleRate, int channels, OrcanodeOnlineStatus oldStatus)
         {
             int n = data.Length;
-            FrequencyInfo frequencyInfo = new FrequencyInfo(data, sampleRate, oldStatus);
+            FrequencyInfo frequencyInfo = new FrequencyInfo(data, sampleRate, channels, oldStatus);
             return frequencyInfo;
         }
 
@@ -168,29 +217,17 @@ namespace OrcanodeMonitor.Core
                     throw new Exception("FFMpeg processing failed.");
                 }
 
-                // Get the number of channels in the WAV file, which is encoded
-                // in a 2-byte field at offset 22.
-                outputStream.Seek(22, SeekOrigin.Begin);
-                int channels;
-                using (BinaryReader reader = new BinaryReader(outputStream, System.Text.Encoding.Default, true))
-                {
-                    channels = reader.ReadInt16();
-                }
+                // Read the entire stream into a byte array.
+                byte[] byteBuffer = outputStream.ToArray();
+
+                // Get the number of channels in the WAV file (offset 22, 2 bytes).
+                int channels = BitConverter.ToInt16(byteBuffer, 22);
 
                 var waveFormat = new WaveFormat(rate: 44100, bits: 16, channels: channels);
-                var rawStream = new RawSourceWaveStream(outputStream, waveFormat);
-
-                // Reset the position to the beginning.
-                rawStream.Seek(0, SeekOrigin.Begin);
 
                 // Compute the duration in seconds.
-                long totalBytes = rawStream.Length;
                 double byteRate = waveFormat.SampleRate * waveFormat.Channels * (waveFormat.BitsPerSample / 8.0);
-                double durationInSeconds = totalBytes / byteRate;
-
-                // Read the audio data into a byte buffer.
-                var byteBuffer = new byte[rawStream.Length];
-                int bytesRead = rawStream.Read(byteBuffer, 0, byteBuffer.Length);
+                double durationInSeconds = byteBuffer.Length / byteRate;
 
                 // Convert byte buffer to float buffer.
                 var floatBuffer = new float[byteBuffer.Length / sizeof(short)];
@@ -200,7 +237,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 // Perform FFT and analyze frequencies.
-                var status = AnalyzeFrequencies(floatBuffer, waveFormat.SampleRate, oldStatus);
+                var status = AnalyzeFrequencies(floatBuffer, waveFormat.SampleRate, waveFormat.Channels, oldStatus);
                 return status;
             }
         }
