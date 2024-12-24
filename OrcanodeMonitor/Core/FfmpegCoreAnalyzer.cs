@@ -5,10 +5,7 @@ using FFMpegCore.Pipes;
 using MathNet.Numerics.IntegralTransforms;
 using NAudio.Wave;
 using OrcanodeMonitor.Models;
-using System.Diagnostics;
-using System.IO;
 using System.Numerics;
-using System.Runtime.InteropServices;
 
 namespace OrcanodeMonitor.Core
 {
@@ -223,7 +220,10 @@ namespace OrcanodeMonitor.Core
                 // Get the number of channels in the WAV file (offset 22, 2 bytes).
                 int channels = BitConverter.ToInt16(byteBuffer, 22);
 
-                var waveFormat = new WaveFormat(rate: 44100, bits: 16, channels: channels);
+                // Get the sample rate in the WAV file (offset 24, 4 bytes).
+                int sampleRate = BitConverter.ToInt32(byteBuffer, 24);
+
+                var waveFormat = new WaveFormat(rate: sampleRate, bits: 16, channels: channels);
 
                 // Compute the duration in seconds.
                 double byteRate = waveFormat.SampleRate * waveFormat.Channels * (waveFormat.BitsPerSample / 8.0);
