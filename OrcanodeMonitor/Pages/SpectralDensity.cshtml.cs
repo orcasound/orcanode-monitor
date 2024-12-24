@@ -54,7 +54,7 @@ namespace OrcanodeMonitor.Pages
                 FrequencyInfo? frequencyInfo = await Fetcher.GetLatestAudioSampleAsync(node, result.UnixTimestampString, false, _logger);
                 if (frequencyInfo != null)
                 {
-                    const int MaxFrequency = 23000;
+                    const int MaxFrequency = 24000;
                     const int PointCount = 1000;
 
                     // Compute the logarithmic base needed to get PointCount points.

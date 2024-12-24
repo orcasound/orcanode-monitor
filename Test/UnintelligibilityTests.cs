@@ -46,6 +46,7 @@ namespace Test
         [TestMethod]
         public async Task TestUnintelligibleSample()
         {
+            // Audio hums.
             await TestSampleAsync("unintelligible\\live4869.ts", OrcanodeOnlineStatus.Unintelligible);
             await TestSampleAsync("unintelligible\\live1816b.ts", OrcanodeOnlineStatus.Unintelligible);
             await TestSampleAsync("unintelligible\\live1815.ts", OrcanodeOnlineStatus.Unintelligible);
