@@ -11,52 +11,92 @@ namespace OrcanodeMonitor.Core
 {
     public class FrequencyInfo
     {
-        public FrequencyInfo(float[] data, int sampleRate, OrcanodeOnlineStatus oldStatus)
+        public FrequencyInfo(float[] data, int sampleRate, int channels, OrcanodeOnlineStatus oldStatus)
         {
-            FrequencyAmplitudes = ComputeFrequencyAmplitudes(data, sampleRate);
+            FrequencyMagnitudes = ComputeFrequencyMagnitudes(data, sampleRate, channels);
             Status = GetStatus(oldStatus);
         }
 
-        private static Dictionary<double, double> ComputeFrequencyAmplitudes(float[] data, int sampleRate)
+        private static Dictionary<double, double> ComputeFrequencyMagnitudes(float[] data, int sampleRate, int channels)
         {
             var result = new Dictionary<double, double>();
-            int n = data.Length;
-            Complex[] complexData = data.Select(d => new Complex(d, 0)).ToArray();
-            Fourier.Forward(complexData, FourierOptions.Matlab);
-            for (int i = 0; i < n / 2; i++)
+            int n = data.Length / channels;
+
+            // Create an array of complex data for each channel.
+            Complex[][] complexData = new Complex[channels][];
+            for (int ch = 0; ch < channels; ch++)
             {
-                double amplitude = complexData[i].Magnitude;
-                double frequency = (((double)i) * sampleRate) / n;
-                result[frequency] = amplitude;
+                complexData[ch] = new Complex[n];
             }
+
+            // Populate the complex arrays with channel data.
+            for (int i = 0; i < n; i++)
+            {
+                for (int ch = 0; ch < channels; ch++)
+                {
+                    complexData[ch][i] = new Complex(data[i * channels + ch], 0);
+                }
+            }
+
+            // Perform Fourier transform for each channel.
+            var channelResults = new List<Dictionary<double, double>>();
+            for (int ch = 0; ch < channels; ch++)
+            {
+                Fourier.Forward(complexData[ch], FourierOptions.Matlab);
+                var channelResult = new Dictionary<double, double>();
+                for (int i = 0; i < n / 2; i++)
+                {
+                    double magnitude = complexData[ch][i].Magnitude;
+                    double frequency = (((double)i) * sampleRate) / n;
+                    channelResult[frequency] = magnitude;
+                }
+                channelResults.Add(channelResult);
+            }
+
+            // Combine results from all channels.
+            foreach (var channelResult in channelResults)
+            {
+                foreach (var kvp in channelResult)
+                {
+                    if (!result.ContainsKey(kvp.Key))
+                    {
+                        result[kvp.Key] = 0;
+                    }
+                    if (result[kvp.Key] < kvp.Value)
+                    {
+                        result[kvp.Key] = kvp.Value;
+                    }
+                }
+            }
+
             return result;
         }
 
-        // We consider anything above this average amplitude as not silence.
-        const double _defaultMaxSilenceAmplitude = 20.0;
-        private static double MaxSilenceAmplitude
+        // We consider anything above this average magnitude as not silence.
+        const double _defaultMaxSilenceMagnitude = 20.0;
+        private static double MaxSilenceMagnitude
         {
             get
             {
-                string? maxSilenceAmplitudeString = Environment.GetEnvironmentVariable("ORCASOUND_MAX_SILENCE_AMPLITUDE");
-                double maxSilenceAmplitude = double.TryParse(maxSilenceAmplitudeString, out var amplitude) ? amplitude : _defaultMaxSilenceAmplitude;
-                return maxSilenceAmplitude;
+                string? maxSilenceMagnitudeString = Environment.GetEnvironmentVariable("ORCASOUND_MAX_SILENCE_AMPLITUDE");
+                double maxSilenceMagnitude = double.TryParse(maxSilenceMagnitudeString, out var magnitude) ? magnitude : _defaultMaxSilenceMagnitude;
+                return maxSilenceMagnitude;
             }
         }
 
-        // We consider anything below this average amplitude as silence.
-        const double _defaultMinNoiseAmplitude = 15.0;
-        private static double MinNoiseAmplitude
+        // We consider anything below this average magnitude as silence.
+        const double _defaultMinNoiseMagnitude = 15.0;
+        private static double MinNoiseMagnitude
         {
             get
             {
-                string? minNoiseAmplitudeString = Environment.GetEnvironmentVariable("ORCASOUND_MIN_NOISE_AMPLITUDE");
-                double minNoiseAmplitude = double.TryParse(minNoiseAmplitudeString, out var amplitude) ? amplitude : _defaultMinNoiseAmplitude;
-                return minNoiseAmplitude;
+                string? minNoiseMagnitudeString = Environment.GetEnvironmentVariable("ORCASOUND_MIN_NOISE_AMPLITUDE");
+                double minNoiseMagnitude = double.TryParse(minNoiseMagnitudeString, out var magnitude) ? magnitude : _defaultMinNoiseMagnitude;
+                return minNoiseMagnitude;
             }
         }
 
-        // Minimum ratio of amplitude outside the hum range to amplitude
+        // Minimum ratio of magnitude outside the hum range to magnitude
         // within the hum range.  So far the max in a known-unintelligible
         // sample is 21% and the min in a known-good sample is 50%.
         const double _defaultMinSignalPercent = 30;
@@ -70,59 +110,60 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public Dictionary<double, double> FrequencyAmplitudes { get; }
+        public Dictionary<double, double> FrequencyMagnitudes { get; }
         public OrcanodeOnlineStatus Status { get; }
-        public double MaxAmplitude => FrequencyAmplitudes.Values.Max();
+        public double MaxMagnitude => FrequencyMagnitudes.Values.Max();
 
-        // Microphone audio hum typically falls within the 50 Hz to 60 Hz
+        // Microphone audio hum typically falls within the 50 Hz or 60 Hz
         // range. This hum is often caused by electrical interference from
         // power lines and other electronic devices.
-        const double MinHumFrequency = 50.0; // Hz
-        const double MaxHumFrequency = 60.0; // Hz
+        const double HumFrequency1 = 50.0; // Hz
+        const double HumFrequency2 = 60.0; // Hz
+        private static bool IsHumFrequency(double frequency, double humFrequency) => Math.Abs(frequency - humFrequency) < 1.0;
 
-        private static bool IsHumFrequency(double frequency) => (frequency >= MinHumFrequency && frequency <= MaxHumFrequency);
+        private static bool IsHumFrequency(double frequency) => IsHumFrequency(frequency, HumFrequency1) || IsHumFrequency(frequency, HumFrequency2);
 
         /// <summary>
-        /// Find the maximum amplitude outside the audio hum range.
+        /// Find the maximum magnitude outside the audio hum range.
         /// </summary>
-        /// <returns>Amplitude</returns>
-        public double GetMaxNonHumAmplitude()
+        /// <returns>Magnitude</returns>
+        public double GetMaxNonHumMagnitude()
         {
-            double maxNonHumAmplitude = 0;
-            foreach (var pair in FrequencyAmplitudes)
+            double maxNonHumMagnitude = 0;
+            foreach (var pair in FrequencyMagnitudes)
             {
                 double frequency = pair.Key;
-                double amplitude = pair.Value;
+                double magnitude = pair.Value;
                 if (!IsHumFrequency(frequency))
                 {
-                    if (maxNonHumAmplitude < amplitude)
+                    if (maxNonHumMagnitude < magnitude)
                     {
-                        maxNonHumAmplitude = amplitude;
+                        maxNonHumMagnitude = magnitude;
                     }
                 }
             }
-            return maxNonHumAmplitude;
+            return maxNonHumMagnitude;
         }
 
         private OrcanodeOnlineStatus GetStatus(OrcanodeOnlineStatus oldStatus)
         {
-            double max = MaxAmplitude;
-            if (max < MinNoiseAmplitude)
+            double max = MaxMagnitude;
+            if (max < MinNoiseMagnitude)
             {
                 // File contains mostly silence across all frequencies.
                 return OrcanodeOnlineStatus.Silent;
             }
 
-            if ((max <= MaxSilenceAmplitude) && (oldStatus == OrcanodeOnlineStatus.Silent))
+            if ((max <= MaxSilenceMagnitude) && (oldStatus == OrcanodeOnlineStatus.Silent))
             {
                 // In between the min and max silence range, so keep previous status.
                 return oldStatus;
             }
 
-            // Find the maximum amplitude outside the audio hum range.
-            double maxNonHumAmplitude = GetMaxNonHumAmplitude();
+            // Find the maximum magnitude outside the audio hum range.
+            double maxNonHumMagnitude = GetMaxNonHumMagnitude();
 
-            if (maxNonHumAmplitude / max < MinSignalRatio)
+            if (maxNonHumMagnitude / max < MinSignalRatio)
             {
                 // Essentially just silence outside the hum range, no signal.
                 return OrcanodeOnlineStatus.Unintelligible;
@@ -135,10 +176,18 @@ namespace OrcanodeMonitor.Core
 
     public class FfmpegCoreAnalyzer
     {
-        private static FrequencyInfo AnalyzeFrequencies(float[] data, int sampleRate, OrcanodeOnlineStatus oldStatus)
+        /// <summary>
+        /// Analyze frequencies.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="sampleRate">Sample rate</param>
+        /// <param name="channels">Number of channels</param>
+        /// <param name="oldStatus">Old status</param>
+        /// <returns>Frequency info</returns>
+        private static FrequencyInfo AnalyzeFrequencies(float[] data, int sampleRate, int channels, OrcanodeOnlineStatus oldStatus)
         {
             int n = data.Length;
-            FrequencyInfo frequencyInfo = new FrequencyInfo(data, sampleRate, oldStatus);
+            FrequencyInfo frequencyInfo = new FrequencyInfo(data, sampleRate, channels, oldStatus);
             return frequencyInfo;
         }
 
@@ -150,37 +199,48 @@ namespace OrcanodeMonitor.Core
         /// <returns>Status of the most recent audio samples</returns>
         private static async Task<FrequencyInfo> AnalyzeAsync(FFMpegArguments args, OrcanodeOnlineStatus oldStatus)
         {
-            var outputStream = new MemoryStream(); // Create an output stream (e.g., MemoryStream)
-            var pipeSink = new StreamPipeSink(outputStream);
-
-            GlobalFFOptions.Configure(options => options.BinaryFolder = FFMpegInstaller.InstallationDirectory);
-
-            bool ok = await args
-                .OutputToPipe(pipeSink, options => options
-                .WithAudioCodec("pcm_s16le")
-                .ForceFormat("wav"))
-                .ProcessAsynchronously();
-
-            var waveFormat = new WaveFormat(rate: 44100, bits: 16, channels: 1);
-            var rawStream = new RawSourceWaveStream(outputStream, waveFormat);
-
-            // Reset the position to the beginning
-            rawStream.Seek(0, SeekOrigin.Begin);
-
-            // Read the audio data into a byte buffer.
-            var byteBuffer = new byte[rawStream.Length];
-            int bytesRead = rawStream.Read(byteBuffer, 0, byteBuffer.Length);
-
-            // Convert byte buffer to float buffer.
-            var floatBuffer = new float[byteBuffer.Length / sizeof(short)];
-            for (int i = 0; i < floatBuffer.Length; i++)
+            using (var outputStream = new MemoryStream())
             {
-                floatBuffer[i] = BitConverter.ToInt16(byteBuffer, i * sizeof(short)) / 32768f;
-            }
+                // Create an output stream (e.g., MemoryStream).
+                var pipeSink = new StreamPipeSink(outputStream);
+                GlobalFFOptions.Configure(options => options.BinaryFolder = FFMpegInstaller.InstallationDirectory);
 
-            // Perform FFT and analyze frequencies.
-            var status = AnalyzeFrequencies(floatBuffer, waveFormat.SampleRate, oldStatus);
-            return status;
+                bool ok = await args
+                    .OutputToPipe(pipeSink, options => options
+                    .WithAudioCodec("pcm_s16le")
+                    .ForceFormat("wav"))
+                    .ProcessAsynchronously();
+                if (!ok)
+                {
+                    throw new Exception("FFMpeg processing failed.");
+                }
+
+                // Read the entire stream into a byte array.
+                byte[] byteBuffer = outputStream.ToArray();
+
+                // Get the number of channels in the WAV file (offset 22, 2 bytes).
+                int channels = BitConverter.ToInt16(byteBuffer, 22);
+
+                // Get the sample rate in the WAV file (offset 24, 4 bytes).
+                int sampleRate = BitConverter.ToInt32(byteBuffer, 24);
+
+                var waveFormat = new WaveFormat(rate: sampleRate, bits: 16, channels: channels);
+
+                // Compute the duration in seconds.
+                double byteRate = waveFormat.SampleRate * waveFormat.Channels * (waveFormat.BitsPerSample / 8.0);
+                double durationInSeconds = byteBuffer.Length / byteRate;
+
+                // Convert byte buffer to float buffer.
+                var floatBuffer = new float[byteBuffer.Length / sizeof(short)];
+                for (int i = 0; i < floatBuffer.Length; i++)
+                {
+                    floatBuffer[i] = BitConverter.ToInt16(byteBuffer, i * sizeof(short)) / 32768f;
+                }
+
+                // Perform FFT and analyze frequencies.
+                var status = AnalyzeFrequencies(floatBuffer, waveFormat.SampleRate, waveFormat.Channels, oldStatus);
+                return status;
+            }
         }
 
         public static async Task<FrequencyInfo> AnalyzeFileAsync(string filename, OrcanodeOnlineStatus oldStatus)

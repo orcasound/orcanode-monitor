@@ -46,6 +46,7 @@ namespace Test
         [TestMethod]
         public async Task TestUnintelligibleSample()
         {
+            // Audio hums.
             await TestSampleAsync("unintelligible\\live4869.ts", OrcanodeOnlineStatus.Unintelligible);
             await TestSampleAsync("unintelligible\\live1816b.ts", OrcanodeOnlineStatus.Unintelligible);
             await TestSampleAsync("unintelligible\\live1815.ts", OrcanodeOnlineStatus.Unintelligible);
@@ -55,6 +56,8 @@ namespace Test
         [TestMethod]
         public async Task TestNormalSample()
         {
+            await TestSampleAsync("normal\\live3368.ts", OrcanodeOnlineStatus.Online);
+
             await TestSampleAsync("normal\\live3504.ts", OrcanodeOnlineStatus.Online);
             await TestSampleAsync("normal\\live2649.ts", OrcanodeOnlineStatus.Online);
             await TestSampleAsync("normal\\live2289.ts", OrcanodeOnlineStatus.Online);
@@ -66,7 +69,7 @@ namespace Test
         [TestMethod]
         public async Task TestHysteresisBehavior()
         {
-            // Bush Point file from arond 5pm 11/18/2024 is relatively quiet (max amplitude 17.46).
+            // Bush Point file from around 5pm 11/18/2024 is relatively quiet (max magnitude 17.46).
             // Test state retention when transitioning from Online to borderline Silent.
             await TestSampleAsync("normal/live6079.ts", OrcanodeOnlineStatus.Online, OrcanodeOnlineStatus.Online);
 
