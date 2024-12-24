@@ -114,13 +114,14 @@ namespace OrcanodeMonitor.Core
         public OrcanodeOnlineStatus Status { get; }
         public double MaxMagnitude => FrequencyMagnitudes.Values.Max();
 
-        // Microphone audio hum typically falls within the 50 Hz to 60 Hz
+        // Microphone audio hum typically falls within the 50 Hz or 60 Hz
         // range. This hum is often caused by electrical interference from
         // power lines and other electronic devices.
-        const double MinHumFrequency = 50.0; // Hz
-        const double MaxHumFrequency = 60.0; // Hz
+        const double HumFrequency1 = 50.0; // Hz
+        const double HumFrequency2 = 60.0; // Hz
+        private static bool IsHumFrequency(double frequency, double humFrequency) => Math.Abs(frequency - humFrequency) < 1.0;
 
-        private static bool IsHumFrequency(double frequency) => (frequency >= MinHumFrequency && frequency <= MaxHumFrequency);
+        private static bool IsHumFrequency(double frequency) => IsHumFrequency(frequency, HumFrequency1) || IsHumFrequency(frequency, HumFrequency2);
 
         /// <summary>
         /// Find the maximum magnitude outside the audio hum range.
