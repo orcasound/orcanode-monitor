@@ -68,7 +68,7 @@ namespace Test
         [TestMethod]
         public async Task TestHysteresisBehavior()
         {
-            // Bush Point file from arond 5pm 11/18/2024 is relatively quiet (max magnitude 17.46).
+            // Bush Point file from around 5pm 11/18/2024 is relatively quiet (max magnitude 17.46).
             // Test state retention when transitioning from Online to borderline Silent.
             await TestSampleAsync("normal/live6079.ts", OrcanodeOnlineStatus.Online, OrcanodeOnlineStatus.Online);
 

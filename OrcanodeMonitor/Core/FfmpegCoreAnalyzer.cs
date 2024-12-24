@@ -123,7 +123,7 @@ namespace OrcanodeMonitor.Core
         private static bool IsHumFrequency(double frequency) => (frequency >= MinHumFrequency && frequency <= MaxHumFrequency);
 
         /// <summary>
-        /// Find the maximum mangnitude outside the audio hum range.
+        /// Find the maximum magnitude outside the audio hum range.
         /// </summary>
         /// <returns>Magnitude</returns>
         public double GetMaxNonHumMagnitude()
