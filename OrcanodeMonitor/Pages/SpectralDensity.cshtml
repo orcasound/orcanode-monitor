@@ -20,7 +20,7 @@
                 labels: @Html.Raw(Json.Serialize(Model.Labels)),
                 datasets: [{
                     label: 'Last Sample',
-                    data: @Html.Raw(Json.Serialize(Model.MaxBucketAmplitude)),
+                    data: @Html.Raw(Json.Serialize(Model.MaxBucketMagnitude)),
                     backgroundColor: 'rgba(75, 192, 192, 0.2)',
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 1
@@ -38,7 +38,7 @@
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Amplitude'
+                            text: 'Magnitude'
                         }
                     }
                 }
@@ -48,8 +48,8 @@
 
     <div>
         <h2>Statistics</h2>
-        Max amplitude: @Model.MaxAmplitude<br />
-        Max amplitude outside hum range (50-60Hz): @Model.MaxNonHumAmplitude<br />
+        Max magnitude: @Model.MaxMagnitude<br />
+        Max magnitude outside hum range (50-60Hz): @Model.MaxNonHumMagnitude<br />
         Signal ratio: @Model.SignalRatio%<br />
         Status: @Model.Status<br />
         <p></p>
