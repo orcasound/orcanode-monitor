@@ -115,7 +115,7 @@ namespace OrcanodeMonitor
                 {
                     continue;
                 }
-                OrcanodeEvent toEvent = new OrcanodeEvent(toNode, fromItem.Type, fromItem.Value, fromItem.DateTimeUtc);
+                OrcanodeEvent toEvent = new OrcanodeEvent(toNode, fromItem.Type, fromItem.Value, fromItem.DateTimeUtc, fromItem.Url);
                 toContext.OrcanodeEvents.Add(toEvent);
             }
             await toContext.SaveChangesAsync();

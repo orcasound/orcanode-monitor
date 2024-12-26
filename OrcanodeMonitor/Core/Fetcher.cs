@@ -22,6 +22,7 @@ using System.Threading.Channels;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.CodeAnalysis.Elfie.Diagnostics;
 
 namespace OrcanodeMonitor.Core
 {
@@ -870,9 +871,9 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public static void AddOrcanodeEvent(OrcanodeMonitorContext context, Orcanode node, string type, string value)
+        public static void AddOrcanodeEvent(OrcanodeMonitorContext context, Orcanode node, string type, string value, string? url = null)
         {
-            var orcanodeEvent = new OrcanodeEvent(node, type, value, DateTime.UtcNow);
+            var orcanodeEvent = new OrcanodeEvent(node, type, value, DateTime.UtcNow, url);
             context.OrcanodeEvents.Add(orcanodeEvent);
         }
 
@@ -894,16 +895,14 @@ namespace OrcanodeMonitor.Core
             AddOrcanodeEvent(context, node, OrcanodeEventTypes.SDCardSize, value);
         }
 
-        private static void AddHydrophoneStreamStatusEvent(OrcanodeMonitorContext context, Orcanode node)
+        private static void AddHydrophoneStreamStatusEvent(OrcanodeMonitorContext context, Orcanode node, string? url)
         {
             string value = node.OrcasoundOnlineStatusString;
-            AddOrcanodeEvent(context, node, OrcanodeEventTypes.HydrophoneStream, value);
+            AddOrcanodeEvent(context, node, OrcanodeEventTypes.HydrophoneStream, value, url);
         }
 
         public async static Task<FrequencyInfo?> GetLatestAudioSampleAsync(Orcanode node, string unixTimestampString, bool updateNode, ILogger logger)
         {
-            OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
-
             string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/hls/" + unixTimestampString + "/live.m3u8";
             using HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (!response.IsSuccessStatusCode)
@@ -947,10 +946,18 @@ namespace OrcanodeMonitor.Core
             lineNumber = (lineNumber > 3) ? lineNumber - 3 : lineNumber - 1;
             string lastLine = lines[lineNumber];
             Uri newUri = new Uri(baseUri, lastLine);
+            return await GetExactAudioSampleAsync(node, newUri, logger);
+        }
+
+        public async static Task<FrequencyInfo?> GetExactAudioSampleAsync(Orcanode node, Uri uri, ILogger logger)
+        {
+            OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
+
             try
             {
-                using Stream stream = await _httpClient.GetStreamAsync(newUri);
+                using Stream stream = await _httpClient.GetStreamAsync(uri);
                 FrequencyInfo frequencyInfo = await FfmpegCoreAnalyzer.AnalyzeAudioStreamAsync(stream, oldStatus);
+                frequencyInfo.Url = uri.AbsoluteUri;
                 return frequencyInfo;
             }
             catch (Exception ex)
@@ -984,7 +991,7 @@ namespace OrcanodeMonitor.Core
             OrcanodeOnlineStatus newStatus = node.S3StreamStatus;
             if (newStatus != oldStatus)
             {
-                AddHydrophoneStreamStatusEvent(context, node);
+                AddHydrophoneStreamStatusEvent(context, node, frequencyInfo?.Url);
             }
         }
 
