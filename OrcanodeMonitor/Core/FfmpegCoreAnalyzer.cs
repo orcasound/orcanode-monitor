@@ -112,7 +112,12 @@ namespace OrcanodeMonitor.Core
 
         public Dictionary<double, double> FrequencyMagnitudes { get; }
         public OrcanodeOnlineStatus Status { get; }
-        public string Url { get; set; } = string.Empty;
+
+        /// <summary>
+        /// URL at which the original audio sample can be found.
+        /// </summary>
+        public string AudioSampleUrl { get; set; } = string.Empty;
+
         public double MaxMagnitude => FrequencyMagnitudes.Values.Max();
 
         // Microphone audio hum typically falls within the 50 Hz or 60 Hz

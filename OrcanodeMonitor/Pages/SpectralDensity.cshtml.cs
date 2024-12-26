@@ -1,8 +1,6 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Logging;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
@@ -58,7 +56,7 @@ namespace OrcanodeMonitor.Pages
             {
                 double frequency = pair.Key;
                 double magnitude = pair.Value;
-                int bucket = (frequency < 1) ? 0 : (int)(Math.Log(frequency) / logb);
+                int bucket = (frequency < 1) ? 0 : Math.Min(PointCount - 1, (int)(Math.Log(frequency) / logb));
                 if (maxBucketMagnitude[bucket] < magnitude)
                 {
                     maxBucketMagnitude[bucket] = magnitude;

@@ -13,16 +13,8 @@ using Microsoft.EntityFrameworkCore;
 using OrcanodeMonitor.Data;
 using Microsoft.IdentityModel.Tokens;
 using Mono.TextTemplating;
-using Azure.Core;
-using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using OrcanodeMonitor.Api;
-using Newtonsoft.Json.Linq;
-using System.Threading.Channels;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.CodeAnalysis.Elfie.Diagnostics;
 
 namespace OrcanodeMonitor.Core
 {
@@ -957,7 +949,7 @@ namespace OrcanodeMonitor.Core
             {
                 using Stream stream = await _httpClient.GetStreamAsync(uri);
                 FrequencyInfo frequencyInfo = await FfmpegCoreAnalyzer.AnalyzeAudioStreamAsync(stream, oldStatus);
-                frequencyInfo.Url = uri.AbsoluteUri;
+                frequencyInfo.AudioSampleUrl = uri.AbsoluteUri;
                 return frequencyInfo;
             }
             catch (Exception ex)
@@ -991,7 +983,7 @@ namespace OrcanodeMonitor.Core
             OrcanodeOnlineStatus newStatus = node.S3StreamStatus;
             if (newStatus != oldStatus)
             {
-                AddHydrophoneStreamStatusEvent(context, node, frequencyInfo?.Url);
+                AddHydrophoneStreamStatusEvent(context, node, frequencyInfo?.AudioSampleUrl);
             }
         }
 
