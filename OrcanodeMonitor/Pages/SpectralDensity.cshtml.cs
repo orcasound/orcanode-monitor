@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Logging;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
@@ -17,11 +18,10 @@ namespace OrcanodeMonitor.Pages
     {
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<SpectralDensityModel> _logger;
-        private string _eventId;
-        private string _nodeId;
-        public string NodeId => _nodeId;
-        public string EventId => _eventId;
-        public string NodeName { get; private set; }
+        private string _id;
+        private OrcanodeEvent? _event = null;
+        private Orcanode? _node = null;
+        public string NodeName => _node?.DisplayName ?? "Unknown";
         private List<string> _labels;
         private List<double> _maxBucketMagnitude;
         public List<string> Labels => _labels;
@@ -35,9 +35,7 @@ namespace OrcanodeMonitor.Pages
         {
             _databaseContext = context;
             _logger = logger;
-            _nodeId = string.Empty;
-            _eventId = string.Empty;
-            NodeName = "Unknown";
+            _id = string.Empty;
             Status = string.Empty;
             _labels = new List<string>();
             _maxBucketMagnitude = new List<double>();
@@ -85,54 +83,36 @@ namespace OrcanodeMonitor.Pages
             Status = Orcanode.GetStatusString(frequencyInfo.Status);
         }
 
-#if false
         private async Task UpdateNodeFrequencyDataAsync()
         {
-            _labels = new List<string> { };
-            _maxBucketMagnitude = new List<double> { };
-            Orcanode? node = _databaseContext.Orcanodes.Where(n => n.ID == _nodeId).FirstOrDefault();
-            if (node == null)
+            if (_node == null)
             {
-                _logger.LogWarning("Node not found with ID: {NodeId}", _nodeId);
                 return;
             }
-            NodeName = node.DisplayName;
-            TimestampResult? result = await GetLatestS3TimestampAsync(node, false, _logger);
+            TimestampResult? result = await GetLatestS3TimestampAsync(_node, false, _logger);
             if (result != null)
             {
-                FrequencyInfo? frequencyInfo = await Fetcher.GetLatestAudioSampleAsync(node, result.UnixTimestampString, false, _logger);
+                FrequencyInfo? frequencyInfo = await Fetcher.GetLatestAudioSampleAsync(_node, result.UnixTimestampString, false, _logger);
                 if (frequencyInfo != null)
                 {
                     UpdateFrequencyInfo(frequencyInfo);
                 }
             }
         }
-#endif
 
         private async Task UpdateEventFrequencyDataAsync()
         {
-            _labels = new List<string> { };
-            _maxBucketMagnitude = new List<double> { };
-            OrcanodeEvent? e = _databaseContext.OrcanodeEvents.Where(e => e.ID == _eventId).FirstOrDefault();
-            if (e == null)
+            if (_event == null || _node == null)
             {
-                _logger.LogWarning("Node not found with ID: {EventId}", _eventId);
                 return;
             }
-            Orcanode? node = e.Orcanode;
-            if (node == null)
-            {
-                _logger.LogWarning("Node not found with ID: {NodeId}", _nodeId);
-                return;
-            }
-            NodeName = node.DisplayName;
             Uri? uri;
-            if (!Uri.TryCreate(e.Url, UriKind.Absolute, out uri) || (uri == null))
+            if (!Uri.TryCreate(_event.Url, UriKind.Absolute, out uri) || (uri == null))
             {
-                _logger.LogWarning("URI not found with event ID: {EventID}", _eventId);
+                _logger.LogWarning("URI not found with event ID: {EventID}", _id);
                 return;
             }
-            FrequencyInfo? frequencyInfo = await Fetcher.GetExactAudioSampleAsync(node, uri, _logger);
+            FrequencyInfo? frequencyInfo = await Fetcher.GetExactAudioSampleAsync(_node, uri, _logger);
             if (frequencyInfo != null)
             {
                 UpdateFrequencyInfo(frequencyInfo);
@@ -141,8 +121,27 @@ namespace OrcanodeMonitor.Pages
 
         public async Task OnGetAsync(string id)
         {
-            _eventId = id;
-            await UpdateEventFrequencyDataAsync();
+            _id = id;
+
+            // First see if we have a node ID.
+            _node = _databaseContext.Orcanodes.Where(n => n.ID == _id).FirstOrDefault();
+            if (_node != null)
+            {
+                await UpdateNodeFrequencyDataAsync();
+                return;
+            }
+
+            // Next see if we have an event ID.
+            _event = _databaseContext.OrcanodeEvents.Where(e => e.ID == _id).FirstOrDefault();
+            if (_event != null)
+            {
+                _node = _event.Orcanode;
+                await UpdateEventFrequencyDataAsync();
+                return;
+            }
+
+            // Neither worked.
+            _logger.LogWarning("ID not found: {ID}", _id);
         }
     }
 }
