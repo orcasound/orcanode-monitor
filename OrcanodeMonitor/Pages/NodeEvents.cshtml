@@ -48,7 +48,8 @@
         <thead>
             <tr>
                 <th>Timestamp (Pacific)</th>
-                <th>Event</th>
+                <th align="left">Event</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
@@ -62,7 +63,21 @@
             {
                 <tr class="@Model.GetEventClasses(item)">
                     <td>@item.DateTimeLocal.ToString("g")</td>
-                    <td align="left">@item.Description</td>
+                    <td align="left">
+                        @if (!string.IsNullOrEmpty(item.Url))
+                        {
+                            <a href="@item.Url">@item.Description</a>
+                        }
+                        else
+                        {
+                            <span>@item.Description</span>
+                        }
+                    </td>
+                    <td>
+                        <button onclick="location.href='@Url.Page("/SpectralDensity", new { id = item.ID })'" class="btn selected" style="@Model.GetEventButtonStyle(item)">
+                            View Spectral Density
+                        </button>
+                    </td>
                 </tr>
             }
         </tbody>

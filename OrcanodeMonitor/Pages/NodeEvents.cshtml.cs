@@ -79,5 +79,14 @@ namespace OrcanodeMonitor.Pages
             string classes = GetTypeClass(item) + " " + GetTimeRangeClass(item);
             return classes;
         }
+
+        public string GetEventButtonStyle(OrcanodeEvent item)
+        {
+            if ((item.Type == OrcanodeEventTypes.HydrophoneStream) && (item.Url != null))
+            {
+                return "display: inline-block;";
+            }
+            return "display: none;";
+        }
     }
 }

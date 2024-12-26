@@ -344,7 +344,7 @@ namespace OrcanodeMonitor.Core
         private static void AddMezmoStatusEvent(OrcanodeMonitorContext context, Orcanode node)
         {
             string value = node.MezmoStatus.ToString();
-            Fetcher.AddOrcanodeEvent(context, node, OrcanodeEventTypes.MezmoLogging, value);
+            Fetcher.AddOrcanodeEvent(context, node, OrcanodeEventTypes.MezmoLogging, value, string.Empty);
         }
     }
 }
