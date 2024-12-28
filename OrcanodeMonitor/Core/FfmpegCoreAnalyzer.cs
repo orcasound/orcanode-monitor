@@ -74,7 +74,7 @@ namespace OrcanodeMonitor.Core
 
         // We consider anything above this average magnitude as not silence.
         const double _defaultMaxSilenceMagnitude = 20.0;
-        private static double MaxSilenceMagnitude
+        public static double MaxSilenceMagnitude
         {
             get
             {
@@ -86,7 +86,7 @@ namespace OrcanodeMonitor.Core
 
         // We consider anything below this average magnitude as silence.
         const double _defaultMinNoiseMagnitude = 15.0;
-        private static double MinNoiseMagnitude
+        public static double MinNoiseMagnitude
         {
             get
             {
