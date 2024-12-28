@@ -28,6 +28,8 @@ namespace OrcanodeMonitor.Pages
         public int MaxNonHumMagnitude { get; private set; }
         public int SignalRatio { get; private set; }
         public string Status { get; private set; }
+        public double MaxSilenceMagnitude => FrequencyInfo.MaxSilenceMagnitude;
+        public double MinNoiseMagnitude => FrequencyInfo.MinNoiseMagnitude;
 
         public SpectralDensityModel(OrcanodeMonitorContext context, ILogger<SpectralDensityModel> logger)
         {
