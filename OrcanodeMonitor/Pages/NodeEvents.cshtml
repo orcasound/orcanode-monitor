@@ -8,8 +8,9 @@
     <h1 class="display-4">@Model.NodeName</h1>
 
     <!-- Navigation Button -->
-    <a href="@Url.Page("/SpectralDensity", new { id = Model.Id })" class="btn btn-primary" target="_blank">
+    <a href="@Url.Page("/SpectralDensity", new { id = Model.Id })" class="btn btn-primary" target="_blank" rel="noopener">
         View Most Recent Spectral Density
+        <span class="visually-hidden">(opens in new tab)</span>
     </a>
     <p></p>
 
@@ -74,8 +75,9 @@
                         }
                     </td>
                     <td>
-                        <a href="@Url.Page("/SpectralDensity", new { id = item.ID })" class="btn selected" style="@Model.GetEventButtonStyle(item)" target="_blank">
+                        <a href="@Url.Page("/SpectralDensity", new { id = item.ID })" class="btn selected" style="@Model.GetEventButtonStyle(item)" target="_blank" rel="noopener">
                             View Spectral Density
+                            <span class="visually-hidden">(opens in new tab)</span>
                         </a>
                     </td>
                 </tr>
