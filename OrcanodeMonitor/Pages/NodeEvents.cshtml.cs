@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
-using static OrcanodeMonitor.Core.Fetcher;
 
 namespace OrcanodeMonitor.Pages
 {
@@ -82,7 +81,7 @@ namespace OrcanodeMonitor.Pages
 
         public string GetEventButtonStyle(OrcanodeEvent item)
         {
-            if ((item.Type == OrcanodeEventTypes.HydrophoneStream) && (item.Url != null))
+            if ((item.Type == OrcanodeEventTypes.HydrophoneStream) && !string.IsNullOrEmpty(item.Url))
             {
                 return "display: inline-block;";
             }
