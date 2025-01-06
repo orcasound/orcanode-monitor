@@ -38,6 +38,21 @@ namespace Test
         }
 
         [TestMethod]
+        public void TestHumFrequencies()
+        {
+            Assert.IsTrue(FrequencyInfo.IsHumFrequency(59.1));
+            Assert.IsTrue(FrequencyInfo.IsHumFrequency(60.0));
+            Assert.IsTrue(FrequencyInfo.IsHumFrequency(60.9));
+            Assert.IsTrue(FrequencyInfo.IsHumFrequency(120.0));
+            Assert.IsTrue(FrequencyInfo.IsHumFrequency(300.0));
+
+            Assert.IsFalse(FrequencyInfo.IsHumFrequency(59.0));
+            Assert.IsFalse(FrequencyInfo.IsHumFrequency(61.0));
+            Assert.IsFalse(FrequencyInfo.IsHumFrequency(121.0));
+            Assert.IsFalse(FrequencyInfo.IsHumFrequency(299.0));
+        }
+
+        [TestMethod]
         public async Task TestSilentSample()
         {
             await TestSampleAsync("unintelligible\\live1791.ts", OrcanodeOnlineStatus.Silent);
