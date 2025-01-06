@@ -27,7 +27,7 @@
                         borderWidth: 1
                     },
                     {
-                        label: 'Max Silence Magnitude',
+                        label: 'Max Noise Magnitude',
                         data: [
                             { x: @Html.Raw(Json.Serialize(Model.Labels[0])), y: @Html.Raw(Model.MaxSilenceMagnitude) },
                             { x: @Html.Raw(Json.Serialize(Model.Labels[Model.Labels.Count - 1])), y: @Html.Raw(Model.MaxSilenceMagnitude) }
@@ -38,7 +38,7 @@
                         pointRadius: 0 // Hide points on this line
                     },
                     {
-                        label: 'Min Noise Magnitude',
+                        label: 'Min Signal Magnitude',
                         data: [
                             { x: @Html.Raw(Json.Serialize(Model.Labels[0])), y: @Html.Raw(Model.MinNoiseMagnitude) },
                             { x: @Html.Raw(Json.Serialize(Model.Labels[Model.Labels.Count - 1])), y: @Html.Raw(Model.MinNoiseMagnitude) }
