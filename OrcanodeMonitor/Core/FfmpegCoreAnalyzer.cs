@@ -98,8 +98,8 @@ namespace OrcanodeMonitor.Core
 
         // Minimum ratio of magnitude outside the hum range to magnitude
         // within the hum range.  So far the max in a known-unintelligible
-        // sample is 21% and the min in a known-good sample is 50%.
-        const double _defaultMinSignalPercent = 30;
+        // sample is 21% and the min in a known-good sample is 29%.
+        const double _defaultMinSignalPercent = 25;
         private static double MinSignalRatio
         {
             get
@@ -125,9 +125,14 @@ namespace OrcanodeMonitor.Core
         // power lines and other electronic devices.
         const double HumFrequency1 = 50.0; // Hz
         const double HumFrequency2 = 60.0; // Hz
-        private static bool IsHumFrequency(double frequency, double humFrequency) => Math.Abs(frequency - humFrequency) < 1.0;
+        private static bool IsHumFrequency(double frequency, double humFrequency)
+        {
+            const double tolerance = 1.0;
+            double remainder = frequency % humFrequency;
+            return (remainder < tolerance || remainder > (humFrequency - tolerance));
+        }
 
-        private static bool IsHumFrequency(double frequency) => IsHumFrequency(frequency, HumFrequency1) || IsHumFrequency(frequency, HumFrequency2);
+        public static bool IsHumFrequency(double frequency) => IsHumFrequency(frequency, HumFrequency1) || IsHumFrequency(frequency, HumFrequency2);
 
         /// <summary>
         /// Find the maximum magnitude outside the audio hum range.
