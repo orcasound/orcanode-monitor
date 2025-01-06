@@ -5,6 +5,7 @@ using FFMpegCore.Pipes;
 using MathNet.Numerics.IntegralTransforms;
 using NAudio.Wave;
 using OrcanodeMonitor.Models;
+using System.Diagnostics;
 using System.Numerics;
 
 namespace OrcanodeMonitor.Core
@@ -127,6 +128,8 @@ namespace OrcanodeMonitor.Core
         const double HumFrequency2 = 60.0; // Hz
         private static bool IsHumFrequency(double frequency, double humFrequency)
         {
+            Debug.Assert(frequency >= 0.0);
+            Debug.Assert(humFrequency >= 0.0);
             const double tolerance = 1.0;
             double remainder = frequency % humFrequency;
             return (remainder < tolerance || remainder > (humFrequency - tolerance));

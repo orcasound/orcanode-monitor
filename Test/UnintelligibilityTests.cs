@@ -38,7 +38,7 @@ namespace Test
         }
 
         [TestMethod]
-        public async Task TestHumFrequencies()
+        public void TestHumFrequencies()
         {
             Assert.IsTrue(FrequencyInfo.IsHumFrequency(59.1));
             Assert.IsTrue(FrequencyInfo.IsHumFrequency(60.0));
