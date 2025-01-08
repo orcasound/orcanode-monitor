@@ -24,6 +24,7 @@ namespace OrcanodeMonitor.Pages
         private List<double> _maxBucketMagnitude;
         public List<string> Labels => _labels;
         public List<double> MaxBucketMagnitude => _maxBucketMagnitude;
+        public string AudioUrl => _event?.Url ?? "Unknown";
         public int MaxMagnitude { get; private set; }
         public int MaxNonHumMagnitude { get; private set; }
         public int SignalRatio { get; private set; }
