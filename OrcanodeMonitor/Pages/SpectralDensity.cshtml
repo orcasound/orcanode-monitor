@@ -4,6 +4,7 @@
     ViewData["Title"] = "Spectral Density";
 }
 
+<script src="https://github.com/xqq/mpegts.js/releases/download/v1.8.0/mpegts.js"></script>
 <div class="text-center">
     <h1 class="display-4">Spectral Density of Audio From @Model.NodeName</h1>
 
@@ -76,6 +77,54 @@
         Max magnitude outside hum range (50-60Hz): @Model.MaxNonHumMagnitude<br />
         Signal ratio: @Model.SignalRatio%<br />
         Status: @Model.Status<br />
+        <!-- Audio Button and Element -->
+        <button id="playButton" onclick="playAudio('@Model.AudioUrl')">Play</button>
+        <button id="stopButton" onclick="stopAudio()" style="display: none;">Stop</button>
+        <audio id="audioElement" controls style="display:none;"></audio>
+        <script>
+            var player;
+
+            function playAudio(url) {
+                var audioElement = document.getElementById('audioElement');
+                var playButton = document.getElementById('playButton');
+                var stopButton = document.getElementById('stopButton');
+
+                if (mpegts.getFeatureList().mseLivePlayback) {
+                    console.log("mpegts.js is supported, playing " + url);
+                    player = mpegts.createPlayer({
+                        type: 'mse',
+                        isLive: true,
+                        url: url });
+                    player.attachMediaElement(audioElement);
+                    player.load();
+                    player.play();
+
+                    // Toggle buttons
+                    playButton.style.display = 'none';
+                    stopButton.style.display = 'inline-block';
+                } else {
+                    console.log("mpegts.js is not supported on this browser.");
+                }
+            }
+            function stopAudio() {
+                if (player) {
+                    var playButton = document.getElementById('playButton');
+                    var stopButton = document.getElementById('stopButton');
+
+                    player.unload();
+                    player.detachMediaElement();
+                    player.destroy();
+                    player = null;
+                    console.log("Audio stopped and player cleaned up.");
+
+                    // Toggle buttons
+                    playButton.style.display = 'inline-block';
+                    stopButton.style.display = 'none';
+                } else {
+                    console.log("No audio is currently playing.");
+                }
+            }
+        </script>
         <p></p>
     </div>
 </div>
