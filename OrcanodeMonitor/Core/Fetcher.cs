@@ -941,6 +941,19 @@ namespace OrcanodeMonitor.Core
             return await GetExactAudioSampleAsync(node, newUri, logger);
         }
 
+        /// <summary>
+        /// Retrieves the last modified date of a resource via HTTP HEAD request.
+        /// </summary>
+        /// <param name="uri">The URI of the resource to check.</param>
+        /// <returns>The last modified date in UTC, or null if not available.</returns>
+        public async static Task<DateTime?> GetLastModifiedAsync(Uri uri)
+        {
+            using var headRequest = new HttpRequestMessage(HttpMethod.Head, uri);
+            using var headResponse = await _httpClient.SendAsync(headRequest);
+            DateTime? lastModified = headResponse.Content.Headers.LastModified?.UtcDateTime;
+            return lastModified;
+        }
+
         public async static Task<FrequencyInfo?> GetExactAudioSampleAsync(Orcanode node, Uri uri, ILogger logger)
         {
             OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
