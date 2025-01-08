@@ -7,6 +7,7 @@
 <script src="https://github.com/xqq/mpegts.js/releases/download/v1.8.0/mpegts.js"></script>
 <div class="text-center">
     <h1 class="display-4">Spectral Density of Audio From @Model.NodeName</h1>
+    As of: @Model.LastModified<br />
 
     <!-- Include Chart.js from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
@@ -21,7 +22,7 @@
                 labels: @Html.Raw(Json.Serialize(Model.Labels)),
                 datasets: [
                     {
-                        label: 'Last Sample',
+                        label: 'Audio Sample',
                         data: @Html.Raw(Json.Serialize(Model.MaxBucketMagnitude)),
                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         borderColor: 'rgba(75, 192, 192, 1)',

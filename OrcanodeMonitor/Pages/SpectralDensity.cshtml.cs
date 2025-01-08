@@ -31,6 +31,7 @@ namespace OrcanodeMonitor.Pages
         public string Status { get; private set; }
         public double MaxSilenceMagnitude => FrequencyInfo.MaxSilenceMagnitude;
         public double MinNoiseMagnitude => FrequencyInfo.MinNoiseMagnitude;
+        public string LastModified { get; private set; }
 
         public SpectralDensityModel(OrcanodeMonitorContext context, ILogger<SpectralDensityModel> logger)
         {
@@ -113,6 +114,10 @@ namespace OrcanodeMonitor.Pages
                 _logger.LogWarning("URI not found with event ID: {EventID}", _id);
                 return;
             }
+
+            DateTime? lastModified = await Fetcher.GetLastModifiedAsync(uri);
+            LastModified = lastModified?.ToLocalTime().ToString() ?? "Unknown";
+
             FrequencyInfo? frequencyInfo = await Fetcher.GetExactAudioSampleAsync(_node, uri, _logger);
             if (frequencyInfo != null)
             {

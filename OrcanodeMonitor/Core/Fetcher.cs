@@ -941,6 +941,14 @@ namespace OrcanodeMonitor.Core
             return await GetExactAudioSampleAsync(node, newUri, logger);
         }
 
+        public async static Task<DateTime?> GetLastModifiedAsync(Uri uri)
+        {
+            using var headRequest = new HttpRequestMessage(HttpMethod.Head, uri);
+            using var headResponse = await _httpClient.SendAsync(headRequest);
+            DateTime? lastModified = headResponse.Content.Headers.LastModified?.UtcDateTime;
+            return lastModified;
+        }
+
         public async static Task<FrequencyInfo?> GetExactAudioSampleAsync(Orcanode node, Uri uri, ILogger logger)
         {
             OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
