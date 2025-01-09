@@ -115,13 +115,13 @@ The following state will be stored per orcanode:
 
 **ORCASOUND_MIN_INTELLIGIBLE_SIGNAL_PERCENT**: The minimum percentage of total magnitude across all frequencies outside the hum range vs magnitude in hum range (multiples of 60 Hz), needed to determine that an audio stream is intelligible. Default: 150
 
-**ORCASOUND_MAX_SILENCE_AMPLITUDE**: The maximum amplitude at which an stream stream might still be considered unintelligible due to silence. Default: 20
+**ORCASOUND_MAX_SILENCE_MAGNITUDE**: The maximum magnitude at which an stream stream might still be considered unintelligible due to silence. Default: 20
 
-**ORCASOUND_MIN_NOISE_AMPLITUDE**: The minimum amplitude at which an stream stream might still be considered intelligible. Default: 15
+**ORCASOUND_MIN_NOISE_MAGNITUDE**: The minimum magnitude at which an stream stream might still be considered intelligible. Default: 15
 
-These amplitude thresholds work together to implement hysteresis in the noise detection:
-- Amplitudes below MIN_NOISE_AMPLITUDE are always considered silent.
-- Amplitudes above MAX_SILENCE_AMPLITUDE are always considered noisy.
+These magnitude thresholds work together to implement hysteresis in the noise detection:
+- Amplitudes below ORCASOUND_MIN_NOISE_MAGNITUDE are always considered silent.
+- Amplitudes above ORCASOUND_MAX_SILENCE_MAGNITUDE are always considered noisy.
 - Amplitudes between these thresholds maintain their previous state to prevent rapid oscillation between states.
 
 ## Web page front end
