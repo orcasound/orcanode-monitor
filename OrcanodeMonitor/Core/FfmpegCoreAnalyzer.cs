@@ -219,11 +219,15 @@ namespace OrcanodeMonitor.Core
             }
 
             // Find the total magnitude outside the audio hum range.
-            double maxNonHumMagnitude = GetMaxNonHumMagnitude();
+            if (GetMaxNonHumMagnitude() < MinNoiseMagnitude)
+            {
+                // Just silence outside the hum range, no signal.
+                return OrcanodeOnlineStatus.Unintelligible;
+            }
+
             double totalNonHumMagnitude = GetTotalNonHumMagnitude();
             double totalHumMagnitude = GetTotalHumMagnitude();
-
-            if (maxNonHumMagnitude < MinNoiseMagnitude || totalNonHumMagnitude / totalHumMagnitude < MinSignalRatio)
+            if (totalNonHumMagnitude / totalHumMagnitude < MinSignalRatio)
             {
                 // Essentially just silence outside the hum range, no signal.
                 return OrcanodeOnlineStatus.Unintelligible;
