@@ -26,6 +26,10 @@ namespace OrcanodeMonitor.Pages
         public List<double> MaxBucketMagnitude => _maxBucketMagnitude;
         public string AudioUrl => _event?.Url ?? "Unknown";
         public int MaxMagnitude { get; private set; }
+        public int TotalNonHumMagnitude => (int)Math.Round(_totalNonHumMagnitude);
+        public int TotalHumMagnitude => (int)Math.Round(_totalHumMagnitude);
+        private double _totalHumMagnitude;
+        private double _totalNonHumMagnitude;
         public int MaxNonHumMagnitude { get; private set; }
         public int SignalRatio { get; private set; }
         public string Status { get; private set; }
@@ -81,8 +85,10 @@ namespace OrcanodeMonitor.Pages
             double maxNonHumMagnitude = frequencyInfo.GetMaxNonHumMagnitude();
             MaxMagnitude = (int)Math.Round(maxMagnitude);
             MaxNonHumMagnitude = (int)Math.Round(maxNonHumMagnitude);
-            SignalRatio = (int)Math.Round(100 * maxNonHumMagnitude / maxMagnitude);
             Status = Orcanode.GetStatusString(frequencyInfo.Status);
+            _totalHumMagnitude = frequencyInfo.GetTotalHumMagnitude();
+            _totalNonHumMagnitude = frequencyInfo.GetTotalNonHumMagnitude();
+            SignalRatio = (int)Math.Round(100 * _totalNonHumMagnitude / _totalHumMagnitude);
         }
 
         private async Task UpdateNodeFrequencyDataAsync()

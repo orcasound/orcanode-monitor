@@ -71,6 +71,7 @@ namespace Test
         [TestMethod]
         public async Task TestNormalSample()
         {
+            await TestSampleAsync("normal\\live4118.ts", OrcanodeOnlineStatus.Online);
             await TestSampleAsync("normal\\live3368.ts", OrcanodeOnlineStatus.Online);
 
             await TestSampleAsync("normal\\live3504.ts", OrcanodeOnlineStatus.Online);

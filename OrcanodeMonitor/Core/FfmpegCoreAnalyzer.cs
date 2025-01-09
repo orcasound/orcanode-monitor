@@ -99,8 +99,8 @@ namespace OrcanodeMonitor.Core
 
         // Minimum ratio of magnitude outside the hum range to magnitude
         // within the hum range.  So far the max in a known-unintelligible
-        // sample is 21% and the min in a known-good sample is 29%.
-        const double _defaultMinSignalPercent = 25;
+        // sample is 53% and the min in a known-good sample is 208%.
+        const double _defaultMinSignalPercent = 150;
         private static double MinSignalRatio
         {
             get
@@ -159,6 +159,50 @@ namespace OrcanodeMonitor.Core
             return maxNonHumMagnitude;
         }
 
+        /// <summary>
+        /// Find the total magnitude outside the audio hum range.
+        /// </summary>
+        /// <returns>Magnitude</returns>
+        public double GetTotalNonHumMagnitude()
+        {
+            double totalNonHumMagnitude = 0;
+            foreach (var pair in FrequencyMagnitudes)
+            {
+                double frequency = pair.Key;
+                double magnitude = pair.Value;
+                if (!IsHumFrequency(frequency))
+                {
+                    if (magnitude > MinNoiseMagnitude)
+                    {
+                        totalNonHumMagnitude += magnitude;
+                    }
+                }
+            }
+            return totalNonHumMagnitude;
+        }
+
+        /// <summary>
+        /// Find the total magnitude of the audio hum range.
+        /// </summary>
+        /// <returns>Magnitude</returns>
+        public double GetTotalHumMagnitude()
+        {
+            double totalHumMagnitude = 0;
+            foreach (var pair in FrequencyMagnitudes)
+            {
+                double frequency = pair.Key;
+                double magnitude = pair.Value;
+                if (IsHumFrequency(frequency))
+                {
+                    if (magnitude > MinNoiseMagnitude)
+                    {
+                        totalHumMagnitude += magnitude;
+                    }
+                }
+            }
+            return totalHumMagnitude;
+        }
+
         private OrcanodeOnlineStatus GetStatus(OrcanodeOnlineStatus oldStatus)
         {
             double max = MaxMagnitude;
@@ -174,10 +218,16 @@ namespace OrcanodeMonitor.Core
                 return oldStatus;
             }
 
-            // Find the maximum magnitude outside the audio hum range.
-            double maxNonHumMagnitude = GetMaxNonHumMagnitude();
+            // Find the total magnitude outside the audio hum range.
+            if (GetMaxNonHumMagnitude() < MinNoiseMagnitude)
+            {
+                // Just silence outside the hum range, no signal.
+                return OrcanodeOnlineStatus.Unintelligible;
+            }
 
-            if (maxNonHumMagnitude < MinNoiseMagnitude || maxNonHumMagnitude / max < MinSignalRatio)
+            double totalNonHumMagnitude = GetTotalNonHumMagnitude();
+            double totalHumMagnitude = GetTotalHumMagnitude();
+            if (totalNonHumMagnitude / totalHumMagnitude < MinSignalRatio)
             {
                 // Essentially just silence outside the hum range, no signal.
                 return OrcanodeOnlineStatus.Unintelligible;
