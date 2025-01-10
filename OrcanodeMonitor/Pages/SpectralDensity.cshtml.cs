@@ -45,6 +45,7 @@ namespace OrcanodeMonitor.Pages
             Status = string.Empty;
             _labels = new List<string>();
             _maxBucketMagnitude = new List<double>();
+            LastModified = string.Empty;
         }
 
         private void UpdateFrequencyInfo(FrequencyInfo frequencyInfo)
