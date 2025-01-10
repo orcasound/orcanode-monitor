@@ -31,27 +31,6 @@ namespace OrcanodeMonitor.Pages
         public string Id => _node?.ID ?? string.Empty;
         public string NodeName => _node?.DisplayName ?? "Unknown";
 
-        [BindProperty]
-        public string TimePeriod { get; set; } = "week"; // Default to 'week'
-        [BindProperty]
-        public string EventType { get; set; } = OrcanodeEventTypes.All; // Default to 'all'
-
-        private DateTime SinceTime
-        {
-            get
-            {
-                if (TimePeriod == "week")
-                {
-                    return DateTime.UtcNow.AddDays(-7);
-                }
-                if (TimePeriod == "month")
-                {
-                    return DateTime.UtcNow.AddMonths(-1);
-                }
-                return DateTime.MinValue;
-            }
-        }
-
         private List<OrcanodeEvent> _events;
         public List<OrcanodeEvent> RecentEvents => _events;
         public int GetUptimePercentage(string type, string timeRange)
@@ -112,24 +91,19 @@ namespace OrcanodeMonitor.Pages
 
         private void FetchEvents(ILogger logger)
         {
-            _events = Fetcher.GetRecentEventsForNode(_databaseContext, Id, SinceTime, logger)
-                .Where(e => e.Type == EventType || EventType == OrcanodeEventTypes.All)
+            _events = Fetcher.GetRecentEventsForNode(_databaseContext, Id, DateTime.MinValue, logger)
                 .ToList() ?? new List<OrcanodeEvent>();
 
-            var allEvents = Fetcher.GetRecentEventsForNode(_databaseContext, Id, DateTime.MinValue, logger)
-                .Where(e => e.Type == EventType || EventType == OrcanodeEventTypes.All)
-                .ToList() ?? new List<OrcanodeEvent>();
-
-            var dataplicityEvents = allEvents.Where(e => e.Type == OrcanodeEventTypes.DataplicityConnection).ToList();
-            var hydrophoneStreamEvents = allEvents.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
-            var mezmoEvents = allEvents.Where(e => e.Type == OrcanodeEventTypes.MezmoLogging).ToList();
+            var dataplicityEvents = _events.Where(e => e.Type == OrcanodeEventTypes.DataplicityConnection).ToList();
+            var hydrophoneStreamEvents = _events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
+            var mezmoEvents = _events.Where(e => e.Type == OrcanodeEventTypes.MezmoLogging).ToList();
 
             JsonDataplicityData = JsonSerializer.Serialize(dataplicityEvents.Select(e => new { Timestamp = e.DateTimeUtc, StateValue = StatusStringToInt(e.Value) }));
             JsonMezmoData = JsonSerializer.Serialize(mezmoEvents.Select(e => new { Timestamp = e.DateTimeUtc, StateValue = StatusStringToInt(e.Value) }));
             JsonHydrophoneStreamData = JsonSerializer.Serialize(hydrophoneStreamEvents.Select(e => new { Timestamp = e.DateTimeUtc, StateValue = StatusStringToInt(e.Value) }));
         }
 
-        public async Task OnGetAsync(string id)
+        public void OnGet(string id)
         {
             _node = _databaseContext.Orcanodes.Where(n => n.ID == id).First();
             FetchEvents(_logger);
