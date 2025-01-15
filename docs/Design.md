@@ -113,7 +113,7 @@ The following state will be stored per orcanode:
 
 **MEZMO_LOG_SECONDS**: The number of seconds of Mezmo logs to check for activity. Default: 60
 
-**ORCASOUND_MIN_INTELLIGIBLE_SIGNAL_PERCENT**: The minimum percentage of total magnitude across all frequencies outside the hum range vs magnitude in hum range (multiples of 60 Hz), needed to determine that an audio stream is intelligible. Default: 150
+**ORCASOUND_MIN_INTELLIGIBLE_SIGNAL_PERCENT**: The minimum percentage of total magnitude across all frequencies outside the hum range vs magnitude in hum range (multiples of 60 Hz), needed to determine that an audio stream is intelligible. Default: 100
 
 **ORCASOUND_MAX_SILENCE_MAGNITUDE**: The maximum magnitude at which a stream stream might still be considered unintelligible due to silence. Default: 20
 
