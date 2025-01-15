@@ -14,6 +14,109 @@
     </a>
     <p></p>
 
+    <!-- Include Chart.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+
+    <!-- Canvas for Chart.js -->
+    <canvas id="uptimeChart" width="400" height="100"></canvas>
+    <script>
+        var ctx = document.getElementById('uptimeChart').getContext('2d');
+        var dataplicityData = @Html.Raw(Model.JsonDataplicityData);
+        var mezmoData = @Html.Raw(Model.JsonMezmoData);
+        var hydrophoneStreamData = @Html.Raw(Model.JsonHydrophoneStreamData);
+        var statusLabels = {
+            0: 'Unconfigured',
+            0.9: 'Down',
+            0.95: 'Down',
+            1: 'Down',
+            2: 'Unintelligible',
+            2.9: 'Up',
+            2.95: 'Up',
+            3: 'Up'
+        };
+
+        var myLineChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: hydrophoneStreamData.map(e => new Date(e.Timestamp)),
+                datasets: [
+                    {
+                        label: 'Dataplicity',
+                        data: dataplicityData.map(e => e.StateValue == 0 ? 0 : e.StateValue - 0.1),
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        stepped: 'before'
+                    },
+                    {
+                        label: 'Mezmo',
+                        data: mezmoData.map(e => e.StateValue == 0 ? 0 : e.StateValue - 0.05),
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(0, 255, 0, 1)',
+                        borderWidth: 1,
+                        stepped: 'before'
+                    },
+                    {
+                        label: 'Audio Stream',
+                        data: hydrophoneStreamData.map(e => e.StateValue),
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1,
+                        stepped: 'before'
+                    }
+                ]
+            },
+            options: {
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            tooltipFormat: 'MMM d, yyyy', // Format for the tooltip
+                            displayFormats: {
+                                minute: 'HH:mm',
+                                hour: 'MMM d, HH:mm',
+                                day: 'MMM d',
+                                week: 'MMM d',
+                                month: 'MMM yyyy',
+                                quarter: 'MMM yyyy',
+                                year: 'yyyy'
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'State'
+                        },
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) {
+                                return statusLabels[value] || value;
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                var value = context.raw;
+                                return statusLabels[value] || value;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+
     <div>
         Uptime percentage:
         <span id="uptime-all-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("all", "pastWeek")%</span>
@@ -24,6 +127,10 @@
         <span id="uptime-hydrophoneStream-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("hydrophoneStream", "pastMonth")%</span>
         <span id="uptime-dataplicityConnection-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("dataplicityConnection", "pastMonth")%</span>
         <span id="uptime-mezmoLogging-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("mezmoLogging", "pastMonth")%</span>
+        <span id="uptime-all-all" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("all", "all")%</span>
+        <span id="uptime-hydrophoneStream-all" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("hydrophoneStream", "all")%</span>
+        <span id="uptime-dataplicityConnection-all" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("dataplicityConnection", "all")%</span>
+        <span id="uptime-mezmoLogging-all" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("mezmoLogging", "all")%</span>
         <p></p>
     </div>
 
@@ -32,6 +139,7 @@
         Filter by Time Range:
         <button id="btn-timeRange-pastWeek" class="btn unselected" onclick="updateFilter('timeRange', 'pastWeek')">Past Week</button>
         <button id="btn-timeRange-pastMonth" class="btn selected" onclick="updateFilter('timeRange', 'pastMonth')">Past Month</button>
+        <button id="btn-timeRange-all" class="btn unselected" onclick="updateFilter('timeRange', 'all')">All</button>
         <p></p>
     </div>
 
@@ -90,6 +198,8 @@
             timeRange: 'pastMonth',
             type: 'all' };
 
+        updateFilter('default', 'default');
+
         function updateFilter(filterType, filterValue) {
             // Update time range filter.
             if (filterType == 'timeRange') {
@@ -132,7 +242,7 @@
             // Loop through each row.
             rows.forEach(function(row) {
                 // Check if the row matches the selected time range and type
-                var matchesTimeRange = (currentFilters.timeRange === 'pastMonth' || row.classList.contains(currentFilters.timeRange));
+                var matchesTimeRange = (currentFilters.timeRange === 'all' || row.classList.contains(currentFilters.timeRange));
                 var matchesType = (currentFilters.type === 'all' || row.classList.contains(currentFilters.type));
                 
                 if (matchesTimeRange && matchesType) {

@@ -81,14 +81,14 @@ namespace OrcanodeMonitor.Models
             Url = string.Empty;
         }
 
-        public OrcanodeEvent(Orcanode node, string type, string value, DateTime timestamp, string? url)
+        public OrcanodeEvent(Orcanode node, string type, string value, DateTime timestampUtc, string? url)
         {
             Slug = node.OrcasoundSlug;
             Type = type;
             Value = value;
-            DateTimeUtc = timestamp;
+            DateTimeUtc = timestampUtc;
             OrcanodeId = node.ID;
-            Year = timestamp.Year;
+            Year = timestampUtc.Year;
             ID = Guid.NewGuid().ToString();
             Url = url ?? string.Empty;
         }
