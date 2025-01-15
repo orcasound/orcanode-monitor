@@ -99,8 +99,8 @@ namespace OrcanodeMonitor.Core
 
         // Minimum ratio of magnitude outside the hum range to magnitude
         // within the hum range.  So far the max in a known-unintelligible
-        // sample is 53% and the min in a known-good sample is 208%.
-        const double _defaultMinSignalPercent = 150;
+        // sample is 53% and the min in a known-good sample is 114%.
+        const double _defaultMinSignalPercent = 100;
         private static double MinSignalRatio
         {
             get
