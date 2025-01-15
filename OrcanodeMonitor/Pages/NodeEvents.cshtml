@@ -19,7 +19,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 
     <!-- Canvas for Chart.js -->
-    <canvas id="uptimeChart" width="400" height="200"></canvas>
+    <canvas id="uptimeChart" width="400" height="100"></canvas>
     <script>
         var ctx = document.getElementById('uptimeChart').getContext('2d');
         var dataplicityData = @Html.Raw(Model.JsonDataplicityData);
@@ -27,8 +27,12 @@
         var hydrophoneStreamData = @Html.Raw(Model.JsonHydrophoneStreamData);
         var statusLabels = {
             0: 'Unconfigured',
+            0.9: 'Down',
+            0.95: 'Down',
             1: 'Down',
             2: 'Unintelligible',
+            2.9: 'Up',
+            2.95: 'Up',
             3: 'Up'
         };
 
@@ -39,19 +43,19 @@
                 datasets: [
                     {
                         label: 'Dataplicity',
-                        data: dataplicityData.map(e => e.StateValue),
+                        data: dataplicityData.map(e => e.StateValue == 0 ? 0 : e.StateValue - 0.1),
                         backgroundColor: 'rgba(255, 99, 132, 0.2)',
                         borderColor: 'rgba(255, 99, 132, 1)',
                         borderWidth: 1,
-                        stepped: 'after'
+                        stepped: 'before'
                     },
                     {
                         label: 'Mezmo',
-                        data: mezmoData.map(e => e.StateValue),
+                        data: mezmoData.map(e => e.StateValue == 0 ? 0 : e.StateValue - 0.05),
                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         borderColor: 'rgba(0, 255, 0, 1)',
                         borderWidth: 1,
-                        stepped: 'after'
+                        stepped: 'before'
                     },
                     {
                         label: 'Audio Stream',
@@ -59,7 +63,7 @@
                         backgroundColor: 'rgba(54, 162, 235, 0.2)',
                         borderColor: 'rgba(54, 162, 235, 1)',
                         borderWidth: 1,
-                        stepped: 'after'
+                        stepped: 'before'
                     }
                 ]
             },

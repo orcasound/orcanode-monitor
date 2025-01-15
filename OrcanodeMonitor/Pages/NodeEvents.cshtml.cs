@@ -89,14 +89,50 @@ namespace OrcanodeMonitor.Pages
         public string JsonMezmoData { get; set; }
         public string JsonHydrophoneStreamData { get; set; }
 
+        private void AddCurrentEvent(List<OrcanodeEvent> events, DateTime origin, DateTime now)
+        {
+            if (!events.Any())
+            {
+                return; // Nothing to do.
+            }
+
+            OrcanodeEvent last = events.Last();
+            if (last.Orcanode == null)
+            {
+                return;
+            }
+
+            var current = new OrcanodeEvent(last.Orcanode, last.Type, last.Value, now, null);
+            events.Add(current);
+
+            OrcanodeEvent first = events.First();
+            if (first.DateTimeUtc == origin)
+            {
+                return;
+            }
+            var original = new OrcanodeEvent(last.Orcanode, last.Type, Orcanode.GetStatusString(OrcanodeOnlineStatus.Absent), origin, null);
+            events.Insert(0, original);
+        }
+
         private void FetchEvents(ILogger logger)
         {
             _events = Fetcher.GetRecentEventsForNode(_databaseContext, Id, DateTime.MinValue, logger)
                 .ToList() ?? new List<OrcanodeEvent>();
 
-            var dataplicityEvents = _events.Where(e => e.Type == OrcanodeEventTypes.DataplicityConnection).ToList();
-            var hydrophoneStreamEvents = _events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
-            var mezmoEvents = _events.Where(e => e.Type == OrcanodeEventTypes.MezmoLogging).ToList();
+            DateTime now = DateTime.UtcNow;
+            if (!_events.Any())
+            {
+                return; // Nothing to do.
+            }
+            OrcanodeEvent firstEvent = _events.OrderBy(e => e.DateTimeUtc).First();
+            DateTime firstTimeUtc = firstEvent.DateTimeUtc;
+
+            List<OrcanodeEvent> dataplicityEvents = _events.Where(e => e.Type == OrcanodeEventTypes.DataplicityConnection).OrderBy(e => e.DateTimeUtc).ToList();
+            AddCurrentEvent(dataplicityEvents, firstTimeUtc, now);
+            List<OrcanodeEvent> hydrophoneStreamEvents = _events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).OrderBy(e => e.DateTimeUtc).ToList();
+            AddCurrentEvent(hydrophoneStreamEvents, firstTimeUtc, now);
+            List<OrcanodeEvent> mezmoEvents = _events.Where(e => e.Type == OrcanodeEventTypes.MezmoLogging).OrderBy(e => e.DateTimeUtc).ToList();
+            AddCurrentEvent(mezmoEvents, firstTimeUtc, now);
 
             JsonDataplicityData = JsonSerializer.Serialize(dataplicityEvents.Select(e => new { Timestamp = e.DateTimeUtc, StateValue = StatusStringToInt(e.Value) }));
             JsonMezmoData = JsonSerializer.Serialize(mezmoEvents.Select(e => new { Timestamp = e.DateTimeUtc, StateValue = StatusStringToInt(e.Value) }));
