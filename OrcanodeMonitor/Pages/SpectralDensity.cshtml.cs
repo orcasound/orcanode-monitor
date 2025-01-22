@@ -26,6 +26,7 @@ namespace OrcanodeMonitor.Pages
         public List<double> MaxBucketMagnitude => _maxBucketMagnitude;
         public string AudioUrl => _event?.Url ?? "Unknown";
         public int MaxMagnitude { get; private set; }
+        public int ChannelCount { get; private set; }
         public int TotalNonHumMagnitude => (int)Math.Round(_totalNonHumMagnitude);
         public int TotalHumMagnitude => (int)Math.Round(_totalHumMagnitude);
         private double _totalHumMagnitude;
@@ -48,7 +49,7 @@ namespace OrcanodeMonitor.Pages
             LastModified = string.Empty;
         }
 
-        private void UpdateFrequencyInfo(FrequencyInfo frequencyInfo)
+        private void UpdateFrequencyInfo(FrequencyInfo frequencyInfo, int? onlyChannel)
         {
             const int MaxFrequency = 24000;
             const int PointCount = 1000;
@@ -86,10 +87,41 @@ namespace OrcanodeMonitor.Pages
             double maxNonHumMagnitude = frequencyInfo.GetMaxNonHumMagnitude();
             MaxMagnitude = (int)Math.Round(maxMagnitude);
             MaxNonHumMagnitude = (int)Math.Round(maxNonHumMagnitude);
+            ChannelCount = frequencyInfo.ChannelCount;
             Status = Orcanode.GetStatusString(frequencyInfo.Status);
             _totalHumMagnitude = frequencyInfo.GetTotalHumMagnitude();
             _totalNonHumMagnitude = frequencyInfo.GetTotalNonHumMagnitude();
             SignalRatio = (int)Math.Round(100 * _totalNonHumMagnitude / _totalHumMagnitude);
+        }
+
+        public int GetMaxMagnitude(int channel)
+        {
+            return 0; // TODO
+        }
+
+        public int GetMaxNonHumMagnitude(int channel)
+        {
+            return 0; // TODO
+        }
+
+        public int GetTotalHumMagnitude(int channel)
+        {
+            return 0; // TODO
+        }
+
+        public int GetTotalNonHumMagnitude(int channel)
+        {
+            return 0; // TODO
+        }
+
+        public int GetSignalRatio(int channel)
+        {
+            return 0; // TODO
+        }
+
+        public string GetStatus(int channel)
+        {
+            return string.Empty; // TODO
         }
 
         private async Task UpdateNodeFrequencyDataAsync()
@@ -104,7 +136,7 @@ namespace OrcanodeMonitor.Pages
                 FrequencyInfo? frequencyInfo = await Fetcher.GetLatestAudioSampleAsync(_node, result.UnixTimestampString, false, _logger);
                 if (frequencyInfo != null)
                 {
-                    UpdateFrequencyInfo(frequencyInfo);
+                    UpdateFrequencyInfo(frequencyInfo, null);
                 }
             }
         }
@@ -128,7 +160,7 @@ namespace OrcanodeMonitor.Pages
             FrequencyInfo? frequencyInfo = await Fetcher.GetExactAudioSampleAsync(_node, uri, _logger);
             if (frequencyInfo != null)
             {
-                UpdateFrequencyInfo(frequencyInfo);
+                UpdateFrequencyInfo(frequencyInfo, null);
             }
         }
 

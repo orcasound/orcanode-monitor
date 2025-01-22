@@ -74,12 +74,33 @@
 
     <div>
         <h2>Statistics</h2>
-        Max magnitude: @Model.MaxMagnitude<br />
-        Max magnitude outside hum range: @Model.MaxNonHumMagnitude<br />
-        Total magnitude outside hum range: @Model.TotalNonHumMagnitude<br />
-        Total magnitude of hum range: @Model.TotalHumMagnitude<br />
-        Signal ratio: @Model.SignalRatio%<br />
-        Status: @Model.Status<br />
+        # Channels: @Model.ChannelCount<br />
+
+        @if (Model.ChannelCount > 1)
+        {
+            <h3>Summary</h3>
+            <p>
+                Max magnitude: @Model.MaxMagnitude <br />
+                Max magnitude outside hum range: @Model.MaxNonHumMagnitude <br />
+                Total magnitude outside hum range: @Model.TotalNonHumMagnitude <br />
+                Total magnitude of hum range: @Model.TotalHumMagnitude <br />
+                Signal ratio: @Model.SignalRatio %<br />
+                Status: @Model.Status <br />
+            </p>
+        }
+        @for (int i = 0; i < Model.ChannelCount; i++)
+        {
+            <p>Channel @i:</p>
+            <p>
+                Max magnitude: @Model.GetMaxMagnitude(i) <br />
+                Max magnitude outside hum range: @Model.GetMaxNonHumMagnitude(i) <br />
+                Total magnitude outside hum range: @Model.GetTotalNonHumMagnitude(i) <br />
+                Total magnitude of hum range: @Model.GetTotalHumMagnitude(i) <br />
+                Signal ratio: @Model.GetSignalRatio(i) %<br />
+                Status: @Model.GetStatus(i) <br />
+            </p>
+        }
+
         <!-- Audio Button and Element -->
         <button id="playButton" onclick="playAudio('@Model.AudioUrl')">Play</button>
         <button id="stopButton" onclick="stopAudio()" style="display: none;">Stop</button>
