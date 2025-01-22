@@ -63,7 +63,7 @@ namespace OrcanodeMonitor.Pages
             double b = Math.Pow(MaxFrequency, 1.0 / PointCount);
             double logb = Math.Log(b);
 
-            double maxMagnitude = _frequencyInfo.MaxMagnitude;
+            double maxMagnitude = _frequencyInfo.GetMaxMagnitude();
             var maxBucketMagnitude = new double[PointCount];
             var maxBucketFrequency = new int[PointCount];
 
@@ -96,7 +96,7 @@ namespace OrcanodeMonitor.Pages
             Status = Orcanode.GetStatusString(_frequencyInfo.Status);
             _totalHumMagnitude = _frequencyInfo.GetTotalHumMagnitude();
             _totalNonHumMagnitude = _frequencyInfo.GetTotalNonHumMagnitude();
-            SignalRatio = (int)Math.Round(100 * _totalNonHumMagnitude / _totalHumMagnitude);
+            SignalRatio = (int)Math.Round(100 * _frequencyInfo.GetSignalRatio());
         }
 
         public int GetMaxMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetMaxMagnitude(channel) ?? 0);
@@ -107,9 +107,9 @@ namespace OrcanodeMonitor.Pages
 
         public int GetTotalNonHumMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetTotalNonHumMagnitude(channel) ?? 0);
 
-        public int GetSignalRatio(int channel) => (int)Math.Round(_frequencyInfo?.GetSignalRatio(channel) ?? 0);
+        public int GetSignalRatio(int channel) => (int)Math.Round(100 * _frequencyInfo?.GetSignalRatio(channel) ?? 0);
 
-        public string GetStatus(int channel) => _frequencyInfo?.GetStatus(channel) ?? string.Empty;
+        public string GetStatus(int channel) => Orcanode.GetStatusString(_frequencyInfo?.StatusForChannel[channel] ?? OrcanodeOnlineStatus.Absent);
 
         private async Task UpdateNodeFrequencyDataAsync()
         {

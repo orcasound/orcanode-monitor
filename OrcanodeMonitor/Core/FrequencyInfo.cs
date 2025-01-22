@@ -12,21 +12,35 @@ namespace OrcanodeMonitor.Core
 {
     public class FrequencyInfo
     {
+        /// <summary>
+        /// Given an audio clip, compute frequency info for it.
+        /// </summary>
+        /// <param name="data"></param>
+        /// <param name="sampleRate"></param>
+        /// <param name="channels"></param>
+        /// <param name="oldStatus"></param>
+        /// <param name="onlyChannel"></param> // TODO: delete
         public FrequencyInfo(float[] data, int sampleRate, int channels, OrcanodeOnlineStatus oldStatus, int? onlyChannel)
         {
             ChannelCount = channels;
-            FrequencyMagnitudes = ComputeFrequencyMagnitudes(data, sampleRate, channels);
+            FrequencyMagnitudesForChannel = new Dictionary<double, double>[channels];
+            StatusForChannel = new OrcanodeOnlineStatus[channels + 1];
+            FrequencyMagnitudes = new Dictionary<double, double>();
+            ComputeFrequencyMagnitudes(data, sampleRate, channels);
             Status = GetStatus(oldStatus);
+            for (int i = 0; i < channels; i++)
+            {
+                StatusForChannel[i] = GetStatus(oldStatus, i);
+            }
         }
 
-        private static Dictionary<double, double> ComputeFrequencyMagnitudes(float[] data, int sampleRate, int channels)
+        private void ComputeFrequencyMagnitudes(float[] data, int sampleRate, int channelCount)
         {
-            var result = new Dictionary<double, double>();
-            int n = data.Length / channels;
+            int n = data.Length / channelCount;
 
             // Create an array of complex data for each channel.
-            Complex[][] complexData = new Complex[channels][];
-            for (int ch = 0; ch < channels; ch++)
+            Complex[][] complexData = new Complex[channelCount][];
+            for (int ch = 0; ch < channelCount; ch++)
             {
                 complexData[ch] = new Complex[n];
             }
@@ -34,44 +48,40 @@ namespace OrcanodeMonitor.Core
             // Populate the complex arrays with channel data.
             for (int i = 0; i < n; i++)
             {
-                for (int ch = 0; ch < channels; ch++)
+                for (int ch = 0; ch < channelCount; ch++)
                 {
-                    complexData[ch][i] = new Complex(data[i * channels + ch], 0);
+                    complexData[ch][i] = new Complex(data[i * channelCount + ch], 0);
                 }
             }
 
             // Perform Fourier transform for each channel.
-            var channelResults = new List<Dictionary<double, double>>();
-            for (int ch = 0; ch < channels; ch++)
+            for (int ch = 0; ch < channelCount; ch++)
             {
                 Fourier.Forward(complexData[ch], FourierOptions.Matlab);
-                var channelResult = new Dictionary<double, double>();
+                FrequencyMagnitudesForChannel[ch] = new Dictionary<double, double>();
                 for (int i = 0; i < n / 2; i++)
                 {
                     double magnitude = complexData[ch][i].Magnitude;
                     double frequency = (((double)i) * sampleRate) / n;
-                    channelResult[frequency] = magnitude;
+                    FrequencyMagnitudesForChannel[ch][frequency] = magnitude;
                 }
-                channelResults.Add(channelResult);
             }
 
             // Combine results from all channels.
-            foreach (var channelResult in channelResults)
+            foreach (var channelResult in FrequencyMagnitudesForChannel)
             {
                 foreach (var kvp in channelResult)
                 {
-                    if (!result.ContainsKey(kvp.Key))
+                    if (!FrequencyMagnitudes.ContainsKey(kvp.Key))
                     {
-                        result[kvp.Key] = 0;
+                        FrequencyMagnitudes[kvp.Key] = 0;
                     }
-                    if (result[kvp.Key] < kvp.Value)
+                    if (FrequencyMagnitudes[kvp.Key] < kvp.Value)
                     {
-                        result[kvp.Key] = kvp.Value;
+                        FrequencyMagnitudes[kvp.Key] = kvp.Value;
                     }
                 }
             }
-
-            return result;
         }
 
         // We consider anything above this average magnitude as not silence.
@@ -112,8 +122,12 @@ namespace OrcanodeMonitor.Core
             }
         }
 
+        // Data members.
+
         public Dictionary<double, double> FrequencyMagnitudes { get; }
+        public Dictionary<double, double>[] FrequencyMagnitudesForChannel { get; }
         public OrcanodeOnlineStatus Status { get; }
+        public OrcanodeOnlineStatus[] StatusForChannel { get; }
         public int ChannelCount { get; private set; } = 0;
 
         /// <summary>
@@ -121,15 +135,13 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         public string AudioSampleUrl { get; set; } = string.Empty;
 
-        public double MaxMagnitude => FrequencyMagnitudes.Values.Max();
+        private Dictionary<double, double> GetFrequencyMagnitudes(int? channel)
+        {
+            return (channel.HasValue) ? FrequencyMagnitudesForChannel[channel.Value] : FrequencyMagnitudes;
+        }
 
-        // Channel-specific methods.
-        public double GetMaxMagnitude(int channel) => 0; // TODO
-        public double GetMaxNonHumMagnitude(int channel) => 0; // TODO
-        public double GetTotalHumMagnitude(int channel) => 0; // TODO
-        public double GetTotalNonHumMagnitude(int channel) => 0; // TODO
-        public double GetSignalRatio(int channel) => 0; // TODO
-        public string GetStatus(int channel) => string.Empty; // TODO
+        public double GetMaxMagnitude(int? channel = null) => GetFrequencyMagnitudes(channel).Values.Max();
+        public double GetSignalRatio(int? channel = null) => GetTotalNonHumMagnitude(channel) / GetTotalHumMagnitude(channel);
 
         // Microphone audio hum typically falls within the 50 Hz or 60 Hz
         // range. This hum is often caused by electrical interference from
@@ -148,13 +160,13 @@ namespace OrcanodeMonitor.Core
         public static bool IsHumFrequency(double frequency) => IsHumFrequency(frequency, HumFrequency1) || IsHumFrequency(frequency, HumFrequency2);
 
         /// <summary>
-        /// Find the maximum magnitude outside the audio hum range.
+        /// Find the maximum magnitude outside the audio hum range among a set of frequency magnitudes.
         /// </summary>
         /// <returns>Magnitude</returns>
-        public double GetMaxNonHumMagnitude()
+        private double GetMaxNonHumMagnitude(Dictionary<double, double> frequencyMagnitudes)
         {
             double maxNonHumMagnitude = 0;
-            foreach (var pair in FrequencyMagnitudes)
+            foreach (var pair in frequencyMagnitudes)
             {
                 double frequency = pair.Key;
                 double magnitude = pair.Value;
@@ -170,13 +182,20 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Find the total magnitude outside the audio hum range.
+        /// Find the maximum magnitude outside the audio hum range.
+        /// </summary>
+        /// <param name="channel">Channel, or null for all</param>
+        /// <returns>Magnitude</returns>
+        public double GetMaxNonHumMagnitude(int? channel = null) => GetMaxNonHumMagnitude(GetFrequencyMagnitudes(channel));
+
+        /// <summary>
+        /// Find the total magnitude outside the audio hum range among a given set of frequency magnitudes.
         /// </summary>
         /// <returns>Magnitude</returns>
-        public double GetTotalNonHumMagnitude()
+        private double GetTotalNonHumMagnitude(Dictionary<double, double> frequencyMagnitudes)
         {
             double totalNonHumMagnitude = 0;
-            foreach (var pair in FrequencyMagnitudes)
+            foreach (var pair in frequencyMagnitudes)
             {
                 double frequency = pair.Key;
                 double magnitude = pair.Value;
@@ -192,13 +211,20 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Find the total magnitude of the audio hum range.
+        /// Find the total magnitude outside the audio hum range.
+        /// </summary>
+        /// <param name="channel">Channel, or null for all</param>
+        /// <returns>Magnitude</returns>
+        public double GetTotalNonHumMagnitude(int? channel = null) => GetTotalNonHumMagnitude(GetFrequencyMagnitudes(channel));
+
+        /// <summary>
+        /// Find the total magnitude of the audio hum range among a given set of frequency magnitudes.
         /// </summary>
         /// <returns>Magnitude</returns>
-        public double GetTotalHumMagnitude()
+        public double GetTotalHumMagnitude(Dictionary<double, double> frequencyMagnitudes)
         {
             double totalHumMagnitude = 0;
-            foreach (var pair in FrequencyMagnitudes)
+            foreach (var pair in frequencyMagnitudes)
             {
                 double frequency = pair.Key;
                 double magnitude = pair.Value;
@@ -213,9 +239,16 @@ namespace OrcanodeMonitor.Core
             return totalHumMagnitude;
         }
 
-        private OrcanodeOnlineStatus GetStatus(OrcanodeOnlineStatus oldStatus)
+        /// <summary>
+        /// Find the total magnitude of the audio hum range.
+        /// </summary>
+        /// <param name="channel">Channel, or null for all</param>
+        /// <returns>Magnitude</returns>
+        public double GetTotalHumMagnitude(int? channel = null) => GetTotalHumMagnitude(GetFrequencyMagnitudes(channel));
+
+        private OrcanodeOnlineStatus GetStatus(OrcanodeOnlineStatus oldStatus, int? channel = null)
         {
-            double max = MaxMagnitude;
+            double max = GetMaxMagnitude(channel);
             if (max < MinNoiseMagnitude)
             {
                 // File contains mostly silence across all frequencies.
@@ -229,14 +262,14 @@ namespace OrcanodeMonitor.Core
             }
 
             // Find the total magnitude outside the audio hum range.
-            if (GetMaxNonHumMagnitude() < MinNoiseMagnitude)
+            if (GetMaxNonHumMagnitude(channel) < MinNoiseMagnitude)
             {
                 // Just silence outside the hum range, no signal.
                 return OrcanodeOnlineStatus.Unintelligible;
             }
 
-            double totalNonHumMagnitude = GetTotalNonHumMagnitude();
-            double totalHumMagnitude = GetTotalHumMagnitude();
+            double totalNonHumMagnitude = GetTotalNonHumMagnitude(channel);
+            double totalHumMagnitude = GetTotalHumMagnitude(channel);
             if (totalNonHumMagnitude / totalHumMagnitude < MinSignalRatio)
             {
                 // Essentially just silence outside the hum range, no signal.
