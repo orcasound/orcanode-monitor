@@ -19,8 +19,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="sampleRate"></param>
         /// <param name="channels"></param>
         /// <param name="oldStatus"></param>
-        /// <param name="onlyChannel"></param> // TODO: delete
-        public FrequencyInfo(float[] data, int sampleRate, int channels, OrcanodeOnlineStatus oldStatus, int? onlyChannel)
+        public FrequencyInfo(float[] data, int sampleRate, int channels, OrcanodeOnlineStatus oldStatus)
         {
             ChannelCount = channels;
             FrequencyMagnitudesForChannel = new Dictionary<double, double>[channels];

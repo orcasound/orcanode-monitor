@@ -19,12 +19,11 @@ namespace OrcanodeMonitor.Core
         /// <param name="sampleRate">Sample rate</param>
         /// <param name="channels">Number of channels</param>
         /// <param name="oldStatus">Old status</param>
-        /// <param name="onlyChannel">Channel number, or null for all</param>
         /// <returns>Frequency info</returns>
-        private static FrequencyInfo AnalyzeFrequencies(float[] data, int sampleRate, int channels, OrcanodeOnlineStatus oldStatus, int? onlyChannel)
+        private static FrequencyInfo AnalyzeFrequencies(float[] data, int sampleRate, int channels, OrcanodeOnlineStatus oldStatus)
         {
             int n = data.Length;
-            FrequencyInfo frequencyInfo = new FrequencyInfo(data, sampleRate, channels, oldStatus, onlyChannel);
+            FrequencyInfo frequencyInfo = new FrequencyInfo(data, sampleRate, channels, oldStatus);
             return frequencyInfo;
         }
 
@@ -33,9 +32,8 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="args">FFMpeg arguments</param>
         /// <param name="oldStatus">Previous online status</param>
-        /// <param name="onlyChannel">Channel number, or null for all</param>
         /// <returns>Status of the most recent audio samples</returns>
-        private static async Task<FrequencyInfo> AnalyzeAsync(FFMpegArguments args, OrcanodeOnlineStatus oldStatus, int? onlyChannel)
+        private static async Task<FrequencyInfo> AnalyzeAsync(FFMpegArguments args, OrcanodeOnlineStatus oldStatus)
         {
             using (var outputStream = new MemoryStream())
             {
@@ -76,7 +74,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 // Perform FFT and analyze frequencies.
-                var status = AnalyzeFrequencies(floatBuffer, waveFormat.SampleRate, waveFormat.Channels, oldStatus, onlyChannel);
+                var status = AnalyzeFrequencies(floatBuffer, waveFormat.SampleRate, waveFormat.Channels, oldStatus);
                 return status;
             }
         }
@@ -84,14 +82,14 @@ namespace OrcanodeMonitor.Core
         public static async Task<FrequencyInfo> AnalyzeFileAsync(string filename, OrcanodeOnlineStatus oldStatus)
         {
             var args = FFMpegArguments.FromFileInput(filename);
-            return await AnalyzeAsync(args, oldStatus, null);
+            return await AnalyzeAsync(args, oldStatus);
         }
 
         public static async Task<FrequencyInfo> AnalyzeAudioStreamAsync(Stream stream, OrcanodeOnlineStatus oldStatus)
         {
             StreamPipeSource streamPipeSource = new StreamPipeSource(stream);
             var args = FFMpegArguments.FromPipeInput(streamPipeSource);
-            return await AnalyzeAsync(args, oldStatus, null);
+            return await AnalyzeAsync(args, oldStatus);
         }
     }
 }
