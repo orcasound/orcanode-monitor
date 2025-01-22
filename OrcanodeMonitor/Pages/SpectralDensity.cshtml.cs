@@ -31,6 +31,7 @@ namespace OrcanodeMonitor.Pages
         public int TotalHumMagnitude => (int)Math.Round(_totalHumMagnitude);
         private double _totalHumMagnitude;
         private double _totalNonHumMagnitude;
+        private FrequencyInfo? _frequencyInfo = null;
         public int MaxNonHumMagnitude { get; private set; }
         public int SignalRatio { get; private set; }
         public string Status { get; private set; }
@@ -49,8 +50,12 @@ namespace OrcanodeMonitor.Pages
             LastModified = string.Empty;
         }
 
-        private void UpdateFrequencyInfo(FrequencyInfo frequencyInfo, int? onlyChannel)
+        private void UpdateFrequencyInfo(int? onlyChannel = null)
         {
+            if (_frequencyInfo == null)
+            {
+                return;
+            }
             const int MaxFrequency = 24000;
             const int PointCount = 1000;
 
@@ -58,11 +63,11 @@ namespace OrcanodeMonitor.Pages
             double b = Math.Pow(MaxFrequency, 1.0 / PointCount);
             double logb = Math.Log(b);
 
-            double maxMagnitude = frequencyInfo.MaxMagnitude;
+            double maxMagnitude = _frequencyInfo.MaxMagnitude;
             var maxBucketMagnitude = new double[PointCount];
             var maxBucketFrequency = new int[PointCount];
 
-            foreach (var pair in frequencyInfo.FrequencyMagnitudes)
+            foreach (var pair in _frequencyInfo.FrequencyMagnitudes)
             {
                 double frequency = pair.Key;
                 double magnitude = pair.Value;
@@ -84,45 +89,27 @@ namespace OrcanodeMonitor.Pages
                 }
             }
 
-            double maxNonHumMagnitude = frequencyInfo.GetMaxNonHumMagnitude();
+            double maxNonHumMagnitude = _frequencyInfo.GetMaxNonHumMagnitude();
             MaxMagnitude = (int)Math.Round(maxMagnitude);
             MaxNonHumMagnitude = (int)Math.Round(maxNonHumMagnitude);
-            ChannelCount = frequencyInfo.ChannelCount;
-            Status = Orcanode.GetStatusString(frequencyInfo.Status);
-            _totalHumMagnitude = frequencyInfo.GetTotalHumMagnitude();
-            _totalNonHumMagnitude = frequencyInfo.GetTotalNonHumMagnitude();
+            ChannelCount = _frequencyInfo.ChannelCount;
+            Status = Orcanode.GetStatusString(_frequencyInfo.Status);
+            _totalHumMagnitude = _frequencyInfo.GetTotalHumMagnitude();
+            _totalNonHumMagnitude = _frequencyInfo.GetTotalNonHumMagnitude();
             SignalRatio = (int)Math.Round(100 * _totalNonHumMagnitude / _totalHumMagnitude);
         }
 
-        public int GetMaxMagnitude(int channel)
-        {
-            return 0; // TODO
-        }
+        public int GetMaxMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetMaxMagnitude(channel) ?? 0);
 
-        public int GetMaxNonHumMagnitude(int channel)
-        {
-            return 0; // TODO
-        }
+        public int GetMaxNonHumMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetMaxNonHumMagnitude(channel) ?? 0);
 
-        public int GetTotalHumMagnitude(int channel)
-        {
-            return 0; // TODO
-        }
+        public int GetTotalHumMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetTotalHumMagnitude(channel) ?? 0);
 
-        public int GetTotalNonHumMagnitude(int channel)
-        {
-            return 0; // TODO
-        }
+        public int GetTotalNonHumMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetTotalNonHumMagnitude(channel) ?? 0);
 
-        public int GetSignalRatio(int channel)
-        {
-            return 0; // TODO
-        }
+        public int GetSignalRatio(int channel) => (int)Math.Round(_frequencyInfo?.GetSignalRatio(channel) ?? 0);
 
-        public string GetStatus(int channel)
-        {
-            return string.Empty; // TODO
-        }
+        public string GetStatus(int channel) => _frequencyInfo?.GetStatus(channel) ?? string.Empty;
 
         private async Task UpdateNodeFrequencyDataAsync()
         {
@@ -133,11 +120,8 @@ namespace OrcanodeMonitor.Pages
             TimestampResult? result = await GetLatestS3TimestampAsync(_node, false, _logger);
             if (result != null)
             {
-                FrequencyInfo? frequencyInfo = await Fetcher.GetLatestAudioSampleAsync(_node, result.UnixTimestampString, false, _logger);
-                if (frequencyInfo != null)
-                {
-                    UpdateFrequencyInfo(frequencyInfo, null);
-                }
+                _frequencyInfo = await Fetcher.GetLatestAudioSampleAsync(_node, result.UnixTimestampString, false, _logger);
+                UpdateFrequencyInfo();
             }
         }
 
@@ -157,11 +141,8 @@ namespace OrcanodeMonitor.Pages
             DateTime? lastModified = await Fetcher.GetLastModifiedAsync(uri);
             LastModified = lastModified?.ToLocalTime().ToString() ?? "Unknown";
 
-            FrequencyInfo? frequencyInfo = await Fetcher.GetExactAudioSampleAsync(_node, uri, _logger);
-            if (frequencyInfo != null)
-            {
-                UpdateFrequencyInfo(frequencyInfo, null);
-            }
+            _frequencyInfo = await Fetcher.GetExactAudioSampleAsync(_node, uri, _logger);
+            UpdateFrequencyInfo();
         }
 
         public async Task OnGetAsync(string id)
