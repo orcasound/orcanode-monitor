@@ -1,9 +1,13 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.CodeAnalysis;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
+using System.Diagnostics;
+using System.Linq.Expressions;
+using System.Text.Json;
 using static OrcanodeMonitor.Core.Fetcher;
 
 namespace OrcanodeMonitor.Pages
@@ -21,9 +25,7 @@ namespace OrcanodeMonitor.Pages
         private Orcanode? _node = null;
         public string NodeName => _node?.DisplayName ?? "Unknown";
         private List<string> _labels;
-        private List<double> _maxBucketMagnitude;
         public List<string> Labels => _labels;
-        public List<double> MaxBucketMagnitude => _maxBucketMagnitude;
         public string AudioUrl => _event?.Url ?? "Unknown";
         public int MaxMagnitude { get; private set; }
         public int ChannelCount { get; private set; }
@@ -46,16 +48,11 @@ namespace OrcanodeMonitor.Pages
             _id = string.Empty;
             Status = string.Empty;
             _labels = new List<string>();
-            _maxBucketMagnitude = new List<double>();
             LastModified = string.Empty;
         }
 
-        private void UpdateFrequencyInfo(int? onlyChannel = null)
+        private void FillInGraphPoints(List<string> labels, List<double> maxBucketMagnitudeList, int? channel = null)
         {
-            if (_frequencyInfo == null)
-            {
-                return;
-            }
             const int MaxFrequency = 24000;
             const int PointCount = 1000;
 
@@ -63,11 +60,9 @@ namespace OrcanodeMonitor.Pages
             double b = Math.Pow(MaxFrequency, 1.0 / PointCount);
             double logb = Math.Log(b);
 
-            double maxMagnitude = _frequencyInfo.GetMaxMagnitude();
             var maxBucketMagnitude = new double[PointCount];
             var maxBucketFrequency = new int[PointCount];
-
-            foreach (var pair in _frequencyInfo.FrequencyMagnitudes)
+            foreach (var pair in _frequencyInfo.GetFrequencyMagnitudes(channel))
             {
                 double frequency = pair.Key;
                 double magnitude = pair.Value;
@@ -78,26 +73,89 @@ namespace OrcanodeMonitor.Pages
                     maxBucketFrequency[bucket] = (int)Math.Round(frequency);
                 }
             }
-
-            // Fill in graph points.
             for (int i = 0; i < PointCount; i++)
             {
                 if (maxBucketMagnitude[i] > 0)
                 {
-                    _labels.Add(maxBucketFrequency[i].ToString());
-                    _maxBucketMagnitude.Add(maxBucketMagnitude[i]);
+                    labels.Add(maxBucketFrequency[i].ToString());
+                    maxBucketMagnitudeList.Add(maxBucketMagnitude[i]);
                 }
             }
+        }
 
-            double maxNonHumMagnitude = _frequencyInfo.GetMaxNonHumMagnitude();
-            MaxMagnitude = (int)Math.Round(maxMagnitude);
-            MaxNonHumMagnitude = (int)Math.Round(maxNonHumMagnitude);
+        private double GetBucketMagnitude(string label, List<string> labels, List<double> magnitudes)
+        {
+            double sum = 0;
+            for (int i = 0; i < labels.Count; i++)
+            {
+                if (labels[i] == label)
+                {
+                    sum += magnitudes[i];
+                }
+            }
+            return sum;
+        }
+
+        private void UpdateFrequencyInfo()
+        {
+            if (_frequencyInfo == null)
+            {
+                return;
+            }
+
+            // Compute graph points.
+            var summaryLabels = new List<string>();
+            var summaryMaxBucketMagnitude = new List<double>();
+            FillInGraphPoints(summaryLabels, summaryMaxBucketMagnitude);
+            var channelLabels = new List<string>[_frequencyInfo.ChannelCount];
+            var channelMaxBucketMagnitude = new List<double>[_frequencyInfo.ChannelCount];
+            for (int i = 0; i < _frequencyInfo.ChannelCount; i++)
+            {
+                channelLabels[i] = new List<string>();
+                channelMaxBucketMagnitude[i] = new List<double>();
+                FillInGraphPoints(channelLabels[i], channelMaxBucketMagnitude[i], i);
+            }
+
+            // Collect all labels.
+            var mainLabels = new HashSet<string>(summaryLabels);
+            for (int i = 0; i < _frequencyInfo.ChannelCount; i++)
+            {
+                mainLabels.UnionWith(channelLabels[i]);
+            }
+            _labels = mainLabels.ToList();
+
+            // Align data.
+            var summaryDataset = _labels.Select(label => new
+            {
+                Label = label,
+                Value = summaryLabels.Contains(label) ? GetBucketMagnitude(label, summaryLabels, summaryMaxBucketMagnitude) : (double?)null
+            }).ToList<object>();
+            var channelDatasets = new List<List<object>>();
+            for (int i = 0; i < _frequencyInfo.ChannelCount; i++)
+            {
+                var channelDataset = _labels.Select(label => new
+                {
+                    Label = label,
+                    Value = channelLabels[i].Contains(label) ? GetBucketMagnitude(label, channelLabels[i], channelMaxBucketMagnitude[i]) : (double?)null
+                }).ToList<object>();
+                channelDatasets.Add(channelDataset);
+            }
+
+            // Serialise to JSON.
+            JsonSummaryDataset = JsonSerializer.Serialize(summaryDataset);
+            JsonChannelDatasets = channelDatasets.Select(dataset => JsonSerializer.Serialize(dataset)).ToList();
+
+            MaxMagnitude = (int)Math.Round(_frequencyInfo.GetMaxMagnitude());
+            MaxNonHumMagnitude = (int)Math.Round(_frequencyInfo.GetMaxNonHumMagnitude());
             ChannelCount = _frequencyInfo.ChannelCount;
             Status = Orcanode.GetStatusString(_frequencyInfo.Status);
             _totalHumMagnitude = _frequencyInfo.GetTotalHumMagnitude();
             _totalNonHumMagnitude = _frequencyInfo.GetTotalNonHumMagnitude();
             SignalRatio = (int)Math.Round(100 * _frequencyInfo.GetSignalRatio());
         }
+
+        public string JsonSummaryDataset { get; set; }
+        public List<string> JsonChannelDatasets { get; set; }
 
         public int GetMaxMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetMaxMagnitude(channel) ?? 0);
 

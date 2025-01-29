@@ -1,9 +1,6 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using FFMpegCore;
-using FFMpegCore.Pipes;
 using MathNet.Numerics.IntegralTransforms;
-using NAudio.Wave;
 using OrcanodeMonitor.Models;
 using System.Diagnostics;
 using System.Numerics;
@@ -123,8 +120,8 @@ namespace OrcanodeMonitor.Core
 
         // Data members.
 
-        public Dictionary<double, double> FrequencyMagnitudes { get; }
-        public Dictionary<double, double>[] FrequencyMagnitudesForChannel { get; }
+        private Dictionary<double, double> FrequencyMagnitudes { get; }
+        private Dictionary<double, double>[] FrequencyMagnitudesForChannel { get; }
         public OrcanodeOnlineStatus Status { get; }
         public OrcanodeOnlineStatus[] StatusForChannel { get; }
         public int ChannelCount { get; private set; } = 0;
@@ -134,7 +131,7 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         public string AudioSampleUrl { get; set; } = string.Empty;
 
-        private Dictionary<double, double> GetFrequencyMagnitudes(int? channel)
+        public Dictionary<double, double> GetFrequencyMagnitudes(int? channel = null)
         {
             return (channel.HasValue) ? FrequencyMagnitudesForChannel[channel.Value] : FrequencyMagnitudes;
         }

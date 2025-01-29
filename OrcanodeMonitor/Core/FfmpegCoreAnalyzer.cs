@@ -2,11 +2,8 @@
 // SPDX-License-Identifier: MIT
 using FFMpegCore;
 using FFMpegCore.Pipes;
-using MathNet.Numerics.IntegralTransforms;
 using NAudio.Wave;
 using OrcanodeMonitor.Models;
-using System.Diagnostics;
-using System.Numerics;
 
 namespace OrcanodeMonitor.Core
 {
