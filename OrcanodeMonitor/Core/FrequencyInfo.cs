@@ -32,6 +32,16 @@ namespace OrcanodeMonitor.Core
 
         private void ComputeFrequencyMagnitudes(float[] data, int sampleRate, int channelCount)
         {
+            if (data == null || data.Length == 0)
+                throw new ArgumentException("Audio data cannot be null or empty", nameof(data));
+#if false
+            // TODO: there seems to be some issue here to track down.
+            if (data.Length % channelCount != 0)
+                throw new ArgumentException("Data length must be divisible by channel count", nameof(data));
+#endif
+            if (sampleRate <= 0)
+                throw new ArgumentException("Sample rate must be positive", nameof(sampleRate));
+
             int n = data.Length / channelCount;
 
             // Create an array of complex data for each channel.
@@ -54,7 +64,7 @@ namespace OrcanodeMonitor.Core
             for (int ch = 0; ch < channelCount; ch++)
             {
                 Fourier.Forward(complexData[ch], FourierOptions.Matlab);
-                FrequencyMagnitudesForChannel[ch] = new Dictionary<double, double>();
+                FrequencyMagnitudesForChannel[ch] = new Dictionary<double, double>(n / 2);
                 for (int i = 0; i < n / 2; i++)
                 {
                     double magnitude = complexData[ch][i].Magnitude;
@@ -139,10 +149,19 @@ namespace OrcanodeMonitor.Core
         public double GetMaxMagnitude(int? channel = null) => GetFrequencyMagnitudes(channel).Values.Max();
 
         /// <summary>
-        /// Compute the sound-to-hum ratio.
+        /// Compute the ratio between non-hum and hum frequencies in the audio signal.
+        /// This ratio helps determine if the signal is intelligible or just noise.
         /// </summary>
         /// <param name="channel">Channel number, or null for an aggregate</param>
-        /// <returns>Ratio</returns>
+        /// <returns>
+        /// The ratio of non-hum to hum frequencies. A higher ratio indicates a clearer signal.
+        /// Returns 0 when no hum is detected to avoid division by zero.
+        /// </returns>
+        /// <remarks>
+        /// The ratio is calculated by dividing the total magnitude of non-hum frequencies
+        /// by the total magnitude of hum frequencies (50Hz and 60Hz bands).
+        /// A minimum value of 1 is used for hum magnitude to prevent division by zero.
+        /// </remarks>
         public double GetSignalRatio(int? channel = null)
         {
             double hum = Math.Max(GetTotalHumMagnitude(channel), 1);
