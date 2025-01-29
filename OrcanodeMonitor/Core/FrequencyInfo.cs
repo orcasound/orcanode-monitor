@@ -137,7 +137,17 @@ namespace OrcanodeMonitor.Core
         }
 
         public double GetMaxMagnitude(int? channel = null) => GetFrequencyMagnitudes(channel).Values.Max();
-        public double GetSignalRatio(int? channel = null) => GetTotalNonHumMagnitude(channel) / GetTotalHumMagnitude(channel);
+
+        /// <summary>
+        /// Compute the sound-to-hum ratio.
+        /// </summary>
+        /// <param name="channel">Channel number, or null for an aggregate</param>
+        /// <returns>Ratio</returns>
+        public double GetSignalRatio(int? channel = null)
+        {
+            double hum = Math.Max(GetTotalHumMagnitude(channel), 1);
+            return GetTotalNonHumMagnitude(channel) / hum;
+        }
 
         // Microphone audio hum typically falls within the 50 Hz or 60 Hz
         // range. This hum is often caused by electrical interference from

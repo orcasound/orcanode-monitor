@@ -7,7 +7,7 @@ using OrcanodeMonitor.Models;
 
 namespace OrcanodeMonitor.Core
 {
-     public class FfmpegCoreAnalyzer
+    public class FfmpegCoreAnalyzer
     {
         /// <summary>
         /// Analyze frequencies.

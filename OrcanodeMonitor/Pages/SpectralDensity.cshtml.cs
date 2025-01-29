@@ -178,8 +178,15 @@ namespace OrcanodeMonitor.Pages
             TimestampResult? result = await GetLatestS3TimestampAsync(_node, false, _logger);
             if (result != null)
             {
-                _frequencyInfo = await Fetcher.GetLatestAudioSampleAsync(_node, result.UnixTimestampString, false, _logger);
-                UpdateFrequencyInfo();
+                try
+                {
+                    _frequencyInfo = await Fetcher.GetLatestAudioSampleAsync(_node, result.UnixTimestampString, false, _logger);
+                    UpdateFrequencyInfo();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to fetch audio sample for node {NodeId}", _node.ID);
+                }
             }
         }
 
@@ -199,8 +206,15 @@ namespace OrcanodeMonitor.Pages
             DateTime? lastModified = await Fetcher.GetLastModifiedAsync(uri);
             LastModified = lastModified?.ToLocalTime().ToString() ?? "Unknown";
 
-            _frequencyInfo = await Fetcher.GetExactAudioSampleAsync(_node, uri, _logger);
-            UpdateFrequencyInfo();
+            try
+            {
+                _frequencyInfo = await Fetcher.GetExactAudioSampleAsync(_node, uri, _logger);
+                UpdateFrequencyInfo();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch audio sample for event {EventId}", _id);
+            }
         }
 
         public async Task OnGetAsync(string id)
