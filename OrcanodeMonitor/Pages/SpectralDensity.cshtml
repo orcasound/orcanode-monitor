@@ -35,8 +35,8 @@
                    @: {
                    @:     label: 'Channel @(i+1)',
                    @:     data: @Html.Raw(Model.JsonChannelDatasets[i]),
-                   @:     backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                   @:     borderColor: 'rgba(75, 192, 192, 1)',
+                   @:     backgroundColor: @Html.Raw(Model.GetChannelColor(@i, 0.2)),
+                   @:     borderColor: @Html.Raw(Model.GetChannelColor(@i, 1)),
                    @:     borderWidth: 1
                    @: },
                         }
@@ -102,7 +102,7 @@
         {
             @for (int i = 0; i < Model.ChannelCount; i++)
             {
-                <p>Channel @i:</p>
+                <p>Channel @(i + 1):</p>
                 <p>
                     Max magnitude: @Model.GetMaxMagnitude(i) <br />
                     Max magnitude outside hum range: @Model.GetMaxNonHumMagnitude(i) <br />

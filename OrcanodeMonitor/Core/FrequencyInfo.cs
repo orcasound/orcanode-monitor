@@ -12,15 +12,15 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Given an audio clip, compute frequency info for it.
         /// </summary>
-        /// <param name="data"></param>
-        /// <param name="sampleRate"></param>
-        /// <param name="channels"></param>
-        /// <param name="oldStatus"></param>
+        /// <param name="data">Raw audio data as float array</param>
+        /// <param name="sampleRate">Audio sample rate in Hz</param>
+        /// <param name="channels">Number of audio channels</param>
+        /// <param name="oldStatus">Previous online status for hysteresis</param>
         public FrequencyInfo(float[] data, int sampleRate, int channels, OrcanodeOnlineStatus oldStatus)
         {
             ChannelCount = channels;
             FrequencyMagnitudesForChannel = new Dictionary<double, double>[channels];
-            StatusForChannel = new OrcanodeOnlineStatus[channels + 1];
+            StatusForChannel = new OrcanodeOnlineStatus[channels];
             FrequencyMagnitudes = new Dictionary<double, double>();
             ComputeFrequencyMagnitudes(data, sampleRate, channels);
             Status = GetStatus(oldStatus);

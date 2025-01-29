@@ -5,8 +5,6 @@ using Microsoft.CodeAnalysis;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
-using System.Diagnostics;
-using System.Linq.Expressions;
 using System.Text.Json;
 using static OrcanodeMonitor.Core.Fetcher;
 
@@ -51,29 +49,34 @@ namespace OrcanodeMonitor.Pages
             LastModified = string.Empty;
         }
 
+        private const int MAX_FREQUENCY = 24000;
+        private const int POINT_COUNT = 1000;
+
         private void FillInGraphPoints(List<string> labels, List<double> maxBucketMagnitudeList, int? channel = null)
         {
-            const int MaxFrequency = 24000;
-            const int PointCount = 1000;
+            if (_frequencyInfo == null)
+            {
+                return;
+            }
 
             // Compute the logarithmic base needed to get PointCount points.
-            double b = Math.Pow(MaxFrequency, 1.0 / PointCount);
+            double b = Math.Pow(MAX_FREQUENCY, 1.0 / POINT_COUNT);
             double logb = Math.Log(b);
 
-            var maxBucketMagnitude = new double[PointCount];
-            var maxBucketFrequency = new int[PointCount];
+            var maxBucketMagnitude = new double[POINT_COUNT];
+            var maxBucketFrequency = new int[POINT_COUNT];
             foreach (var pair in _frequencyInfo.GetFrequencyMagnitudes(channel))
             {
                 double frequency = pair.Key;
                 double magnitude = pair.Value;
-                int bucket = (frequency < 1) ? 0 : Math.Min(PointCount - 1, (int)(Math.Log(frequency) / logb));
+                int bucket = (frequency < 1) ? 0 : Math.Min(POINT_COUNT - 1, (int)(Math.Log(frequency) / logb));
                 if (maxBucketMagnitude[bucket] < magnitude)
                 {
                     maxBucketMagnitude[bucket] = magnitude;
                     maxBucketFrequency[bucket] = (int)Math.Round(frequency);
                 }
             }
-            for (int i = 0; i < PointCount; i++)
+            for (int i = 0; i < POINT_COUNT; i++)
             {
                 if (maxBucketMagnitude[i] > 0)
                 {
@@ -156,6 +159,20 @@ namespace OrcanodeMonitor.Pages
 
         public string JsonSummaryDataset { get; set; }
         public List<string> JsonChannelDatasets { get; set; }
+
+        public string GetChannelColor(int channelIndex, double alpha)
+        {
+            var colors = new[] {
+                (75, 192, 192),   // Teal
+                (255, 99, 132),   // Pink
+                (54, 162, 235),   // Blue
+                (255, 206, 86),   // Yellow
+                (153, 102, 255),  // Purple
+                (255, 159, 64)    // Orange
+            };
+            var (r, g, b) = colors[channelIndex % colors.Length];
+            return $"rgba({r}, {g}, {b}, {alpha})";
+        }
 
         public int GetMaxMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetMaxMagnitude(channel) ?? 0);
 
