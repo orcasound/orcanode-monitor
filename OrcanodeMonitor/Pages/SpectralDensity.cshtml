@@ -21,17 +21,8 @@
             data: {
                 labels: @Html.Raw(Json.Serialize(Model.Labels)),
                 datasets: [
+                    @for (int i = 0; i < Model.ChannelCount; i++)
                     {
-                        label: 'Audio Sample',
-                        data: @Html.Raw(Model.JsonSummaryDataset),
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    },
-                    @if (Model.ChannelCount > 1)
-                    {
-                        for (int i = 0; i < Model.ChannelCount; i++)
-                        {
                    @: {
                    @:     label: 'Channel @(i+1)',
                    @:     data: @Html.Raw(Model.JsonChannelDatasets[i]),
@@ -39,7 +30,6 @@
                    @:     borderColor: @Html.Raw(Model.GetChannelColor(@i, 1)),
                    @:     borderWidth: 1
                    @: },
-                        }
                     }
                     {
                         label: 'Max Noise Magnitude',
@@ -102,7 +92,7 @@
         {
             @for (int i = 0; i < Model.ChannelCount; i++)
             {
-                <p>Channel @(i + 1):</p>
+                <h3>Channel @(i + 1):</h3>
                 <p>
                     Max magnitude: @Model.GetMaxMagnitude(i) <br />
                     Max magnitude outside hum range: @Model.GetMaxNonHumMagnitude(i) <br />

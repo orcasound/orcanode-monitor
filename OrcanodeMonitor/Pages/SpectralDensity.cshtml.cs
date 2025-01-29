@@ -49,7 +49,17 @@ namespace OrcanodeMonitor.Pages
             LastModified = string.Empty;
         }
 
+        /// <summary>
+        /// Maximum frequency to analyze in Hz.
+        /// Typical human hearing range is up to 20kHz.
+        /// Orca calls are up to 40kHz.
+        /// </summary>
         private const int MAX_FREQUENCY = 24000;
+
+        /// <summary>
+        /// Number of points to plot on the graph. 1000 points provides a good balance
+        /// between resolution and performance.
+        /// </summary>
         private const int POINT_COUNT = 1000;
 
         private void FillInGraphPoints(List<string> labels, List<double> maxBucketMagnitudeList, int? channel = null)
@@ -130,16 +140,16 @@ namespace OrcanodeMonitor.Pages
             // Align data.
             var summaryDataset = _labels.Select(label => new
             {
-                Label = label,
-                Value = summaryLabels.Contains(label) ? GetBucketMagnitude(label, summaryLabels, summaryMaxBucketMagnitude) : (double?)null
+                x = label,
+                y = summaryLabels.Contains(label) ? GetBucketMagnitude(label, summaryLabels, summaryMaxBucketMagnitude) : (double?)null
             }).ToList<object>();
             var channelDatasets = new List<List<object>>();
             for (int i = 0; i < _frequencyInfo.ChannelCount; i++)
             {
                 var channelDataset = _labels.Select(label => new
                 {
-                    Label = label,
-                    Value = channelLabels[i].Contains(label) ? GetBucketMagnitude(label, channelLabels[i], channelMaxBucketMagnitude[i]) : (double?)null
+                    x = label,
+                    y = channelLabels[i].Contains(label) ? GetBucketMagnitude(label, channelLabels[i], channelMaxBucketMagnitude[i]) : (double?)null
                 }).ToList<object>();
                 channelDatasets.Add(channelDataset);
             }
@@ -157,25 +167,45 @@ namespace OrcanodeMonitor.Pages
             SignalRatio = (int)Math.Round(100 * _frequencyInfo.GetSignalRatio());
         }
 
+        /// <summary>
+        /// Gets or sets the JSON-serialized dataset containing summary frequency magnitudes.
+        /// Can be used by Chart.js for visualization, but isn't currently.
+        /// </summary>
         public string JsonSummaryDataset { get; set; }
+
+        /// <summary>
+        /// Gets or sets the JSON-serialized datasets containing per-channel frequency magnitudes.
+        /// Used by Chart.js for visualization when multiple channels are present.
+        /// </summary>
         public List<string> JsonChannelDatasets { get; set; }
 
         public string GetChannelColor(int channelIndex, double alpha)
         {
             var colors = new[] {
+                (54, 235, 127),   // Green
+                (153, 102, 255),  // Purple
+                (255, 159, 64),   // Orange
+                (255, 206, 86),   // Yellow
                 (75, 192, 192),   // Teal
                 (255, 99, 132),   // Pink
                 (54, 162, 235),   // Blue
-                (255, 206, 86),   // Yellow
-                (153, 102, 255),  // Purple
-                (255, 159, 64)    // Orange
             };
             var (r, g, b) = colors[channelIndex % colors.Length];
-            return $"rgba({r}, {g}, {b}, {alpha})";
+            return $"'rgba({r}, {g}, {b}, {alpha})'";
         }
 
+        /// <summary>
+        /// Gets the maximum magnitude for a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index to get the magnitude for.</param>
+        /// <returns>The maximum magnitude for the specified channel, or 0 if no data is available.</returns>
         public int GetMaxMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetMaxMagnitude(channel) ?? 0);
 
+        /// <summary>
+        /// Gets the maximum non-hum magnitude for a specific channel.
+        /// </summary>
+        /// <param name="channel">The channel index to get the magnitude for.</param>
+        /// <returns>The maximum non-hum magnitude for the specified channel, or 0 if no data is available.</returns>
         public int GetMaxNonHumMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetMaxNonHumMagnitude(channel) ?? 0);
 
         public int GetTotalHumMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetTotalHumMagnitude(channel) ?? 0);
