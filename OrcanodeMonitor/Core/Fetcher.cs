@@ -438,9 +438,9 @@ namespace OrcanodeMonitor.Core
         /// <returns>null on error, or JsonElement on success</returns>
         private async static Task<JsonElement?> GetOrcasoundDataAsync(OrcanodeMonitorContext context, string site, ILogger logger)
         {
+            string url = "https://" + site + _orcasoundFeedsUrlPath;
             try
             {
-                string url = "https://" + site + _orcasoundFeedsUrlPath;
                 string json = await _httpClient.GetStringAsync(url);
                 if (json.IsNullOrEmpty())
                 {
