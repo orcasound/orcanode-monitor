@@ -13,66 +13,107 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
 
     <!-- Canvas for Chart.js -->
-    <canvas id="frequencyChart" width="400" height="200"></canvas>
+    @for (int i = 0; i < Model.ChannelCount; i++)
+    {
+        <canvas id="frequencyChart@(i + 1)" width="400" height="200"></canvas>
+    }
     <script>
-        var ctx = document.getElementById('frequencyChart').getContext('2d');
-        var myLineChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: @Html.Raw(Json.Serialize(Model.Labels)),
-                datasets: [
-                    @for (int i = 0; i < Model.ChannelCount; i++)
-                    {
-                   @: {
-                   @:     label: 'Channel @(i+1)',
-                   @:     data: @Html.Raw(Model.JsonChannelDatasets[i]),
-                   @:     backgroundColor: @Html.Raw(Model.GetChannelColor(@i, 0.2)),
-                   @:     borderColor: @Html.Raw(Model.GetChannelColor(@i, 1)),
-                   @:     borderWidth: 1
-                   @: },
-                    }
-                    {
-                        label: 'Max Noise Magnitude',
-                        data: [
-                            { x: @Html.Raw(Json.Serialize(Model.Labels[0])), y: @Html.Raw(Model.MaxSilenceMagnitude) },
-                            { x: @Html.Raw(Json.Serialize(Model.Labels[Model.Labels.Count - 1])), y: @Html.Raw(Model.MaxSilenceMagnitude) }
-                        ],
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 2,
-                        fill: false,
-                        pointRadius: 0 // Hide points on this line
-                    },
-                    {
-                        label: 'Min Signal Magnitude',
-                        data: [
-                            { x: @Html.Raw(Json.Serialize(Model.Labels[0])), y: @Html.Raw(Model.MinNoiseMagnitude) },
-                            { x: @Html.Raw(Json.Serialize(Model.Labels[Model.Labels.Count - 1])), y: @Html.Raw(Model.MinNoiseMagnitude) }
-                        ],
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 2,
-                        fill: false,
-                        pointRadius: 0 // Hide points on this line
-                    }
-                ]
-            },
-            options: {
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Frequency'
+         // Client side function to initialize all charts.
+        function initializeCharts2(labels, jsonChannelDatasets)
+        {
+            var maxSilenceMagnitude = @Model.MaxSilenceMagnitude;
+            var minNoiseMagnitude = @Model.MinNoiseMagnitude;
+
+            // Channel Count = @Model.ChannelCount
+
+            @for (int i = 0; i < Model.ChannelCount; i++)
+            {
+                string backgroundColor = Model.GetChannelColor(i, 0.2);
+                string borderColor = Model.GetChannelColor(i, 1);
+                string id = "frequencyChart" + (i + 1).ToString();
+
+                @: initializeChart(
+                @:     '@id',
+                @:     labels,
+                @:     jsonChannelDatasets[@i],
+                @:     maxSilenceMagnitude,
+                @:     minNoiseMagnitude,
+                @:     @i,
+                @:     '@backgroundColor',
+                @:     '@borderColor'
+                @: );
+            }
+        }
+
+        function initializeCharts()
+        {
+            var labels = @Html.Raw(Json.Serialize(Model.Labels));
+            var jsonChannelDatasets = @Html.Raw(Model.JsonChannelDatasets);
+            initializeCharts2(labels, jsonChannelDatasets);
+        }
+
+        // Client side function to initialize a chart.
+        function initializeChart(elementId, labels, jsonChannelDataset, maxSilenceMagnitude, minNoiseMagnitude, i, backgroundColor, borderColor)
+        {
+            var ctx = document.getElementById(elementId).getContext('2d');
+            var myLineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Channel ' + (i + 1),
+                            data: jsonChannelDataset,
+                            backgroundColor: backgroundColor,
+                            borderColor: borderColor,
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Max Noise Magnitude',
+                            data: [
+                                { x: labels[0], y: maxSilenceMagnitude },
+                                { x: labels[labels.length - 1], y: maxSilenceMagnitude }
+                            ],
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2,
+                            fill: false,
+                            pointRadius: 0 // Hide points on this line
+                        },
+                        {
+                            label: 'Min Signal Magnitude',
+                            data: [
+                                { x: labels[0], y: minNoiseMagnitude },
+                                { x: labels[labels.length - 1], y: minNoiseMagnitude }
+                            ],
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 2,
+                            fill: false,
+                            pointRadius: 0 // Hide points on this line
                         }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Magnitude'
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Frequency'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Magnitude'
+                            }
                         }
                     }
                 }
-            }
-        });
+            });
+            return myLineChart;
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeCharts);
     </script>
 
     <div>

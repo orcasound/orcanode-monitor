@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
+using System.Collections.Generic;
 using System.Text.Json;
 using static OrcanodeMonitor.Core.Fetcher;
 
@@ -98,15 +99,15 @@ namespace OrcanodeMonitor.Pages
 
         private double GetBucketMagnitude(string label, List<string> labels, List<double> magnitudes)
         {
-            double sum = 0;
+            double max = 0;
             for (int i = 0; i < labels.Count; i++)
             {
-                if (labels[i] == label)
+                if (labels[i] == label && magnitudes[i] > max)
                 {
-                    sum += magnitudes[i];
+                    max = magnitudes[i];
                 }
             }
-            return sum;
+            return max;
         }
 
         private void UpdateFrequencyInfo()
@@ -156,7 +157,7 @@ namespace OrcanodeMonitor.Pages
 
             // Serialise to JSON.
             JsonSummaryDataset = JsonSerializer.Serialize(summaryDataset);
-            JsonChannelDatasets = channelDatasets.Select(dataset => JsonSerializer.Serialize(dataset)).ToList();
+            JsonChannelDatasets = JsonSerializer.Serialize(channelDatasets);
 
             MaxMagnitude = (int)Math.Round(_frequencyInfo.GetMaxMagnitude());
             MaxNonHumMagnitude = (int)Math.Round(_frequencyInfo.GetMaxNonHumMagnitude());
@@ -177,7 +178,7 @@ namespace OrcanodeMonitor.Pages
         /// Gets or sets the JSON-serialized datasets containing per-channel frequency magnitudes.
         /// Used by Chart.js for visualization when multiple channels are present.
         /// </summary>
-        public List<string> JsonChannelDatasets { get; set; }
+        public string JsonChannelDatasets { get; set; }
 
         public string GetChannelColor(int channelIndex, double alpha)
         {
@@ -191,7 +192,7 @@ namespace OrcanodeMonitor.Pages
                 (54, 162, 235),   // Blue
             };
             var (r, g, b) = colors[channelIndex % colors.Length];
-            return $"'rgba({r}, {g}, {b}, {alpha})'";
+            return $"rgba({r}, {g}, {b}, {alpha})";
         }
 
         /// <summary>
@@ -229,6 +230,9 @@ namespace OrcanodeMonitor.Pages
                 {
                     _frequencyInfo = await Fetcher.GetLatestAudioSampleAsync(_node, result.UnixTimestampString, false, _logger);
                     UpdateFrequencyInfo();
+
+                    // Use local time.
+                    LastModified = DateTime.Now.ToString();
                 }
                 catch (Exception ex)
                 {
