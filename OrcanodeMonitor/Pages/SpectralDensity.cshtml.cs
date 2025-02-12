@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
+using System.Collections.Generic;
 using System.Text.Json;
 using static OrcanodeMonitor.Core.Fetcher;
 
@@ -156,7 +157,7 @@ namespace OrcanodeMonitor.Pages
 
             // Serialise to JSON.
             JsonSummaryDataset = JsonSerializer.Serialize(summaryDataset);
-            JsonChannelDatasets = channelDatasets.Select(dataset => JsonSerializer.Serialize(dataset)).ToList();
+            JsonChannelDatasets = JsonSerializer.Serialize(channelDatasets); // channelDatasets.Select(dataset => JsonSerializer.Serialize(dataset)).ToList();
 
             MaxMagnitude = (int)Math.Round(_frequencyInfo.GetMaxMagnitude());
             MaxNonHumMagnitude = (int)Math.Round(_frequencyInfo.GetMaxNonHumMagnitude());
@@ -177,7 +178,7 @@ namespace OrcanodeMonitor.Pages
         /// Gets or sets the JSON-serialized datasets containing per-channel frequency magnitudes.
         /// Used by Chart.js for visualization when multiple channels are present.
         /// </summary>
-        public List<string> JsonChannelDatasets { get; set; }
+        public string JsonChannelDatasets { get; set; }
 
         public string GetChannelColor(int channelIndex, double alpha)
         {

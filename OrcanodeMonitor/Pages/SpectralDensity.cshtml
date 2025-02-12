@@ -26,10 +26,6 @@
 
             // Channel Count = @Model.ChannelCount
 
-            // DEBUGGING...
-            var dataset = jsonChannelDatasets[0];
-            console.info('channel[0]: ' + dataset);
-
             @for (int i = 0; i < Model.ChannelCount; i++)
             {
                 string backgroundColor = Model.GetChannelColor(i, 0.2);
@@ -52,16 +48,13 @@
         function initializeCharts()
         {
             var labels = @Html.Raw(Json.Serialize(Model.Labels));
-            var jsonChannelDatasets = @Html.Raw(Json.Serialize(Model.JsonChannelDatasets));
+            var jsonChannelDatasets = @Html.Raw(Model.JsonChannelDatasets);
             initializeCharts2(labels, jsonChannelDatasets);
         }
 
         // Client side function to initialize a chart.
         function initializeChart(elementId, labels, jsonChannelDataset, maxSilenceMagnitude, minNoiseMagnitude, i, backgroundColor, borderColor)
         {
-            console.info('initializeChart ' + i);
-            console.info(jsonChannelDataset);
-
             var ctx = document.getElementById(elementId).getContext('2d');
             var myLineChart = new Chart(ctx, {
                 type: 'line',
