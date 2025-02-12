@@ -157,7 +157,7 @@ namespace OrcanodeMonitor.Pages
 
             // Serialise to JSON.
             JsonSummaryDataset = JsonSerializer.Serialize(summaryDataset);
-            JsonChannelDatasets = JsonSerializer.Serialize(channelDatasets); // channelDatasets.Select(dataset => JsonSerializer.Serialize(dataset)).ToList();
+            JsonChannelDatasets = JsonSerializer.Serialize(channelDatasets);
 
             MaxMagnitude = (int)Math.Round(_frequencyInfo.GetMaxMagnitude());
             MaxNonHumMagnitude = (int)Math.Round(_frequencyInfo.GetMaxNonHumMagnitude());
