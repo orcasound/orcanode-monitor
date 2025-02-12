@@ -231,7 +231,8 @@ namespace OrcanodeMonitor.Pages
                     _frequencyInfo = await Fetcher.GetLatestAudioSampleAsync(_node, result.UnixTimestampString, false, _logger);
                     UpdateFrequencyInfo();
 
-                    LastModified = DateTime.Now.ToLocalTime().ToString();
+                    // Use local time.
+                    LastModified = DateTime.Now.ToString();
                 }
                 catch (Exception ex)
                 {
