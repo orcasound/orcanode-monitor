@@ -34,9 +34,30 @@ namespace OrcanodeMonitor.Core
         {
             using (var outputStream = new MemoryStream())
             {
+                GlobalFFOptions.Configure(options => options.BinaryFolder = FFMpegInstaller.InstallationDirectory);
+
+#if true
+                // Save a copy to a file.
+                string filePath = "output.wav";
+                bool ok = await args
+                    .OutputToFile(filePath, true, options => options
+                        .WithAudioCodec("pcm_s16le")
+                        .ForceFormat("wav"))
+                    .ProcessAsynchronously();
+                if (!ok)
+                {
+                    throw new Exception("FFMpeg processing failed.");
+                }
+
+                // Read the entire stream.
+                using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))
+                {
+                    await fileStream.CopyToAsync(outputStream);
+                    outputStream.Position = 0;
+                }
+#else
                 // Create an output stream (e.g., MemoryStream).
                 var pipeSink = new StreamPipeSink(outputStream);
-                GlobalFFOptions.Configure(options => options.BinaryFolder = FFMpegInstaller.InstallationDirectory);
 
                 bool ok = await args
                     .OutputToPipe(pipeSink, options => options
@@ -47,6 +68,7 @@ namespace OrcanodeMonitor.Core
                 {
                     throw new Exception("FFMpeg processing failed.");
                 }
+#endif
 
                 // Read the entire stream into a byte array.
                 byte[] byteBuffer = outputStream.ToArray();
