@@ -98,15 +98,15 @@ namespace OrcanodeMonitor.Pages
 
         private double GetBucketMagnitude(string label, List<string> labels, List<double> magnitudes)
         {
-            double sum = 0;
+            double max = 0;
             for (int i = 0; i < labels.Count; i++)
             {
-                if (labels[i] == label)
+                if (labels[i] == label && magnitudes[i] > max)
                 {
-                    sum += magnitudes[i];
+                    max = magnitudes[i];
                 }
             }
-            return sum;
+            return max;
         }
 
         private void UpdateFrequencyInfo()
@@ -191,7 +191,7 @@ namespace OrcanodeMonitor.Pages
                 (54, 162, 235),   // Blue
             };
             var (r, g, b) = colors[channelIndex % colors.Length];
-            return $"'rgba({r}, {g}, {b}, {alpha})'";
+            return $"rgba({r}, {g}, {b}, {alpha})";
         }
 
         /// <summary>
@@ -229,6 +229,8 @@ namespace OrcanodeMonitor.Pages
                 {
                     _frequencyInfo = await Fetcher.GetLatestAudioSampleAsync(_node, result.UnixTimestampString, false, _logger);
                     UpdateFrequencyInfo();
+
+                    LastModified = DateTime.Now.ToLocalTime().ToString();
                 }
                 catch (Exception ex)
                 {
