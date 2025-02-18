@@ -36,8 +36,15 @@ namespace OrcanodeMonitor.Pages
         public int MaxNonHumMagnitude { get; private set; }
         public int SignalRatio { get; private set; }
         public string Status { get; private set; }
+        private static double MagnitudeToDecibels(double magnitude)
+        {
+            double dB = 20 * Math.Log10(magnitude);
+            return dB;
+        }
         public double MaxSilenceMagnitude => FrequencyInfo.MaxSilenceMagnitude;
         public double MinNoiseMagnitude => FrequencyInfo.MinNoiseMagnitude;
+        public double MaxSilenceDecibels => MagnitudeToDecibels(FrequencyInfo.MaxSilenceMagnitude);
+        public double MinNoiseDecibels => MagnitudeToDecibels(FrequencyInfo.MinNoiseMagnitude);
         public string LastModified { get; private set; }
 
         public SpectralDensityModel(OrcanodeMonitorContext context, ILogger<SpectralDensityModel> logger)
@@ -63,7 +70,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         private const int POINT_COUNT = 1000;
 
-        private void FillInGraphPoints(List<string> labels, List<double> maxBucketMagnitudeList, int? channel = null)
+        private void FillInGraphPoints(List<string> labels, List<double> maxBucketDecibelsList, int? channel = null)
         {
             if (_frequencyInfo == null)
             {
@@ -74,37 +81,41 @@ namespace OrcanodeMonitor.Pages
             double b = Math.Pow(MAX_FREQUENCY, 1.0 / POINT_COUNT);
             double logb = Math.Log(b);
 
-            var maxBucketMagnitude = new double[POINT_COUNT];
+            var maxBucketDecibels = new double[POINT_COUNT];
+            for (int i = 0; i < POINT_COUNT; i++) {
+                maxBucketDecibels[i] = double.NegativeInfinity;
+            }
             var maxBucketFrequency = new int[POINT_COUNT];
             foreach (var pair in _frequencyInfo.GetFrequencyMagnitudes(channel))
             {
                 double frequency = pair.Key;
                 double magnitude = pair.Value;
+                double dB = MagnitudeToDecibels(magnitude);
                 int bucket = (frequency < 1) ? 0 : Math.Min(POINT_COUNT - 1, (int)(Math.Log(frequency) / logb));
-                if (maxBucketMagnitude[bucket] < magnitude)
+                if (maxBucketDecibels[bucket] < dB)
                 {
-                    maxBucketMagnitude[bucket] = magnitude;
+                    maxBucketDecibels[bucket] = dB;
                     maxBucketFrequency[bucket] = (int)Math.Round(frequency);
                 }
             }
             for (int i = 0; i < POINT_COUNT; i++)
             {
-                if (maxBucketMagnitude[i] > 0)
+                if (maxBucketDecibels[i] > double.NegativeInfinity)
                 {
                     labels.Add(maxBucketFrequency[i].ToString());
-                    maxBucketMagnitudeList.Add(maxBucketMagnitude[i]);
+                    maxBucketDecibelsList.Add(maxBucketDecibels[i]);
                 }
             }
         }
 
-        private double GetBucketMagnitude(string label, List<string> labels, List<double> magnitudes)
+        private double GetBucketDecibels(string label, List<string> labels, List<double> decibels)
         {
             double max = 0;
             for (int i = 0; i < labels.Count; i++)
             {
-                if (labels[i] == label && magnitudes[i] > max)
+                if (labels[i] == label && decibels[i] > max)
                 {
-                    max = magnitudes[i];
+                    max = decibels[i];
                 }
             }
             return max;
@@ -119,15 +130,15 @@ namespace OrcanodeMonitor.Pages
 
             // Compute graph points.
             var summaryLabels = new List<string>();
-            var summaryMaxBucketMagnitude = new List<double>();
-            FillInGraphPoints(summaryLabels, summaryMaxBucketMagnitude);
+            var summaryMaxBucketDecibels = new List<double>();
+            FillInGraphPoints(summaryLabels, summaryMaxBucketDecibels);
             var channelLabels = new List<string>[_frequencyInfo.ChannelCount];
-            var channelMaxBucketMagnitude = new List<double>[_frequencyInfo.ChannelCount];
+            var channelMaxBucketDecibels = new List<double>[_frequencyInfo.ChannelCount];
             for (int i = 0; i < _frequencyInfo.ChannelCount; i++)
             {
                 channelLabels[i] = new List<string>();
-                channelMaxBucketMagnitude[i] = new List<double>();
-                FillInGraphPoints(channelLabels[i], channelMaxBucketMagnitude[i], i);
+                channelMaxBucketDecibels[i] = new List<double>();
+                FillInGraphPoints(channelLabels[i], channelMaxBucketDecibels[i], i);
             }
 
             // Collect all labels.
@@ -142,7 +153,7 @@ namespace OrcanodeMonitor.Pages
             var summaryDataset = _labels.Select(label => new
             {
                 x = label,
-                y = summaryLabels.Contains(label) ? GetBucketMagnitude(label, summaryLabels, summaryMaxBucketMagnitude) : (double?)null
+                y = summaryLabels.Contains(label) ? GetBucketDecibels(label, summaryLabels, summaryMaxBucketDecibels) : (double?)null
             }).ToList<object>();
             var channelDatasets = new List<List<object>>();
             for (int i = 0; i < _frequencyInfo.ChannelCount; i++)
@@ -150,7 +161,7 @@ namespace OrcanodeMonitor.Pages
                 var channelDataset = _labels.Select(label => new
                 {
                     x = label,
-                    y = channelLabels[i].Contains(label) ? GetBucketMagnitude(label, channelLabels[i], channelMaxBucketMagnitude[i]) : (double?)null
+                    y = channelLabels[i].Contains(label) ? GetBucketDecibels(label, channelLabels[i], channelMaxBucketDecibels[i]) : (double?)null
                 }).ToList<object>();
                 channelDatasets.Add(channelDataset);
             }

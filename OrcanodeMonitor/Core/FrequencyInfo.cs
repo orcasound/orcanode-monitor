@@ -4,6 +4,7 @@ using MathNet.Numerics.IntegralTransforms;
 using OrcanodeMonitor.Models;
 using System.Diagnostics;
 using System.Numerics;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace OrcanodeMonitor.Core
 {
@@ -30,7 +31,7 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        private void ComputeFrequencyMagnitudes(float[] data, int sampleRate, int channelCount)
+        private void ComputeFrequencyMagnitudes(float[] data, int sampleRate, int channelCount, int windowSize = 8192)
         {
             if (data == null || data.Length == 0)
                 throw new ArgumentException("Audio data cannot be null or empty", nameof(data));
@@ -42,34 +43,48 @@ namespace OrcanodeMonitor.Core
             if (sampleRate <= 0)
                 throw new ArgumentException("Sample rate must be positive", nameof(sampleRate));
 
-            int n = data.Length / channelCount;
+            // Number of FFT windows in the data.
+            int totalWindows = (data.Length / channelCount) / windowSize;
 
             // Create an array of complex data for each channel.
             Complex[][] complexData = new Complex[channelCount][];
             for (int ch = 0; ch < channelCount; ch++)
             {
-                complexData[ch] = new Complex[n];
+                complexData[ch] = new Complex[windowSize];
+                FrequencyMagnitudesForChannel[ch] = new Dictionary<double, double>();
             }
 
-            // Populate the complex arrays with channel data.
-            for (int i = 0; i < n; i++)
+            // Populate the complex arrays with channel data and apply a Hann window.
+            for (int windowIndex = 0; windowIndex < totalWindows; windowIndex++)
             {
                 for (int ch = 0; ch < channelCount; ch++)
                 {
-                    complexData[ch][i] = new Complex(data[i * channelCount + ch], 0);
-                }
-            }
+                    // Apply the Hann window and populate complex data arrays for each window.
+                    for (int i = 0; i < windowSize; i++)
+                    {
+                        int dataIndex = (windowIndex * windowSize * channelCount) + (i * channelCount + ch);
+                        double window = 0.5 * (1 - Math.Cos(2 * Math.PI * i / (windowSize - 1))); // Hann window
+                        complexData[ch][i] = new Complex(data[dataIndex] * window, 0);
+                    }
 
-            // Perform Fourier transform for each channel.
-            for (int ch = 0; ch < channelCount; ch++)
-            {
-                Fourier.Forward(complexData[ch], FourierOptions.Matlab);
-                FrequencyMagnitudesForChannel[ch] = new Dictionary<double, double>(n / 2);
-                for (int i = 0; i < n / 2; i++)
-                {
-                    double magnitude = complexData[ch][i].Magnitude;
-                    double frequency = (((double)i) * sampleRate) / n;
-                    FrequencyMagnitudesForChannel[ch][frequency] = magnitude;
+                    // Perform the FFT on the current window.
+                    Fourier.Forward(complexData[ch], FourierOptions.Matlab);
+
+                    // Only the first half of the FFT output contains useful information,
+                    // since the second half corresponds to negative frequencies.
+                    for (int i = 0; i < windowSize / 2; i++)
+                    {
+                        double magnitude = complexData[ch][i].Magnitude;
+                        double frequency = (((double)i) * sampleRate) / windowSize;
+                        if (!FrequencyMagnitudesForChannel[ch].ContainsKey(frequency))
+                        {
+                            FrequencyMagnitudesForChannel[ch][frequency] = 0;
+                        }
+                        if (FrequencyMagnitudesForChannel[ch][frequency] < magnitude)
+                        {
+                            FrequencyMagnitudesForChannel[ch][frequency] = magnitude;
+                        }
+                    }
                 }
             }
 

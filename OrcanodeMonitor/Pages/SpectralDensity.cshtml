@@ -21,8 +21,8 @@
          // Client side function to initialize all charts.
         function initializeCharts2(labels, jsonChannelDatasets)
         {
-            var maxSilenceMagnitude = @Model.MaxSilenceMagnitude;
-            var minNoiseMagnitude = @Model.MinNoiseMagnitude;
+            var maxSilenceDecibels = @Model.MaxSilenceDecibels;
+            var minNoiseDecibels = @Model.MinNoiseDecibels;
 
             // Channel Count = @Model.ChannelCount
 
@@ -36,8 +36,8 @@
                 @:     '@id',
                 @:     labels,
                 @:     jsonChannelDatasets[@i],
-                @:     maxSilenceMagnitude,
-                @:     minNoiseMagnitude,
+                @:     maxSilenceDecibels,
+                @:     minNoiseDecibels,
                 @:     @i,
                 @:     '@backgroundColor',
                 @:     '@borderColor'
@@ -53,7 +53,7 @@
         }
 
         // Client side function to initialize a chart.
-        function initializeChart(elementId, labels, jsonChannelDataset, maxSilenceMagnitude, minNoiseMagnitude, i, backgroundColor, borderColor)
+        function initializeChart(elementId, labels, jsonChannelDataset, maxSilenceDecibels, minNoiseDecibels, i, backgroundColor, borderColor)
         {
             var ctx = document.getElementById(elementId).getContext('2d');
             var myLineChart = new Chart(ctx, {
@@ -66,13 +66,14 @@
                             data: jsonChannelDataset,
                             backgroundColor: backgroundColor,
                             borderColor: borderColor,
-                            borderWidth: 1
+                            borderWidth: 1,
+                            fill: true
                         },
                         {
-                            label: 'Max Noise Magnitude',
+                            label: 'Max Noise Decibels',
                             data: [
-                                { x: labels[0], y: maxSilenceMagnitude },
-                                { x: labels[labels.length - 1], y: maxSilenceMagnitude }
+                                { x: labels[0], y: maxSilenceDecibels },
+                                { x: labels[labels.length - 1], y: maxSilenceDecibels }
                             ],
                             borderColor: 'rgba(54, 162, 235, 1)',
                             borderWidth: 2,
@@ -80,10 +81,10 @@
                             pointRadius: 0 // Hide points on this line
                         },
                         {
-                            label: 'Min Signal Magnitude',
+                            label: 'Min Signal Decibels',
                             data: [
-                                { x: labels[0], y: minNoiseMagnitude },
-                                { x: labels[labels.length - 1], y: minNoiseMagnitude }
+                                { x: labels[0], y: minNoiseDecibels },
+                                { x: labels[labels.length - 1], y: minNoiseDecibels }
                             ],
                             borderColor: 'rgba(255, 99, 132, 1)',
                             borderWidth: 2,
@@ -101,10 +102,9 @@
                             }
                         },
                         y: {
-                            beginAtZero: true,
                             title: {
                                 display: true,
-                                text: 'Magnitude'
+                                text: 'dB'
                             }
                         }
                     }
