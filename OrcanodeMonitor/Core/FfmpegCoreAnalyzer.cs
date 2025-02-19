@@ -39,6 +39,7 @@ namespace OrcanodeMonitor.Core
 #if true
                 // Save a copy to a file.
                 string filePath = "output.wav";
+#if false
                 bool ok = await args
                     .OutputToFile(filePath, true, options => options
                         .WithAudioCodec("pcm_s16le")
@@ -48,6 +49,7 @@ namespace OrcanodeMonitor.Core
                 {
                     throw new Exception("FFMpeg processing failed.");
                 }
+#endif
 
                 // Read the entire stream.
                 using (FileStream fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read))

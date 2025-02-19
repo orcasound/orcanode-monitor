@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TransferData", "TransferData\TransferData.csproj", "{6782AD7D-54FE-4CBC-B1FA-2C43345EB07F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SpectralDensity", "SpectralDensity\SpectralDensity.csproj", "{B71E40DF-BE72-42B0-9740-90A01A891DD9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{6782AD7D-54FE-4CBC-B1FA-2C43345EB07F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6782AD7D-54FE-4CBC-B1FA-2C43345EB07F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6782AD7D-54FE-4CBC-B1FA-2C43345EB07F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B71E40DF-BE72-42B0-9740-90A01A891DD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B71E40DF-BE72-42B0-9740-90A01A891DD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B71E40DF-BE72-42B0-9740-90A01A891DD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B71E40DF-BE72-42B0-9740-90A01A891DD9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
