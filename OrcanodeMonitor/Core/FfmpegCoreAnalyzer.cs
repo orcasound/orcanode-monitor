@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: MIT
 using FFMpegCore;
 using FFMpegCore.Pipes;
-using NAudio.Wave;
 using OrcanodeMonitor.Models;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace OrcanodeMonitor.Core
 {
@@ -17,11 +18,53 @@ namespace OrcanodeMonitor.Core
         /// <param name="channels">Number of channels</param>
         /// <param name="oldStatus">Old status</param>
         /// <returns>Frequency info</returns>
-        private static FrequencyInfo AnalyzeFrequencies(float[] data, int sampleRate, int channels, OrcanodeOnlineStatus oldStatus)
+        private static FrequencyInfo AnalyzeFrequencies(float[] data, uint sampleRate, int channels, OrcanodeOnlineStatus oldStatus)
         {
-            int n = data.Length;
             FrequencyInfo frequencyInfo = new FrequencyInfo(data, sampleRate, channels, oldStatus);
             return frequencyInfo;
+        }
+
+        public static T ByteArrayToStructure<T>(byte[] bytes, int offset) where T : struct
+        {
+            GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+            try
+            {
+                IntPtr ptr = (IntPtr)(handle.AddrOfPinnedObject().ToInt64() + offset);
+                return (T)Marshal.PtrToStructure(ptr, typeof(T));
+            }
+            finally
+            {
+                handle.Free();
+            }
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct RiffHeader
+        {
+            public uint ChunkId;        // 'RIFF'
+            public uint ChunkSize;      // Size following the ChunkSize.
+            public uint Format;         // 'WAVE'
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct FmtChunk
+        {
+            public uint ChunkID;
+            public uint ChunkSize;
+            public short AudioFormat;
+            public short NumChannels;
+            public uint SampleRate;
+            public uint ByteRate;
+            public short BlockAlign;
+            public short BitsPerSample;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        public struct ListChunk
+        {
+            public uint ChunkID;
+            public uint ChunkSize;
+            public uint TypeID;
         }
 
         /// <summary>
@@ -39,7 +82,7 @@ namespace OrcanodeMonitor.Core
 #if true
                 // Save a copy to a file.
                 string filePath = "output.wav";
-#if false
+#if true
                 bool ok = await args
                     .OutputToFile(filePath, true, options => options
                         .WithAudioCodec("pcm_s16le")
@@ -75,27 +118,64 @@ namespace OrcanodeMonitor.Core
                 // Read the entire stream into a byte array.
                 byte[] byteBuffer = outputStream.ToArray();
 
-                // Get the number of channels in the WAV file (offset 22, 2 bytes).
-                int channels = BitConverter.ToInt16(byteBuffer, 22);
+                // Process the 12-byte RIFF header.
+                int offset = 0;
+                string headerType = Encoding.ASCII.GetString(byteBuffer, offset, 4);
+                if (headerType != "RIFF")
+                {
+                    throw new ArgumentException("Malformed data", nameof(headerType));
+                }
+                RiffHeader riffHeader = ByteArrayToStructure<RiffHeader>(byteBuffer, offset);
+                offset += 12;
 
-                // Get the sample rate in the WAV file (offset 24, 4 bytes).
-                int sampleRate = BitConverter.ToInt32(byteBuffer, 24);
+                FmtChunk fmtChunk = default(FmtChunk);
+                ListChunk listChunk = default(ListChunk);
+                int subchunkSize = 0;
+                int dataOffset = 0;
+                int dataSize = 0;
 
-                var waveFormat = new WaveFormat(rate: sampleRate, bits: 16, channels: channels);
-
-                // Compute the duration in seconds.
-                double byteRate = waveFormat.SampleRate * waveFormat.Channels * (waveFormat.BitsPerSample / 8.0);
-                double durationInSeconds = byteBuffer.Length / byteRate;
+                // Process the next chunk.
+                do
+                {
+                    headerType = Encoding.ASCII.GetString(byteBuffer, offset, 4);
+                    subchunkSize = BitConverter.ToInt32(byteBuffer, offset + 4);
+                    if (subchunkSize == -1)
+                    {
+                        subchunkSize = byteBuffer.Length - offset - 8;
+                    }
+                    switch (headerType)
+                    {
+                        case "fmt ":
+                            fmtChunk = ByteArrayToStructure<FmtChunk>(byteBuffer, offset);
+                            if (fmtChunk.SampleRate <= 0)
+                            {
+                                throw new ArgumentException("Sample rate must be positive", nameof(fmtChunk.SampleRate));
+                            }
+                            break;
+                        case "LIST":
+                            listChunk = ByteArrayToStructure<ListChunk>(byteBuffer, offset);
+                            break;
+                        case "data":
+                            dataOffset = offset + 8;
+                            dataSize = byteBuffer.Length - dataOffset;
+                            break;
+                    }
+                    offset += 8 + subchunkSize;
+                } while (offset < byteBuffer.Length);
+                if (dataSize == 0)
+                {
+                    throw new ArgumentException("Malformed data", nameof(headerType));
+                }
 
                 // Convert byte buffer to float buffer.
-                var floatBuffer = new float[byteBuffer.Length / sizeof(short)];
+                var floatBuffer = new float[dataSize / sizeof(short)];
                 for (int i = 0; i < floatBuffer.Length; i++)
                 {
-                    floatBuffer[i] = BitConverter.ToInt16(byteBuffer, i * sizeof(short)) / 32768f;
+                    floatBuffer[i] = BitConverter.ToInt16(byteBuffer, dataOffset + i * sizeof(short)) / 32768f;
                 }
 
                 // Perform FFT and analyze frequencies.
-                var status = AnalyzeFrequencies(floatBuffer, waveFormat.SampleRate, waveFormat.Channels, oldStatus);
+                var status = AnalyzeFrequencies(floatBuffer, fmtChunk.SampleRate, fmtChunk.NumChannels, oldStatus);
                 return status;
             }
         }
