@@ -16,7 +16,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="sampleRate">Audio sample rate in Hz</param>
         /// <param name="channels">Number of audio channels</param>
         /// <param name="oldStatus">Previous online status for hysteresis</param>
-        public FrequencyInfo(float[] data, int sampleRate, int channels, OrcanodeOnlineStatus oldStatus)
+        public FrequencyInfo(float[] data, uint sampleRate, int channels, OrcanodeOnlineStatus oldStatus)
         {
             ChannelCount = channels;
             FrequencyMagnitudesForChannel = new Dictionary<double, double>[channels];
@@ -30,17 +30,20 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        private void ComputeFrequencyMagnitudes(float[] data, int sampleRate, int channelCount)
+        private void ComputeFrequencyMagnitudes(float[] data, uint sampleRate, int channelCount)
         {
             if (data == null || data.Length == 0)
+            {
                 throw new ArgumentException("Audio data cannot be null or empty", nameof(data));
-#if false
-            // TODO: there seems to be some issue here to track down.
+            }
             if (data.Length % channelCount != 0)
+            {
                 throw new ArgumentException("Data length must be divisible by channel count", nameof(data));
-#endif
+            }
             if (sampleRate <= 0)
+            {
                 throw new ArgumentException("Sample rate must be positive", nameof(sampleRate));
+            }
 
             int n = data.Length / channelCount;
 
