@@ -46,6 +46,7 @@ namespace Test
             Assert.IsTrue(FrequencyInfo.IsHumFrequency(120.0));
             Assert.IsTrue(FrequencyInfo.IsHumFrequency(300.0));
 
+            Assert.IsFalse(FrequencyInfo.IsHumFrequency(0.0));
             Assert.IsFalse(FrequencyInfo.IsHumFrequency(59.0));
             Assert.IsFalse(FrequencyInfo.IsHumFrequency(61.0));
             Assert.IsFalse(FrequencyInfo.IsHumFrequency(121.0));
