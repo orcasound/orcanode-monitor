@@ -112,7 +112,8 @@ namespace OrcanodeMonitor.Core
         }
 
         // We consider anything below this average magnitude as silence.
-        const double _defaultMinNoiseMagnitude = 15.0;
+        // The lowest normal value we have seen is 7.7.
+        const double _defaultMinNoiseMagnitude = 7.0;
         public static double MinNoiseMagnitude
         {
             get
@@ -293,7 +294,8 @@ namespace OrcanodeMonitor.Core
             }
 
             // Find the total magnitude outside the audio hum range.
-            if (GetMaxNonHumMagnitude(channel) < MinNoiseMagnitude)
+            double maxNonHumMagnitude = GetMaxNonHumMagnitude(channel);
+            if (maxNonHumMagnitude < MinNoiseMagnitude)
             {
                 // Just silence outside the hum range, no signal.
                 return OrcanodeOnlineStatus.Unintelligible;
