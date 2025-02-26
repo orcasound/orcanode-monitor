@@ -16,7 +16,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="sampleRate">Audio sample rate in Hz</param>
         /// <param name="channels">Number of audio channels</param>
         /// <param name="oldStatus">Previous online status for hysteresis</param>
-        public FrequencyInfo(float[] data, int sampleRate, int channels, OrcanodeOnlineStatus oldStatus)
+        public FrequencyInfo(float[] data, uint sampleRate, int channels, OrcanodeOnlineStatus oldStatus)
         {
             ChannelCount = channels;
             FrequencyMagnitudesForChannel = new Dictionary<double, double>[channels];
@@ -30,17 +30,20 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        private void ComputeFrequencyMagnitudes(float[] data, int sampleRate, int channelCount)
+        private void ComputeFrequencyMagnitudes(float[] data, uint sampleRate, int channelCount)
         {
             if (data == null || data.Length == 0)
+            {
                 throw new ArgumentException("Audio data cannot be null or empty", nameof(data));
-#if false
-            // TODO: there seems to be some issue here to track down.
+            }
             if (data.Length % channelCount != 0)
+            {
                 throw new ArgumentException("Data length must be divisible by channel count", nameof(data));
-#endif
+            }
             if (sampleRate <= 0)
+            {
                 throw new ArgumentException("Sample rate must be positive", nameof(sampleRate));
+            }
 
             int n = data.Length / channelCount;
 
@@ -82,10 +85,16 @@ namespace OrcanodeMonitor.Core
                     {
                         FrequencyMagnitudes[kvp.Key] = 0;
                     }
-                    if (FrequencyMagnitudes[kvp.Key] < kvp.Value)
-                    {
-                        FrequencyMagnitudes[kvp.Key] = kvp.Value;
-                    }
+                    FrequencyMagnitudes[kvp.Key] += kvp.Value;
+                }
+            }
+
+            // Now that we have the sum take the average.
+            if (channelCount > 1)
+            {
+                foreach (var key in FrequencyMagnitudes.Keys)
+                {
+                    FrequencyMagnitudes[key] /= channelCount;
                 }
             }
         }
@@ -103,7 +112,8 @@ namespace OrcanodeMonitor.Core
         }
 
         // We consider anything below this average magnitude as silence.
-        const double _defaultMinNoiseMagnitude = 15.0;
+        // The lowest normal value we have seen is 7.7.
+        const double _defaultMinNoiseMagnitude = 7.0;
         public static double MinNoiseMagnitude
         {
             get
@@ -116,8 +126,8 @@ namespace OrcanodeMonitor.Core
 
         // Minimum ratio of magnitude outside the hum range to magnitude
         // within the hum range.  So far the max in a known-unintelligible
-        // sample is 53% and the min in a known-good sample is 114%.
-        const double _defaultMinSignalPercent = 100;
+        // sample is 1140% and the min in a known-good sample is 1670%.
+        const double _defaultMinSignalPercent = 1400;
         private static double MinSignalRatio
         {
             get
@@ -168,21 +178,24 @@ namespace OrcanodeMonitor.Core
             return GetTotalNonHumMagnitude(channel) / hum;
         }
 
-        // Microphone audio hum typically falls within the 50 Hz or 60 Hz
+        // Microphone audio hum typically falls within the 60 Hz
         // range. This hum is often caused by electrical interference from
         // power lines and other electronic devices.
-        const double HumFrequency1 = 50.0; // Hz
-        const double HumFrequency2 = 60.0; // Hz
+        const double HumFrequency60 = 60.0; // Hz
         private static bool IsHumFrequency(double frequency, double humFrequency)
         {
-            Debug.Assert(frequency >= 0.0);
+            if (frequency == 0.0)
+            {
+                return false;
+            }
+            Debug.Assert(frequency > 0.0);
             Debug.Assert(humFrequency >= 0.0);
             const double tolerance = 1.0;
             double remainder = frequency % humFrequency;
             return (remainder < tolerance || remainder > (humFrequency - tolerance));
         }
 
-        public static bool IsHumFrequency(double frequency) => IsHumFrequency(frequency, HumFrequency1) || IsHumFrequency(frequency, HumFrequency2);
+        public static bool IsHumFrequency(double frequency) => IsHumFrequency(frequency, HumFrequency60);
 
         /// <summary>
         /// Find the maximum magnitude outside the audio hum range among a set of frequency magnitudes.
@@ -226,10 +239,7 @@ namespace OrcanodeMonitor.Core
                 double magnitude = pair.Value;
                 if (!IsHumFrequency(frequency))
                 {
-                    if (magnitude > MinNoiseMagnitude)
-                    {
-                        totalNonHumMagnitude += magnitude;
-                    }
+                    totalNonHumMagnitude += magnitude;
                 }
             }
             return totalNonHumMagnitude;
@@ -255,10 +265,7 @@ namespace OrcanodeMonitor.Core
                 double magnitude = pair.Value;
                 if (IsHumFrequency(frequency))
                 {
-                    if (magnitude > MinNoiseMagnitude)
-                    {
-                        totalHumMagnitude += magnitude;
-                    }
+                    totalHumMagnitude += magnitude;
                 }
             }
             return totalHumMagnitude;
@@ -287,7 +294,8 @@ namespace OrcanodeMonitor.Core
             }
 
             // Find the total magnitude outside the audio hum range.
-            if (GetMaxNonHumMagnitude(channel) < MinNoiseMagnitude)
+            double maxNonHumMagnitude = GetMaxNonHumMagnitude(channel);
+            if (maxNonHumMagnitude < MinNoiseMagnitude)
             {
                 // Just silence outside the hum range, no signal.
                 return OrcanodeOnlineStatus.Unintelligible;
@@ -295,7 +303,8 @@ namespace OrcanodeMonitor.Core
 
             double totalNonHumMagnitude = GetTotalNonHumMagnitude(channel);
             double totalHumMagnitude = GetTotalHumMagnitude(channel);
-            if (totalNonHumMagnitude / totalHumMagnitude < MinSignalRatio)
+            double signalRatio = totalNonHumMagnitude / totalHumMagnitude;
+            if (signalRatio < MinSignalRatio)
             {
                 // Essentially just silence outside the hum range, no signal.
                 return OrcanodeOnlineStatus.Unintelligible;
