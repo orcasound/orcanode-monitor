@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using MathNet.Numerics.IntegralTransforms;
+using FftSharp;
 using OrcanodeMonitor.Models;
 using System.Diagnostics;
 using System.Numerics;
@@ -46,33 +46,33 @@ namespace OrcanodeMonitor.Core
             }
 
             int n = data.Length / channelCount;
+            int nextPowerOfTwo = (int)Math.Pow(2, Math.Ceiling(Math.Log(n, 2)));
 
-            // Create an array of complex data for each channel.
-            Complex[][] complexData = new Complex[channelCount][];
+            // Create frequency magnitudes for each channel.
             for (int ch = 0; ch < channelCount; ch++)
             {
-                complexData[ch] = new Complex[n];
-            }
-
-            // Populate the complex arrays with channel data.
-            for (int i = 0; i < n; i++)
-            {
-                for (int ch = 0; ch < channelCount; ch++)
+                // Extract channel-specific data.
+                double[] channelData = new double[nextPowerOfTwo];
+                for (int i = 0; i < n; i++)
                 {
-                    complexData[ch][i] = new Complex(data[i * channelCount + ch], 0);
+                    channelData[i] = data[i * channelCount + ch];
                 }
-            }
 
-            // Perform Fourier transform for each channel.
-            for (int ch = 0; ch < channelCount; ch++)
-            {
-                Fourier.Forward(complexData[ch], FourierOptions.Matlab);
+                // Apply Hann window.
+                var hannWindow = new FftSharp.Windows.Hanning();
+                hannWindow.ApplyInPlace(channelData);
+
+                // Perform FFT.
+                Complex[] fftResult = FFT.Forward(channelData);
+                double[] magnitudes = FFT.Magnitude(fftResult);
+
+                // Store frequency magnitudes for this channel.
                 FrequencyMagnitudesForChannel[ch] = new Dictionary<double, double>(n / 2);
-                for (int i = 0; i < n / 2; i++)
+                for (int i = 0; i < magnitudes.Length / 2; i++) // Use only the first half (positive frequencies).
                 {
-                    double magnitude = complexData[ch][i].Magnitude;
-                    double frequency = (((double)i) * sampleRate) / n;
-                    FrequencyMagnitudesForChannel[ch][frequency] = magnitude;
+                    double frequency = (((double)i) * sampleRate) / nextPowerOfTwo;
+                    FrequencyMagnitudesForChannel[ch][frequency] = magnitudes[i];
+                    double decibels = magnitudes[i] > 0 ? 20 * Math.Log10(magnitudes[i]) : double.NegativeInfinity; // DEBUG
                 }
             }
 
