@@ -110,7 +110,7 @@ namespace OrcanodeMonitor.Pages
 
         private double GetBucketDecibels(string label, List<string> labels, List<double> decibels)
         {
-            double max = 0;
+            double max = double.NegativeInfinity;
             for (int i = 0; i < labels.Count; i++)
             {
                 if (labels[i] == label && decibels[i] > max)
