@@ -30,7 +30,7 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        private void ComputeFrequencyMagnitudes(float[] data, uint sampleRate, int channelCount)
+        private void ComputeFrequencyMagnitudes(float[] data, uint sampleRate, int channelCount, int windowSize = 8192)
         {
             if (data == null || data.Length == 0)
             {
@@ -45,34 +45,49 @@ namespace OrcanodeMonitor.Core
                 throw new ArgumentException("Sample rate must be positive", nameof(sampleRate));
             }
 
-            int n = data.Length / channelCount;
+            int overlap = windowSize / 2; // 50% overlap
+            int totalSamples = data.Length / channelCount;
+            int totalWindows = (totalSamples - windowSize) / overlap + 1;
 
             // Create an array of complex data for each channel.
             Complex[][] complexData = new Complex[channelCount][];
             for (int ch = 0; ch < channelCount; ch++)
             {
-                complexData[ch] = new Complex[n];
+                complexData[ch] = new Complex[windowSize];
+                FrequencyMagnitudesForChannel[ch] = new Dictionary<double, double>();
             }
 
-            // Populate the complex arrays with channel data.
-            for (int i = 0; i < n; i++)
-            {
-                for (int ch = 0; ch < channelCount; ch++)
-                {
-                    complexData[ch][i] = new Complex(data[i * channelCount + ch], 0);
-                }
-            }
-
-            // Perform Fourier transform for each channel.
+            // Apply overlapping windows and perform FFT.
             for (int ch = 0; ch < channelCount; ch++)
             {
-                Fourier.Forward(complexData[ch], FourierOptions.Matlab);
-                FrequencyMagnitudesForChannel[ch] = new Dictionary<double, double>(n / 2);
-                for (int i = 0; i < n / 2; i++)
+                for (int windowIndex = 0; windowIndex < totalWindows; windowIndex++)
                 {
-                    double magnitude = complexData[ch][i].Magnitude;
-                    double frequency = (((double)i) * sampleRate) / n;
-                    FrequencyMagnitudesForChannel[ch][frequency] = magnitude;
+                    // Apply the Hann window and populate complex data arrays for each window.
+                    for (int i = 0; i < windowSize; i++)
+                    {
+                        int dataIndex = (windowIndex * overlap * channelCount) + (i * channelCount) + ch;
+                        double window = 0.5 * (1 - Math.Cos(2 * Math.PI * i / (windowSize - 1))); // Hann window
+                        complexData[ch][i] = new Complex(data[dataIndex] * window, 0);
+                    }
+
+                    // Perform the FFT on the current window.
+                    Fourier.Forward(complexData[ch], FourierOptions.Matlab);
+
+                    // Only the first half of the FFT output contains useful information,
+                    // since the second half corresponds to negative frequencies.
+                    for (int i = 0; i < windowSize / 2; i++)
+                    {
+                        double magnitude = complexData[ch][i].Magnitude;
+                        double frequency = (((double)i) * sampleRate) / windowSize;
+                        if (!FrequencyMagnitudesForChannel[ch].ContainsKey(frequency))
+                        {
+                            FrequencyMagnitudesForChannel[ch][frequency] = 0;
+                        }
+                        if (FrequencyMagnitudesForChannel[ch][frequency] < magnitude)
+                        {
+                            FrequencyMagnitudesForChannel[ch][frequency] = magnitude;
+                        }
+                    }
                 }
             }
 
@@ -85,6 +100,12 @@ namespace OrcanodeMonitor.Core
                     {
                         FrequencyMagnitudes[kvp.Key] = 0;
                     }
+
+                    // The audacity manual states:
+                    // "The spectrum analysis shows the sum of all selected channels,
+                    // so shows the sum of left and right channels in a stereo track.
+                    // If there are two selected channels with identical audio, the
+                    // same peak will be 6 dB higher than if one channel was selected."
                     FrequencyMagnitudes[kvp.Key] += kvp.Value;
                 }
             }
