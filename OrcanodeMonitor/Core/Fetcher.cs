@@ -961,7 +961,11 @@ namespace OrcanodeMonitor.Core
             try
             {
                 using Stream stream = await _httpClient.GetStreamAsync(uri);
+#if true
+                FrequencyInfo frequencyInfo = await FfmpegCoreAnalyzer.AnalyzeFileAsync("output.wav", oldStatus);
+#else
                 FrequencyInfo frequencyInfo = await FfmpegCoreAnalyzer.AnalyzeAudioStreamAsync(stream, oldStatus);
+#endif
                 frequencyInfo.AudioSampleUrl = uri.AbsoluteUri;
                 return frequencyInfo;
             }
