@@ -961,7 +961,7 @@ namespace OrcanodeMonitor.Core
             try
             {
                 using Stream stream = await _httpClient.GetStreamAsync(uri);
-#if false
+#if true
                 FrequencyInfo frequencyInfo = await FfmpegCoreAnalyzer.AnalyzeAudioStreamAsync(stream, oldStatus);
 #else
                 FrequencyInfo frequencyInfo = await FfmpegCoreAnalyzer.AnalyzeFileAsync("output-2channels.wav", oldStatus);

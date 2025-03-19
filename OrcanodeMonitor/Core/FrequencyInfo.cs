@@ -105,8 +105,14 @@ namespace OrcanodeMonitor.Core
             return magnitude;
         }
 
+        private static double MagnitudeToDecibels(double magnitude)
+        {
+            double dB = 20 * Math.Log10(magnitude);
+            return dB;
+        }
+
         // We consider anything above this average decibels as not silence.
-        const double _defaultMaxSilenceDecibels = -100;
+        const double _defaultMaxSilenceDecibels = -80;
         public static double MaxSilenceDecibels
         {
             get
@@ -120,8 +126,8 @@ namespace OrcanodeMonitor.Core
         public static double MaxSilenceMagnitude => DecibelsToMagnitude(MaxSilenceDecibels);
 
         // We consider anything below this average decibels as silence.
-        // The lowest normal value we have seen is TBD.
-        const double _defaultMinNoiseDecibels = -110;
+        // The lowest normal value we have seen is -98.
+        const double _defaultMinNoiseDecibels = -90;
         public static double MinNoiseDecibels
         {
             get
@@ -289,14 +295,15 @@ namespace OrcanodeMonitor.Core
 
         private OrcanodeOnlineStatus GetStatus(OrcanodeOnlineStatus oldStatus, int? channel = null)
         {
-            double max = GetMaxMagnitude(channel);
-            if (max < MinNoiseMagnitude)
+            double maxMagnitude = GetMaxMagnitude(channel);
+            double maxDecibels = MagnitudeToDecibels(maxMagnitude);
+            if (maxDecibels < MinNoiseDecibels)
             {
                 // File contains mostly silence across all frequencies.
                 return OrcanodeOnlineStatus.Silent;
             }
 
-            if ((max <= MaxSilenceMagnitude) && (oldStatus == OrcanodeOnlineStatus.Silent))
+            if (maxDecibels <= MaxSilenceDecibels)
             {
                 // In between the min and max silence range, so keep previous status.
                 return oldStatus;
@@ -304,7 +311,8 @@ namespace OrcanodeMonitor.Core
 
             // Find the total magnitude outside the audio hum range.
             double maxNonHumMagnitude = GetMaxNonHumMagnitude(channel);
-            if (maxNonHumMagnitude < MinNoiseMagnitude)
+            double maxNonHumDecibels = MagnitudeToDecibels(maxNonHumMagnitude);
+            if (maxNonHumDecibels < MinNoiseDecibels)
             {
                 // Just silence outside the hum range, no signal.
                 return OrcanodeOnlineStatus.Unintelligible;
