@@ -41,10 +41,8 @@ namespace OrcanodeMonitor.Pages
             double dB = 20 * Math.Log10(magnitude);
             return dB;
         }
-        public double MaxSilenceMagnitude => FrequencyInfo.MaxSilenceMagnitude;
-        public double MinNoiseMagnitude => FrequencyInfo.MinNoiseMagnitude;
-        public double MaxSilenceDecibels => MagnitudeToDecibels(FrequencyInfo.MaxSilenceMagnitude);
-        public double MinNoiseDecibels => MagnitudeToDecibels(FrequencyInfo.MinNoiseMagnitude);
+        public double MaxSilenceDecibels => FrequencyInfo.MaxSilenceDecibels;
+        public double MinNoiseDecibels => FrequencyInfo.MinNoiseDecibels;
         public string LastModified { get; private set; }
 
         public SpectralDensityModel(OrcanodeMonitorContext context, ILogger<SpectralDensityModel> logger)

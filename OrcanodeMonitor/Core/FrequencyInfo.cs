@@ -99,30 +99,39 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        // We consider anything above this average magnitude as not silence.
-        const double _defaultMaxSilenceMagnitude = 20.0;
-        public static double MaxSilenceMagnitude
+        private static double DecibelsToMagnitude(double decibels)
+        {
+            double magnitude = Math.Pow(10, decibels / 20);
+            return magnitude;
+        }
+
+        // We consider anything above this average decibels as not silence.
+        const double _defaultMaxSilenceDecibels = -100;
+        public static double MaxSilenceDecibels
         {
             get
             {
-                string? maxSilenceMagnitudeString = Environment.GetEnvironmentVariable("ORCASOUND_MAX_SILENCE_MAGNITUDE");
-                double maxSilenceMagnitude = double.TryParse(maxSilenceMagnitudeString, out var magnitude) ? magnitude : _defaultMaxSilenceMagnitude;
-                return maxSilenceMagnitude;
+                string? maxSilenceDecibelsString = Environment.GetEnvironmentVariable("ORCASOUND_MAX_SILENCE_DECIBELS");
+                double maxSilenceDecibels = double.TryParse(maxSilenceDecibelsString, out var decibels) ? decibels : _defaultMaxSilenceDecibels;
+                return maxSilenceDecibels;
             }
         }
 
-        // We consider anything below this average magnitude as silence.
-        // The lowest normal value we have seen is 7.7.
-        const double _defaultMinNoiseMagnitude = 7.0;
-        public static double MinNoiseMagnitude
+        public static double MaxSilenceMagnitude => DecibelsToMagnitude(MaxSilenceDecibels);
+
+        // We consider anything below this average decibels as silence.
+        // The lowest normal value we have seen is TBD.
+        const double _defaultMinNoiseDecibels = -110;
+        public static double MinNoiseDecibels
         {
             get
             {
-                string? minNoiseMagnitudeString = Environment.GetEnvironmentVariable("ORCASOUND_MIN_NOISE_MAGNITUDE");
-                double minNoiseMagnitude = double.TryParse(minNoiseMagnitudeString, out var magnitude) ? magnitude : _defaultMinNoiseMagnitude;
-                return minNoiseMagnitude;
+                string? minNoiseDecibelsString = Environment.GetEnvironmentVariable("ORCASOUND_MIN_NOISE_DECIBELS");
+                double minNoiseDecibels = double.TryParse(minNoiseDecibelsString, out var decibels) ? decibels : _defaultMinNoiseDecibels;
+                return minNoiseDecibels;
             }
         }
+        public static double MinNoiseMagnitude => DecibelsToMagnitude(MinNoiseDecibels);
 
         // Minimum ratio of magnitude outside the hum range to magnitude
         // within the hum range.  So far the max in a known-unintelligible
