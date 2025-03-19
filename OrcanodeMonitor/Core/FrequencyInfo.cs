@@ -1,6 +1,6 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using MathNet.Numerics.IntegralTransforms;
+using FftSharp;
 using OrcanodeMonitor.Models;
 using System.Diagnostics;
 using System.Numerics;
@@ -46,33 +46,33 @@ namespace OrcanodeMonitor.Core
             }
 
             int n = data.Length / channelCount;
+            int nextPowerOfTwo = (int)Math.Pow(2, Math.Ceiling(Math.Log(n, 2)));
 
-            // Create an array of complex data for each channel.
-            Complex[][] complexData = new Complex[channelCount][];
+            // Create frequency magnitudes for each channel.
             for (int ch = 0; ch < channelCount; ch++)
             {
-                complexData[ch] = new Complex[n];
-            }
-
-            // Populate the complex arrays with channel data.
-            for (int i = 0; i < n; i++)
-            {
-                for (int ch = 0; ch < channelCount; ch++)
+                // Extract channel-specific data.
+                double[] channelData = new double[nextPowerOfTwo];
+                for (int i = 0; i < n; i++)
                 {
-                    complexData[ch][i] = new Complex(data[i * channelCount + ch], 0);
+                    channelData[i] = data[i * channelCount + ch];
                 }
-            }
 
-            // Perform Fourier transform for each channel.
-            for (int ch = 0; ch < channelCount; ch++)
-            {
-                Fourier.Forward(complexData[ch], FourierOptions.Matlab);
+                // Apply Hann window.
+                var hannWindow = new FftSharp.Windows.Hanning();
+                hannWindow.ApplyInPlace(channelData);
+
+                // Perform FFT.
+                Complex[] fftResult = FFT.Forward(channelData);
+                double[] magnitudes = FFT.Magnitude(fftResult);
+
+                // Store frequency magnitudes for this channel.
                 FrequencyMagnitudesForChannel[ch] = new Dictionary<double, double>(n / 2);
-                for (int i = 0; i < n / 2; i++)
+                for (int i = 0; i < magnitudes.Length / 2; i++) // Use only the first half (positive frequencies).
                 {
-                    double magnitude = complexData[ch][i].Magnitude;
-                    double frequency = (((double)i) * sampleRate) / n;
-                    FrequencyMagnitudesForChannel[ch][frequency] = magnitude;
+                    double frequency = (((double)i) * sampleRate) / nextPowerOfTwo;
+                    FrequencyMagnitudesForChannel[ch][frequency] = magnitudes[i];
+                    double decibels = magnitudes[i] > 0 ? 20 * Math.Log10(magnitudes[i]) : double.NegativeInfinity; // DEBUG
                 }
             }
 
@@ -99,30 +99,45 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        // We consider anything above this average magnitude as not silence.
-        const double _defaultMaxSilenceMagnitude = 20.0;
-        public static double MaxSilenceMagnitude
+        private static double DecibelsToMagnitude(double decibels)
+        {
+            double magnitude = Math.Pow(10, decibels / 20);
+            return magnitude;
+        }
+
+        private static double MagnitudeToDecibels(double magnitude)
+        {
+            double dB = 20 * Math.Log10(magnitude);
+            return dB;
+        }
+
+        // We consider anything above this average decibels as not silence.
+        const double _defaultMaxSilenceDecibels = -80;
+        public static double MaxSilenceDecibels
         {
             get
             {
-                string? maxSilenceMagnitudeString = Environment.GetEnvironmentVariable("ORCASOUND_MAX_SILENCE_MAGNITUDE");
-                double maxSilenceMagnitude = double.TryParse(maxSilenceMagnitudeString, out var magnitude) ? magnitude : _defaultMaxSilenceMagnitude;
-                return maxSilenceMagnitude;
+                string? maxSilenceDecibelsString = Environment.GetEnvironmentVariable("ORCASOUND_MAX_SILENCE_DECIBELS");
+                double maxSilenceDecibels = double.TryParse(maxSilenceDecibelsString, out var decibels) ? decibels : _defaultMaxSilenceDecibels;
+                return maxSilenceDecibels;
             }
         }
 
-        // We consider anything below this average magnitude as silence.
-        // The lowest normal value we have seen is 7.7.
-        const double _defaultMinNoiseMagnitude = 7.0;
-        public static double MinNoiseMagnitude
+        public static double MaxSilenceMagnitude => DecibelsToMagnitude(MaxSilenceDecibels);
+
+        // We consider anything below this average decibels as silence.
+        // The lowest normal value we have seen is -98.
+        const double _defaultMinNoiseDecibels = -90;
+        public static double MinNoiseDecibels
         {
             get
             {
-                string? minNoiseMagnitudeString = Environment.GetEnvironmentVariable("ORCASOUND_MIN_NOISE_MAGNITUDE");
-                double minNoiseMagnitude = double.TryParse(minNoiseMagnitudeString, out var magnitude) ? magnitude : _defaultMinNoiseMagnitude;
-                return minNoiseMagnitude;
+                string? minNoiseDecibelsString = Environment.GetEnvironmentVariable("ORCASOUND_MIN_NOISE_DECIBELS");
+                double minNoiseDecibels = double.TryParse(minNoiseDecibelsString, out var decibels) ? decibels : _defaultMinNoiseDecibels;
+                return minNoiseDecibels;
             }
         }
+        public static double MinNoiseMagnitude => DecibelsToMagnitude(MinNoiseDecibels);
 
         // Minimum ratio of magnitude outside the hum range to magnitude
         // within the hum range.  So far the max in a known-unintelligible
@@ -280,14 +295,15 @@ namespace OrcanodeMonitor.Core
 
         private OrcanodeOnlineStatus GetStatus(OrcanodeOnlineStatus oldStatus, int? channel = null)
         {
-            double max = GetMaxMagnitude(channel);
-            if (max < MinNoiseMagnitude)
+            double maxMagnitude = GetMaxMagnitude(channel);
+            double maxDecibels = MagnitudeToDecibels(maxMagnitude);
+            if (maxDecibels < MinNoiseDecibels)
             {
                 // File contains mostly silence across all frequencies.
                 return OrcanodeOnlineStatus.Silent;
             }
 
-            if ((max <= MaxSilenceMagnitude) && (oldStatus == OrcanodeOnlineStatus.Silent))
+            if (maxDecibels <= MaxSilenceDecibels)
             {
                 // In between the min and max silence range, so keep previous status.
                 return oldStatus;
@@ -295,7 +311,8 @@ namespace OrcanodeMonitor.Core
 
             // Find the total magnitude outside the audio hum range.
             double maxNonHumMagnitude = GetMaxNonHumMagnitude(channel);
-            if (maxNonHumMagnitude < MinNoiseMagnitude)
+            double maxNonHumDecibels = MagnitudeToDecibels(maxNonHumMagnitude);
+            if (maxNonHumDecibels < MinNoiseDecibels)
             {
                 // Just silence outside the hum range, no signal.
                 return OrcanodeOnlineStatus.Unintelligible;
