@@ -145,7 +145,13 @@ namespace OrcanodeMonitor.Pages
             {
                 mainLabels.UnionWith(channelLabels[i]);
             }
-            _labels = mainLabels.ToList();
+
+            // Sort labels numerically.
+            _labels = mainLabels
+                .Select(label => int.Parse(label)) // Convert to integers for sorting.
+                .OrderBy(num => num)               // Sort in ascending order.
+                .Select(num => num.ToString())     // Convert back to strings.
+                .ToList();
 
             // Align data.
             var summaryDataset = _labels.Select(label => new
