@@ -44,7 +44,7 @@
                 datasets: [
                     {
                         label: 'Dataplicity',
-                        data: dataplicityData.map(e => e.StateValue == 0 ? 0 : e.StateValue - 0.1),
+                        data: dataplicityData.map(e => e.StateValue === null ? null : (e.StateValue == 0 ? 0 : e.StateValue - 0.1)),
                         backgroundColor: 'rgba(255, 99, 132, 0.2)',
                         borderColor: 'rgba(255, 99, 132, 1)',
                         borderWidth: 1,
@@ -53,7 +53,7 @@
                     },
                     {
                         label: 'Mezmo',
-                        data: mezmoData.map(e => e.StateValue == 0 ? 0 : e.StateValue - 0.05),
+                        data: mezmoData.map(e => e.StateValue === null ? null : (e.StateValue == 0 ? 0 : e.StateValue - 0.05)),
                         backgroundColor: 'rgba(75, 192, 192, 0.2)',
                         borderColor: 'rgba(0, 255, 0, 1)',
                         borderWidth: 1,
@@ -62,7 +62,7 @@
                     },
                     {
                         label: 'Audio Stream',
-                        data: hydrophoneStreamData.map(e => e.StateValue),
+                        data: hydrophoneStreamData.map(e => e.StateValue === null ? null : e.StateValue),
                         backgroundColor: 'rgba(54, 162, 235, 0.2)',
                         borderColor: 'rgba(54, 162, 235, 1)',
                         borderWidth: 1,
