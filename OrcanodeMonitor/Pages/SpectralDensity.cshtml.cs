@@ -26,14 +26,14 @@ namespace OrcanodeMonitor.Pages
         private List<string> _labels;
         public List<string> Labels => _labels;
         public string AudioUrl => _event?.Url ?? "Unknown";
-        public int MaxMagnitude { get; private set; }
+        public double MaxMagnitude { get; private set; }
         public int ChannelCount { get; private set; }
-        public int TotalNonHumMagnitude => (int)Math.Round(_totalNonHumMagnitude);
-        public int TotalHumMagnitude => (int)Math.Round(_totalHumMagnitude);
+        public double TotalNonHumMagnitude => _totalNonHumMagnitude;
+        public double TotalHumMagnitude => _totalHumMagnitude;
         private double _totalHumMagnitude;
         private double _totalNonHumMagnitude;
         private FrequencyInfo? _frequencyInfo = null;
-        public int MaxNonHumMagnitude { get; private set; }
+        public double MaxNonHumMagnitude { get; private set; }
         public int SignalRatio { get; private set; }
         public string Status { get; private set; }
         private static double MagnitudeToDecibels(double magnitude)
@@ -174,8 +174,8 @@ namespace OrcanodeMonitor.Pages
             JsonSummaryDataset = JsonSerializer.Serialize(summaryDataset);
             JsonChannelDatasets = JsonSerializer.Serialize(channelDatasets);
 
-            MaxMagnitude = (int)Math.Round(_frequencyInfo.GetMaxMagnitude());
-            MaxNonHumMagnitude = (int)Math.Round(_frequencyInfo.GetMaxNonHumMagnitude());
+            MaxMagnitude = _frequencyInfo.GetMaxMagnitude();
+            MaxNonHumMagnitude = _frequencyInfo.GetMaxNonHumMagnitude();
             ChannelCount = _frequencyInfo.ChannelCount;
             Status = Orcanode.GetStatusString(_frequencyInfo.Status);
             _totalHumMagnitude = _frequencyInfo.GetTotalHumMagnitude();
@@ -215,18 +215,18 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="channel">The channel index to get the magnitude for.</param>
         /// <returns>The maximum magnitude for the specified channel, or 0 if no data is available.</returns>
-        public int GetMaxMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetMaxMagnitude(channel) ?? 0);
+        public double GetMaxMagnitude(int channel) => _frequencyInfo?.GetMaxMagnitude(channel) ?? 0;
 
         /// <summary>
         /// Gets the maximum non-hum magnitude for a specific channel.
         /// </summary>
         /// <param name="channel">The channel index to get the magnitude for.</param>
         /// <returns>The maximum non-hum magnitude for the specified channel, or 0 if no data is available.</returns>
-        public int GetMaxNonHumMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetMaxNonHumMagnitude(channel) ?? 0);
+        public double GetMaxNonHumMagnitude(int channel) => _frequencyInfo?.GetMaxNonHumMagnitude(channel) ?? 0;
 
-        public int GetTotalHumMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetTotalHumMagnitude(channel) ?? 0);
+        public double GetTotalHumMagnitude(int channel) => _frequencyInfo?.GetTotalHumMagnitude(channel) ?? 0;
 
-        public int GetTotalNonHumMagnitude(int channel) => (int)Math.Round(_frequencyInfo?.GetTotalNonHumMagnitude(channel) ?? 0);
+        public double GetTotalNonHumMagnitude(int channel) => _frequencyInfo?.GetTotalNonHumMagnitude(channel) ?? 0;
 
         public int GetSignalRatio(int channel) => (int)Math.Round(100 * _frequencyInfo?.GetSignalRatio(channel) ?? 0);
 
