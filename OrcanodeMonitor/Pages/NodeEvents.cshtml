@@ -121,23 +121,6 @@
         });
     </script>
 
-    <div>
-        Uptime percentage:
-        <span id="uptime-all-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("all", "pastWeek")%</span>
-        <span id="uptime-hydrophoneStream-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("hydrophoneStream", "pastWeek")%</span>
-        <span id="uptime-dataplicityConnection-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("dataplicityConnection", "pastWeek")%</span>
-        <span id="uptime-mezmoLogging-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("mezmoLogging", "pastWeek")%</span>
-        <span id="uptime-all-pastMonth" class="uptime-percentage">@Model.GetUptimePercentage("all", "pastMonth")%</span>
-        <span id="uptime-hydrophoneStream-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("hydrophoneStream", "pastMonth")%</span>
-        <span id="uptime-dataplicityConnection-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("dataplicityConnection", "pastMonth")%</span>
-        <span id="uptime-mezmoLogging-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("mezmoLogging", "pastMonth")%</span>
-        <span id="uptime-all-all" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("all", "all")%</span>
-        <span id="uptime-hydrophoneStream-all" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("hydrophoneStream", "all")%</span>
-        <span id="uptime-dataplicityConnection-all" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("dataplicityConnection", "all")%</span>
-        <span id="uptime-mezmoLogging-all" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("mezmoLogging", "all")%</span>
-        <p></p>
-    </div>
-
     <!-- Filter Buttons for Time Range -->
     <div>
         Filter by Time Range:
@@ -157,6 +140,22 @@
         <p></p>
     </div>
 
+    <div>
+        Uptime percentage:
+        <span id="uptime-all-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("all", "pastWeek")%</span>
+        <span id="uptime-hydrophoneStream-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("hydrophoneStream", "pastWeek")%</span>
+        <span id="uptime-dataplicityConnection-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("dataplicityConnection", "pastWeek")%</span>
+        <span id="uptime-mezmoLogging-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("mezmoLogging", "pastWeek")%</span>
+        <span id="uptime-all-pastMonth" class="uptime-percentage">@Model.GetUptimePercentage("all", "pastMonth")%</span>
+        <span id="uptime-hydrophoneStream-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("hydrophoneStream", "pastMonth")%</span>
+        <span id="uptime-dataplicityConnection-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("dataplicityConnection", "pastMonth")%</span>
+        <span id="uptime-mezmoLogging-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("mezmoLogging", "pastMonth")%</span>
+        <span id="uptime-all-all" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("all", "all")%</span>
+        <span id="uptime-hydrophoneStream-all" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("hydrophoneStream", "all")%</span>
+        <span id="uptime-dataplicityConnection-all" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("dataplicityConnection", "all")%</span>
+        <span id="uptime-mezmoLogging-all" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("mezmoLogging", "all")%</span>
+        <p></p>
+    </div>
     <table id="eventsTable" class="table">
         <thead>
             <tr>
