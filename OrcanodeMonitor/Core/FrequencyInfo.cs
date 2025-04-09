@@ -242,6 +242,13 @@ namespace OrcanodeMonitor.Core
         public double GetMaxNonHumMagnitude(int? channel = null) => GetMaxNonHumMagnitude(GetFrequencyMagnitudes(channel));
 
         /// <summary>
+        /// Find the maximum decibels outside the audio hum range.
+        /// </summary>
+        /// <param name="channel">Channel, or null for all</param>
+        /// <returns>Magnitude</returns>
+        public double GetMaxNonHumDecibels(int? channel = null) => MagnitudeToDecibels(GetMaxNonHumMagnitude(channel));
+
+        /// <summary>
         /// Find the total magnitude outside the audio hum range among a given set of frequency magnitudes.
         /// </summary>
         /// <returns>Magnitude</returns>

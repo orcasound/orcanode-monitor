@@ -19,6 +19,7 @@
             <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Mezmo</a></th>
             <th><a href="https://open.quiltdata.com/b/audio-orcasound-net/tree/" target="_blank">S3 Stream</a></th>
             <th>Up%</th>
+            <th>dB</th>
             <th><a href="https://live.orcasound.net/listen" target="_blank">Orcasound</a></th>
             <th><a href="https://aifororcas2.azurewebsites.net/hydrophones" target="_blank">OrcaHello</a></th>
         </tr>
@@ -76,6 +77,9 @@
                        aria-label="View events for @item.DisplayName">
                     @Model.GetUptimePercentage(item)%
                 </a>
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.DecibelLevelForDisplay)
             </td>
             @if (item.OrcasoundStatus == Models.OrcanodeOnlineStatus.Absent)
             {
@@ -164,6 +168,9 @@
         </li>
         <li>
             <b>Up%</b>: Percentage of time the S3 Stream has been online over the past week.
+        </li>
+        <li>
+            <b>dB</b>: Maximum decibels other than hum.
         </li>
         <li>
             <b>Orcasound Absent</b>: orcasound.net does not know about the node.

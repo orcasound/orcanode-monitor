@@ -994,6 +994,7 @@ namespace OrcanodeMonitor.Core
             if (frequencyInfo != null)
             {
                 node.AudioStreamStatus = frequencyInfo.Status;
+                node.DecibelLevel = frequencyInfo.GetMaxNonHumDecibels();
             }
             node.AudioStandardDeviation = 0.0;
 
