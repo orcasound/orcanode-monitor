@@ -446,13 +446,21 @@ namespace OrcanodeMonitor.Models
                     continue;
                 }
                 DateTime current = e.DateTimeUtc;
-                if (IsStateOnline(lastValue))
+
+                // When collecting "all" events, we only want to count time
+                // starting with the first event for the node, not across all
+                // time or we'd end up with about 0% uptime.
+                // For other time ranges, use the full week or month.
+                if (start > DateTime.MinValue)
                 {
-                    up += (current - start);
-                }
-                else
-                {
-                    down += (current - start);
+                    if (IsStateOnline(lastValue))
+                    {
+                        up += (current - start);
+                    }
+                    else
+                    {
+                        down += (current - start);
+                    }
                 }
                 start = current;
                 lastValue = e.Value;
