@@ -24,6 +24,15 @@ namespace OrcanodeMonitor.Core
                 return TimeSpan.FromMinutes(frequencyToPollInMinutes);
             }
         }
+        public static double PollsPerDay
+        {
+            get
+            {
+                TimeSpan timeSpan = FrequencyToPoll;
+                TimeSpan oneDay = TimeSpan.FromDays(1);
+                return oneDay.TotalMinutes / timeSpan.TotalMinutes;
+            }
+        }
 
         private readonly ILogger<PeriodicTasks> _logger;
 

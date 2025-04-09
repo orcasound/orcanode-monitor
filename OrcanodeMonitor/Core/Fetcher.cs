@@ -994,7 +994,19 @@ namespace OrcanodeMonitor.Core
             if (frequencyInfo != null)
             {
                 node.AudioStreamStatus = frequencyInfo.Status;
-                node.DecibelLevel = frequencyInfo.GetMaxNonHumDecibels();
+
+                // Compute an exponential weighted moving average of the decibel level.
+                double newValue = frequencyInfo.GetAverageNonHumDecibels();
+                if (true) // node.DecibelLevel == null)
+                {
+                    node.DecibelLevel = newValue;
+                }
+                else
+                {
+                    // Let it be a moving average across a day.
+                    double alpha = 1.0 / PeriodicTasks.PollsPerDay;
+                    node.DecibelLevel = (alpha * newValue) + ((1 - alpha) * node.DecibelLevel);
+                }
             }
             node.AudioStandardDeviation = 0.0;
 
