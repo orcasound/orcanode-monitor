@@ -66,6 +66,7 @@ namespace OrcanodeMonitor.Models
             PartitionValue = 1;
             MezmoLogSize = 0;
             MezmoViewId = string.Empty;
+            DecibelLevel = 0;
         }
 
         #region persisted
@@ -174,6 +175,22 @@ namespace OrcanodeMonitor.Models
         public bool? DataplicityUpgradeAvailable { get; set; }
 
         public double? AudioStandardDeviation { get; set; }
+
+        /// <summary>
+        /// Measure of volume.
+        /// </summary>
+        public double? DecibelLevel { get; set; }
+
+        public string DecibelLevelForDisplay {
+            get
+            {
+                if (DecibelLevel == null || DecibelLevel == 0)
+                {
+                    return "N/A";
+                }
+                return ((int)Math.Round(DecibelLevel ?? 0)).ToString();
+            }
+        }
 
         /// <summary>
         /// Whether the node is visible on the orcasound website.
