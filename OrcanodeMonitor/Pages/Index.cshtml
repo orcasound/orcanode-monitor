@@ -13,15 +13,15 @@
         <tr>
             <th>Type</th>
             <th>Location</th>
-            <th><a href="https://www.dataplicity.com/app/" target="_blank">Dataplicity</a></th>
-            <th>Agent Version</th>
-            <th>SD Card Util.</th>
-            <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Mezmo</a></th>
+            <th><a href="https://live.orcasound.net/listen" target="_blank">Orcasound</a></th>
             <th><a href="https://open.quiltdata.com/b/audio-orcasound-net/tree/" target="_blank">S3 Stream</a></th>
             <th>Up%</th>
             <th>dB</th>
-            <th><a href="https://live.orcasound.net/listen" target="_blank">Orcasound</a></th>
             <th><a href="https://aifororcas2.azurewebsites.net/hydrophones" target="_blank">OrcaHello</a></th>
+            <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Logging</a></th>
+            <th><a href="https://www.dataplicity.com/app/" target="_blank">Dataplicity</a></th>
+            <th>Agent Version</th>
+            <th>SD Card Util.</th>
         </tr>
     @foreach (Models.Orcanode item in Model.Nodes)
     {
@@ -32,29 +32,17 @@
             <td title="@Html.DisplayFor(modelItem => item.DataplicityDescription)">
                 @Html.DisplayFor(modelItem => item.DisplayName)
             </td>
-            <td style="background-color: @Model.NodeDataplicityBackgroundColor(item)">
-                <a asp-page="/DataplicityNode" asp-route-serial="@item.DataplicitySerial" style="color: @Model.NodeDataplicityTextColor(item)">
-                    @Html.DisplayFor(modelItem => item.DataplicityConnectionStatus)
-                </a>
-            </td>
-            <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
-                @Html.DisplayFor(modelItem => item.AgentVersion)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.DiskUsedInGigs)/@Html.DisplayFor(modelItem => item.DiskCapacityInGigs)G
-                (@Html.DisplayFor(modelItem => item.DiskUsagePercentage)%)
-            </td>
-            @if (item.MezmoStatus == Models.OrcanodeOnlineStatus.Absent)
+            @if (item.OrcasoundStatus == Models.OrcanodeOnlineStatus.Absent)
             {
-                    <td style="background-color: @Model.NodeMezmoBackgroundColor(item); color: @Model.NodeMezmoTextColor(item)">
-                    @Html.DisplayFor(modelItem => item.MezmoStatus)
+                <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item); color: @Model.NodeOrcasoundTextColor(item)">
+                    @Html.DisplayFor(modelItem => item.OrcasoundStatus)
                 </td>
             }
             else
             {
-                <td style="background-color: @Model.NodeMezmoBackgroundColor(item)">
-                    <a href="https://app.mezmo.com/313dbd82f3/logs/view?hosts=@Html.DisplayFor(modelItem => item.S3NodeName)" style="color: @Model.NodeMezmoTextColor(item)" target="_blank">
-                        @Html.DisplayFor(modelItem => item.MezmoStatus)
+                <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item)">
+                    <a href="https://@Html.DisplayFor(modelItem => item.OrcasoundHost)/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" style="color: @Model.NodeOrcasoundTextColor(item)" target="_blank">
+                        @Html.DisplayFor(modelItem => item.OrcasoundStatus)
                     </a>
                 </td>
             }
@@ -73,7 +61,7 @@
                 </td>
             }
             <td style="background-color: @Model.NodeUptimePercentageBackgroundColor(item)">
-                    <a asp-page="/NodeEvents" asp-route-id="@item.ID" style="color: @Model.NodeUptimePercentageTextColor(item)"
+                <a asp-page="/NodeEvents" asp-route-id="@item.ID" style="color: @Model.NodeUptimePercentageTextColor(item)"
                        aria-label="View events for @item.DisplayName">
                     @Model.GetUptimePercentage(item)%
                 </a>
@@ -81,23 +69,9 @@
             <td>
                 @Html.DisplayFor(modelItem => item.DecibelLevelForDisplay)
             </td>
-            @if (item.OrcasoundStatus == Models.OrcanodeOnlineStatus.Absent)
-            {
-                <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item); color: @Model.NodeOrcasoundTextColor(item)">
-                    @Html.DisplayFor(modelItem => item.OrcasoundStatus)
-                </td>
-            }
-            else
-            {
-                <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item)">
-                    <a href="https://@Html.DisplayFor(modelItem => item.OrcasoundHost)/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" style="color: @Model.NodeOrcasoundTextColor(item)" target="_blank">
-                        @Html.DisplayFor(modelItem => item.OrcasoundStatus)
-                    </a>
-                </td>
-            }
             @if (item.OrcaHelloStatus == Models.OrcanodeOnlineStatus.Absent)
             {
-                    <td style="background-color: @Model.NodeOrcaHelloBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
+                <td style="background-color: @Model.NodeOrcaHelloBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
                     @Html.DisplayFor(modelItem => item.OrcaHelloStatus)
                 </td>
             }
@@ -109,6 +83,32 @@
                     </a>
                 </td>
             }
+            @if (item.MezmoStatus == Models.OrcanodeOnlineStatus.Absent)
+            {
+                <td style="background-color: @Model.NodeMezmoBackgroundColor(item); color: @Model.NodeMezmoTextColor(item)">
+                    @Html.DisplayFor(modelItem => item.MezmoStatus)
+                </td>
+            }
+            else
+            {
+                <td style="background-color: @Model.NodeMezmoBackgroundColor(item)">
+                    <a href="https://app.mezmo.com/313dbd82f3/logs/view?hosts=@Html.DisplayFor(modelItem => item.S3NodeName)" style="color: @Model.NodeMezmoTextColor(item)" target="_blank">
+                        @Html.DisplayFor(modelItem => item.MezmoStatus)
+                    </a>
+                </td>
+            }
+            <td style="background-color: @Model.NodeDataplicityBackgroundColor(item)">
+                <a asp-page="/DataplicityNode" asp-route-serial="@item.DataplicitySerial" style="color: @Model.NodeDataplicityTextColor(item)">
+                    @Html.DisplayFor(modelItem => item.DataplicityConnectionStatus)
+                </a>
+            </td>
+            <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
+                @Html.DisplayFor(modelItem => item.AgentVersion)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.DiskUsedInGigs)/@Html.DisplayFor(modelItem => item.DiskCapacityInGigs)G
+                (@Html.DisplayFor(modelItem => item.DiskUsagePercentage)%)
+            </td>
         </tr>
     }
     </table>
@@ -128,25 +128,13 @@
             <b>Type Unknown</b>: The node type is unknown.
         </li>
         <li>
-            <b>Dataplicity Absent</b>: Dataplicity does not know about the node.
+            <b>Orcasound Absent</b>: orcasound.net does not know about the node.
         </li>
         <li>
-            <b>Dataplicity Offline</b>: Dataplicity connection is down.
+            <b>Orcasound Hidden</b>: orcasound.net knows about but does not display the node.
         </li>
         <li>
-            <b>Dataplicity Online</b>: Dataplicity connection is up.
-        </li>
-        <li>
-            <b>Mezmo Absent</b>: Mezmo does not know about the node.
-        </li>
-        <li>
-            <b>Mezmo NoView</b>: Mezmo has no view configured for the node.
-        </li>
-        <li>
-            <b>Mezmo Offline</b>: Mezmo has no recent log entries for the node.
-        </li>
-        <li>
-            <b>Mezmo Online</b>: Mezmo is receiving recent log entries from the node.
+            <b>Orcasound Online</b>: orcasound.net knows about the node.
         </li>
         <li>
             <b>S3 Stream Absent</b>: No latest.txt file exists on S3 for this node.
@@ -173,19 +161,31 @@
             <b>dB</b>: Maximum decibels other than hum.
         </li>
         <li>
-            <b>Orcasound Absent</b>: orcasound.net does not know about the node.
-        </li>
-        <li>
-            <b>Orcasound Hidden</b>: orcasound.net knows about but does not display the node.
-        </li>
-        <li>
-            <b>Orcasound Online</b>: orcasound.net knows about the node.
-        </li>
-        <li>
             <b>OrcaHello Absent</b>: OrcaHello does not know about the node.
         </li>
         <li>
             <b>OrcaHello Online</b>: OrcaHello knows about the node.
+        </li>
+        <li>
+            <b>Logging Absent</b>: Mezmo does not know about the node.
+        </li>
+        <li>
+            <b>Logging NoView</b>: Mezmo has no view configured for the node.
+        </li>
+        <li>
+            <b>Logging Offline</b>: Mezmo has no recent log entries for the node.
+        </li>
+        <li>
+            <b>Logging Online</b>: Mezmo is receiving recent log entries from the node.
+        </li>
+        <li>
+            <b>Dataplicity Absent</b>: Dataplicity does not know about the node.
+        </li>
+        <li>
+            <b>Dataplicity Offline</b>: Dataplicity connection is down.
+        </li>
+        <li>
+            <b>Dataplicity Online</b>: Dataplicity connection is up.
         </li>
     </ul>
     <p/>
