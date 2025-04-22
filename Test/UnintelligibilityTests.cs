@@ -67,11 +67,13 @@ namespace Test
             await TestSampleAsync("unintelligible\\live1816b.ts", OrcanodeOnlineStatus.Unintelligible);
             await TestSampleAsync("unintelligible\\live1815.ts", OrcanodeOnlineStatus.Unintelligible);
             await TestSampleAsync("unintelligible\\live1816.ts", OrcanodeOnlineStatus.Unintelligible);
+            await TestSampleAsync("unintelligible\\live5936.ts", OrcanodeOnlineStatus.Unintelligible);
         }
 
         [TestMethod]
         public async Task TestNormalSample()
         {
+            await TestSampleAsync("normal\\live7372.ts", OrcanodeOnlineStatus.Online);
             await TestSampleAsync("normal\\live7793.ts", OrcanodeOnlineStatus.Online);
             await TestSampleAsync("normal\\live4118.ts", OrcanodeOnlineStatus.Online);
             await TestSampleAsync("normal\\live3368.ts", OrcanodeOnlineStatus.Online);
