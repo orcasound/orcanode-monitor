@@ -997,7 +997,7 @@ namespace OrcanodeMonitor.Core
 
                 // Compute an exponential weighted moving average of the decibel level.
                 double newValue = frequencyInfo.GetAverageNonHumDecibels();
-                if (true) // node.DecibelLevel == null)
+                if (node.DecibelLevel == null)
                 {
                     node.DecibelLevel = newValue;
                 }
