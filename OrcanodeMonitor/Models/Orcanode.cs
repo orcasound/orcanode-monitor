@@ -67,6 +67,7 @@ namespace OrcanodeMonitor.Models
             MezmoLogSize = 0;
             MezmoViewId = string.Empty;
             DecibelLevel = 0;
+            HumDecibelLevel = 0;
         }
 
         #region persisted
@@ -177,11 +178,11 @@ namespace OrcanodeMonitor.Models
         public double? AudioStandardDeviation { get; set; }
 
         /// <summary>
-        /// Measure of volume.
+        /// Measure of real volume.
         /// </summary>
         public double? DecibelLevel { get; set; }
 
-        public string DecibelLevelForDisplay {
+        public string RealDecibelLevelForDisplay {
             get
             {
                 if (DecibelLevel == null || DecibelLevel == 0)
@@ -189,6 +190,23 @@ namespace OrcanodeMonitor.Models
                     return "N/A";
                 }
                 return ((int)Math.Round(DecibelLevel ?? 0)).ToString();
+            }
+        }
+
+        /// <summary>
+        /// Measure of hum volume.
+        /// </summary>
+        public double? HumDecibelLevel { get; set; }
+
+        public string HumDecibelLevelForDisplay
+        {
+            get
+            {
+                if (HumDecibelLevel == null || HumDecibelLevel == 0)
+                {
+                    return "N/A";
+                }
+                return ((int)Math.Round(HumDecibelLevel ?? 0)).ToString();
             }
         }
 
