@@ -235,6 +235,48 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
+        /// Find the average magnitude outside the audio hum range among a set of frequency magnitudes.
+        /// </summary>
+        /// <returns>Magnitude</returns>
+        private double GetAverageNonHumMagnitude(Dictionary<double, double> frequencyMagnitudes)
+        {
+            double totalNonHumMagnitude = 0;
+            int count = 0;
+            foreach (var pair in frequencyMagnitudes)
+            {
+                double frequency = pair.Key;
+                double magnitude = pair.Value;
+                if (!IsHumFrequency(frequency))
+                {
+                    totalNonHumMagnitude += magnitude;
+                    count++;
+                }
+            }
+            return totalNonHumMagnitude / count;
+        }
+
+        /// <summary>
+        /// Find the average magnitude inside the audio hum range among a set of frequency magnitudes.
+        /// </summary>
+        /// <returns>Magnitude</returns>
+        private double GetAverageHumMagnitude(Dictionary<double, double> frequencyMagnitudes)
+        {
+            double totalNonHumMagnitude = 0;
+            int count = 0;
+            foreach (var pair in frequencyMagnitudes)
+            {
+                double frequency = pair.Key;
+                double magnitude = pair.Value;
+                if (IsHumFrequency(frequency))
+                {
+                    totalNonHumMagnitude += magnitude;
+                    count++;
+                }
+            }
+            return totalNonHumMagnitude / count;
+        }
+
+        /// <summary>
         /// Find the maximum magnitude outside the audio hum range.
         /// </summary>
         /// <param name="channel">Channel, or null for all</param>
@@ -242,11 +284,39 @@ namespace OrcanodeMonitor.Core
         public double GetMaxNonHumMagnitude(int? channel = null) => GetMaxNonHumMagnitude(GetFrequencyMagnitudes(channel));
 
         /// <summary>
-        /// Find the maximum decibels outside the audio hum range.
+        /// Find the average magnitude outside the audio hum range.
         /// </summary>
         /// <param name="channel">Channel, or null for all</param>
         /// <returns>Magnitude</returns>
+        public double GetAverageNonHumMagnitude(int? channel = null) => GetAverageNonHumMagnitude(GetFrequencyMagnitudes(channel));
+
+        /// <summary>
+        /// Find the average magnitude inside the audio hum range.
+        /// </summary>
+        /// <param name="channel">Channel, or null for all</param>
+        /// <returns>Magnitude</returns>
+        public double GetAverageHumMagnitude(int? channel = null) => GetAverageHumMagnitude(GetFrequencyMagnitudes(channel));
+
+        /// <summary>
+        /// Find the maximum decibels outside the audio hum range.
+        /// </summary>
+        /// <param name="channel">Channel, or null for all</param>
+        /// <returns>Decibels</returns>
         public double GetMaxNonHumDecibels(int? channel = null) => MagnitudeToDecibels(GetMaxNonHumMagnitude(channel));
+
+        /// <summary>
+        /// Find the average decibels outside the audio hum range.
+        /// </summary>
+        /// <param name="channel">Channel, or null for all</param>
+        /// <returns>Decibels</returns>
+        public double GetAverageNonHumDecibels(int? channel = null) => MagnitudeToDecibels(GetAverageNonHumMagnitude(channel));
+
+        /// <summary>
+        /// Find the average decibels inside the audio hum range.
+        /// </summary>
+        /// <param name="channel">Channel, or null for all</param>
+        /// <returns>Decibels</returns>
+        public double GetAverageHumDecibels(int? channel = null) => MagnitudeToDecibels(GetAverageHumMagnitude(channel));
 
         /// <summary>
         /// Find the total magnitude outside the audio hum range among a given set of frequency magnitudes.
