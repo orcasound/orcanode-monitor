@@ -9,6 +9,42 @@ namespace OrcanodeMonitor.Core
 {
     public class FrequencyInfo
     {
+        static OrcanodeOnlineStatus GetBetterStatus(OrcanodeOnlineStatus a, OrcanodeOnlineStatus b)
+        {
+            if (a == OrcanodeOnlineStatus.Online)
+            {
+                return a;
+            }
+            if (b == OrcanodeOnlineStatus.Online)
+            {
+                return b;
+            }
+            if (a == OrcanodeOnlineStatus.Unintelligible)
+            {
+                return a;
+            }
+            if (b == OrcanodeOnlineStatus.Unintelligible)
+            {
+                return b;
+            }
+            if (a == OrcanodeOnlineStatus.Silent)
+            {
+                return a;
+            }
+            if (b == OrcanodeOnlineStatus.Silent)
+            {
+                return b;
+            }
+            if (a == OrcanodeOnlineStatus.Absent)
+            {
+                return b;
+            }
+
+            // Other statuses should be the same for both.
+            Debug.Assert(a == b);
+            return a;
+        }
+
         /// <summary>
         /// Given an audio clip, compute frequency info for it.
         /// </summary>
@@ -23,10 +59,11 @@ namespace OrcanodeMonitor.Core
             StatusForChannel = new OrcanodeOnlineStatus[channels];
             FrequencyMagnitudes = new Dictionary<double, double>();
             ComputeFrequencyMagnitudes(data, sampleRate, channels);
-            Status = GetStatus(oldStatus);
+            Status = OrcanodeOnlineStatus.Absent;
             for (int i = 0; i < channels; i++)
             {
                 StatusForChannel[i] = GetStatus(oldStatus, i);
+                Status = GetBetterStatus(Status, StatusForChannel[i]);
             }
         }
 
