@@ -124,8 +124,8 @@
     <!-- Filter Buttons for Time Range -->
     <div>
         Filter by Time Range:
-        <button id="btn-timeRange-pastWeek" class="btn unselected" onclick="updateFilter('timeRange', 'pastWeek')">Past Week</button>
-        <button id="btn-timeRange-pastMonth" class="btn selected" onclick="updateFilter('timeRange', 'pastMonth')">Past Month</button>
+        <button id="btn-timeRange-pastWeek" class="btn selected" onclick="updateFilter('timeRange', 'pastWeek')">Past Week</button>
+        <button id="btn-timeRange-pastMonth" class="btn unselected" onclick="updateFilter('timeRange', 'pastMonth')">Past Month</button>
         <button id="btn-timeRange-all" class="btn unselected" onclick="updateFilter('timeRange', 'all')">All</button>
         <p></p>
     </div>
@@ -133,8 +133,8 @@
     <!-- Filter Buttons for Type -->
     <div>
         Filter by Type:
-        <button id="btn-type-all" class="btn selected" onclick="updateFilter('type', 'all')">All</button>
-        <button id="btn-type-hydrophoneStream" class="btn unselected" onclick="updateFilter('type', 'hydrophoneStream')">Hydrophone Stream</button>
+        <button id="btn-type-all" class="btn unselected" onclick="updateFilter('type', 'all')">All</button>
+        <button id="btn-type-hydrophoneStream" class="btn selected" onclick="updateFilter('type', 'hydrophoneStream')">Hydrophone Stream</button>
         <button id="btn-type-dataplicityConnection" class="btn unselected" onclick="updateFilter('type', 'dataplicityConnection')">Dataplicity Connection</button>
         <button id="btn-type-mezmoLogging" class="btn unselected" onclick="updateFilter('type', 'mezmoLogging')">Mezmo Logging</button>
         <p></p>
@@ -143,10 +143,10 @@
     <div>
         Uptime percentage:
         <span id="uptime-all-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("all", "pastWeek")%</span>
-        <span id="uptime-hydrophoneStream-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("hydrophoneStream", "pastWeek")%</span>
+        <span id="uptime-hydrophoneStream-pastWeek" class="uptime-percentage">@Model.GetUptimePercentage("hydrophoneStream", "pastWeek")%</span>
         <span id="uptime-dataplicityConnection-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("dataplicityConnection", "pastWeek")%</span>
         <span id="uptime-mezmoLogging-pastWeek" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("mezmoLogging", "pastWeek")%</span>
-        <span id="uptime-all-pastMonth" class="uptime-percentage">@Model.GetUptimePercentage("all", "pastMonth")%</span>
+        <span id="uptime-all-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("all", "pastMonth")%</span>
         <span id="uptime-hydrophoneStream-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("hydrophoneStream", "pastMonth")%</span>
         <span id="uptime-dataplicityConnection-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("dataplicityConnection", "pastMonth")%</span>
         <span id="uptime-mezmoLogging-pastMonth" class="uptime-percentage" style="display: none;">@Model.GetUptimePercentage("mezmoLogging", "pastMonth")%</span>
@@ -198,8 +198,8 @@
 
     <script>
         var currentFilters = {
-            timeRange: 'pastMonth',
-            type: 'all' };
+            timeRange: 'pastWeek',
+            type: 'hydrophoneStream' };
 
         updateFilter('default', 'default');
 
