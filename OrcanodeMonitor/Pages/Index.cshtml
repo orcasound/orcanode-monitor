@@ -67,10 +67,10 @@
                     @Model.GetUptimePercentage(item)%
                 </a>
             </td>
-            <td>
+            <td style="background-color: @Model.NodeRealDecibelLevelBackgroundColor(item)">
                 @Html.DisplayFor(modelItem => item.RealDecibelLevelForDisplay)
             </td>
-            <td>
+            <td style="background-color: @Model.NodeHumDecibelLevelBackgroundColor(item)">
                 @Html.DisplayFor(modelItem => item.HumDecibelLevelForDisplay)
             </td>
             @if (item.OrcaHelloStatus == Models.OrcanodeOnlineStatus.Absent)
@@ -109,7 +109,7 @@
             <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
                 @Html.DisplayFor(modelItem => item.AgentVersion)
             </td>
-            <td>
+            <td style="background-color: @Model.NodeDiskUsagePercentageColor(item)">
                 @Html.DisplayFor(modelItem => item.DiskUsedInGigs)/@Html.DisplayFor(modelItem => item.DiskCapacityInGigs)G
                 (@Html.DisplayFor(modelItem => item.DiskUsagePercentage)%)
             </td>

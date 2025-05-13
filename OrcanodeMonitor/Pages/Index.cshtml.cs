@@ -53,7 +53,7 @@ namespace OrcanodeMonitor.Pages
             }
             if (orcasoundStatus.HasValue && (orcasoundStatus != OrcanodeOnlineStatus.Online))
             {
-                return ColorTranslator.ToHtml(Color.FromArgb(0xff, 0xcc, 0xcb));
+                return ColorTranslator.ToHtml(LightRed);
             }
             return ColorTranslator.ToHtml(Color.Red);
         }
@@ -109,12 +109,52 @@ namespace OrcanodeMonitor.Pages
             string color = GetBackgroundColor(node.OrcasoundStatus);
             if ((node.Type != "Live") && (color == ColorTranslator.ToHtml(Color.Red)))
             {
-                return ColorTranslator.ToHtml(Color.FromArgb(0xff, 0xcc, 0xcb));
+                return ColorTranslator.ToHtml(LightRed);
             }
             return color;
         }
 
+        private Color LightRed => Color.FromArgb(0xff, 0xcc, 0xcb);
+
         public string NodeOrcasoundTextColor(Orcanode node) => GetTextColor(NodeOrcasoundBackgroundColor(node));
+
+        public string NodeRealDecibelLevelBackgroundColor(Orcanode node)
+        {
+            string value = node.RealDecibelLevelForDisplay;
+            if (value == "N/A")
+            {
+                return ColorTranslator.ToHtml(LightRed);
+            }
+            long level = long.Parse(value);
+            if (level < FrequencyInfo.MinNoiseDecibels)
+            {
+                return ColorTranslator.ToHtml(LightRed);
+            }
+            if (level < FrequencyInfo.MaxSilenceDecibels)
+            {
+                return ColorTranslator.ToHtml(Color.Yellow);
+            }
+            return ColorTranslator.ToHtml(Color.LightGreen);
+        }
+
+        public string NodeHumDecibelLevelBackgroundColor(Orcanode node)
+        {
+            string value = node.HumDecibelLevelForDisplay;
+            if (value == "N/A")
+            {
+                return ColorTranslator.ToHtml(LightRed);
+            }
+            long level = long.Parse(value);
+            if (level < FrequencyInfo.MinNoiseDecibels)
+            {
+                return ColorTranslator.ToHtml(Color.LightGreen);
+            }
+            if (level < FrequencyInfo.MaxSilenceDecibels)
+            {
+                return ColorTranslator.ToHtml(Color.Yellow);
+            }
+            return ColorTranslator.ToHtml(LightRed);
+        }
 
         private DateTime SinceTime => DateTime.UtcNow.AddDays(-7);
 
@@ -127,7 +167,7 @@ namespace OrcanodeMonitor.Pages
             {
                 if (node.OrcasoundStatus != OrcanodeOnlineStatus.Online)
                 {
-                    return ColorTranslator.ToHtml(Color.FromArgb(0xff, 0xcc, 0xcb));
+                    return ColorTranslator.ToHtml(LightRed);
                 }
                 return ColorTranslator.ToHtml(Color.Red);
             }
@@ -148,6 +188,20 @@ namespace OrcanodeMonitor.Pages
                 return ColorTranslator.ToHtml(Color.Yellow);
             }
             return ColorTranslator.ToHtml(Color.LightGreen);
+        }
+
+        public string NodeDiskUsagePercentageColor(Orcanode node)
+        {
+            long percentage = node.DiskUsagePercentage;
+            if (percentage < 75)
+            {
+                return ColorTranslator.ToHtml(Color.LightGreen);
+            }
+            if (percentage < 90)
+            {
+                return ColorTranslator.ToHtml(Color.Yellow);
+            }
+            return ColorTranslator.ToHtml(Color.Red);
         }
 
         public async Task OnGetAsync()
