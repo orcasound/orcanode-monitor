@@ -4,6 +4,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
@@ -46,6 +47,10 @@ namespace OrcanodeMonitor.Pages
         {
             _serial = serial;
             string rawJson = await Fetcher.GetDataplicityDataAsync(serial, _logger);
+            if (rawJson.IsNullOrEmpty())
+            {
+                return NotFound(); // Returns a 404 error page
+            }
             var formatter = new JsonFormatter();
             _jsonData = formatter.FormatJson(rawJson);
             return Page();
