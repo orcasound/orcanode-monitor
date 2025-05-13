@@ -103,7 +103,7 @@ The following state will be stored per orcanode:
 
 **AZURE_COSMOS_CONNECTIONSTRING**: The connection string for the Cosmos database to use.
 
-**ORCANODE_MONITOR_READONLY**: If set to "true", the Cosmos database is not updated.
+**ORCANODE_MONITOR_READONLY**: If set to "true", the Cosmos database is not updated by the Orcanode Monitor service. The service will continue to read data but will skip all database write operations.
 
 **IFTTT_SERVICE_KEY**: If-This-Then-That service key as provided via the ifttt.com service.
 

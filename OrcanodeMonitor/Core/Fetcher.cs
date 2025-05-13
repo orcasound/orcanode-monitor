@@ -614,6 +614,11 @@ namespace OrcanodeMonitor.Core
             }
         }
 
+        /// <summary>
+        /// Saves changes to the database if the application is not in read-only mode.
+        /// </summary>
+        /// <param name="context">The database context to save changes for.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         private static async Task SaveChangesAsync(OrcanodeMonitorContext context)
         {
             if (!IsReadOnly)
