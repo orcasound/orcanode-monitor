@@ -103,6 +103,8 @@ The following state will be stored per orcanode:
 
 **AZURE_COSMOS_CONNECTIONSTRING**: The connection string for the Cosmos database to use.
 
+**ORCANODE_MONITOR_READONLY**: If set to "true", the Cosmos database is not updated.
+
 **IFTTT_SERVICE_KEY**: If-This-Then-That service key as provided via the ifttt.com service.
 
 **ORCASOUND_DATAPLICITY_TOKEN**: Security token that allows reading state from Dataplicity.

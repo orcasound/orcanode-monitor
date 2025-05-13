@@ -18,6 +18,12 @@ if (connection.IsNullOrEmpty())
     connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
 }
 
+string isReadOnly = Environment.GetEnvironmentVariable("ORCANODE_MONITOR_READONLY") ?? "false";
+if (isReadOnly == "true")
+{
+    Fetcher.IsReadOnly = true;
+}
+
 string databaseName = Environment.GetEnvironmentVariable("AZURE_COSMOS_DATABASENAME") ?? "orcasound-cosmosdb";
 
 // Add services to the container.

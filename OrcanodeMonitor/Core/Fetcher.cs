@@ -28,6 +28,7 @@ namespace OrcanodeMonitor.Core
         private static string _orcaHelloHydrophonesUrl = "https://aifororcasdetections2.azurewebsites.net/api/hydrophones";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         private static string _iftttServiceKey = Environment.GetEnvironmentVariable("IFTTT_SERVICE_KEY") ?? "<unknown>";
+        public static bool IsReadOnly = false;
         private static string _defaultProdS3Bucket = "audio-orcasound-net";
         private static string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
         public static string IftttServiceKey => _iftttServiceKey;
@@ -244,7 +245,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
-                await context.SaveChangesAsync();
+                await SaveChangesAsync(context);
             }
             catch (Exception ex)
             {
@@ -388,7 +389,7 @@ namespace OrcanodeMonitor.Core
                     {
                         // Save changes to make the node have an ID before we can
                         // possibly generate any events.
-                        await context.SaveChangesAsync();
+                        await SaveChangesAsync(context);
                     }
 
                     // Trigger any event changes.
@@ -421,7 +422,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
-                await context.SaveChangesAsync();
+                await SaveChangesAsync(context);
             }
             catch (Exception ex)
             {
@@ -613,6 +614,14 @@ namespace OrcanodeMonitor.Core
             }
         }
 
+        private static async Task SaveChangesAsync(OrcanodeMonitorContext context)
+        {
+            if (!IsReadOnly)
+            {
+                await context.SaveChangesAsync();
+            }
+        }
+
         /// <summary>
         /// Update the current list of Orcanodes using data from orcasound.net.
         /// </summary>
@@ -641,7 +650,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
-                await context.SaveChangesAsync();
+                await SaveChangesAsync(context);
             }
             catch (Exception ex)
             {
@@ -663,7 +672,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
-                await context.SaveChangesAsync();
+                await SaveChangesAsync(context);
             }
             catch (Exception ex)
             {
