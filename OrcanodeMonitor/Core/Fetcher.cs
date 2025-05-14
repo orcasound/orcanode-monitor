@@ -1011,7 +1011,7 @@ namespace OrcanodeMonitor.Core
 
                 // Compute an exponential weighted moving average of the non-hum decibel level.
                 double newValue = frequencyInfo.GetAverageNonHumDecibels();
-                if (node.DecibelLevel == null)
+                if (node.DecibelLevel == null || node.DecibelLevel == double.NegativeInfinity)
                 {
                     node.DecibelLevel = newValue;
                 }
@@ -1024,7 +1024,7 @@ namespace OrcanodeMonitor.Core
 
                 // Do the same for the hum decibel level.
                 newValue = frequencyInfo.GetAverageHumDecibels();
-                if (node.HumDecibelLevel == null)
+                if (node.HumDecibelLevel == null || node.HumDecibelLevel == double.NegativeInfinity)
                 {
                     node.HumDecibelLevel = newValue;
                 }

@@ -178,23 +178,23 @@ namespace OrcanodeMonitor.Models
         public double? AudioStandardDeviation { get; set; }
 
         /// <summary>
-        /// Measure of real volume.
+        /// Measure of real volume.  Negative infinity is absolute silence.
         /// </summary>
         public double? DecibelLevel { get; set; }
 
         public string RealDecibelLevelForDisplay {
             get
             {
-                if (DecibelLevel == null || DecibelLevel == 0)
+                if (DecibelLevel == null || DecibelLevel == double.NegativeInfinity)
                 {
                     return "N/A";
                 }
-                return ((int)Math.Round(DecibelLevel ?? 0)).ToString();
+                return ((int)Math.Round(DecibelLevel ?? double.NegativeInfinity)).ToString();
             }
         }
 
         /// <summary>
-        /// Measure of hum volume.
+        /// Measure of hum volume. Negative infinity is absolute silence.
         /// </summary>
         public double? HumDecibelLevel { get; set; }
 
@@ -202,11 +202,11 @@ namespace OrcanodeMonitor.Models
         {
             get
             {
-                if (HumDecibelLevel == null || HumDecibelLevel == 0)
+                if (HumDecibelLevel == null || HumDecibelLevel == double.NegativeInfinity)
                 {
                     return "N/A";
                 }
-                return ((int)Math.Round(HumDecibelLevel ?? 0)).ToString();
+                return ((int)Math.Round(HumDecibelLevel ?? double.NegativeInfinity)).ToString();
             }
         }
 
