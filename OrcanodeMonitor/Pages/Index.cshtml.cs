@@ -220,5 +220,11 @@ namespace OrcanodeMonitor.Pages
             var events = await _databaseContext.OrcanodeEvents.ToListAsync();
             _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
         }
+
+        public string GetEventClasses(OrcanodeEvent item)
+        {
+            string classes = NodeEventsModel.GetTypeClass(item) + " " + NodeEventsModel.GetTimeRangeClass(item);
+            return classes;
+        }
     }
 }
