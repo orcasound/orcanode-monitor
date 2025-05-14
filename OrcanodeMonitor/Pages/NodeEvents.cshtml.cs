@@ -151,7 +151,7 @@ namespace OrcanodeMonitor.Pages
             FetchEvents(_logger);
         }
 
-        public string GetTypeClass(OrcanodeEvent item) => item.Type switch
+        public static string GetTypeClass(OrcanodeEvent item) => item.Type switch
         {
             OrcanodeEventTypes.HydrophoneStream => "hydrophoneStream",
             OrcanodeEventTypes.DataplicityConnection => "dataplicityConnection",
@@ -161,7 +161,7 @@ namespace OrcanodeMonitor.Pages
             _ => string.Empty
         };
 
-        public string GetTimeRangeClass(OrcanodeEvent item)
+        public static string GetTimeRangeClass(OrcanodeEvent item)
         {
             DateTime OneWeekAgo = DateTime.UtcNow.AddDays(-7);
             if (item.DateTimeUtc > OneWeekAgo) {

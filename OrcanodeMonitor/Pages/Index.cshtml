@@ -197,21 +197,108 @@
     </ul>
     <p/>
     <h1 class="display-4"><a href="/api/ifttt/v1/triggers/nodestateevents">Recent State Events</a></h1>
-    <table>
+    <!-- Filter Buttons for Type -->
+    <div>
+        Filter by Type:
+        <button id="btn-type-all" class="btn unselected" onclick="updateFilter('type', 'all')">All</button>
+        <button id="btn-type-hydrophoneStream" class="btn selected" onclick="updateFilter('type', 'hydrophoneStream')">Hydrophone Stream</button>
+        <button id="btn-type-dataplicityConnection" class="btn unselected" onclick="updateFilter('type', 'dataplicityConnection')">Dataplicity Connection</button>
+        <button id="btn-type-mezmoLogging" class="btn unselected" onclick="updateFilter('type', 'mezmoLogging')">Mezmo Logging</button>
+        <p></p>
+    </div>
+    <table id="eventsTable" class="table">
         <thead>
             <tr>
                 <th>Timestamp (Pacific)</th>
-                <th>Event</th>
+                <th align="left">Event</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (Models.OrcanodeEvent item in Model.RecentEvents)
+            @if (!Model.RecentEvents.Any())
             {
                 <tr>
+                    <td colspan="2" class="text-center">No events found for this time period.</td>
+                </tr>
+            }
+            @foreach (Models.OrcanodeEvent item in Model.RecentEvents)
+            {
+                <tr class="@Model.GetEventClasses(item)">
                     <td>@item.DateTimeLocal.ToString("g")</td>
                     <td align="left">@item.Description</td>
                 </tr>
             }
         </tbody>
     </table>
+
+    <script>
+        var currentFilters = {
+            timeRange: 'pastWeek',
+            type: 'hydrophoneStream' };
+
+        updateFilter('default', 'default');
+
+        function updateFilter(filterType, filterValue) {
+            // Update time range filter.
+            if (filterType == 'timeRange') {
+                var oldTimeRangeButtonId = 'btn-timeRange-' + currentFilters.timeRange;
+                var oldTimeRangeButton = document.getElementById(oldTimeRangeButtonId);
+                oldTimeRangeButton.classList.remove('selected');
+                oldTimeRangeButton.classList.add('unselected');
+
+                currentFilters.timeRange = filterValue;
+
+                var newTimeRangeButtonId = 'btn-timeRange-' + currentFilters.timeRange;
+                var newTimeRangeButton = document.getElementById(newTimeRangeButtonId);
+                newTimeRangeButton.classList.remove('unselected');
+                newTimeRangeButton.classList.add('selected');
+            }
+
+            // Update type filter.
+            if (filterType == 'type') {
+                var oldTypeButtonId = 'btn-type-' + currentFilters.type;
+                var oldTypeButton = document.getElementById(oldTypeButtonId);
+                oldTypeButton.classList.remove('selected');
+                oldTypeButton.classList.add('unselected');
+
+                currentFilters.type = filterValue;
+
+                var newTypeButtonId = 'btn-type-' + currentFilters.type;
+                var newTypeButton = document.getElementById(newTypeButtonId);
+                newTypeButton.classList.remove('unselected');
+                newTypeButton.classList.add('selected');
+            }
+
+            filterTable();
+            showUptimePercentage("uptime-" + currentFilters.type + "-" + currentFilters.timeRange);
+        }
+
+        function filterTable() {
+            // Get all rows from the table.
+            var rows = document.querySelectorAll('#eventsTable tbody tr');
+
+            // Loop through each row.
+            rows.forEach(function(row) {
+                // Check if the row matches the selected time range and type
+                var matchesTimeRange = (currentFilters.timeRange === 'all' || row.classList.contains(currentFilters.timeRange));
+                var matchesType = (currentFilters.type === 'all' || row.classList.contains(currentFilters.type));
+
+                if (matchesTimeRange && matchesType) {
+                    row.style.display = ''; // Show matching rows.
+                } else {
+                    row.style.display = 'none'; // Hide non-matching rows.
+                }
+            });
+        }
+
+        function showUptimePercentage(id) {
+            // Hide all uptime percentage elements.
+            var elements = document.querySelectorAll('.uptime-percentage');
+            elements.forEach(function(element) {
+                element.style.display = 'none';
+            });
+
+            // Show the selected uptime percentage.
+            document.getElementById(id).style.display = '';
+        }
+    </script>
  </div>
