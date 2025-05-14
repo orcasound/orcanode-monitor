@@ -269,7 +269,6 @@
             }
 
             filterTable();
-            showUptimePercentage("uptime-" + currentFilters.type + "-" + currentFilters.timeRange);
         }
 
         function filterTable() {
@@ -288,17 +287,6 @@
                     row.style.display = 'none'; // Hide non-matching rows.
                 }
             });
-        }
-
-        function showUptimePercentage(id) {
-            // Hide all uptime percentage elements.
-            var elements = document.querySelectorAll('.uptime-percentage');
-            elements.forEach(function(element) {
-                element.style.display = 'none';
-            });
-
-            // Show the selected uptime percentage.
-            document.getElementById(id).style.display = '';
         }
     </script>
  </div>
