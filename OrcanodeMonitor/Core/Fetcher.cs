@@ -841,11 +841,20 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="context"></param>
         /// <param name="since">Time to get events since</param>
+        /// <param name="logger"></param>
         /// <returns>null on error, or list of events on success</returns>
-        public static List<OrcanodeEvent>? GetRecentEvents(OrcanodeMonitorContext context, DateTime since)
+        public static List<OrcanodeEvent>? GetRecentEvents(OrcanodeMonitorContext context, DateTime since, ILogger logger)
         {
-            List<OrcanodeEvent> events = context.OrcanodeEvents.Where(e => e.DateTimeUtc >= since).OrderByDescending(e => e.DateTimeUtc).ToList();
-            return events;
+            try
+            {
+                List<OrcanodeEvent> events = context.OrcanodeEvents.Where(e => e.DateTimeUtc >= since).OrderByDescending(e => e.DateTimeUtc).ToList();
+                return events;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Failed to fetch recent events");
+                return null;
+            }
         }
 
         private static List<OrcanodeEvent> AddOlderEvent(List<OrcanodeEvent> orcanodeEvents, List<OrcanodeEvent> events, DateTime since, string type)
@@ -882,7 +891,8 @@ namespace OrcanodeMonitor.Core
                 orcanodeEvents = AddOlderEvent(orcanodeEvents, events, since, OrcanodeEventTypes.MezmoLogging);
 
                 return orcanodeEvents;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 logger.LogError(ex, $"Failed to fetch events for node {id}");
                 return null;
