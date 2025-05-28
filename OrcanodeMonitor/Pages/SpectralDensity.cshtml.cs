@@ -32,6 +32,10 @@ namespace OrcanodeMonitor.Pages
         public double TotalHumMagnitude => _totalHumMagnitude;
         private double _totalHumMagnitude;
         private double _totalNonHumMagnitude;
+        private double _averageHumDecibels;
+        private double _averageNonHumDecibels;
+        public double AverageHumDecibels => _averageHumDecibels;
+        public double AverageNonHumDecibels => _averageNonHumDecibels;
         private FrequencyInfo? _frequencyInfo = null;
         public double MaxNonHumMagnitude { get; private set; }
         public int SignalRatio { get; private set; }
@@ -180,6 +184,8 @@ namespace OrcanodeMonitor.Pages
             Status = Orcanode.GetStatusString(_frequencyInfo.Status);
             _totalHumMagnitude = _frequencyInfo.GetTotalHumMagnitude();
             _totalNonHumMagnitude = _frequencyInfo.GetTotalNonHumMagnitude();
+            _averageHumDecibels = _frequencyInfo.GetAverageHumDecibels();
+            _averageNonHumDecibels = _frequencyInfo.GetAverageNonHumDecibels();
             SignalRatio = (int)Math.Round(100 * _frequencyInfo.GetSignalRatio());
         }
 
@@ -227,6 +233,8 @@ namespace OrcanodeMonitor.Pages
         public double GetTotalHumMagnitude(int channel) => _frequencyInfo?.GetTotalHumMagnitude(channel) ?? 0;
 
         public double GetTotalNonHumMagnitude(int channel) => _frequencyInfo?.GetTotalNonHumMagnitude(channel) ?? 0;
+        public double GetAverageHumDecibels(int channel) => _frequencyInfo?.GetAverageHumDecibels(channel) ?? double.NaN;
+        public double GetAverageNonHumDecibels(int channel) => _frequencyInfo?.GetAverageNonHumDecibels(channel) ?? double.NaN;
 
         public int GetSignalRatio(int channel) => (int)Math.Round(100 * _frequencyInfo?.GetSignalRatio(channel) ?? 0);
 
