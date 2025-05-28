@@ -128,10 +128,10 @@ namespace OrcanodeMonitor.Pages
             return json;
         }
 
-        private void FetchEvents(ILogger logger)
+        private async Task FetchEventsAsync(ILogger logger)
         {
-            _events = Fetcher.GetRecentEventsForNode(_databaseContext, Id, DateTime.MinValue, logger)
-                .ToList() ?? new List<OrcanodeEvent>();
+            List<OrcanodeEvent>? events = await Fetcher.GetRecentEventsForNodeAsync(_databaseContext, Id, DateTime.MinValue, logger);
+            _events = events?.ToList() ?? new List<OrcanodeEvent>();
 
             if (!_events.Any())
             {
@@ -145,10 +145,10 @@ namespace OrcanodeMonitor.Pages
             JsonHydrophoneStreamData = CreateJsonDataset(OrcanodeEventTypes.HydrophoneStream, allTimestamps, now);
         }
 
-        public void OnGet(string id)
+        public async Task OnGetAsync(string id)
         {
             _node = _databaseContext.Orcanodes.Where(n => n.ID == id).First();
-            FetchEvents(_logger);
+            await FetchEventsAsync(_logger);
         }
 
         public static string GetTypeClass(OrcanodeEvent item) => item.Type switch
