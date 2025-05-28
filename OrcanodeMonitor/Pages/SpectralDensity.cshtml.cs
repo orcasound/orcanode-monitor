@@ -47,7 +47,11 @@ namespace OrcanodeMonitor.Pages
         }
         public double MaxSilenceDecibels => FrequencyInfo.MaxSilenceDecibels;
         public double MinNoiseDecibels => FrequencyInfo.MinNoiseDecibels;
-        public string LastModified { get; private set; }
+
+        /// <summary>
+        /// Last modified timestamp, in local time.
+        /// </summary>
+        public string LastModifiedLocal { get; private set; }
 
         public SpectralDensityModel(OrcanodeMonitorContext context, ILogger<SpectralDensityModel> logger)
         {
@@ -56,7 +60,7 @@ namespace OrcanodeMonitor.Pages
             _id = string.Empty;
             Status = string.Empty;
             _labels = new List<string>();
-            LastModified = string.Empty;
+            LastModifiedLocal = string.Empty;
         }
 
         /// <summary>
@@ -255,7 +259,7 @@ namespace OrcanodeMonitor.Pages
                     UpdateFrequencyInfo();
 
                     // Use local time.
-                    LastModified = DateTime.Now.ToString();
+                    LastModifiedLocal = DateTime.Now.ToString();
                 }
                 catch (Exception ex)
                 {
@@ -278,7 +282,7 @@ namespace OrcanodeMonitor.Pages
             }
 
             DateTime? lastModified = await Fetcher.GetLastModifiedAsync(uri);
-            LastModified = lastModified?.ToLocalTime().ToString() ?? "Unknown";
+            LastModifiedLocal = lastModified?.ToLocalTime().ToString() ?? "Unknown";
 
             try
             {
