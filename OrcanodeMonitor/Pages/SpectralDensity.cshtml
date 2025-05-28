@@ -127,6 +127,8 @@
             Total magnitude outside hum range: @Model.TotalNonHumMagnitude <br />
             Total magnitude of hum range: @Model.TotalHumMagnitude <br />
             Signal ratio: @Model.SignalRatio %<br />
+            Average decibels outside hum range: @Model.AverageHumDecibels <br />
+            Average decibels of hum: @Model.AverageHumDecibels <br />
             Status: @Model.Status <br />
         </p>
         @if (Model.ChannelCount > 1)
@@ -140,6 +142,8 @@
                     Total magnitude outside hum range: @Model.GetTotalNonHumMagnitude(i) <br />
                     Total magnitude of hum range: @Model.GetTotalHumMagnitude(i) <br />
                     Signal ratio: @Model.GetSignalRatio(i) %<br />
+                    Average decibels outside hum range: @Model.GetAverageHumDecibels(i) <br />
+                    Average decibels of hum: @Model.GetAverageHumDecibels(i) <br />
                     Status: @Model.GetStatus(i) <br />
                 </p>
             }
