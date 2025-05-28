@@ -802,9 +802,17 @@ namespace OrcanodeMonitor.Core
         /// <returns></returns>
         public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
+            OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
             TimestampResult? result = await GetLatestS3TimestampAsync(node, true, logger);
             if (result == null)
             {
+                OrcanodeOnlineStatus newStatus = node.S3StreamStatus;
+                if (newStatus != oldStatus)
+                {
+                    // Log event if it just went absent. Other events will be logged
+                    // inside the call to UpdateManifestTimestampAsync() below.
+                    AddHydrophoneStreamStatusEvent(context, node, null);
+                }
                 return;
             }
             string unixTimestampString = result.UnixTimestampString;
