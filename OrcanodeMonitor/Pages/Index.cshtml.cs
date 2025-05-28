@@ -17,8 +17,7 @@ namespace OrcanodeMonitor.Pages
         private List<OrcanodeEvent> _events;
         private List<Orcanode> _nodes;
         public List<Orcanode> Nodes => _nodes;
-        private const int _maxEventCountToDisplay = 20;
-        public List<OrcanodeEvent> RecentEvents => Fetcher.GetEvents(_databaseContext, _maxEventCountToDisplay);
+        public List<OrcanodeEvent> RecentEvents => Fetcher.GetRecentEvents(_databaseContext, DateTime.UtcNow.AddDays(-7));
 
         public IndexModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger)
         {

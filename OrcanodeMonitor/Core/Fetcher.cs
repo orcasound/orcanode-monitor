@@ -836,6 +836,18 @@ namespace OrcanodeMonitor.Core
             return orcanodeEvents;
         }
 
+        /// <summary>
+        /// Get recent events.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="since">Time to get events since</param>
+        /// <returns>null on error, or list of events on success</returns>
+        public static List<OrcanodeEvent>? GetRecentEvents(OrcanodeMonitorContext context, DateTime since)
+        {
+            List<OrcanodeEvent> events = context.OrcanodeEvents.Where(e => e.DateTimeUtc >= since).OrderByDescending(e => e.DateTimeUtc).ToList();
+            return events;
+        }
+
         private static List<OrcanodeEvent> AddOlderEvent(List<OrcanodeEvent> orcanodeEvents, List<OrcanodeEvent> events, DateTime since, string type)
         {
             OrcanodeEvent? olderEvent = events.Where(e => (e.DateTimeUtc < since) && (e.Type == type)).FirstOrDefault();
