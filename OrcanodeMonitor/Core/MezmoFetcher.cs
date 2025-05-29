@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
@@ -133,7 +134,7 @@ namespace OrcanodeMonitor.Core
                     return;
                 }
 
-                var originalList = context.Orcanodes.ToList();
+                var originalList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = originalList.ToList();
@@ -243,7 +244,7 @@ namespace OrcanodeMonitor.Core
                     return;
                 }
 
-                var originalList = context.Orcanodes.ToList();
+                var originalList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = originalList.ToList();
