@@ -73,15 +73,15 @@ namespace Test
                     options => { options.ConnectionMode(ConnectionMode.Gateway); }).Options;
         }
 
-        private void VerifyCanReadEntity<T>(DbSet<T> dbSet, string entityName) where T : class
+        private async Task VerifyCanReadEntityAsync<T>(DbSet<T> dbSet, string entityName) where T : class
         {
-            var items = dbSet.ToList();
+            var items = await dbSet.ToListAsync();
             Assert.IsNotNull(items, $"{entityName} should not be null");
             // Add specific assertions based on expected test data
         }
 
         [TestMethod]
-        public void CanReadProduction()
+        public async Task CanReadProductionAsync()
         {
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Production");
 
@@ -90,14 +90,14 @@ namespace Test
             {
                 Assert.IsNotNull(context, "Context initialization failed");
 
-                VerifyCanReadEntity(context.MonitorState, "MonitorState");
-                VerifyCanReadEntity(context.Orcanodes, "Orcanodes");
-                VerifyCanReadEntity(context.OrcanodeEvents, "OrcanodeEvents");
+                await VerifyCanReadEntityAsync(context.MonitorState, "MonitorState");
+                await VerifyCanReadEntityAsync(context.Orcanodes, "Orcanodes");
+                await VerifyCanReadEntityAsync(context.OrcanodeEvents, "OrcanodeEvents");
             }
         }
 
         [TestMethod]
-        public void CanReadStaging()
+        public async Task CanReadStagingAsync()
         {
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Staging");
 
@@ -106,14 +106,14 @@ namespace Test
             {
                 Assert.IsNotNull(context, "Context initialization failed");
 
-                VerifyCanReadEntity(context.MonitorState, "MonitorState");
-                VerifyCanReadEntity(context.Orcanodes, "Orcanodes");
-                VerifyCanReadEntity(context.OrcanodeEvents, "OrcanodeEvents");
+                await VerifyCanReadEntityAsync(context.MonitorState, "MonitorState");
+                await VerifyCanReadEntityAsync(context.Orcanodes, "Orcanodes");
+                await VerifyCanReadEntityAsync(context.OrcanodeEvents, "OrcanodeEvents");
             }
         }
 
         [TestMethod]
-        public void CanReadDevelopment()
+        public async Task CanReadDevelopmentAsync()
         {
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
 
@@ -122,9 +122,9 @@ namespace Test
             {
                 Assert.IsNotNull(context, "Context initialization failed");
 
-                VerifyCanReadEntity(context.MonitorState, "MonitorState");
-                VerifyCanReadEntity(context.Orcanodes, "Orcanodes");
-                VerifyCanReadEntity(context.OrcanodeEvents, "OrcanodeEvents");
+                await VerifyCanReadEntityAsync(context.MonitorState, "MonitorState");
+                await VerifyCanReadEntityAsync(context.Orcanodes, "Orcanodes");
+                await VerifyCanReadEntityAsync(context.OrcanodeEvents, "OrcanodeEvents");
             }
         }
     }
