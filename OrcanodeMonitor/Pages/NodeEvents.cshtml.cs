@@ -1,6 +1,7 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
@@ -147,7 +148,7 @@ namespace OrcanodeMonitor.Pages
 
         public async Task OnGetAsync(string id)
         {
-            _node = _databaseContext.Orcanodes.Where(n => n.ID == id).First();
+            _node = await _databaseContext.Orcanodes.Where(n => n.ID == id).FirstAsync();
             await FetchEventsAsync(_logger);
         }
 
