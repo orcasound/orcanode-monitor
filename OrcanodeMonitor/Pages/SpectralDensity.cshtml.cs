@@ -259,7 +259,7 @@ namespace OrcanodeMonitor.Pages
                     UpdateFrequencyInfo();
 
                     // Use local time.
-                    LastModifiedLocal = DateTime.Now.ToString();
+                    LastModifiedLocal = Fetcher.UtcToLocalDateTime(DateTime.UtcNow)?.ToString() ?? "Unknown";
                 }
                 catch (Exception ex)
                 {
@@ -282,7 +282,7 @@ namespace OrcanodeMonitor.Pages
             }
 
             DateTime? lastModified = await Fetcher.GetLastModifiedAsync(uri);
-            LastModifiedLocal = lastModified?.ToLocalTime().ToString() ?? "Unknown";
+            LastModifiedLocal = UtcToLocalDateTime(lastModified)?.ToString() ?? "Unknown";
 
             try
             {
