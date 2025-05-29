@@ -17,8 +17,8 @@ namespace OrcanodeMonitor.Pages
         private List<OrcanodeEvent> _events;
         private List<Orcanode> _nodes;
         public List<Orcanode> Nodes => _nodes;
-        private const int _maxEventCountToDisplay = 20;
-        public List<OrcanodeEvent> RecentEvents => Fetcher.GetEvents(_databaseContext, _maxEventCountToDisplay);
+        public List<OrcanodeEvent> RecentEvents => _recentEvents;
+        private List<OrcanodeEvent> _recentEvents;
 
         public IndexModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger)
         {
@@ -26,6 +26,7 @@ namespace OrcanodeMonitor.Pages
             _logger = logger;
             _events = new List<OrcanodeEvent>();
             _nodes = new List<Orcanode>();
+            _recentEvents = new List<OrcanodeEvent>();
         }
         public string LastChecked
         {
@@ -219,6 +220,8 @@ namespace OrcanodeMonitor.Pages
             // Fetch events for uptime computation.
             var events = await _databaseContext.OrcanodeEvents.ToListAsync();
             _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
+
+            _recentEvents = await Fetcher.GetRecentEventsAsync(_databaseContext, DateTime.UtcNow.AddDays(-7), _logger) ?? new List<OrcanodeEvent>();
         }
 
         public string GetEventClasses(OrcanodeEvent item)

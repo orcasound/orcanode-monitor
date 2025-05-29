@@ -21,9 +21,9 @@ namespace OrcanodeMonitor.Api
             _databaseContext = context;
         }
 
-        private JsonResult GetEvents(int limit)
+        private async Task<JsonResult> GetEventsAsync(int limit)
         {
-            List<OrcanodeEvent> events = Core.Fetcher.GetEvents(_databaseContext, limit);
+            List<OrcanodeEvent> events = await Core.Fetcher.GetEventsAsync(_databaseContext, limit);
 
             // Convert to IFTTT data transfer objects.
             var latestEvents = new List<OrcanodeIftttEventDTO>();
@@ -46,14 +46,14 @@ namespace OrcanodeMonitor.Api
         // GET is not used by IFTTT so this does not require a service key.
         // GET: api/ifttt/v1/triggers/<TestController>
         [HttpGet]
-        public IActionResult Get()
+        public async Task<IActionResult> OnGetAsync()
         {
-            return GetEvents(_defaultLimit);
+            return await GetEventsAsync(_defaultLimit);
         }
 
         // POST api/ifttt/v1/triggers/<TestController>
         [HttpPost]
-        public IActionResult Post([FromBody] JsonElement requestBody)
+        public async Task<IActionResult> OnPostAsync([FromBody] JsonElement requestBody)
         {
             var failure = Fetcher.CheckIftttServiceKey(Request);
             if (failure != null)
@@ -82,7 +82,7 @@ namespace OrcanodeMonitor.Api
                     // events for a given node.
                 }
 
-                return GetEvents(limit);
+                return await GetEventsAsync(limit);
             }
             catch (JsonException)
             {

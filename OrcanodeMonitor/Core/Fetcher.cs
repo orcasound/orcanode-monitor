@@ -178,7 +178,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 // Get a snapshot to use during the loop to avoid multiple queries.
-                var foundList = context.Orcanodes.ToList();
+                var foundList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = foundList.ToList();
@@ -306,7 +306,7 @@ namespace OrcanodeMonitor.Core
                     return;
                 }
 
-                var originalList = context.Orcanodes.ToList();
+                var originalList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = originalList.ToList();
@@ -637,7 +637,7 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                var foundList = context.Orcanodes.ToList();
+                var foundList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = foundList.ToList();
@@ -667,7 +667,7 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                List<Orcanode> nodes = context.Orcanodes.ToList();
+                List<Orcanode> nodes = await context.Orcanodes.ToListAsync();
                 foreach (Orcanode node in nodes)
                 {
                     if (!node.S3NodeName.IsNullOrEmpty())
@@ -802,9 +802,17 @@ namespace OrcanodeMonitor.Core
         /// <returns></returns>
         public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
+            OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
             TimestampResult? result = await GetLatestS3TimestampAsync(node, true, logger);
             if (result == null)
             {
+                OrcanodeOnlineStatus newStatus = node.S3StreamStatus;
+                if (newStatus != oldStatus)
+                {
+                    // Log event if it just went absent. Other events will be logged
+                    // inside the call to UpdateManifestTimestampAsync() below.
+                    AddHydrophoneStreamStatusEvent(context, node, null);
+                }
                 return;
             }
             string unixTimestampString = result.UnixTimestampString;
@@ -830,10 +838,31 @@ namespace OrcanodeMonitor.Core
         /// <param name="context">Database context</param>
         /// <param name="limit">Maximum number of events to return</param>
         /// <returns>List of events</returns>
-        public static List<OrcanodeEvent> GetEvents(OrcanodeMonitorContext context, int limit)
+        public static async Task<List<OrcanodeEvent>> GetEventsAsync(OrcanodeMonitorContext context, int limit)
         {
-            List<OrcanodeEvent> orcanodeEvents = context.OrcanodeEvents.OrderByDescending(e => e.DateTimeUtc).Take(limit).ToList();
+            List<OrcanodeEvent> orcanodeEvents = await context.OrcanodeEvents.OrderByDescending(e => e.DateTimeUtc).Take(limit).ToListAsync();
             return orcanodeEvents;
+        }
+
+        /// <summary>
+        /// Get recent events.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="since">Time to get events since</param>
+        /// <param name="logger"></param>
+        /// <returns>null on error, or list of events on success</returns>
+        public static async Task<List<OrcanodeEvent>?> GetRecentEventsAsync(OrcanodeMonitorContext context, DateTime since, ILogger logger)
+        {
+            try
+            {
+                List<OrcanodeEvent> events = await context.OrcanodeEvents.Where(e => e.DateTimeUtc >= since).OrderByDescending(e => e.DateTimeUtc).ToListAsync();
+                return events;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Failed to fetch recent events");
+                return null;
+            }
         }
 
         private static List<OrcanodeEvent> AddOlderEvent(List<OrcanodeEvent> orcanodeEvents, List<OrcanodeEvent> events, DateTime since, string type)
@@ -857,11 +886,11 @@ namespace OrcanodeMonitor.Core
         /// <param name="since">Time to get events since</param>
         /// <param name="logger"></param>
         /// <returns>null on error, or list of events on success</returns>
-        public static List<OrcanodeEvent>? GetRecentEventsForNode(OrcanodeMonitorContext context, string id, DateTime since, ILogger logger)
+        public static async Task<List<OrcanodeEvent>?> GetRecentEventsForNodeAsync(OrcanodeMonitorContext context, string id, DateTime since, ILogger logger)
         {
             try
             {
-                List<OrcanodeEvent> events = context.OrcanodeEvents.Where(e => e.OrcanodeId == id).OrderByDescending(e => e.DateTimeUtc).ToList();
+                List<OrcanodeEvent> events = await context.OrcanodeEvents.Where(e => e.OrcanodeId == id).OrderByDescending(e => e.DateTimeUtc).ToListAsync();
                 List<OrcanodeEvent> orcanodeEvents = events.Where(e => e.DateTimeUtc >= since).ToList();
 
                 // Add one older event per type we can filter on.
@@ -870,7 +899,8 @@ namespace OrcanodeMonitor.Core
                 orcanodeEvents = AddOlderEvent(orcanodeEvents, events, since, OrcanodeEventTypes.MezmoLogging);
 
                 return orcanodeEvents;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 logger.LogError(ex, $"Failed to fetch events for node {id}");
                 return null;
