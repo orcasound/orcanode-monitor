@@ -13,14 +13,16 @@
         <tr>
             <th>Type</th>
             <th>Location</th>
+            <th><a href="https://live.orcasound.net/listen" target="_blank">Orcasound</a></th>
+            <th><a href="https://open.quiltdata.com/b/audio-orcasound-net/tree/" target="_blank">S3 Stream</a></th>
+            <th>Up%</th>
+            <th>Real dB</th>
+            <th>Hum dB</th>
+            <th><a href="https://aifororcas2.azurewebsites.net/hydrophones" target="_blank">OrcaHello</a></th>
+            <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Logging</a></th>
             <th><a href="https://www.dataplicity.com/app/" target="_blank">Dataplicity</a></th>
             <th>Agent Version</th>
             <th>SD Card Util.</th>
-            <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Mezmo</a></th>
-            <th><a href="https://open.quiltdata.com/b/audio-orcasound-net/tree/" target="_blank">S3 Stream</a></th>
-            <th>Up%</th>
-            <th><a href="https://live.orcasound.net/listen" target="_blank">Orcasound</a></th>
-            <th><a href="https://aifororcas2.azurewebsites.net/hydrophones" target="_blank">OrcaHello</a></th>
         </tr>
     @foreach (Models.Orcanode item in Model.Nodes)
     {
@@ -31,29 +33,17 @@
             <td title="@Html.DisplayFor(modelItem => item.DataplicityDescription)">
                 @Html.DisplayFor(modelItem => item.DisplayName)
             </td>
-            <td style="background-color: @Model.NodeDataplicityBackgroundColor(item)">
-                <a asp-page="/DataplicityNode" asp-route-serial="@item.DataplicitySerial" style="color: @Model.NodeDataplicityTextColor(item)">
-                    @Html.DisplayFor(modelItem => item.DataplicityConnectionStatus)
-                </a>
-            </td>
-            <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
-                @Html.DisplayFor(modelItem => item.AgentVersion)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.DiskUsedInGigs)/@Html.DisplayFor(modelItem => item.DiskCapacityInGigs)G
-                (@Html.DisplayFor(modelItem => item.DiskUsagePercentage)%)
-            </td>
-            @if (item.MezmoStatus == Models.OrcanodeOnlineStatus.Absent)
+            @if (item.OrcasoundStatus == Models.OrcanodeOnlineStatus.Absent)
             {
-                    <td style="background-color: @Model.NodeMezmoBackgroundColor(item); color: @Model.NodeMezmoTextColor(item)">
-                    @Html.DisplayFor(modelItem => item.MezmoStatus)
+                <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item); color: @Model.NodeOrcasoundTextColor(item)">
+                    @Html.DisplayFor(modelItem => item.OrcasoundStatus)
                 </td>
             }
             else
             {
-                <td style="background-color: @Model.NodeMezmoBackgroundColor(item)">
-                    <a href="https://app.mezmo.com/313dbd82f3/logs/view?hosts=@Html.DisplayFor(modelItem => item.S3NodeName)" style="color: @Model.NodeMezmoTextColor(item)" target="_blank">
-                        @Html.DisplayFor(modelItem => item.MezmoStatus)
+                <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item)">
+                    <a href="https://@Html.DisplayFor(modelItem => item.OrcasoundHost)/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" style="color: @Model.NodeOrcasoundTextColor(item)" target="_blank">
+                        @Html.DisplayFor(modelItem => item.OrcasoundStatus)
                     </a>
                 </td>
             }
@@ -72,28 +62,20 @@
                 </td>
             }
             <td style="background-color: @Model.NodeUptimePercentageBackgroundColor(item)">
-                    <a asp-page="/NodeEvents" asp-route-id="@item.ID" style="color: @Model.NodeUptimePercentageTextColor(item)"
+                <a asp-page="/NodeEvents" asp-route-id="@item.ID" style="color: @Model.NodeUptimePercentageTextColor(item)"
                        aria-label="View events for @item.DisplayName">
                     @Model.GetUptimePercentage(item)%
                 </a>
             </td>
-            @if (item.OrcasoundStatus == Models.OrcanodeOnlineStatus.Absent)
-            {
-                <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item); color: @Model.NodeOrcasoundTextColor(item)">
-                    @Html.DisplayFor(modelItem => item.OrcasoundStatus)
-                </td>
-            }
-            else
-            {
-                <td style="background-color: @Model.NodeOrcasoundBackgroundColor(item)">
-                    <a href="https://@Html.DisplayFor(modelItem => item.OrcasoundHost)/listen/@Html.DisplayFor(modelItem => item.OrcasoundSlug)" style="color: @Model.NodeOrcasoundTextColor(item)" target="_blank">
-                        @Html.DisplayFor(modelItem => item.OrcasoundStatus)
-                    </a>
-                </td>
-            }
+            <td style="background-color: @Model.NodeRealDecibelLevelBackgroundColor(item)">
+                @Html.DisplayFor(modelItem => item.RealDecibelLevelForDisplay)
+            </td>
+            <td style="background-color: @Model.NodeHumDecibelLevelBackgroundColor(item)">
+                @Html.DisplayFor(modelItem => item.HumDecibelLevelForDisplay)
+            </td>
             @if (item.OrcaHelloStatus == Models.OrcanodeOnlineStatus.Absent)
             {
-                    <td style="background-color: @Model.NodeOrcaHelloBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
+                <td style="background-color: @Model.NodeOrcaHelloBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
                     @Html.DisplayFor(modelItem => item.OrcaHelloStatus)
                 </td>
             }
@@ -105,6 +87,32 @@
                     </a>
                 </td>
             }
+            @if (item.MezmoStatus == Models.OrcanodeOnlineStatus.Absent)
+            {
+                <td style="background-color: @Model.NodeMezmoBackgroundColor(item); color: @Model.NodeMezmoTextColor(item)">
+                    @Html.DisplayFor(modelItem => item.MezmoStatus)
+                </td>
+            }
+            else
+            {
+                <td style="background-color: @Model.NodeMezmoBackgroundColor(item)">
+                    <a href="https://app.mezmo.com/313dbd82f3/logs/view?hosts=@Html.DisplayFor(modelItem => item.S3NodeName)" style="color: @Model.NodeMezmoTextColor(item)" target="_blank">
+                        @Html.DisplayFor(modelItem => item.MezmoStatus)
+                    </a>
+                </td>
+            }
+            <td style="background-color: @Model.NodeDataplicityBackgroundColor(item)">
+                <a asp-page="/DataplicityNode" asp-route-serial="@item.DataplicitySerial" style="color: @Model.NodeDataplicityTextColor(item)">
+                    @Html.DisplayFor(modelItem => item.DataplicityConnectionStatus)
+                </a>
+            </td>
+            <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
+                @Html.DisplayFor(modelItem => item.AgentVersion)
+            </td>
+            <td style="background-color: @Model.NodeDiskUsagePercentageColor(item)">
+                @Html.DisplayFor(modelItem => item.DiskUsedInGigs)/@Html.DisplayFor(modelItem => item.DiskCapacityInGigs)G
+                (@Html.DisplayFor(modelItem => item.DiskUsagePercentage)%)
+            </td>
         </tr>
     }
     </table>
@@ -124,25 +132,13 @@
             <b>Type Unknown</b>: The node type is unknown.
         </li>
         <li>
-            <b>Dataplicity Absent</b>: Dataplicity does not know about the node.
+            <b>Orcasound Absent</b>: orcasound.net does not know about the node.
         </li>
         <li>
-            <b>Dataplicity Offline</b>: Dataplicity connection is down.
+            <b>Orcasound Hidden</b>: orcasound.net knows about but does not display the node.
         </li>
         <li>
-            <b>Dataplicity Online</b>: Dataplicity connection is up.
-        </li>
-        <li>
-            <b>Mezmo Absent</b>: Mezmo does not know about the node.
-        </li>
-        <li>
-            <b>Mezmo NoView</b>: Mezmo has no view configured for the node.
-        </li>
-        <li>
-            <b>Mezmo Offline</b>: Mezmo has no recent log entries for the node.
-        </li>
-        <li>
-            <b>Mezmo Online</b>: Mezmo is receiving recent log entries from the node.
+            <b>Orcasound Online</b>: orcasound.net knows about the node.
         </li>
         <li>
             <b>S3 Stream Absent</b>: No latest.txt file exists on S3 for this node.
@@ -163,13 +159,13 @@
             <b>S3 Stream Unintelligible</b>: Audio stream is being sent to S3 but it appears to be bad.
         </li>
         <li>
-            <b>Orcasound Absent</b>: orcasound.net does not know about the node.
+            <b>Up%</b>: Percentage of time the S3 Stream has been online over the past week.
         </li>
         <li>
-            <b>Orcasound Hidden</b>: orcasound.net knows about but does not display the node.
+            <b>Real dB</b>: Average relative decibels other than audio hum across all frequencies in the most recent 10 second sample.
         </li>
         <li>
-            <b>Orcasound Online</b>: orcasound.net knows about the node.
+            <b>Hum dB</b>: Average relative decibels of audio hum in the most recent 10 second sample.
         </li>
         <li>
             <b>OrcaHello Absent</b>: OrcaHello does not know about the node.
@@ -177,24 +173,120 @@
         <li>
             <b>OrcaHello Online</b>: OrcaHello knows about the node.
         </li>
+        <li>
+            <b>Logging Absent</b>: Mezmo does not know about the node.
+        </li>
+        <li>
+            <b>Logging NoView</b>: Mezmo has no view configured for the node.
+        </li>
+        <li>
+            <b>Logging Offline</b>: Mezmo has no recent log entries for the node.
+        </li>
+        <li>
+            <b>Logging Online</b>: Mezmo is receiving recent log entries from the node.
+        </li>
+        <li>
+            <b>Dataplicity Absent</b>: Dataplicity does not know about the node.
+        </li>
+        <li>
+            <b>Dataplicity Offline</b>: Dataplicity connection is down.
+        </li>
+        <li>
+            <b>Dataplicity Online</b>: Dataplicity connection is up.
+        </li>
     </ul>
     <p/>
     <h1 class="display-4"><a href="/api/ifttt/v1/triggers/nodestateevents">Recent State Events</a></h1>
-    <table>
+    <!-- Filter Buttons for Type -->
+    <div>
+        Filter by Type:
+        <button id="btn-type-all" class="btn unselected" onclick="updateFilter('type', 'all')">All</button>
+        <button id="btn-type-hydrophoneStream" class="btn selected" onclick="updateFilter('type', 'hydrophoneStream')">Hydrophone Stream</button>
+        <button id="btn-type-dataplicityConnection" class="btn unselected" onclick="updateFilter('type', 'dataplicityConnection')">Dataplicity Connection</button>
+        <button id="btn-type-mezmoLogging" class="btn unselected" onclick="updateFilter('type', 'mezmoLogging')">Mezmo Logging</button>
+        <p></p>
+    </div>
+    <table id="eventsTable" class="table">
         <thead>
             <tr>
                 <th>Timestamp (Pacific)</th>
-                <th>Event</th>
+                <th align="left">Event</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (Models.OrcanodeEvent item in Model.RecentEvents)
+            @if (!Model.RecentEvents.Any())
             {
                 <tr>
+                    <td colspan="2" class="text-center">No events found for this time period.</td>
+                </tr>
+            }
+            @foreach (Models.OrcanodeEvent item in Model.RecentEvents)
+            {
+                <tr class="@Model.GetEventClasses(item)">
                     <td>@item.DateTimeLocal.ToString("g")</td>
                     <td align="left">@item.Description</td>
                 </tr>
             }
         </tbody>
     </table>
+
+    <script>
+        var currentFilters = {
+            timeRange: 'pastWeek',
+            type: 'hydrophoneStream' };
+
+        updateFilter('default', 'default');
+
+        function updateFilter(filterType, filterValue) {
+            // Update time range filter.
+            if (filterType == 'timeRange') {
+                var oldTimeRangeButtonId = 'btn-timeRange-' + currentFilters.timeRange;
+                var oldTimeRangeButton = document.getElementById(oldTimeRangeButtonId);
+                oldTimeRangeButton.classList.remove('selected');
+                oldTimeRangeButton.classList.add('unselected');
+
+                currentFilters.timeRange = filterValue;
+
+                var newTimeRangeButtonId = 'btn-timeRange-' + currentFilters.timeRange;
+                var newTimeRangeButton = document.getElementById(newTimeRangeButtonId);
+                newTimeRangeButton.classList.remove('unselected');
+                newTimeRangeButton.classList.add('selected');
+            }
+
+            // Update type filter.
+            if (filterType == 'type') {
+                var oldTypeButtonId = 'btn-type-' + currentFilters.type;
+                var oldTypeButton = document.getElementById(oldTypeButtonId);
+                oldTypeButton.classList.remove('selected');
+                oldTypeButton.classList.add('unselected');
+
+                currentFilters.type = filterValue;
+
+                var newTypeButtonId = 'btn-type-' + currentFilters.type;
+                var newTypeButton = document.getElementById(newTypeButtonId);
+                newTypeButton.classList.remove('unselected');
+                newTypeButton.classList.add('selected');
+            }
+
+            filterTable();
+        }
+
+        function filterTable() {
+            // Get all rows from the table.
+            var rows = document.querySelectorAll('#eventsTable tbody tr');
+
+            // Loop through each row.
+            rows.forEach(function(row) {
+                // Check if the row matches the selected time range and type
+                var matchesTimeRange = (currentFilters.timeRange === 'all' || row.classList.contains(currentFilters.timeRange));
+                var matchesType = (currentFilters.type === 'all' || row.classList.contains(currentFilters.type));
+
+                if (matchesTimeRange && matchesType) {
+                    row.style.display = ''; // Show matching rows.
+                } else {
+                    row.style.display = 'none'; // Hide non-matching rows.
+                }
+            });
+        }
+    </script>
  </div>

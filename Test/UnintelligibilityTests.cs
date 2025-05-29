@@ -46,6 +46,7 @@ namespace Test
             Assert.IsTrue(FrequencyInfo.IsHumFrequency(120.0));
             Assert.IsTrue(FrequencyInfo.IsHumFrequency(300.0));
 
+            Assert.IsFalse(FrequencyInfo.IsHumFrequency(0.0));
             Assert.IsFalse(FrequencyInfo.IsHumFrequency(59.0));
             Assert.IsFalse(FrequencyInfo.IsHumFrequency(61.0));
             Assert.IsFalse(FrequencyInfo.IsHumFrequency(121.0));
@@ -66,11 +67,16 @@ namespace Test
             await TestSampleAsync("unintelligible\\live1816b.ts", OrcanodeOnlineStatus.Unintelligible);
             await TestSampleAsync("unintelligible\\live1815.ts", OrcanodeOnlineStatus.Unintelligible);
             await TestSampleAsync("unintelligible\\live1816.ts", OrcanodeOnlineStatus.Unintelligible);
+            await TestSampleAsync("unintelligible\\live5936.ts", OrcanodeOnlineStatus.Unintelligible);
         }
 
         [TestMethod]
         public async Task TestNormalSample()
         {
+            // 2-channel sample with one silent and one normal channel.
+            await TestSampleAsync("normal\\live2008.ts", OrcanodeOnlineStatus.Online);
+
+            await TestSampleAsync("normal\\live7372.ts", OrcanodeOnlineStatus.Online);
             await TestSampleAsync("normal\\live7793.ts", OrcanodeOnlineStatus.Online);
             await TestSampleAsync("normal\\live4118.ts", OrcanodeOnlineStatus.Online);
             await TestSampleAsync("normal\\live3368.ts", OrcanodeOnlineStatus.Online);

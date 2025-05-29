@@ -25,3 +25,21 @@ updates:
       actions:
         patterns:
           - "*"
+
+  - package-ecosystem: nuget
+    directory: /Test
+    schedule:
+      interval: daily
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: nuget
+    directory: /TransferData
+    schedule:
+      interval: daily
+    groups:
+      actions:
+        patterns:
+          - "*"

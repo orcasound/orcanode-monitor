@@ -28,6 +28,7 @@ namespace OrcanodeMonitor.Core
         private static string _orcaHelloHydrophonesUrl = "https://aifororcasdetections2.azurewebsites.net/api/hydrophones";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         private static string _iftttServiceKey = Environment.GetEnvironmentVariable("IFTTT_SERVICE_KEY") ?? "<unknown>";
+        public static bool IsReadOnly = false;
         private static string _defaultProdS3Bucket = "audio-orcasound-net";
         private static string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
         public static string IftttServiceKey => _iftttServiceKey;
@@ -177,7 +178,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 // Get a snapshot to use during the loop to avoid multiple queries.
-                var foundList = context.Orcanodes.ToList();
+                var foundList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = foundList.ToList();
@@ -244,7 +245,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
-                await context.SaveChangesAsync();
+                await SaveChangesAsync(context);
             }
             catch (Exception ex)
             {
@@ -305,7 +306,7 @@ namespace OrcanodeMonitor.Core
                     return;
                 }
 
-                var originalList = context.Orcanodes.ToList();
+                var originalList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = originalList.ToList();
@@ -388,7 +389,7 @@ namespace OrcanodeMonitor.Core
                     {
                         // Save changes to make the node have an ID before we can
                         // possibly generate any events.
-                        await context.SaveChangesAsync();
+                        await SaveChangesAsync(context);
                     }
 
                     // Trigger any event changes.
@@ -421,7 +422,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
-                await context.SaveChangesAsync();
+                await SaveChangesAsync(context);
             }
             catch (Exception ex)
             {
@@ -614,6 +615,19 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
+        /// Saves changes to the database if the application is not in read-only mode.
+        /// </summary>
+        /// <param name="context">The database context to save changes for.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        private static async Task SaveChangesAsync(OrcanodeMonitorContext context)
+        {
+            if (!IsReadOnly)
+            {
+                await context.SaveChangesAsync();
+            }
+        }
+
+        /// <summary>
         /// Update the current list of Orcanodes using data from orcasound.net.
         /// </summary>
         /// <param name="context">Database context to update</param>
@@ -623,7 +637,7 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                var foundList = context.Orcanodes.ToList();
+                var foundList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = foundList.ToList();
@@ -641,7 +655,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
-                await context.SaveChangesAsync();
+                await SaveChangesAsync(context);
             }
             catch (Exception ex)
             {
@@ -653,7 +667,7 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                List<Orcanode> nodes = context.Orcanodes.ToList();
+                List<Orcanode> nodes = await context.Orcanodes.ToListAsync();
                 foreach (Orcanode node in nodes)
                 {
                     if (!node.S3NodeName.IsNullOrEmpty())
@@ -663,7 +677,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
-                await context.SaveChangesAsync();
+                await SaveChangesAsync(context);
             }
             catch (Exception ex)
             {
@@ -788,9 +802,17 @@ namespace OrcanodeMonitor.Core
         /// <returns></returns>
         public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
+            OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
             TimestampResult? result = await GetLatestS3TimestampAsync(node, true, logger);
             if (result == null)
             {
+                OrcanodeOnlineStatus newStatus = node.S3StreamStatus;
+                if (newStatus != oldStatus)
+                {
+                    // Log event if it just went absent. Other events will be logged
+                    // inside the call to UpdateManifestTimestampAsync() below.
+                    AddHydrophoneStreamStatusEvent(context, node, null);
+                }
                 return;
             }
             string unixTimestampString = result.UnixTimestampString;
@@ -816,10 +838,31 @@ namespace OrcanodeMonitor.Core
         /// <param name="context">Database context</param>
         /// <param name="limit">Maximum number of events to return</param>
         /// <returns>List of events</returns>
-        public static List<OrcanodeEvent> GetEvents(OrcanodeMonitorContext context, int limit)
+        public static async Task<List<OrcanodeEvent>> GetEventsAsync(OrcanodeMonitorContext context, int limit)
         {
-            List<OrcanodeEvent> orcanodeEvents = context.OrcanodeEvents.OrderByDescending(e => e.DateTimeUtc).Take(limit).ToList();
+            List<OrcanodeEvent> orcanodeEvents = await context.OrcanodeEvents.OrderByDescending(e => e.DateTimeUtc).Take(limit).ToListAsync();
             return orcanodeEvents;
+        }
+
+        /// <summary>
+        /// Get recent events.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="since">Time to get events since</param>
+        /// <param name="logger"></param>
+        /// <returns>null on error, or list of events on success</returns>
+        public static async Task<List<OrcanodeEvent>?> GetRecentEventsAsync(OrcanodeMonitorContext context, DateTime since, ILogger logger)
+        {
+            try
+            {
+                List<OrcanodeEvent> events = await context.OrcanodeEvents.Where(e => e.DateTimeUtc >= since).OrderByDescending(e => e.DateTimeUtc).ToListAsync();
+                return events;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Failed to fetch recent events");
+                return null;
+            }
         }
 
         private static List<OrcanodeEvent> AddOlderEvent(List<OrcanodeEvent> orcanodeEvents, List<OrcanodeEvent> events, DateTime since, string type)
@@ -843,11 +886,11 @@ namespace OrcanodeMonitor.Core
         /// <param name="since">Time to get events since</param>
         /// <param name="logger"></param>
         /// <returns>null on error, or list of events on success</returns>
-        public static List<OrcanodeEvent>? GetRecentEventsForNode(OrcanodeMonitorContext context, string id, DateTime since, ILogger logger)
+        public static async Task<List<OrcanodeEvent>?> GetRecentEventsForNodeAsync(OrcanodeMonitorContext context, string id, DateTime since, ILogger logger)
         {
             try
             {
-                List<OrcanodeEvent> events = context.OrcanodeEvents.Where(e => e.OrcanodeId == id).OrderByDescending(e => e.DateTimeUtc).ToList();
+                List<OrcanodeEvent> events = await context.OrcanodeEvents.Where(e => e.OrcanodeId == id).OrderByDescending(e => e.DateTimeUtc).ToListAsync();
                 List<OrcanodeEvent> orcanodeEvents = events.Where(e => e.DateTimeUtc >= since).ToList();
 
                 // Add one older event per type we can filter on.
@@ -856,7 +899,8 @@ namespace OrcanodeMonitor.Core
                 orcanodeEvents = AddOlderEvent(orcanodeEvents, events, since, OrcanodeEventTypes.MezmoLogging);
 
                 return orcanodeEvents;
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 logger.LogError(ex, $"Failed to fetch events for node {id}");
                 return null;
@@ -961,7 +1005,11 @@ namespace OrcanodeMonitor.Core
             try
             {
                 using Stream stream = await _httpClient.GetStreamAsync(uri);
+#if true
                 FrequencyInfo frequencyInfo = await FfmpegCoreAnalyzer.AnalyzeAudioStreamAsync(stream, oldStatus);
+#else
+                FrequencyInfo frequencyInfo = await FfmpegCoreAnalyzer.AnalyzeFileAsync("output-2channels.wav", oldStatus);
+#endif
                 frequencyInfo.AudioSampleUrl = uri.AbsoluteUri;
                 return frequencyInfo;
             }
@@ -990,6 +1038,32 @@ namespace OrcanodeMonitor.Core
             if (frequencyInfo != null)
             {
                 node.AudioStreamStatus = frequencyInfo.Status;
+
+                // Compute an exponential weighted moving average of the non-hum decibel level.
+                double newValue = frequencyInfo.GetAverageNonHumDecibels();
+                if (node.DecibelLevel == null || node.DecibelLevel == double.NegativeInfinity)
+                {
+                    node.DecibelLevel = newValue;
+                }
+                else
+                {
+                    // Let it be a moving average across a day.
+                    double alpha = 1.0 / PeriodicTasks.PollsPerDay;
+                    node.DecibelLevel = (alpha * newValue) + ((1 - alpha) * node.DecibelLevel);
+                }
+
+                // Do the same for the hum decibel level.
+                newValue = frequencyInfo.GetAverageHumDecibels();
+                if (node.HumDecibelLevel == null || node.HumDecibelLevel == double.NegativeInfinity)
+                {
+                    node.HumDecibelLevel = newValue;
+                }
+                else
+                {
+                    // Let it be a moving average across a day.
+                    double alpha = 1.0 / PeriodicTasks.PollsPerDay;
+                    node.HumDecibelLevel = (alpha * newValue) + ((1 - alpha) * node.HumDecibelLevel);
+                }
             }
             node.AudioStandardDeviation = 0.0;
 
