@@ -73,6 +73,8 @@ namespace Test
         [TestMethod]
         public async Task TestNormalSample()
         {
+            await TestSampleAsync("normal\\live7648.ts", OrcanodeOnlineStatus.Online);
+
             // 2-channel sample with one silent and one normal channel.
             await TestSampleAsync("normal\\live2008.ts", OrcanodeOnlineStatus.Online);
 
