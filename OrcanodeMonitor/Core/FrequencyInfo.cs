@@ -164,7 +164,7 @@ namespace OrcanodeMonitor.Core
 
         // We consider anything below this average decibels as silence.
         // The lowest normal value we have seen is -98.
-        const double _defaultMinNoiseDecibels = -90;
+        const double _defaultMinNoiseDecibels = -95;
         public static double MinNoiseDecibels
         {
             get
@@ -293,6 +293,37 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
+        /// Find the magnitude deviation outside the audio hum range among a set of frequency magnitudes.
+        /// </summary>
+        /// <returns>Magnitude</returns>
+        private double GetDeviationNonHumMagnitude(Dictionary<double, double> frequencyMagnitudes)
+        {
+            /* Compute the standard deviation:
+             * 1. Calculate the mean (average) of the data points.
+             * 2. Find the squared differences from the mean for each data point.
+             * 3. Calculate the average of the squared differences (variance).
+             * 4. Take the square root of the variance to get the standard deviation.
+             */
+            double average = GetAverageNonHumMagnitude(frequencyMagnitudes);
+            double totalNonHumDifference = 0;
+            int count = 0;
+            foreach (var pair in frequencyMagnitudes)
+            {
+                double frequency = pair.Key;
+                double magnitude = pair.Value;
+                if (!IsHumFrequency(frequency))
+                {
+                    double deviation = magnitude - average;
+                    totalNonHumDifference += deviation * deviation;
+                    count++;
+                }
+            }
+            double averageNonHumDifference = totalNonHumDifference / count;
+            double standardDeviation = Math.Sqrt(averageNonHumDifference);
+            return standardDeviation;
+        }
+
+        /// <summary>
         /// Find the average magnitude inside the audio hum range among a set of frequency magnitudes.
         /// </summary>
         /// <returns>Magnitude</returns>
@@ -328,6 +359,13 @@ namespace OrcanodeMonitor.Core
         public double GetAverageNonHumMagnitude(int? channel = null) => GetAverageNonHumMagnitude(GetFrequencyMagnitudes(channel));
 
         /// <summary>
+        /// Find the magnitude deviation outside the audio hum range.
+        /// </summary>
+        /// <param name="channel">Channel, or null for all</param>
+        /// <returns>Magnitude</returns>
+        public double GetDeviationNonHumMagnitude(int? channel = null) => GetDeviationNonHumMagnitude(GetFrequencyMagnitudes(channel));
+
+        /// <summary>
         /// Find the average magnitude inside the audio hum range.
         /// </summary>
         /// <param name="channel">Channel, or null for all</param>
@@ -347,6 +385,14 @@ namespace OrcanodeMonitor.Core
         /// <param name="channel">Channel, or null for all</param>
         /// <returns>Decibels</returns>
         public double GetAverageNonHumDecibels(int? channel = null) => MagnitudeToDecibels(GetAverageNonHumMagnitude(channel));
+
+        /// <summary>
+        /// Find the decibel deviation outside the audio hum range.
+        /// Note: This is not currently used, but might be in the future.
+        /// </summary>
+        /// <param name="channel">Channel, or null for all</param>
+        /// <returns>Decibels</returns>
+        public double GetDeviationNonHumDecibels(int? channel = null) => MagnitudeToDecibels(GetDeviationNonHumMagnitude(channel));
 
         /// <summary>
         /// Find the average decibels inside the audio hum range.
