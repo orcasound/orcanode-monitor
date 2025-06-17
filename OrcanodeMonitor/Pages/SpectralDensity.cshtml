@@ -19,7 +19,7 @@
     }
     <script>
          // Client side function to initialize all charts.
-        function initializeCharts2(labels, jsonChannelDatasets)
+        function initializeCharts2(labels, jsonChannelDatasets, jsonNonHumChannelDatasets, jsonHumChannelDatasets)
         {
             var maxSilenceDecibels = @Model.MaxSilenceDecibels;
             var minNoiseDecibels = @Model.MinNoiseDecibels;
@@ -28,19 +28,30 @@
 
             @for (int i = 0; i < Model.ChannelCount; i++)
             {
-                string backgroundColor = Model.GetChannelColor(i, 0.2);
-                string borderColor = Model.GetChannelColor(i, 1);
+                // We use GetChannelColor for line colors, not channels per se.
+                string backgroundColor = Model.GetChannelColor(0, 0.2);
+                string borderColor = Model.GetChannelColor(0, 1);
+                string nonHumBackgroundColor = Model.GetChannelColor(1, 0.2);
+                string nonHumBorderColor = Model.GetChannelColor(1, 1);
+                string humBackgroundColor = Model.GetChannelColor(2, 0.2);
+                string humBorderColor = Model.GetChannelColor(2, 1);
                 string id = "frequencyChart" + (i + 1).ToString();
 
                 @: initializeChart(
                 @:     '@id',
                 @:     labels,
                 @:     jsonChannelDatasets[@i],
+                @:     jsonNonHumChannelDatasets[@i],
+                @:     jsonHumChannelDatasets[@i],
                 @:     maxSilenceDecibels,
                 @:     minNoiseDecibels,
                 @:     @i,
                 @:     '@backgroundColor',
-                @:     '@borderColor'
+                @:     '@borderColor',
+                @:     '@nonHumBackgroundColor',
+                @:     '@nonHumBorderColor',
+                @:     '@humBackgroundColor',
+                @:     '@humBorderColor'
                 @: );
             }
         }
@@ -49,11 +60,13 @@
         {
             var labels = @Html.Raw(Json.Serialize(Model.Labels));
             var jsonChannelDatasets = @Html.Raw(Model.JsonChannelDatasets);
-            initializeCharts2(labels, jsonChannelDatasets);
+            var jsonNonHumChannelDataset = @Html.Raw(Model.JsonNonHumChannelDatasets);
+            var jsonHumChannelDataset = @Html.Raw(Model.JsonHumChannelDatasets);
+            initializeCharts2(labels, jsonChannelDatasets, jsonNonHumChannelDataset, jsonHumChannelDataset);
         }
 
         // Client side function to initialize a chart.
-        function initializeChart(elementId, labels, jsonChannelDataset, maxSilenceDecibels, minNoiseDecibels, i, backgroundColor, borderColor)
+        function initializeChart(elementId, labels, jsonChannelDataset, jsonNonHumChannelDataset, jsonHumChannelDataset, maxSilenceDecibels, minNoiseDecibels, i, backgroundColor, borderColor, nonHumBackgroundColor, nonHumBorderColor, humBackgroundColor, humBorderColor)
         {
             var ctx = document.getElementById(elementId).getContext('2d');
             var myLineChart = new Chart(ctx, {
@@ -67,7 +80,26 @@
                             backgroundColor: backgroundColor,
                             borderColor: borderColor,
                             borderWidth: 1,
-                            fill: "start"
+                            fill: "start",
+                            hidden: true // This line will be hidden by default
+                        },
+                        {
+                            label: 'Channel ' + (i + 1) + ' (excluding hum)',
+                            data: jsonNonHumChannelDataset,
+                            backgroundColor: nonHumBackgroundColor,
+                            borderColor: nonHumBorderColor,
+                            borderWidth: 1,
+                            fill: "start",
+                            hidden: false
+                        },
+                        {
+                            label: 'Channel ' + (i + 1) + ' (humOnly)',
+                            data: jsonHumChannelDataset,
+                            backgroundColor: humBackgroundColor,
+                            borderColor: humBorderColor,
+                            borderWidth: 1,
+                            fill: "start",
+                            hidden: false
                         },
                         {
                             label: 'Max Silence Decibels',

@@ -177,10 +177,51 @@ namespace OrcanodeMonitor.Pages
                 }).ToList<object>();
                 channelDatasets.Add(channelDataset);
             }
+            var nonHumChannelDatasets = new List<List<object>>();
+            for (int i = 0; i < _frequencyInfo.ChannelCount; i++)
+            {
+                var nonHumChannelDataset = _labels
+                    .Where(label =>
+                    {
+                        if (double.TryParse(label, out double frequency)) // Try to parse the label as a double
+                        {
+                            return !FrequencyInfo.IsHumFrequency(frequency); // Return true if it's not a hum frequency
+                        }
+                        return false; // If parsing fails, exclude the label
+                    })
+                    .Select(label => new
+                    {
+                        x = label,
+                        y = channelLabels[i].Contains(label) ? GetBucketDecibels(label, channelLabels[i], channelMaxBucketDecibels[i]) : (double?)null
+                    })
+                    .ToList<object>();
+                nonHumChannelDatasets.Add(nonHumChannelDataset);
+            }
+            var humChannelDatasets = new List<List<object>>();
+            for (int i = 0; i < _frequencyInfo.ChannelCount; i++)
+            {
+                var humChannelDataset = _labels
+                    .Where(label =>
+                    {
+                        if (double.TryParse(label, out double frequency)) // Try to parse the label as a double
+                        {
+                            return FrequencyInfo.IsHumFrequency(frequency); // Return true if it's a hum frequency
+                        }
+                        return false; // If parsing fails, exclude the label
+                    })
+                    .Select(label => new
+                    {
+                        x = label,
+                        y = channelLabels[i].Contains(label) ? GetBucketDecibels(label, channelLabels[i], channelMaxBucketDecibels[i]) : (double?)null
+                    })
+                    .ToList<object>();
+                humChannelDatasets.Add(humChannelDataset);
+            }
 
             // Serialise to JSON.
-            JsonSummaryDataset = JsonSerializer.Serialize(summaryDataset);
             JsonChannelDatasets = JsonSerializer.Serialize(channelDatasets);
+            JsonNonHumChannelDatasets = JsonSerializer.Serialize(nonHumChannelDatasets);
+            JsonHumChannelDatasets = JsonSerializer.Serialize(humChannelDatasets);
 
             MaxMagnitude = _frequencyInfo.GetMaxMagnitude();
             MaxNonHumMagnitude = _frequencyInfo.GetMaxNonHumMagnitude();
@@ -194,16 +235,21 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Gets or sets the JSON-serialized dataset containing summary frequency magnitudes.
-        /// Can be used by Chart.js for visualization, but isn't currently.
+        /// Gets or sets the JSON-serialized datasets containing per-channel frequency magnitudes.
         /// </summary>
-        public string JsonSummaryDataset { get; set; }
+        public string JsonChannelDatasets { get; set; }
+
+        /// <summary>
+        /// Gets or sets the JSON-serialized datasets containing per-channel frequency magnitudes
+        /// for non-hum frequencies.
+        /// </summary>
+        public string JsonNonHumChannelDatasets { get; set; }
 
         /// <summary>
         /// Gets or sets the JSON-serialized datasets containing per-channel frequency magnitudes.
-        /// Used by Chart.js for visualization when multiple channels are present.
+        /// for non-hum frequencies.
         /// </summary>
-        public string JsonChannelDatasets { get; set; }
+        public string JsonHumChannelDatasets { get; set; }
 
         public string GetChannelColor(int channelIndex, double alpha)
         {

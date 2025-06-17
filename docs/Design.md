@@ -119,7 +119,7 @@ The following state will be stored per orcanode:
 
 **ORCASOUND_MAX_SILENCE_DECIBELS**: The maximum decibel level at which a stream stream might still be considered unintelligible due to silence. Default: -80
 
-**ORCASOUND_MIN_NOISE_DECIBELS**: The minimum decibel level at which a stream stream might still be considered intelligible. Default: -90
+**ORCASOUND_MIN_NOISE_DECIBELS**: The minimum decibel level at which a stream stream might still be considered intelligible. Default: -98
 
 These magnitude thresholds work together to implement hysteresis in the noise detection:
 - Magnitudes below ORCASOUND_MIN_NOISE_MAGNITUDE are always considered silent.

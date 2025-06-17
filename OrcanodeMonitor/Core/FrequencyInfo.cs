@@ -149,6 +149,7 @@ namespace OrcanodeMonitor.Core
         }
 
         // We consider anything above this average decibels as not silence.
+        // If this number is updated, it should also be updated in Design.md.
         const double _defaultMaxSilenceDecibels = -80;
         public static double MaxSilenceDecibels
         {
@@ -164,7 +165,8 @@ namespace OrcanodeMonitor.Core
 
         // We consider anything below this average decibels as silence.
         // The lowest normal value we have seen is -98.
-        const double _defaultMinNoiseDecibels = -95;
+        // If this number is updated, it should also be updated in Design.md.
+        const double _defaultMinNoiseDecibels = -98;
         public static double MinNoiseDecibels
         {
             get
@@ -234,7 +236,7 @@ namespace OrcanodeMonitor.Core
         // range. This hum is often caused by electrical interference from
         // power lines and other electronic devices.
         const double HumFrequency60 = 60.0; // Hz
-        private static bool IsHumFrequency(double frequency, double humFrequency)
+        public static bool IsHumFrequency(double frequency, double humFrequency)
         {
             if (frequency == 0.0)
             {
@@ -242,7 +244,7 @@ namespace OrcanodeMonitor.Core
             }
             Debug.Assert(frequency > 0.0);
             Debug.Assert(humFrequency >= 0.0);
-            const double tolerance = 1.0;
+            const double tolerance = 1.1;
             double remainder = frequency % humFrequency;
             return (remainder < tolerance || remainder > (humFrequency - tolerance));
         }
