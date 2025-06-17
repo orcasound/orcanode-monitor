@@ -247,7 +247,7 @@ namespace OrcanodeMonitor.Pages
 
         /// <summary>
         /// Gets or sets the JSON-serialized datasets containing per-channel frequency magnitudes.
-        /// for non-hum frequencies.
+        /// for hum frequencies.
         /// </summary>
         public string JsonHumChannelDatasets { get; set; }
 
