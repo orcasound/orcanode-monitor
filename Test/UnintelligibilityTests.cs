@@ -37,20 +37,26 @@ namespace Test
             }
         }
 
-        [TestMethod]
-        public void TestHumFrequencies()
+        [DataTestMethod]
+        [DataRow(59.0)]
+        [DataRow(60.0)]
+        [DataRow(61.0)]
+        [DataRow(120.0)]
+        [DataRow(300.0)]
+        public void TestHumFrequencies_Hum(double freq)
         {
-            Assert.IsTrue(FrequencyInfo.IsHumFrequency(59.1));
-            Assert.IsTrue(FrequencyInfo.IsHumFrequency(60.0));
-            Assert.IsTrue(FrequencyInfo.IsHumFrequency(60.9));
-            Assert.IsTrue(FrequencyInfo.IsHumFrequency(120.0));
-            Assert.IsTrue(FrequencyInfo.IsHumFrequency(300.0));
+            Assert.IsTrue(FrequencyInfo.IsHumFrequency(freq));
+        }
 
-            Assert.IsFalse(FrequencyInfo.IsHumFrequency(0.0));
-            Assert.IsFalse(FrequencyInfo.IsHumFrequency(59.0));
-            Assert.IsFalse(FrequencyInfo.IsHumFrequency(61.0));
-            Assert.IsFalse(FrequencyInfo.IsHumFrequency(121.0));
-            Assert.IsFalse(FrequencyInfo.IsHumFrequency(299.0));
+        [DataTestMethod]
+        [DataRow(0.0)]
+        [DataRow(58.9)]
+        [DataRow(61.1)]
+        [DataRow(121.1)]
+        [DataRow(298.9)]
+        public void TestHumFrequencies_NonHum(double freq)
+        {
+            Assert.IsFalse(FrequencyInfo.IsHumFrequency(freq));
         }
 
         [TestMethod]
