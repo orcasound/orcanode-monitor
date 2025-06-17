@@ -40,17 +40,17 @@ namespace Test
         [TestMethod]
         public void TestHumFrequencies()
         {
-            Assert.IsTrue(FrequencyInfo.IsHumFrequency(59.1));
+            Assert.IsTrue(FrequencyInfo.IsHumFrequency(59.0));
             Assert.IsTrue(FrequencyInfo.IsHumFrequency(60.0));
-            Assert.IsTrue(FrequencyInfo.IsHumFrequency(60.9));
+            Assert.IsTrue(FrequencyInfo.IsHumFrequency(61.0));
             Assert.IsTrue(FrequencyInfo.IsHumFrequency(120.0));
             Assert.IsTrue(FrequencyInfo.IsHumFrequency(300.0));
 
             Assert.IsFalse(FrequencyInfo.IsHumFrequency(0.0));
-            Assert.IsFalse(FrequencyInfo.IsHumFrequency(59.0));
-            Assert.IsFalse(FrequencyInfo.IsHumFrequency(61.0));
-            Assert.IsFalse(FrequencyInfo.IsHumFrequency(121.0));
-            Assert.IsFalse(FrequencyInfo.IsHumFrequency(299.0));
+            Assert.IsFalse(FrequencyInfo.IsHumFrequency(58.9));
+            Assert.IsFalse(FrequencyInfo.IsHumFrequency(61.1));
+            Assert.IsFalse(FrequencyInfo.IsHumFrequency(121.1));
+            Assert.IsFalse(FrequencyInfo.IsHumFrequency(298.9));
         }
 
         [TestMethod]

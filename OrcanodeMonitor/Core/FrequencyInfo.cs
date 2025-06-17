@@ -244,7 +244,7 @@ namespace OrcanodeMonitor.Core
             }
             Debug.Assert(frequency > 0.0);
             Debug.Assert(humFrequency >= 0.0);
-            const double tolerance = 1.1;
+            const double tolerance = 1.05;
             double remainder = frequency % humFrequency;
             return (remainder < tolerance || remainder > (humFrequency - tolerance));
         }
