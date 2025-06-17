@@ -166,7 +166,7 @@ namespace OrcanodeMonitor.Core
         // We consider anything below this average decibels as silence.
         // The lowest normal value we have seen is -98.
         // If this number is updated, it should also be updated in Design.md.
-        const double _defaultMinNoiseDecibels = -98;
+        const double _defaultMinNoiseDecibels = -95;
         public static double MinNoiseDecibels
         {
             get
