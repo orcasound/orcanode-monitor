@@ -285,13 +285,18 @@ namespace OrcanodeMonitor.Core
             {
                 double frequency = pair.Key;
                 double magnitude = pair.Value;
+                if (magnitude < MinNoiseMagnitude)
+                {
+                    // Don't count silent frequencies.
+                    continue;
+                }
                 if (!IsHumFrequency(frequency))
                 {
                     totalNonHumMagnitude += magnitude;
                     count++;
                 }
             }
-            return totalNonHumMagnitude / count;
+            return (count > 0) ? (totalNonHumMagnitude / count) : 0;
         }
 
         /// <summary>
@@ -313,6 +318,11 @@ namespace OrcanodeMonitor.Core
             {
                 double frequency = pair.Key;
                 double magnitude = pair.Value;
+                if (magnitude < MinNoiseMagnitude)
+                {
+                    // Don't count silent frequencies.
+                    continue;
+                }
                 if (!IsHumFrequency(frequency))
                 {
                     double deviation = magnitude - average;
@@ -337,13 +347,18 @@ namespace OrcanodeMonitor.Core
             {
                 double frequency = pair.Key;
                 double magnitude = pair.Value;
+                if (magnitude < MinNoiseMagnitude)
+                {
+                    // Don't count silent frequencies.
+                    continue;
+                }
                 if (IsHumFrequency(frequency))
                 {
                     totalNonHumMagnitude += magnitude;
                     count++;
                 }
             }
-            return totalNonHumMagnitude / count;
+            return (count > 0) ? (totalNonHumMagnitude / count) : 0;
         }
 
         /// <summary>
