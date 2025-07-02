@@ -330,7 +330,7 @@ namespace OrcanodeMonitor.Core
                     count++;
                 }
             }
-            double averageNonHumDifference = totalNonHumDifference / count;
+            double averageNonHumDifference = (count > 0) ? (totalNonHumDifference / count) : 0;
             double standardDeviation = Math.Sqrt(averageNonHumDifference);
             return standardDeviation;
         }
@@ -341,7 +341,7 @@ namespace OrcanodeMonitor.Core
         /// <returns>Magnitude</returns>
         private double GetAverageHumMagnitude(Dictionary<double, double> frequencyMagnitudes)
         {
-            double totalNonHumMagnitude = 0;
+            double totalHumMagnitude = 0;
             int count = 0;
             foreach (var pair in frequencyMagnitudes)
             {
@@ -354,11 +354,11 @@ namespace OrcanodeMonitor.Core
                 }
                 if (IsHumFrequency(frequency))
                 {
-                    totalNonHumMagnitude += magnitude;
+                    totalHumMagnitude += magnitude;
                     count++;
                 }
             }
-            return (count > 0) ? (totalNonHumMagnitude / count) : 0;
+            return (count > 0) ? (totalHumMagnitude / count) : 0;
         }
 
         /// <summary>
