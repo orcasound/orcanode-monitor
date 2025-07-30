@@ -23,8 +23,7 @@ namespace OrcanodeMonitor.Pages
         private OrcanodeEvent? _event = null;
         private Orcanode? _node = null;
         public string NodeName => _node?.DisplayName ?? "Unknown";
-        private List<string> _labels;
-        public List<string> Labels => _labels;
+        public List<string> Labels => _frequencyInfo?.Labels ?? new List<string>();
         public string AudioUrl => _event?.Url ?? "Unknown";
         public double MaxMagnitude { get; private set; }
         public int ChannelCount { get; private set; }
@@ -59,72 +58,7 @@ namespace OrcanodeMonitor.Pages
             _logger = logger;
             _id = string.Empty;
             Status = string.Empty;
-            _labels = new List<string>();
             LastModifiedLocal = string.Empty;
-        }
-
-        /// <summary>
-        /// Maximum frequency to analyze in Hz.
-        /// Typical human hearing range is up to 20kHz.
-        /// Orca calls are up to 40kHz.
-        /// </summary>
-        private const int MAX_FREQUENCY = 24000;
-
-        /// <summary>
-        /// Number of points to plot on the graph. 1000 points provides a good balance
-        /// between resolution and performance.
-        /// </summary>
-        private const int POINT_COUNT = 1000;
-
-        private void FillInGraphPoints(List<string> labels, List<double> maxBucketDecibelsList, int? channel = null)
-        {
-            if (_frequencyInfo == null)
-            {
-                return;
-            }
-
-            // Compute the logarithmic base needed to get PointCount points.
-            double b = Math.Pow(MAX_FREQUENCY, 1.0 / POINT_COUNT);
-            double logb = Math.Log(b);
-
-            var maxBucketDecibels = new double[POINT_COUNT];
-            for (int i = 0; i < POINT_COUNT; i++) {
-                maxBucketDecibels[i] = double.NegativeInfinity;
-            }
-            var maxBucketFrequency = new int[POINT_COUNT];
-            foreach (var pair in _frequencyInfo.GetFrequencyMagnitudes(channel))
-            {
-                double frequency = pair.Key;
-                double magnitude = pair.Value;
-                double dB = MagnitudeToDecibels(magnitude);
-                int bucket = (frequency < 1) ? 0 : Math.Min(POINT_COUNT - 1, (int)(Math.Log(frequency) / logb));
-                if (maxBucketDecibels[bucket] < dB)
-                {
-                    maxBucketDecibels[bucket] = dB;
-                    maxBucketFrequency[bucket] = (int)Math.Round(frequency);
-                }
-            }
-            for (int i = 0; i < POINT_COUNT; i++)
-            {
-                if (maxBucketDecibels[i] > double.NegativeInfinity)
-                {
-                    labels.Add(maxBucketFrequency[i].ToString());
-                    maxBucketDecibelsList.Add(maxBucketDecibels[i]);
-                }
-            }
-        }
-
-        private double GetBucketDecibels(string label, List<string> labels, List<double> decibels)
-        {
-            double max = double.NegativeInfinity;
-            for (int i = 0; i < labels.Count; i++)
-            {
-                if (labels[i] == label && decibels[i] > max)
-                {
-                    max = decibels[i];
-                }
-            }
-            return max;
         }
 
         private void UpdateFrequencyInfo()
@@ -134,94 +68,10 @@ namespace OrcanodeMonitor.Pages
                 return;
             }
 
-            // Compute graph points.
-            var summaryLabels = new List<string>();
-            var summaryMaxBucketDecibels = new List<double>();
-            FillInGraphPoints(summaryLabels, summaryMaxBucketDecibels);
-            var channelLabels = new List<string>[_frequencyInfo.ChannelCount];
-            var channelMaxBucketDecibels = new List<double>[_frequencyInfo.ChannelCount];
-            for (int i = 0; i < _frequencyInfo.ChannelCount; i++)
-            {
-                channelLabels[i] = new List<string>();
-                channelMaxBucketDecibels[i] = new List<double>();
-                FillInGraphPoints(channelLabels[i], channelMaxBucketDecibels[i], i);
-            }
-
-            // Collect all labels.
-            var mainLabels = new HashSet<string>(summaryLabels);
-            for (int i = 0; i < _frequencyInfo.ChannelCount; i++)
-            {
-                mainLabels.UnionWith(channelLabels[i]);
-            }
-
-            // Sort labels numerically.
-            _labels = mainLabels
-                .Select(label => int.Parse(label)) // Convert to integers for sorting.
-                .OrderBy(num => num)               // Sort in ascending order.
-                .Select(num => num.ToString())     // Convert back to strings.
-                .ToList();
-
-            // Align data.
-            var summaryDataset = _labels.Select(label => new
-            {
-                x = label,
-                y = summaryLabels.Contains(label) ? GetBucketDecibels(label, summaryLabels, summaryMaxBucketDecibels) : (double?)null
-            }).ToList<object>();
-            var channelDatasets = new List<List<object>>();
-            for (int i = 0; i < _frequencyInfo.ChannelCount; i++)
-            {
-                var channelDataset = _labels.Select(label => new
-                {
-                    x = label,
-                    y = channelLabels[i].Contains(label) ? GetBucketDecibels(label, channelLabels[i], channelMaxBucketDecibels[i]) : (double?)null
-                }).ToList<object>();
-                channelDatasets.Add(channelDataset);
-            }
-            var nonHumChannelDatasets = new List<List<object>>();
-            for (int i = 0; i < _frequencyInfo.ChannelCount; i++)
-            {
-                var nonHumChannelDataset = _labels
-                    .Where(label =>
-                    {
-                        if (double.TryParse(label, out double frequency)) // Try to parse the label as a double
-                        {
-                            return !FrequencyInfo.IsHumFrequency(frequency); // Return true if it's not a hum frequency
-                        }
-                        return false; // If parsing fails, exclude the label
-                    })
-                    .Select(label => new
-                    {
-                        x = label,
-                        y = channelLabels[i].Contains(label) ? GetBucketDecibels(label, channelLabels[i], channelMaxBucketDecibels[i]) : (double?)null
-                    })
-                    .ToList<object>();
-                nonHumChannelDatasets.Add(nonHumChannelDataset);
-            }
-            var humChannelDatasets = new List<List<object>>();
-            for (int i = 0; i < _frequencyInfo.ChannelCount; i++)
-            {
-                var humChannelDataset = _labels
-                    .Where(label =>
-                    {
-                        if (double.TryParse(label, out double frequency)) // Try to parse the label as a double
-                        {
-                            return FrequencyInfo.IsHumFrequency(frequency); // Return true if it's a hum frequency
-                        }
-                        return false; // If parsing fails, exclude the label
-                    })
-                    .Select(label => new
-                    {
-                        x = label,
-                        y = channelLabels[i].Contains(label) ? GetBucketDecibels(label, channelLabels[i], channelMaxBucketDecibels[i]) : (double?)null
-                    })
-                    .ToList<object>();
-                humChannelDatasets.Add(humChannelDataset);
-            }
-
             // Serialise to JSON.
-            JsonChannelDatasets = JsonSerializer.Serialize(channelDatasets);
-            JsonNonHumChannelDatasets = JsonSerializer.Serialize(nonHumChannelDatasets);
-            JsonHumChannelDatasets = JsonSerializer.Serialize(humChannelDatasets);
+            JsonChannelDatasets = JsonSerializer.Serialize(_frequencyInfo.ChannelDatasets);
+            JsonNonHumChannelDatasets = JsonSerializer.Serialize(_frequencyInfo.NonHumChannelDatasets);
+            JsonHumChannelDatasets = JsonSerializer.Serialize(_frequencyInfo.HumChannelDatasets);
 
             MaxMagnitude = _frequencyInfo.GetMaxMagnitude();
             MaxNonHumMagnitude = _frequencyInfo.GetMaxNonHumMagnitude();
