@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 using FftSharp;
 using OrcanodeMonitor.Models;
+using System.Data;
 using System.Diagnostics;
 using System.Numerics;
 
@@ -9,6 +10,159 @@ namespace OrcanodeMonitor.Core
 {
     public class FrequencyInfo
     {
+        /// <summary>
+        /// Number of points to plot on the graph. 1000 points provides a good balance
+        /// between resolution and performance.
+        /// </summary>
+        private const int POINT_COUNT = 1000;
+
+        /// <summary>
+        /// Maximum frequency to analyze in Hz.
+        /// Typical human hearing range is up to 20kHz.
+        /// Orca calls are up to 40kHz.
+        /// </summary>
+        private const int MAX_FREQUENCY = 24000;
+
+        private void FillInGraphPoints(List<string> labels, List<double> maxBucketDecibelsList, int? channel = null)
+        {
+            // Compute the logarithmic base needed to get PointCount points.
+            double b = Math.Pow(MAX_FREQUENCY, 1.0 / POINT_COUNT);
+            double logb = Math.Log(b);
+
+            var maxBucketDecibels = new double[POINT_COUNT];
+            for (int i = 0; i < POINT_COUNT; i++)
+            {
+                maxBucketDecibels[i] = double.NegativeInfinity;
+            }
+            var maxBucketFrequency = new int[POINT_COUNT];
+            foreach (var pair in GetFrequencyMagnitudes(channel))
+            {
+                double frequency = pair.Key;
+                double magnitude = pair.Value;
+                double dB = MagnitudeToDecibels(magnitude);
+                int bucket = (frequency < 1) ? 0 : Math.Min(POINT_COUNT - 1, (int)(Math.Log(frequency) / logb));
+                if (maxBucketDecibels[bucket] < dB)
+                {
+                    maxBucketDecibels[bucket] = dB;
+                    maxBucketFrequency[bucket] = (int)Math.Round(frequency);
+                }
+            }
+            for (int i = 0; i < POINT_COUNT; i++)
+            {
+                if (maxBucketDecibels[i] > double.NegativeInfinity)
+                {
+                    labels.Add(maxBucketFrequency[i].ToString());
+                    maxBucketDecibelsList.Add(maxBucketDecibels[i]);
+                }
+            }
+        }
+
+        private double GetBucketDecibels(string label, List<string> labels, List<double> decibels)
+        {
+            double max = double.NegativeInfinity;
+            for (int i = 0; i < labels.Count; i++)
+            {
+                if (labels[i] == label && decibels[i] > max)
+                {
+                    max = decibels[i];
+                }
+            }
+            return max;
+        }
+
+        private List<string> _labels;
+        public List<string> Labels => _labels;
+        private List<List<object>> _channelDatasets = new List<List<object>>();
+        public List<List<object>> ChannelDatasets => _channelDatasets;
+        private List<List<object>> _nonHumChannelDatasets = new List<List<object>>();
+        public List<List<object>> NonHumChannelDatasets => _nonHumChannelDatasets;
+        private List<List<object>> _humChannelDatasets = new List<List<object>>();
+        public List<List<object>> HumChannelDatasets => _humChannelDatasets;
+
+        private void UpdateFrequencyInfo()
+        {
+            // Compute graph points.
+            var summaryLabels = new List<string>();
+            var summaryMaxBucketDecibels = new List<double>();
+            FillInGraphPoints(summaryLabels, summaryMaxBucketDecibels);
+            var channelLabels = new List<string>[ChannelCount];
+            var channelMaxBucketDecibels = new List<double>[ChannelCount];
+            for (int i = 0; i < ChannelCount; i++)
+            {
+                channelLabels[i] = new List<string>();
+                channelMaxBucketDecibels[i] = new List<double>();
+                FillInGraphPoints(channelLabels[i], channelMaxBucketDecibels[i], i);
+            }
+
+            // Collect all labels.
+            var mainLabels = new HashSet<string>(summaryLabels);
+            for (int i = 0; i < ChannelCount; i++)
+            {
+                mainLabels.UnionWith(channelLabels[i]);
+            }
+
+            // Sort labels numerically.
+            _labels = mainLabels
+                .Select(label => int.Parse(label)) // Convert to integers for sorting.
+                .OrderBy(num => num)               // Sort in ascending order.
+                .Select(num => num.ToString())     // Convert back to strings.
+                .ToList();
+
+            // Align data.
+            var summaryDataset = _labels.Select(label => new
+            {
+                x = label,
+                y = summaryLabels.Contains(label) ? GetBucketDecibels(label, summaryLabels, summaryMaxBucketDecibels) : (double?)null
+            }).ToList<object>();
+            for (int i = 0; i < ChannelCount; i++)
+            {
+                var channelDataset = _labels.Select(label => new
+                {
+                    x = label,
+                    y = channelLabels[i].Contains(label) ? GetBucketDecibels(label, channelLabels[i], channelMaxBucketDecibels[i]) : (double?)null
+                }).ToList<object>();
+                _channelDatasets.Add(channelDataset);
+            }
+            for (int i = 0; i < ChannelCount; i++)
+            {
+                var nonHumChannelDataset = _labels
+                    .Where(label =>
+                    {
+                        if (double.TryParse(label, out double frequency)) // Try to parse the label as a double
+                        {
+                            return !FrequencyInfo.IsHumFrequency(frequency); // Return true if it's not a hum frequency
+                        }
+                        return false; // If parsing fails, exclude the label
+                    })
+                    .Select(label => new
+                    {
+                        x = label,
+                        y = channelLabels[i].Contains(label) ? GetBucketDecibels(label, channelLabels[i], channelMaxBucketDecibels[i]) : (double?)null
+                    })
+                    .ToList<object>();
+                _nonHumChannelDatasets.Add(nonHumChannelDataset);
+            }
+            for (int i = 0; i < ChannelCount; i++)
+            {
+                var humChannelDataset = _labels
+                    .Where(label =>
+                    {
+                        if (double.TryParse(label, out double frequency)) // Try to parse the label as a double
+                        {
+                            return FrequencyInfo.IsHumFrequency(frequency); // Return true if it's a hum frequency
+                        }
+                        return false; // If parsing fails, exclude the label
+                    })
+                    .Select(label => new
+                    {
+                        x = label,
+                        y = channelLabels[i].Contains(label) ? GetBucketDecibels(label, channelLabels[i], channelMaxBucketDecibels[i]) : (double?)null
+                    })
+                    .ToList<object>();
+                _humChannelDatasets.Add(humChannelDataset);
+            }
+        }
+
         static OrcanodeOnlineStatus GetBetterStatus(OrcanodeOnlineStatus a, OrcanodeOnlineStatus b)
         {
             if (a == OrcanodeOnlineStatus.Online)
@@ -65,6 +219,7 @@ namespace OrcanodeMonitor.Core
                 StatusForChannel[i] = GetStatus(oldStatus, i);
                 Status = GetBetterStatus(Status, StatusForChannel[i]);
             }
+            UpdateFrequencyInfo();
         }
 
         private void ComputeFrequencyMagnitudes(float[] data, uint sampleRate, int channelCount)
@@ -368,6 +523,7 @@ namespace OrcanodeMonitor.Core
         /// <returns>Magnitude</returns>
         public double GetMaxNonHumMagnitude(int? channel = null) => GetMaxNonHumMagnitude(GetFrequencyMagnitudes(channel));
 
+#if false
         /// <summary>
         /// Find the average magnitude outside the audio hum range.
         /// </summary>
@@ -395,14 +551,16 @@ namespace OrcanodeMonitor.Core
         /// <param name="channel">Channel, or null for all</param>
         /// <returns>Decibels</returns>
         public double GetMaxNonHumDecibels(int? channel = null) => MagnitudeToDecibels(GetMaxNonHumMagnitude(channel));
+#endif
 
         /// <summary>
         /// Find the average decibels outside the audio hum range.
         /// </summary>
         /// <param name="channel">Channel, or null for all</param>
         /// <returns>Decibels</returns>
-        public double GetAverageNonHumDecibels(int? channel = null) => MagnitudeToDecibels(GetAverageNonHumMagnitude(channel));
+        public double GetAverageNonHumDecibels(int? channel = null) => GetAverageDecibels(NonHumChannelDatasets, channel);
 
+#if false
         /// <summary>
         /// Find the decibel deviation outside the audio hum range.
         /// Note: This is not currently used, but might be in the future.
@@ -410,13 +568,45 @@ namespace OrcanodeMonitor.Core
         /// <param name="channel">Channel, or null for all</param>
         /// <returns>Decibels</returns>
         public double GetDeviationNonHumDecibels(int? channel = null) => MagnitudeToDecibels(GetDeviationNonHumMagnitude(channel));
+#endif
+
+        /// <summary>
+        /// Find the average decibels in the specified datasets.
+        /// </summary>
+        /// <param name="datasets">Datasets to check</param>
+        /// <param name="channel">Channel, or null for all</param>
+        /// <returns>Decibels</returns>
+        private double GetAverageDecibels(List<List<object>> datasets, int? channel = null)
+        {
+            int index = 0;
+            int count = 0;
+            double totalDecibels = 0;
+            foreach (var dataset in datasets)
+            {
+                if (channel == null || channel == index)
+                {
+                    foreach (var point in dataset)
+                    {
+                        double decibels = ((dynamic)point).y;
+                        if (decibels > double.NegativeInfinity)
+                        {
+                            totalDecibels += decibels;
+                            count++;
+                        }
+                    }
+                }
+                index++;
+            }
+            return totalDecibels / (count > 0 ? count : 1); // Avoid division by zero
+        }
+
 
         /// <summary>
         /// Find the average decibels inside the audio hum range.
         /// </summary>
         /// <param name="channel">Channel, or null for all</param>
         /// <returns>Decibels</returns>
-        public double GetAverageHumDecibels(int? channel = null) => MagnitudeToDecibels(GetAverageHumMagnitude(channel));
+        public double GetAverageHumDecibels(int? channel = null) => GetAverageDecibels(HumChannelDatasets, channel);
 
         /// <summary>
         /// Find the total magnitude outside the audio hum range among a given set of frequency magnitudes.
