@@ -587,7 +587,12 @@ namespace OrcanodeMonitor.Core
                 {
                     foreach (var point in dataset)
                     {
-                        double decibels = ((dynamic)point).y;
+                        object ob = ((dynamic)point).y;
+                        if (ob == null)
+                        {
+                            continue;
+                        }
+                        double decibels = (double)ob;
                         if (decibels > double.NegativeInfinity)
                         {
                             totalDecibels += decibels;
@@ -599,7 +604,6 @@ namespace OrcanodeMonitor.Core
             }
             return totalDecibels / (count > 0 ? count : 1); // Avoid division by zero
         }
-
 
         /// <summary>
         /// Find the average decibels inside the audio hum range.
