@@ -1,20 +1,23 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using System;
-using System.Dynamic;
-using System.Text.Json;
-using System.Net.Http;
-using System.Text.Json.Nodes;
-using System.Xml.Linq;
-using System.Net.Sockets;
-using System.Web;
-using OrcanodeMonitor.Models;
 using Microsoft.EntityFrameworkCore;
-using OrcanodeMonitor.Data;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using Microsoft.IdentityModel.Tokens;
 using Mono.TextTemplating;
-using System.Net;
+using NAudio.CoreAudioApi;
 using OrcanodeMonitor.Api;
+using OrcanodeMonitor.Data;
+using OrcanodeMonitor.Models;
+using System;
+using System.Dynamic;
+using System.Net;
+using System.Net.Http;
+using System.Net.Sockets;
+using System.Security.Policy;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using System.Web;
+using System.Xml.Linq;
 
 namespace OrcanodeMonitor.Core
 {
@@ -286,6 +289,67 @@ namespace OrcanodeMonitor.Core
             {
                 logger.LogError(ex, "Exception in GetDataplicityDataAsync");
                 return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Reboot a hydrophone node.
+        /// </summary>
+        /// <param name="deviceJson">JSON with the Dataplicity device data</param>
+        /// <param name="logger">Logger object</param>
+        /// <returns>true on success, false on failure</returns>
+        public async static Task<bool> RebootDataplicityDeviceAsync(string deviceJson, ILogger logger)
+        {
+            try
+            {
+                // Parse out the reboot URL from the device JSON.
+                dynamic device = JsonSerializer.Deserialize<JsonElement>(deviceJson);
+                if (device.ValueKind != JsonValueKind.Object)
+                {
+                    logger.LogError($"Invalid device kind in RebootDataplicityDeviceAsync: {device.ValueKind}");
+                    return false;
+                }
+                if (!device.TryGetProperty("reboot_url", out JsonElement rebootUrl))
+                {
+                    logger.LogError($"Missing reboot_url in RebootDataplicityDeviceAsync result");
+                    return false;
+                }
+                if (rebootUrl.ValueKind != JsonValueKind.String)
+                {
+                    logger.LogError($"Invalid reboot_url kind in RebootDataplicityDeviceAsync: {device.ValueKind}");
+                    return false;
+                }
+                string rebootUrlString = rebootUrl.ToString();
+                if (rebootUrlString.IsNullOrEmpty())
+                {
+                    logger.LogError($"Empty reboot_url in RebootDataplicityDeviceAsync result");
+                    return false;
+                }
+
+                // Get the dataplicity auth token.
+                string? orcasound_dataplicity_token = Environment.GetEnvironmentVariable("ORCASOUND_DATAPLICITY_TOKEN");
+                if (orcasound_dataplicity_token == null)
+                {
+                    logger.LogError("ORCASOUND_DATAPLICITY_TOKEN not found");
+                    return false;
+                }
+
+                using (var request = new HttpRequestMessage
+                {
+                    RequestUri = new Uri(rebootUrlString),
+                    Method = HttpMethod.Post,
+                })
+                {
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_dataplicity_token);
+                    using HttpResponseMessage response = await _httpClient.SendAsync(request);
+                    response.EnsureSuccessStatusCode();
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Exception in RebootDataplicityDeviceAsync: {ex.Message}");
+                return false;
             }
         }
 

@@ -55,5 +55,22 @@ namespace OrcanodeMonitor.Pages
             _jsonData = formatter.FormatJson(rawJson);
             return Page();
         }
+
+        public async Task<IActionResult> OnPostRebootAsync(string serial)
+        {
+            string rawJson = await Fetcher.GetDataplicityDataAsync(serial, _logger);
+            bool success = await Fetcher.RebootDataplicityDeviceAsync(rawJson, _logger);
+            if (success)
+            {
+                TempData["Message"] = "Device rebooted successfully.";
+            }
+            else
+            {
+                TempData["Message"] = "Reboot failed.";
+            }
+
+            // Redirect to GET to refresh the page
+            return RedirectToPage(new { serial = Request.RouteValues["serial"] });
+        }
     }
 }
