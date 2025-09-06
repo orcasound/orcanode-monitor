@@ -443,10 +443,24 @@ namespace OrcanodeMonitor.Models
                 }
                 TimeSpan interval = PeriodicTasks.FrequencyToPoll;
                 DateTime utcNow = DateTime.UtcNow;
-                TimeSpan sinceTopOfHour = utcNow - utcNow.Date.AddHours(utcNow.Hour);
-                if (sinceTopOfHour >= interval)
+                
+                // Get the configured hour offset for reboot timing
+                string? hourOffsetString = Environment.GetEnvironmentVariable("ORCASOUND_REBOOT_HOUR_OFFSET_MINUTES");
+                int hourOffsetMinutes = int.TryParse(hourOffsetString, out var offset) ? offset : 0;
+                
+                // Calculate time since the configured offset within the hour
+                DateTime hourWithOffset = utcNow.Date.AddHours(utcNow.Hour).AddMinutes(hourOffsetMinutes);
+                TimeSpan sinceOffsetTime = utcNow - hourWithOffset;
+                
+                // Handle case where offset pushes us to next hour
+                if (sinceOffsetTime < TimeSpan.Zero)
                 {
-                    // Only reboot within the first polling interval of the hour.
+                    sinceOffsetTime = sinceOffsetTime.Add(TimeSpan.FromHours(1));
+                }
+                
+                if (sinceOffsetTime >= interval)
+                {
+                    // Only reboot within the first polling interval after the offset time.
                     // This is so we only try a reboot at most once per hour.
                     return false;
                 }
