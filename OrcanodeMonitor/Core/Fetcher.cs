@@ -1,23 +1,14 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using Microsoft.IdentityModel.Tokens;
 using Mono.TextTemplating;
-using NAudio.CoreAudioApi;
 using OrcanodeMonitor.Api;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
-using System;
 using System.Dynamic;
 using System.Net;
-using System.Net.Http;
-using System.Net.Sockets;
-using System.Security.Policy;
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Web;
-using System.Xml.Linq;
 
 namespace OrcanodeMonitor.Core
 {
@@ -303,7 +294,7 @@ namespace OrcanodeMonitor.Core
             try
             {
                 // Parse out the reboot URL from the device JSON.
-                dynamic device = JsonSerializer.Deserialize<JsonElement>(deviceJson);
+                var device = JsonSerializer.Deserialize<JsonElement>(deviceJson);
                 if (device.ValueKind != JsonValueKind.Object)
                 {
                     logger.LogError($"Invalid device kind in RebootDataplicityDeviceAsync: {device.ValueKind}");
@@ -316,13 +307,26 @@ namespace OrcanodeMonitor.Core
                 }
                 if (rebootUrl.ValueKind != JsonValueKind.String)
                 {
-                    logger.LogError($"Invalid reboot_url kind in RebootDataplicityDeviceAsync: {device.ValueKind}");
+                    logger.LogError($"Invalid reboot_url kind in RebootDataplicityDeviceAsync: {rebootUrl.ValueKind}");
                     return false;
                 }
                 string rebootUrlString = rebootUrl.ToString();
                 if (rebootUrlString.IsNullOrEmpty())
                 {
                     logger.LogError($"Empty reboot_url in RebootDataplicityDeviceAsync result");
+                    return false;
+                }
+
+                // Validate URL to avoid Server-Side Request Forgery.
+                if (!Uri.TryCreate(rebootUrlString, UriKind.Absolute, out var rebootUri))
+                {
+                    logger.LogError("Invalid reboot_url format in RebootDataplicityDeviceAsync");
+                    return false;
+                }
+                if (!rebootUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase) ||
+                    !rebootUri.Host.EndsWith("dataplicity.com", StringComparison.OrdinalIgnoreCase))
+                {
+                    logger.LogError($"Blocked non-Dataplicity reboot_url: {rebootUri}");
                     return false;
                 }
 
