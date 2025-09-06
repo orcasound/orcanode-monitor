@@ -426,6 +426,33 @@ namespace OrcanodeMonitor.Models
                 return GetStatusString(status);
             }
         }
+
+        public bool NeedsRebootForContainerRestart
+        {
+            get
+            {
+                if (!(DataplicityOnline ?? false))
+                {
+                    // Dataplicity must be online.
+                    return false;
+                }
+                if (this.S3StreamStatus != OrcanodeOnlineStatus.Offline)
+                {
+                    // S3 Stream status must be offline.
+                    return false;
+                }
+                TimeSpan interval = PeriodicTasks.FrequencyToPoll;
+                DateTime utcNow = DateTime.UtcNow;
+                TimeSpan sinceTopOfHour = utcNow - utcNow.Date.AddHours(utcNow.Hour);
+                if (sinceTopOfHour >= interval)
+                {
+                    // Only reboot within the first polling interval of the hour.
+                    // This is so we only try a reboot at most once per hour.
+                    return false;
+                }
+                return true;
+            }
+        }
         #endregion derived
 
         #region methods
