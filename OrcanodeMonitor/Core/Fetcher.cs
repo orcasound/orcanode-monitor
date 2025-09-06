@@ -330,10 +330,18 @@ namespace OrcanodeMonitor.Core
                     logger.LogError("Invalid reboot_url format in RebootDataplicityDeviceAsync");
                     return false;
                 }
-                if (!rebootUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase) ||
-                    !rebootUri.Host.EndsWith("dataplicity.com", StringComparison.OrdinalIgnoreCase))
+                var host = rebootUri.IdnHost;
+                bool hostAllowed =
+                    host.Equals("dataplicity.com", StringComparison.OrdinalIgnoreCase) ||
+                    host.EndsWith(".dataplicity.com", StringComparison.OrdinalIgnoreCase);
+                if (!rebootUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) || !hostAllowed)
                 {
                     logger.LogError($"Blocked non-Dataplicity reboot_url: {rebootUri}");
+                    return false;
+                }
+                if (!rebootUri.IsDefaultPort && rebootUri.Port != 443)
+                {
+                    logger.LogError($"Blocked non-standard port in reboot_url: {rebootUri}");
                     return false;
                 }
 
