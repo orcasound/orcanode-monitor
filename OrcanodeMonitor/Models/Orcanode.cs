@@ -444,15 +444,15 @@ namespace OrcanodeMonitor.Models
                 TimeSpan interval = PeriodicTasks.FrequencyToPoll;
                 DateTime utcNow = DateTime.UtcNow;
                 
-                // Get the configured hour offset for reboot timing
+                // Get the configured hour offset for reboot timing.
                 string? hourOffsetString = Environment.GetEnvironmentVariable("ORCASOUND_REBOOT_HOUR_OFFSET_MINUTES");
                 int hourOffsetMinutes = int.TryParse(hourOffsetString, out var offset) ? offset : 0;
                 
-                // Calculate time since the configured offset within the hour
+                // Calculate time since the configured offset within the hour.
                 DateTime hourWithOffset = utcNow.Date.AddHours(utcNow.Hour).AddMinutes(hourOffsetMinutes);
                 TimeSpan sinceOffsetTime = utcNow - hourWithOffset;
                 
-                // Handle case where offset pushes us to next hour
+                // Handle case where offset pushes us to next hour.
                 if (sinceOffsetTime < TimeSpan.Zero)
                 {
                     sinceOffsetTime = sinceOffsetTime.Add(TimeSpan.FromHours(1));
