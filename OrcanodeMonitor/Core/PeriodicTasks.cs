@@ -78,7 +78,6 @@ namespace OrcanodeMonitor.Core
 
             await Fetcher.UpdateOrcaHelloDataAsync(context, _logger);
 
-            // See if ant node needs to be rebooted.
             await Fetcher.CheckForRebootsNeededAsync(context, _logger);
         }
     }
