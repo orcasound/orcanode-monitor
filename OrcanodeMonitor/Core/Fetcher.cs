@@ -15,7 +15,7 @@ namespace OrcanodeMonitor.Core
     public class Fetcher
     {
         private static TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
-        private static HttpClient _httpClient = new HttpClient();
+        private static HttpClient _httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
         private static string _orcasoundProdSite = "live.orcasound.net";
         private static string _orcasoundFeedsUrlPath = "/api/json/feeds";
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
