@@ -111,6 +111,8 @@ The following state will be stored per orcanode:
 
 **ORCASOUND_POLL_FREQUENCY_IN_MINUTES**: Service will poll each orcanode at the configured frequency. Default: 5
 
+**ORCASOUND_REBOOT_HOUR_OFFSET_MINUTES**: The number of minutes from the top of the hour when reboot checks should occur. This allows multiple deployments (production and staging) to avoid conflicts by running at different times. Default: 0 (top of hour)
+
 **ORCASOUND_MAX_UPLOAD_DELAY_MINUTES**: If the manifest file is older than this, the node will be considered offline. Default: 2
 
 **MEZMO_LOG_SECONDS**: The number of seconds of Mezmo logs to check for activity. Default: 60
