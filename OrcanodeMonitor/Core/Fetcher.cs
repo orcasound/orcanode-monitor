@@ -1,20 +1,14 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using System;
-using System.Dynamic;
-using System.Text.Json;
-using System.Net.Http;
-using System.Text.Json.Nodes;
-using System.Xml.Linq;
-using System.Net.Sockets;
-using System.Web;
-using OrcanodeMonitor.Models;
 using Microsoft.EntityFrameworkCore;
-using OrcanodeMonitor.Data;
 using Microsoft.IdentityModel.Tokens;
 using Mono.TextTemplating;
-using System.Net;
 using OrcanodeMonitor.Api;
+using OrcanodeMonitor.Data;
+using OrcanodeMonitor.Models;
+using System.Dynamic;
+using System.Net;
+using System.Text.Json;
 
 namespace OrcanodeMonitor.Core
 {
@@ -290,6 +284,95 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
+        /// Reboot a hydrophone node.
+        /// </summary>
+        /// <param name="node">Node to reboot</param>
+        /// <param name="logger">Logger object</param>
+        /// <returns>true on success, false on failure</returns>
+        public async static Task<bool> RebootDataplicityDeviceAsync(Orcanode node, ILogger logger)
+        {
+            try
+            {
+                string deviceJson = await GetDataplicityDataAsync(node.DataplicitySerial, logger);
+                if (deviceJson.IsNullOrEmpty())
+                {
+                    logger.LogWarning($"Node {node.DisplayName} needs a reboot, but couldn't get its Dataplicity data.");
+                    return false;
+                }
+
+                // Parse out the reboot URL from the device JSON.
+                var device = JsonSerializer.Deserialize<JsonElement>(deviceJson);
+                if (device.ValueKind != JsonValueKind.Object)
+                {
+                    logger.LogError($"Invalid device kind in RebootDataplicityDeviceAsync: {device.ValueKind}");
+                    return false;
+                }
+                if (!device.TryGetProperty("reboot_url", out JsonElement rebootUrl))
+                {
+                    logger.LogError($"Missing reboot_url in RebootDataplicityDeviceAsync result");
+                    return false;
+                }
+                if (rebootUrl.ValueKind != JsonValueKind.String)
+                {
+                    logger.LogError($"Invalid reboot_url kind in RebootDataplicityDeviceAsync: {rebootUrl.ValueKind}");
+                    return false;
+                }
+                string rebootUrlString = rebootUrl.ToString();
+                if (rebootUrlString.IsNullOrEmpty())
+                {
+                    logger.LogError($"Empty reboot_url in RebootDataplicityDeviceAsync result");
+                    return false;
+                }
+
+                // Validate URL to avoid Server-Side Request Forgery.
+                if (!Uri.TryCreate(rebootUrlString, UriKind.Absolute, out var rebootUri))
+                {
+                    logger.LogError("Invalid reboot_url format in RebootDataplicityDeviceAsync");
+                    return false;
+                }
+                var host = rebootUri.IdnHost;
+                bool hostAllowed =
+                    host.Equals("dataplicity.com", StringComparison.OrdinalIgnoreCase) ||
+                    host.EndsWith(".dataplicity.com", StringComparison.OrdinalIgnoreCase);
+                if (!rebootUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) || !hostAllowed)
+                {
+                    logger.LogError($"Blocked non-Dataplicity reboot_url: {rebootUri}");
+                    return false;
+                }
+                if (!rebootUri.IsDefaultPort && rebootUri.Port != 443)
+                {
+                    logger.LogError($"Blocked non-standard port in reboot_url: {rebootUri}");
+                    return false;
+                }
+
+                // Get the dataplicity auth token.
+                string? orcasound_dataplicity_token = Environment.GetEnvironmentVariable("ORCASOUND_DATAPLICITY_TOKEN");
+                if (orcasound_dataplicity_token == null)
+                {
+                    logger.LogError("ORCASOUND_DATAPLICITY_TOKEN not found");
+                    return false;
+                }
+
+                using (var request = new HttpRequestMessage
+                {
+                    RequestUri = new Uri(rebootUrlString),
+                    Method = HttpMethod.Post,
+                })
+                {
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_dataplicity_token);
+                    using HttpResponseMessage response = await _httpClient.SendAsync(request);
+                    response.EnsureSuccessStatusCode();
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Exception in RebootDataplicityDeviceAsync: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Update Orcanode state by querying dataplicity.com.
         /// </summary>
         /// <param name="context">Database context to update</param>
@@ -427,6 +510,46 @@ namespace OrcanodeMonitor.Core
             catch (Exception ex)
             {
                 logger.LogError(ex, "Exception in UpdateDataplicityDataAsync");
+            }
+        }
+
+        /// <summary>
+        /// Check for any nodes that need a reboot to fix a container restart issue.
+        /// </summary>
+        /// <param name="context">Database context to update</param>
+        /// <param name="logger"></param>
+        /// <returns></returns>
+        public async static Task CheckForRebootsNeededAsync(OrcanodeMonitorContext context, ILogger logger)
+        {
+            var originalList = await context.Orcanodes.ToListAsync();
+            foreach (Orcanode? node in originalList)
+            {
+                if (!node.NeedsRebootForContainerRestart)
+                {
+                    continue;
+                }
+                if (IsReadOnly)
+                {
+                    logger.LogInformation($"Node {node.DisplayName} needs a reboot, but we are in read-only mode.");
+                    continue;
+                }
+                if (node.DataplicitySerial.IsNullOrEmpty())
+                {
+                    logger.LogWarning($"Node {node.DisplayName} needs a reboot, but has no Dataplicity serial.");
+                    continue;
+                }
+                bool success = await RebootDataplicityDeviceAsync(node, logger);
+                if (success)
+                {
+                    logger.LogInformation($"Node {node.DisplayName} rebooted successfully.");
+                }
+                else
+                {
+                    logger.LogWarning($"Node {node.DisplayName} needs a reboot, but the reboot request failed.");
+                }
+
+                // Wait a bit to avoid hammering the Dataplicity API.
+                await Task.Delay(2000);
             }
         }
 

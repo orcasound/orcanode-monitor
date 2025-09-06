@@ -15,7 +15,7 @@ namespace OrcanodeMonitor.Core
     {
         private readonly IServiceScopeFactory _scopeFactory;
         const int _defaultFrequencyToPollInMinutes = 5;
-        private static TimeSpan FrequencyToPoll
+        public static TimeSpan FrequencyToPoll
         {
             get
             {
@@ -77,6 +77,8 @@ namespace OrcanodeMonitor.Core
             await Fetcher.UpdateS3DataAsync(context, _logger);
 
             await Fetcher.UpdateOrcaHelloDataAsync(context, _logger);
+
+            await Fetcher.CheckForRebootsNeededAsync(context, _logger);
         }
     }
 }
