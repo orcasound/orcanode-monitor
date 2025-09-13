@@ -8,7 +8,7 @@ namespace OrcanodeMonitor.Data
 {
     public class OrcanodeMonitorContext : DbContext
     {
-        public OrcanodeMonitorContext (DbContextOptions<OrcanodeMonitorContext> options)
+        public OrcanodeMonitorContext(DbContextOptions<OrcanodeMonitorContext> options)
             : base(options)
         {
         }
@@ -32,7 +32,7 @@ namespace OrcanodeMonitor.Data
 
             modelBuilder.Entity<MonitorState>()
                 .ToContainer(environment + "MonitorState")
-                .HasPartitionKey(item=>item.ID);
+                .HasPartitionKey(item => item.ID);
 
             modelBuilder.Entity<Orcanode>()
                 .ToContainer(environment + "Orcanode")
@@ -51,7 +51,7 @@ namespace OrcanodeMonitor.Data
             modelBuilder.Entity<Orcanode>()
                 .ToContainer(environment + "Orcanode")
                 .HasPartitionKey(item => item.PartitionValue)
-                .HasKey(item=>item.ID);
+                .HasKey(item => item.ID);
 
             modelBuilder.Entity<OrcanodeEvent>()
                 .ToContainer(environment + "OrcanodeEvent")
@@ -63,7 +63,7 @@ namespace OrcanodeMonitor.Data
                 .HasPartitionKey(item => item.Year)
                 .HasOne(item => item.Orcanode)
                 .WithMany()
-                .HasForeignKey(item=>item.OrcanodeId);
+                .HasForeignKey(item => item.OrcanodeId);
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
