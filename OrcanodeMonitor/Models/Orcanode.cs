@@ -182,7 +182,8 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         public double? DecibelLevel { get; set; }
 
-        public string RealDecibelLevelForDisplay {
+        public string RealDecibelLevelForDisplay
+        {
             get
             {
                 if (DecibelLevel == null || DecibelLevel == double.NegativeInfinity)
@@ -228,7 +229,7 @@ namespace OrcanodeMonitor.Models
         /// <summary>
         /// Audio stream status of most recent sample (defaults to absent).
         /// </summary>
-        public OrcanodeOnlineStatus? AudioStreamStatus { get; set;  }
+        public OrcanodeOnlineStatus? AudioStreamStatus { get; set; }
 
         /// <summary>
         /// Orcasound site host (defaults to empty).
@@ -327,7 +328,8 @@ namespace OrcanodeMonitor.Models
         public long DiskCapacityInGigs => DiskCapacity / 1000000000;
 
         public OrcanodeUpgradeStatus DataplicityUpgradeStatus => DataplicityUpgradeAvailable ?? false ? OrcanodeUpgradeStatus.UpgradeAvailable : OrcanodeUpgradeStatus.UpToDate;
-        public OrcanodeOnlineStatus DataplicityConnectionStatus {
+        public OrcanodeOnlineStatus DataplicityConnectionStatus
+        {
             get
             {
                 if (!DataplicityOnline.HasValue)
@@ -416,7 +418,8 @@ namespace OrcanodeMonitor.Models
         // Convert to a display string.
         public static string GetStatusString(OrcanodeOnlineStatus status) => (status == OrcanodeOnlineStatus.Online) ? OnlineString : status.ToString().ToUpper();
 
-        public string OrcasoundOnlineStatusString {
+        public string OrcasoundOnlineStatusString
+        {
             get
             {
                 // Snapshot the status.
@@ -443,21 +446,21 @@ namespace OrcanodeMonitor.Models
                 }
                 TimeSpan interval = PeriodicTasks.FrequencyToPoll;
                 DateTime utcNow = DateTime.UtcNow;
-                
+
                 // Get the configured hour offset for reboot timing.
                 string? hourOffsetString = Environment.GetEnvironmentVariable("ORCASOUND_REBOOT_HOUR_OFFSET_MINUTES");
                 int hourOffsetMinutes = int.TryParse(hourOffsetString, out var offset) ? offset : 0;
-                
+
                 // Calculate time since the configured offset within the hour.
                 DateTime hourWithOffset = utcNow.Date.AddHours(utcNow.Hour).AddMinutes(hourOffsetMinutes);
                 TimeSpan sinceOffsetTime = utcNow - hourWithOffset;
-                
+
                 // Handle case where offset pushes us to next hour.
                 if (sinceOffsetTime < TimeSpan.Zero)
                 {
                     sinceOffsetTime = sinceOffsetTime.Add(TimeSpan.FromHours(1));
                 }
-                
+
                 if (sinceOffsetTime >= interval)
                 {
                     // Only reboot within the first polling interval after the offset time.
@@ -606,6 +609,6 @@ namespace OrcanodeMonitor.Models
 
         public override string ToString() => DisplayName;
 
-#endregion methods
+        #endregion methods
     }
 }

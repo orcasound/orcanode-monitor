@@ -37,7 +37,7 @@ namespace Test
             }
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow(59.0)]
         [DataRow(60.0)]
         [DataRow(61.0)]
@@ -48,7 +48,7 @@ namespace Test
             Assert.IsTrue(FrequencyInfo.IsHumFrequency(freq));
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow(0.0)]
         [DataRow(58.9)]
         [DataRow(61.1)]
