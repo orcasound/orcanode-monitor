@@ -11,7 +11,7 @@ namespace OrcanodeMonitor.Core
 {
     public class MezmoFetcher
     {
-        private static HttpClient _httpClient = new HttpClient();
+        private static HttpClient _httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
         private static string _mezmoViewsUrl = "https://api.mezmo.com/v1/config/view";
         private static string _mezmoHostsUrl = "https://api.mezmo.com/v1/usage/hosts";
         private static string _mezmoLogUrl = "https://api.mezmo.com/v1/export";
