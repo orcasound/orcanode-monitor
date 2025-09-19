@@ -203,7 +203,7 @@ namespace OrcanodeMonitor.Core
                     OrcanodeOnlineStatus newStatus = node.MezmoStatus;
                     if (newStatus != oldStatus)
                     {
-                        AddMezmoStatusEvent(context, node);
+                        AddMezmoStatusEvent(context, node, logger);
                     }
                 }
 
@@ -312,7 +312,7 @@ namespace OrcanodeMonitor.Core
                         OrcanodeOnlineStatus newStatus = node.MezmoStatus;
                         if (newStatus != oldStatus)
                         {
-                            AddMezmoStatusEvent(context, node);
+                            AddMezmoStatusEvent(context, node, logger);
                         }
                     }
                 }
@@ -342,10 +342,10 @@ namespace OrcanodeMonitor.Core
             await UpdateMezmoViewsAsync(context, logger);
         }
 
-        private static void AddMezmoStatusEvent(OrcanodeMonitorContext context, Orcanode node)
+        private static void AddMezmoStatusEvent(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
             string value = node.MezmoStatus.ToString();
-            Fetcher.AddOrcanodeEvent(context, node, OrcanodeEventTypes.MezmoLogging, value, string.Empty);
+            Fetcher.AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.MezmoLogging, value, string.Empty);
         }
     }
 }
