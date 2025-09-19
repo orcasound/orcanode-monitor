@@ -479,17 +479,17 @@ namespace OrcanodeMonitor.Core
                     OrcanodeOnlineStatus newStatus = node.DataplicityConnectionStatus;
                     if (newStatus != oldStatus)
                     {
-                        AddDataplicityConnectionStatusEvent(context, node);
+                        AddDataplicityConnectionStatusEvent(context, node, logger);
                     }
                     if (oldStatus != OrcanodeOnlineStatus.Absent)
                     {
                         if (oldAgentUpgradeStatus != node.DataplicityUpgradeStatus)
                         {
-                            AddDataplicityAgentUpgradeStatusChangeEvent(context, node);
+                            AddDataplicityAgentUpgradeStatusChangeEvent(context, node, logger);
                         }
                         if (oldDiskCapacityInGigs != node.DiskCapacityInGigs)
                         {
-                            AddDiskCapacityChangeEvent(context, node);
+                            AddDiskCapacityChangeEvent(context, node, logger);
                         }
                     }
                 }
@@ -934,7 +934,7 @@ namespace OrcanodeMonitor.Core
                 {
                     // Log event if it just went absent. Other events will be logged
                     // inside the call to UpdateManifestTimestampAsync() below.
-                    AddHydrophoneStreamStatusEvent(context, node, null);
+                    AddHydrophoneStreamStatusEvent(context, logger, node, null);
                 }
                 return;
             }
@@ -1030,34 +1030,35 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public static void AddOrcanodeEvent(OrcanodeMonitorContext context, Orcanode node, string type, string value, string? url = null)
+        public static void AddOrcanodeEvent(OrcanodeMonitorContext context, ILogger logger, Orcanode node, string type, string value, string? url = null)
         {
+            logger.LogInformation($"Orcanode event: {node.DisplayName} {type} {value}");
             var orcanodeEvent = new OrcanodeEvent(node, type, value, DateTime.UtcNow, url);
             context.OrcanodeEvents.Add(orcanodeEvent);
         }
 
-        private static void AddDataplicityConnectionStatusEvent(OrcanodeMonitorContext context, Orcanode node)
+        private static void AddDataplicityConnectionStatusEvent(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
             string value = node.DataplicityConnectionStatus.ToString();
-            AddOrcanodeEvent(context, node, OrcanodeEventTypes.DataplicityConnection, value);
+            AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.DataplicityConnection, value);
         }
 
-        private static void AddDataplicityAgentUpgradeStatusChangeEvent(OrcanodeMonitorContext context, Orcanode node)
+        private static void AddDataplicityAgentUpgradeStatusChangeEvent(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
             string value = node.DataplicityUpgradeStatus.ToString();
-            AddOrcanodeEvent(context, node, OrcanodeEventTypes.AgentUpgradeStatus, value);
+            AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.AgentUpgradeStatus, value);
         }
 
-        private static void AddDiskCapacityChangeEvent(OrcanodeMonitorContext context, Orcanode node)
+        private static void AddDiskCapacityChangeEvent(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
             string value = string.Format("{0}G", node.DiskCapacityInGigs);
-            AddOrcanodeEvent(context, node, OrcanodeEventTypes.SDCardSize, value);
+            AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.SDCardSize, value);
         }
 
-        private static void AddHydrophoneStreamStatusEvent(OrcanodeMonitorContext context, Orcanode node, string? url)
+        private static void AddHydrophoneStreamStatusEvent(OrcanodeMonitorContext context, ILogger logger, Orcanode node, string? url)
         {
             string value = node.OrcasoundOnlineStatusString;
-            AddOrcanodeEvent(context, node, OrcanodeEventTypes.HydrophoneStream, value, url);
+            AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.HydrophoneStream, value, url);
         }
 
         public async static Task<FrequencyInfo?> GetLatestAudioSampleAsync(Orcanode node, string unixTimestampString, bool updateNode, ILogger logger)
@@ -1193,7 +1194,7 @@ namespace OrcanodeMonitor.Core
             OrcanodeOnlineStatus newStatus = node.S3StreamStatus;
             if (newStatus != oldStatus)
             {
-                AddHydrophoneStreamStatusEvent(context, node, frequencyInfo?.AudioSampleUrl);
+                AddHydrophoneStreamStatusEvent(context, logger, node, frequencyInfo?.AudioSampleUrl);
             }
         }
 
