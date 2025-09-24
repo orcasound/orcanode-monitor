@@ -165,7 +165,8 @@ namespace OrcanodeMonitor.Pages
         public static string GetTimeRangeClass(OrcanodeEvent item)
         {
             DateTime OneWeekAgo = DateTime.UtcNow.AddDays(-7);
-            if (item.DateTimeUtc > OneWeekAgo) {
+            if (item.DateTimeUtc > OneWeekAgo)
+            {
                 return "pastWeek pastMonth";
             }
 

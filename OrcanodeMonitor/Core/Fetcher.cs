@@ -78,7 +78,7 @@ namespace OrcanodeMonitor.Core
                 ID = Guid.NewGuid().ToString(),
                 PartitionValue = 1
             };
-            
+
             nodeList.Add(newNode);
             return newNode;
         }
