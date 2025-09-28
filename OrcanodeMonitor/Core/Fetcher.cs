@@ -197,10 +197,10 @@ namespace OrcanodeMonitor.Core
                         continue;
                     }
                     // Remove the returned node from the unfound list.
-                    Orcanode? oldListNode = unfoundList.Find(a => a.OrcasoundSlug == node.OrcasoundSlug);
-                    if (oldListNode != null)
+                    Orcanode? nodeToRemove = unfoundList.Find(a => a.OrcasoundSlug == node.OrcasoundSlug);
+                    if (nodeToRemove != null)
                     {
-                        unfoundList.Remove(oldListNode);
+                        unfoundList.Remove(nodeToRemove);
                     }
 
                     node.OrcaHelloId = pod.Metadata.Name;
