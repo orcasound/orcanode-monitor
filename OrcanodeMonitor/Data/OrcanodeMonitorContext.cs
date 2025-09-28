@@ -53,14 +53,6 @@ namespace OrcanodeMonitor.Data
                 .HasPartitionKey(item => item.PartitionValue)
                 .HasKey(item => item.ID);
 
-            modelBuilder.Entity<Orcanode>()
-                .Property(o => o.OrcaHelloInferencePodReady)
-                .HasDefaultValue(false);
-
-            modelBuilder.Entity<Orcanode>()
-                .Property(o => o.OrcaHelloInferenceRestartCount)
-                .HasDefaultValue(0);
-
             modelBuilder.Entity<OrcanodeEvent>()
                 .ToContainer(environment + "OrcanodeEvent")
                 .Property(item => item.Year)

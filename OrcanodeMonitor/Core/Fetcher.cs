@@ -198,7 +198,7 @@ namespace OrcanodeMonitor.Core
                     }
                     node.OrcaHelloId = pod.Metadata.Name;
 
-                    if (pod.Status.ContainerStatuses.Count() < 0)
+                    if (pod.Status?.ContainerStatuses == null || pod.Status.ContainerStatuses.Count == 0)
                     {
                         node.OrcaHelloInferencePodReady = false;
                         continue;

@@ -202,7 +202,7 @@ namespace OrcanodeMonitor.Models
         public bool? OrcasoundVisible { get; set; }
 
         /// <summary>
-        /// The name of the InferenceSystem pod for this node.
+        /// The name of the OrcaHello InferenceSystem pod for this node.
         /// </summary>
         public string OrcaHelloId { get; set; }
 
