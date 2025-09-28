@@ -196,6 +196,13 @@ namespace OrcanodeMonitor.Core
                         // No such node.
                         continue;
                     }
+                    // Remove the returned node from the unfound list.
+                    Orcanode? nodeToRemove = unfoundList.Find(a => a.OrcasoundSlug == node.OrcasoundSlug);
+                    if (nodeToRemove != null)
+                    {
+                        unfoundList.Remove(nodeToRemove);
+                    }
+
                     node.OrcaHelloId = pod.Metadata.Name;
 
                     if (pod.Status?.ContainerStatuses == null || pod.Status.ContainerStatuses.Count == 0)
@@ -203,18 +210,12 @@ namespace OrcanodeMonitor.Core
                         node.OrcaHelloInferencePodReady = false;
                         continue;
                     }
+
                     var containerStatus = pod.Status.ContainerStatuses.First();
 
                     node.OrcaHelloInferenceImage = containerStatus.Image;
                     node.OrcaHelloInferencePodReady = containerStatus.Ready;
                     node.OrcaHelloInferenceRestartCount = containerStatus.RestartCount;
-
-                    // Remove the returned node from the unfound list.
-                    Orcanode? oldListNode = unfoundList.Find(a => a.OrcasoundSlug == node.OrcasoundSlug);
-                    if (oldListNode != null)
-                    {
-                        unfoundList.Remove(oldListNode);
-                    }
                 }
 
                 // Mark any remaining unfound nodes as absent.
