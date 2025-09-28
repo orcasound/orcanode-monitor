@@ -20,6 +20,8 @@ namespace OrcanodeMonitor.Pages
         public List<OrcanodeEvent> RecentEvents => _recentEvents;
         private List<OrcanodeEvent> _recentEvents;
 
+        public string AksUrl => Environment.GetEnvironmentVariable("AZURE_AKS_URL") ?? "";
+
         public IndexModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger)
         {
             _databaseContext = context;
