@@ -18,7 +18,7 @@
             <th>Up%</th>
             <th>Real dB</th>
             <th>Hum dB</th>
-            <th><a href="https://aifororcas2.azurewebsites.net/hydrophones" target="_blank">OrcaHello</a></th>
+            <th><a href="@Model.AksUrl" target="_blank">OrcaHello</a></th>
             <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Logging</a></th>
             <th><a href="https://www.dataplicity.com/app/" target="_blank">Dataplicity</a></th>
             <th>Agent Version</th>
@@ -82,7 +82,7 @@
             else
             {
                 <td style="background-color: @Model.NodeOrcaHelloBackgroundColor(item)">
-                    <a href="https://aifororcas2.azurewebsites.net/hydrophones" style="color: @Model.NodeOrcaHelloTextColor(item)" target="_blank">
+                        <a href="@Model.AksUrl" style="color: @Model.NodeOrcaHelloTextColor(item)" target="_blank">
                         @Html.DisplayFor(modelItem => item.OrcaHelloStatus)
                     </a>
                 </td>
