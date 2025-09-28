@@ -1,12 +1,8 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
-using System.Xml.Linq;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json.Linq;
 using OrcanodeMonitor.Core;
 
 namespace OrcanodeMonitor.Models
@@ -46,7 +42,6 @@ namespace OrcanodeMonitor.Models
     public class Orcanode
     {
         const int _defaultMaxUploadDelayMinutes = 2;
-        const double _defaultMinIntelligibleStreamDeviation = 175;
 
         public Orcanode()
         {
@@ -68,21 +63,11 @@ namespace OrcanodeMonitor.Models
             MezmoViewId = string.Empty;
             DecibelLevel = 0;
             HumDecibelLevel = 0;
+            OrcaHelloInferenceImage = string.Empty;
         }
 
         #region persisted
-        // Persisted fields.  If any changes are made, the database must go through a migration.
-        // See https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/?tabs=vs
-        // for more information.  For example, if adding a field called FooBar, then
-        // from Package Manager Console do:
-        // * Add-Migration AddFooBar
-        //
-        // When ready to deploy to an Azure SQL database:
-        // 1. Stop the remote service.
-        // 2. Apply the migration from a developer command shell:
-        //     dotnet ef database update --connection "Server=tcp:orcasound-server.database.windows.net,1433;Initial Catalog=OrcasoundFreeDatabase;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;Authentication=\"Active Directory Default\";Pooling=False;"
-        // 3. Publish from Visual Studio using the appropriate publish profile.
-        // 4. Start the remote service.
+        // Persisted fields.
 
         /// <summary>
         /// Database key field. This is NOT the dataplicity serial GUID, since a node might first be
@@ -217,9 +202,24 @@ namespace OrcanodeMonitor.Models
         public bool? OrcasoundVisible { get; set; }
 
         /// <summary>
-        /// The "id" field from the OrcaHello hydrophones API.
+        /// The name of the InferenceSystem pod for this node.
         /// </summary>
         public string OrcaHelloId { get; set; }
+
+        /// <summary>
+        /// Whether the OrcaHello InferenceSystem pod is ready.
+        /// </summary>
+        public bool? OrcaHelloInferencePodReady { get; set; }
+
+        /// <summary>
+        /// The name of the OrcaHello InferenceSystem image for this node.
+        /// </summary>
+        public string OrcaHelloInferenceImage { get; set; }
+
+        /// <summary>
+        /// The OrcaHello InferenceSystem pod restart count for this node.
+        /// </summary>
+        public int? OrcaHelloInferenceRestartCount { get; set; }
 
         /// <summary>
         /// Partition key fixed value.
@@ -340,7 +340,25 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        public OrcanodeOnlineStatus OrcaHelloStatus => OrcaHelloId.IsNullOrEmpty() ? OrcanodeOnlineStatus.Absent : OrcanodeOnlineStatus.Online;
+        public OrcanodeOnlineStatus OrcaHelloStatus
+        {
+            get
+            {
+                if (OrcaHelloId.IsNullOrEmpty())
+                {
+                    return OrcanodeOnlineStatus.Absent;
+                }
+                if (!(OrcaHelloInferencePodReady ?? false))
+                {
+                    return OrcanodeOnlineStatus.Offline;
+                }
+                if ((OrcaHelloInferenceRestartCount ?? 0) > 0)
+                {
+                    return OrcanodeOnlineStatus.Unintelligible;
+                }
+                return OrcanodeOnlineStatus.Online;
+            }
+        }
 
         public OrcanodeOnlineStatus OrcasoundStatus
         {

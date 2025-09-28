@@ -13,9 +13,9 @@ namespace OrcanodeMonitor.Data
         {
         }
 
-        public DbSet<OrcanodeMonitor.Models.Orcanode> Orcanodes { get; set; } = default!;
-        public DbSet<OrcanodeMonitor.Models.OrcanodeEvent> OrcanodeEvents { get; set; } = default!;
-        public DbSet<OrcanodeMonitor.Models.MonitorState> MonitorState { get; set; } = default!;
+        public DbSet<Orcanode> Orcanodes { get; set; } = default!;
+        public DbSet<OrcanodeEvent> OrcanodeEvents { get; set; } = default!;
+        public DbSet<MonitorState> MonitorState { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -52,6 +52,14 @@ namespace OrcanodeMonitor.Data
                 .ToContainer(environment + "Orcanode")
                 .HasPartitionKey(item => item.PartitionValue)
                 .HasKey(item => item.ID);
+
+            modelBuilder.Entity<Orcanode>()
+                .Property(o => o.OrcaHelloInferencePodReady)
+                .HasDefaultValue(false);
+
+            modelBuilder.Entity<Orcanode>()
+                .Property(o => o.OrcaHelloInferenceRestartCount)
+                .HasDefaultValue(0);
 
             modelBuilder.Entity<OrcanodeEvent>()
                 .ToContainer(environment + "OrcanodeEvent")

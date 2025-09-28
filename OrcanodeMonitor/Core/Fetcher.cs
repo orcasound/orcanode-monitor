@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
+using k8s;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Mono.TextTemplating;
@@ -8,6 +9,7 @@ using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Dynamic;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 
 namespace OrcanodeMonitor.Core
@@ -19,7 +21,6 @@ namespace OrcanodeMonitor.Core
         private static string _orcasoundProdSite = "live.orcasound.net";
         private static string _orcasoundFeedsUrlPath = "/api/json/feeds";
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
-        private static string _orcaHelloHydrophonesUrl = "https://aifororcasdetections2.azurewebsites.net/api/hydrophones";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         private static string _iftttServiceKey = Environment.GetEnvironmentVariable("IFTTT_SERVICE_KEY") ?? "<unknown>";
         public static bool IsReadOnly = false;
@@ -144,7 +145,7 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Update the list of Orcanodes using data from OrcaHello.
+        /// Update the list of Orcanodes using data about InferenceSystem containers in Azure.
         /// </summary>
         /// <param name="context">Database context to update</param>
         /// <param name="logger"></param>
@@ -153,23 +154,29 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                string json = await _httpClient.GetStringAsync(_orcaHelloHydrophonesUrl);
-                if (json.IsNullOrEmpty())
+                string? k8sCACert = Environment.GetEnvironmentVariable("KUBERNETES_CA_CERT");
+                if (k8sCACert == null)
                 {
                     return;
                 }
-                dynamic response = JsonSerializer.Deserialize<ExpandoObject>(json);
-                if (response == null)
+                byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
+                var caCert = new X509Certificate2(caCertBytes);
+                string? host = Environment.GetEnvironmentVariable("KUBERNETES_SERVICE_HOST");
+                if (host == null)
                 {
-                    logger.LogError("UpdateOrcaHelloDataAsync couldn't deserialize JSON");
                     return;
                 }
-                JsonElement hydrophoneArray = response.hydrophones;
-                if (hydrophoneArray.ValueKind != JsonValueKind.Array)
+                string? accessToken = Environment.GetEnvironmentVariable("KUBERNETES_TOKEN");
+                if (accessToken == null)
                 {
-                    logger.LogError($"Invalid hydrophoneArray kind in UpdateOrcaHelloDataAsync: {hydrophoneArray.ValueKind}");
                     return;
                 }
+                var config = new KubernetesClientConfiguration
+                {
+                    Host = host,
+                    AccessToken = accessToken,
+                    SslCaCerts = new X509Certificate2Collection(caCert)
+                };
 
                 // Get a snapshot to use during the loop to avoid multiple queries.
                 var foundList = await context.Orcanodes.ToListAsync();
@@ -177,51 +184,41 @@ namespace OrcanodeMonitor.Core
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = foundList.ToList();
 
-                foreach (JsonElement hydrophone in hydrophoneArray.EnumerateArray())
+                var client = new Kubernetes(config);
+                var pods = await client.ListPodForAllNamespacesAsync();
+                foreach (var pod in pods.Items.Where(p => p.Metadata.Name.StartsWith("inference-system-")))
                 {
-                    // "id" holds the OrcaHello id which is also the S3NodeName.
-                    if (!hydrophone.TryGetProperty("id", out var hydrophoneId))
+                    // Look up podNamespace in slug field of Orcasite feeds response.
+                    // Return the node_name.
+                    Orcanode? node = foundList.Find(n => n.OrcasoundSlug == pod.Metadata.NamespaceProperty);
+                    if (node == null)
                     {
-                        logger.LogError("No id inUpdateOrcaHelloDataAsync result");
+                        // No such node.
                         continue;
                     }
+                    node.OrcaHelloId = pod.Metadata.Name;
 
-                    // "name" holds the display name.
-                    if (!hydrophone.TryGetProperty("name", out var name))
+                    if (pod.Status.ContainerStatuses.Count() < 0)
                     {
-                        logger.LogError("No name in UpdateOrcaHelloDataAsync result");
+                        node.OrcaHelloInferencePodReady = false;
                         continue;
                     }
+                    var containerStatus = pod.Status.ContainerStatuses.First();
+
+                    node.OrcaHelloInferenceImage = containerStatus.Image;
+                    node.OrcaHelloInferencePodReady = containerStatus.Ready;
+                    node.OrcaHelloInferenceRestartCount = containerStatus.RestartCount;
 
                     // Remove the returned node from the unfound list.
-                    Orcanode? oldListNode = unfoundList.Find(a => a.OrcaHelloId == hydrophoneId.ToString());
-                    if (oldListNode == null)
-                    {
-                        oldListNode = unfoundList.Find(a => a.S3NodeName == hydrophoneId.ToString());
-                    }
-                    if (oldListNode == null)
-                    {
-                        oldListNode = unfoundList.Find(a => a.OrcasoundName == name.ToString());
-                    }
+                    Orcanode? oldListNode = unfoundList.Find(a => a.OrcasoundSlug == node.OrcasoundSlug);
                     if (oldListNode != null)
                     {
                         unfoundList.Remove(oldListNode);
                     }
-
-                    // TODO: we should have a unique id, independent of S3.
-                    Orcanode? node = FindOrcanodeByOrcasoundName(foundList, name.ToString());
-                    if (node == null)
-                    {
-                        node = CreateOrcanode(context.Orcanodes);
-                        node.OrcasoundName = name.ToString();
-                        node.S3NodeName = hydrophoneId.ToString();
-                    }
-
-                    node.OrcaHelloId = hydrophoneId.ToString();
                 }
 
                 // Mark any remaining unfound nodes as absent.
-                foreach (var unfoundNode in unfoundList)
+                foreach (Orcanode unfoundNode in unfoundList)
                 {
                     Orcanode? oldNode = null;
                     if (!unfoundNode.OrcasoundFeedId.IsNullOrEmpty())

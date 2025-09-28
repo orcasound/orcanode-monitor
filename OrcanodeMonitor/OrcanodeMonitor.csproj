@@ -14,6 +14,7 @@
     <PackageReference Include="FFMpegCore" Version="5.2.0" />
     <PackageReference Include="FFMpegInstaller.Windows.x64" Version="0.1.10" />
     <PackageReference Include="FftSharp" Version="2.2.0" />
+    <PackageReference Include="KubernetesClient" Version="17.0.14" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.20" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Cosmos" Version="8.0.20" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.20" />
