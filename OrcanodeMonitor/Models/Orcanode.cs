@@ -17,6 +17,7 @@ namespace OrcanodeMonitor.Models
         Unauthorized,
         NoView,
         Silent,
+        Unstable,
     }
     public enum OrcanodeUpgradeStatus
     {
@@ -354,7 +355,7 @@ namespace OrcanodeMonitor.Models
                 }
                 if ((OrcaHelloInferenceRestartCount ?? 0) > 0)
                 {
-                    return OrcanodeOnlineStatus.Unintelligible;
+                    return OrcanodeOnlineStatus.Unstable;
                 }
                 return OrcanodeOnlineStatus.Online;
             }
