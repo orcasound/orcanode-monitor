@@ -40,7 +40,7 @@ namespace OrcanodeMonitor.Pages
                 {
                     return "";
                 }
-                return Fetcher.UtcToLocalDateTime(monitorState.LastUpdatedTimestampUtc).ToString();
+                return Fetcher.UtcToLocalDateTime(monitorState.LastUpdatedTimestampUtc).ToString() ?? "";
             }
         }
 
@@ -50,7 +50,8 @@ namespace OrcanodeMonitor.Pages
             {
                 return ColorTranslator.ToHtml(Color.LightGreen);
             }
-            if (status == OrcanodeOnlineStatus.Hidden || status == OrcanodeOnlineStatus.NoView)
+            if (status == OrcanodeOnlineStatus.Hidden || status == OrcanodeOnlineStatus.NoView ||
+                status == OrcanodeOnlineStatus.Unstable)
             {
                 return ColorTranslator.ToHtml(Color.Yellow);
             }
@@ -59,17 +60,6 @@ namespace OrcanodeMonitor.Pages
                 return ColorTranslator.ToHtml(LightRed);
             }
             return ColorTranslator.ToHtml(Color.Red);
-        }
-
-        private string GetTextColor(OrcanodeOnlineStatus status)
-        {
-            if (status == OrcanodeOnlineStatus.Online ||
-                status == OrcanodeOnlineStatus.Hidden ||
-                status == OrcanodeOnlineStatus.NoView)
-            {
-                return ColorTranslator.ToHtml(Color.FromArgb(0, 0, 238));
-            }
-            return ColorTranslator.ToHtml(Color.White);
         }
 
         private string GetTextColor(string backgroundColor)
