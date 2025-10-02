@@ -62,10 +62,17 @@ namespace Test
             {
                 // Use httpbin redirect endpoint - it will return 302 if redirects are disabled.
                 var response = await httpClient.GetAsync("https://httpbin.org/redirect/1");
-                
-                // If auto redirect is disabled, we should get a 3xx response code.
-                Assert.IsTrue((int)response.StatusCode >= 300 && (int)response.StatusCode < 400, 
-                    $"Expected 3xx redirect response, but got {response.StatusCode}");
+
+                if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+                {
+                    Console.WriteLine("Test indeterminate, got ServiceUnavailable");
+                }
+                else
+                {
+                    // If auto redirect is disabled, we should get a 3xx response code.
+                    Assert.IsTrue((int)response.StatusCode >= 300 && (int)response.StatusCode < 400,
+                        $"Expected 3xx redirect response, but got {response.StatusCode}");
+                }
             }
             catch (HttpRequestException)
             {
@@ -86,10 +93,18 @@ namespace Test
             {
                 // Use httpbin redirect endpoint - it will return 302 if redirects are disabled.
                 var response = await httpClient.GetAsync("https://httpbin.org/redirect/1");
-                
-                // If auto redirect is disabled, we should get a 3xx response code.
-                Assert.IsTrue((int)response.StatusCode >= 300 && (int)response.StatusCode < 400, 
-                    $"Expected 3xx redirect response, but got {response.StatusCode}");
+
+
+                if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+                {
+                    Console.WriteLine("Test indeterminate, got ServiceUnavailable");
+                }
+                else
+                {
+                    // If auto redirect is disabled, we should get a 3xx response code.
+                    Assert.IsTrue((int)response.StatusCode >= 300 && (int)response.StatusCode < 400,
+                        $"Expected 3xx redirect response, but got {response.StatusCode}");
+                }
             }
             catch (HttpRequestException)
             {

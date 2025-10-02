@@ -70,7 +70,7 @@ namespace OrcanodeMonitor.Core
             return max;
         }
 
-        private List<string> _labels;
+        private List<string> _labels = [];
         public List<string> Labels => _labels;
         private List<List<object>> _channelDatasets = new List<List<object>>();
         public List<List<object>> ChannelDatasets => _channelDatasets;
@@ -170,6 +170,14 @@ namespace OrcanodeMonitor.Core
                 return a;
             }
             if (b == OrcanodeOnlineStatus.Online)
+            {
+                return b;
+            }
+            if (a == OrcanodeOnlineStatus.Unstable)
+            {
+                return a;
+            }
+            if (b == OrcanodeOnlineStatus.Unstable)
             {
                 return b;
             }
