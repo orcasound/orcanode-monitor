@@ -173,6 +173,14 @@ namespace OrcanodeMonitor.Core
             {
                 return b;
             }
+            if (a == OrcanodeOnlineStatus.Unstable)
+            {
+                return a;
+            }
+            if (b == OrcanodeOnlineStatus.Unstable)
+            {
+                return b;
+            }
             if (a == OrcanodeOnlineStatus.Unintelligible)
             {
                 return a;
