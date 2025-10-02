@@ -40,7 +40,7 @@ namespace OrcanodeMonitor.Pages
                 {
                     return "";
                 }
-                return Fetcher.UtcToLocalDateTime(monitorState.LastUpdatedTimestampUtc).ToString() ?? "";
+                return Fetcher.UtcToLocalDateTime(monitorState.LastUpdatedTimestampUtc)?.ToString() ?? "";
             }
         }
 
