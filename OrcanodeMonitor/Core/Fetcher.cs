@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
+using FftSharp;
 using k8s;
+using k8s.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Mono.TextTemplating;
@@ -144,6 +146,69 @@ namespace OrcanodeMonitor.Core
             return null;
         }
 
+        private static bool IsBetterContainerStatus(V1ContainerStatus? oldStatus, V1ContainerStatus newStatus)
+        {
+            if (oldStatus == null)
+            {
+                // No old status, so use new status.
+                return true;
+            }
+            if (newStatus.State.Running != null && oldStatus.State.Running == null)
+            {
+                // New status is clearly better since it's Running.
+                return true;
+            }
+            if (newStatus.State.Running == null && oldStatus.State.Running != null)
+            {
+                // Old status is clearly better since it's Running.
+                return false;
+            }
+            if (newStatus.State.Terminated == null && oldStatus.State.Terminated != null)
+            {
+                // New status is worse since it's Terminated.
+                return false;
+            }
+            if (newStatus.State.Terminated != null && oldStatus.State.Terminated == null)
+            {
+                // Old status is worse since it's Terminated.
+                return true;
+            }
+            if (newStatus.State.Terminated != null && oldStatus.State.Terminated != null)
+            {
+                if (newStatus.LastState.Terminated.FinishedAt > oldStatus.LastState.Terminated.FinishedAt)
+                {
+                    // New status is better.
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        private static void GetBestPodStatus(IEnumerable<V1Pod> nodepods, out V1Pod? bestPod, out V1ContainerStatus? bestPodStatus)
+        {
+            bestPod = null;
+            bestPodStatus = null;
+            foreach (var pod in nodepods)
+            {
+                if (pod.Status?.ContainerStatuses == null)
+                {
+                    continue;
+                }
+                foreach (V1ContainerStatus podStatus in pod.Status.ContainerStatuses)
+                {
+                    if (IsBetterContainerStatus(bestPodStatus, podStatus))
+                    {
+                        bestPod = pod;
+                        bestPodStatus = podStatus;
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// Update the list of Orcanodes using data about InferenceSystem containers in Azure.
         /// </summary>
@@ -186,36 +251,43 @@ namespace OrcanodeMonitor.Core
 
                 var client = new Kubernetes(config);
                 var pods = await client.ListPodForAllNamespacesAsync();
-                foreach (var pod in pods.Items.Where(p => p.Metadata.Name.StartsWith("inference-system-")))
+                foreach (Orcanode node in foundList)
                 {
-                    // Look up podNamespace in slug field of Orcasite feeds response.
-                    // Return the node_name.
-                    Orcanode? node = foundList.Find(n => n.OrcasoundSlug == pod.Metadata.NamespaceProperty);
-                    if (node == null)
+                    string slug = node.OrcasoundSlug;
+                    if (slug.IsNullOrEmpty())
                     {
-                        // No such node.
+                        // No slug, so can't match.
                         continue;
                     }
+                    var nodepods = pods.Items.Where(p => p.Metadata.NamespaceProperty == slug);
+                    GetBestPodStatus(nodepods, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+                    if (bestPod != null)
+                    {
+                        node.OrcaHelloId = bestPod.Metadata.Name;
+                    }
+                    node.OrcaHelloInferenceRestartCount = 0;
+                    if (bestContainerStatus != null)
+                    {
+                        node.OrcaHelloInferenceImage = bestContainerStatus.Image;
+                        node.OrcaHelloInferencePodReady = bestContainerStatus.Ready;
+                        DateTime? runningSince = bestContainerStatus.State.Running?.StartedAt;
+                        if (runningSince == null || (DateTime.UtcNow - runningSince < TimeSpan.FromHours(6)))
+                        {
+                            node.OrcaHelloInferenceRestartCount = bestContainerStatus.RestartCount;
+                        }
+                    }
+                    else
+                    {
+                        node.OrcaHelloInferenceImage = string.Empty;
+                        node.OrcaHelloInferencePodReady = false;
+                    }
+
                     // Remove the returned node from the unfound list.
                     Orcanode? nodeToRemove = unfoundList.Find(a => a.OrcasoundSlug == node.OrcasoundSlug);
                     if (nodeToRemove != null)
                     {
                         unfoundList.Remove(nodeToRemove);
                     }
-
-                    node.OrcaHelloId = pod.Metadata.Name;
-
-                    if (pod.Status?.ContainerStatuses == null || pod.Status.ContainerStatuses.Count == 0)
-                    {
-                        node.OrcaHelloInferencePodReady = false;
-                        continue;
-                    }
-
-                    var containerStatus = pod.Status.ContainerStatuses.First();
-
-                    node.OrcaHelloInferenceImage = containerStatus.Image;
-                    node.OrcaHelloInferencePodReady = containerStatus.Ready;
-                    node.OrcaHelloInferenceRestartCount = containerStatus.RestartCount;
                 }
 
                 // Mark any remaining unfound nodes as absent.
