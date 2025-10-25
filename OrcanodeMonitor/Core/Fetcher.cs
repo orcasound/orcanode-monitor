@@ -1,6 +1,5 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using FftSharp;
 using k8s;
 using k8s.Models;
 using Microsoft.EntityFrameworkCore;
@@ -154,7 +153,6 @@ namespace OrcanodeMonitor.Core
         /// <returns>True if new is better, false if old is better</returns>
         private static bool IsBetterContainerStatus(V1ContainerStatus? oldStatus, V1ContainerStatus newStatus)
         {
-            if (newStatus == null) return false;
             if (oldStatus == null) return true;
 
             var oldState = oldStatus.State;
@@ -220,6 +218,11 @@ namespace OrcanodeMonitor.Core
                 }
             }
         }
+
+        /// <summary>
+        /// A pod is considered stable if it has been running for at least this many hours.
+        /// </summary>
+        const int RestartStabilityHours = 6;
 
         /// <summary>
         /// Update the list of Orcanodes using data about InferenceSystem containers in Azure.
@@ -296,7 +299,7 @@ namespace OrcanodeMonitor.Core
                         node.OrcaHelloInferenceImage = bestContainerStatus.Image ?? string.Empty;
                         node.OrcaHelloInferencePodReady = bestContainerStatus.Ready;
                         DateTime? runningSince = bestContainerStatus.State?.Running?.StartedAt;
-                        if (runningSince == null || (DateTime.UtcNow - runningSince < TimeSpan.FromHours(6)))
+                        if (runningSince == null || (DateTime.UtcNow - runningSince < TimeSpan.FromHours(RestartStabilityHours)))
                         {
                             node.OrcaHelloInferenceRestartCount = bestContainerStatus.RestartCount;
                         }
