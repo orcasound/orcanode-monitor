@@ -146,48 +146,60 @@ namespace OrcanodeMonitor.Core
             return null;
         }
 
+        /// <summary>
+        /// Get whether the new container status is better than the old one.
+        /// </summary>
+        /// <param name="oldStatus">Old status</param>
+        /// <param name="newStatus">New status</param>
+        /// <returns>True if new is better, false if old is better</returns>
         private static bool IsBetterContainerStatus(V1ContainerStatus? oldStatus, V1ContainerStatus newStatus)
         {
-            if (oldStatus == null)
+            if (newStatus == null) return false;
+            if (oldStatus == null) return true;
+
+            var oldState = oldStatus.State;
+            var newState = newStatus.State;
+
+            bool oldRunning = oldState?.Running != null;
+            bool newRunning = newState?.Running != null;
+            if (newRunning && !oldRunning) return true;
+            if (!newRunning && oldRunning) return false;
+
+            bool oldTerminated = oldState?.Terminated != null;
+            bool newTerminated = newState?.Terminated != null;
+            // Prefer non‑terminated over terminated when neither is running
+            if (!newTerminated && oldTerminated) return true;
+            if (newTerminated && !oldTerminated) return false;
+
+            // If both running, prefer the most recent start
+            if (newRunning && oldRunning)
             {
-                // No old status, so use new status.
-                return true;
+                DateTime? nStart = newState!.Running!.StartedAt;
+                DateTime? oStart = oldState!.Running!.StartedAt;
+                if (nStart.HasValue && oStart.HasValue) return nStart > oStart;
+                if (nStart.HasValue) return true;
+                if (oStart.HasValue) return false;
             }
-            if (newStatus.State.Running != null && oldStatus.State.Running == null)
+
+            // If both terminated, prefer the most recent finish (use State.Terminated)
+            if (newTerminated && oldTerminated)
             {
-                // New status is clearly better since it's Running.
-                return true;
+                DateTime? nFinish = newState!.Terminated!.FinishedAt;
+                DateTime? oFinish = oldState!.Terminated!.FinishedAt;
+                if (nFinish.HasValue && oFinish.HasValue) return nFinish > oFinish;
+                if (nFinish.HasValue) return true;
+                if (oFinish.HasValue) return false;
             }
-            if (newStatus.State.Running == null && oldStatus.State.Running != null)
-            {
-                // Old status is clearly better since it's Running.
-                return false;
-            }
-            if (newStatus.State.Terminated == null && oldStatus.State.Terminated != null)
-            {
-                // New status is worse since it's Terminated.
-                return false;
-            }
-            if (newStatus.State.Terminated != null && oldStatus.State.Terminated == null)
-            {
-                // Old status is worse since it's Terminated.
-                return true;
-            }
-            if (newStatus.State.Terminated != null && oldStatus.State.Terminated != null)
-            {
-                if (newStatus.LastState.Terminated.FinishedAt > oldStatus.LastState.Terminated.FinishedAt)
-                {
-                    // New status is better.
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
-            }
+
             return false;
         }
 
+        /// <summary>
+        /// Get the best pod status.
+        /// </summary>
+        /// <param name="nodepods">List of pods</param>
+        /// <param name="bestPod">Returns the best pod</param>
+        /// <param name="bestPodStatus">Returns the best pod status</param>
         private static void GetBestPodStatus(IEnumerable<V1Pod> nodepods, out V1Pod? bestPod, out V1ContainerStatus? bestPodStatus)
         {
             bestPod = null;
@@ -259,18 +271,31 @@ namespace OrcanodeMonitor.Core
                         // No slug, so can't match.
                         continue;
                     }
-                    var nodepods = pods.Items.Where(p => p.Metadata.NamespaceProperty == slug);
+                    var nodepods = pods.Items.Where(p => p.Metadata?.NamespaceProperty == slug);
                     GetBestPodStatus(nodepods, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+                    node.OrcaHelloInferenceRestartCount = 0;
                     if (bestPod != null)
                     {
-                        node.OrcaHelloId = bestPod.Metadata.Name;
+                        node.OrcaHelloId = bestPod.Metadata?.Name ?? string.Empty;
+
+                        // Remove the returned node from the unfound list only when a pod matched.
+                        var nodeToRemove = unfoundList.Find(a => a.OrcasoundSlug == node.OrcasoundSlug);
+                        if (nodeToRemove != null)
+                        {
+                            unfoundList.Remove(nodeToRemove);
+                        }
                     }
-                    node.OrcaHelloInferenceRestartCount = 0;
+                    else
+                    {
+                        // No pod matched; clear any stale ID.
+                        node.OrcaHelloId = string.Empty;
+                    }
+
                     if (bestContainerStatus != null)
                     {
-                        node.OrcaHelloInferenceImage = bestContainerStatus.Image;
+                        node.OrcaHelloInferenceImage = bestContainerStatus.Image ?? string.Empty;
                         node.OrcaHelloInferencePodReady = bestContainerStatus.Ready;
-                        DateTime? runningSince = bestContainerStatus.State.Running?.StartedAt;
+                        DateTime? runningSince = bestContainerStatus.State?.Running?.StartedAt;
                         if (runningSince == null || (DateTime.UtcNow - runningSince < TimeSpan.FromHours(6)))
                         {
                             node.OrcaHelloInferenceRestartCount = bestContainerStatus.RestartCount;
@@ -280,13 +305,6 @@ namespace OrcanodeMonitor.Core
                     {
                         node.OrcaHelloInferenceImage = string.Empty;
                         node.OrcaHelloInferencePodReady = false;
-                    }
-
-                    // Remove the returned node from the unfound list.
-                    Orcanode? nodeToRemove = unfoundList.Find(a => a.OrcasoundSlug == node.OrcasoundSlug);
-                    if (nodeToRemove != null)
-                    {
-                        unfoundList.Remove(nodeToRemove);
                     }
                 }
 
