@@ -265,10 +265,21 @@ namespace OrcanodeMonitor.Core
 
             V1PodList pods = await client.ListNamespacedPodAsync(slug);
             GetBestPodStatus(pods.Items, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+
+            string podName = bestPod?.Metadata?.Name ?? string.Empty;
+            if (string.IsNullOrEmpty(bestPod?.Metadata?.Name))
+            {
+                return string.Empty;
+            }
+
             Stream? logs = await client.ReadNamespacedPodLogAsync(
-                name: bestPod?.Metadata?.Name,
+                name: podName,
                 namespaceParameter: slug,
                 tailLines: 300);
+            if (logs == null)
+            {
+                return string.Empty;
+            }
             using var reader = new StreamReader(logs);
             string text = reader.ReadToEnd();
             return text;

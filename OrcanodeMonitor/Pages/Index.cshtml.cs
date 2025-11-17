@@ -119,7 +119,7 @@ namespace OrcanodeMonitor.Pages
             DateTime? since = node.OrcaHelloInferencePodRunningSince;
             if (since.HasValue)
             {
-                var ts = DateTime.Now - since.Value;
+                var ts = DateTime.UtcNow - since.Value;
                 if (ts > TimeSpan.FromDays(1))
                 {
                     return ColorTranslator.ToHtml(Color.LightGreen);
