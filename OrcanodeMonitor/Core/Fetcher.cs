@@ -318,10 +318,20 @@ namespace OrcanodeMonitor.Core
                             unfoundList.Remove(nodeToRemove);
                         }
 
-                        var logs = await client.ReadNamespacedPodLogAsync(
-                            name: bestPod?.Metadata?.Name,
+                        string podName = bestPod?.Metadata?.Name ?? string.Empty;
+                        if (string.IsNullOrEmpty(podName))
+                        {
+                            continue;
+                        }
+
+                        Stream? logs = await client.ReadNamespacedPodLogAsync(
+                            name: podName,
                             namespaceParameter: slug,
                             tailLines: 300);
+                        if (logs == null)
+                        {
+                            continue;
+                        }
 
                         int lastLiveIndex = -1;
                         using var reader = new StreamReader(logs);
