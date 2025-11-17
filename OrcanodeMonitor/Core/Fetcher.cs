@@ -365,7 +365,7 @@ namespace OrcanodeMonitor.Core
                             {
                                 DateTimeOffset offset = result.Offset.Value;
                                 DateTimeOffset clipEndTime = offset.AddSeconds((lastLiveIndex * 10) + 12);
-                                DateTimeOffset now = DateTimeOffset.Now;
+                                DateTimeOffset now = DateTimeOffset.UtcNow;
                                 node.OrcaHelloInferencePodLag = (now - clipEndTime);
                             }
                         }

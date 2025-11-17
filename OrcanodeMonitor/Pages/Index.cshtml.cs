@@ -1,12 +1,10 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
-using System;
 using System.Drawing;
 
 namespace OrcanodeMonitor.Pages
@@ -42,7 +40,7 @@ namespace OrcanodeMonitor.Pages
             if (ts.Minutes > 0) result += $"{ts.Minutes}m ";
             if (ts.Seconds > 0) result += $"{ts.Seconds}s";
 
-            return result;
+            return string.IsNullOrWhiteSpace(result) ? "0s" : result.Trim();
         }
 
         public string LastChecked
