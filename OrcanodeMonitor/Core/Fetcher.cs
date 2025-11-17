@@ -12,6 +12,7 @@ using System.Dynamic;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace OrcanodeMonitor.Core
 {
@@ -286,6 +287,37 @@ namespace OrcanodeMonitor.Core
                         if (nodeToRemove != null)
                         {
                             unfoundList.Remove(nodeToRemove);
+                        }
+
+                        var logs = await client.ReadNamespacedPodLogAsync(
+                            name: bestPod?.Metadata?.Name,
+                            namespaceParameter: slug,
+                            tailLines: 300);
+
+                        int lastLiveIndex = -1;
+                        using var reader = new StreamReader(logs);
+                        string line;
+                        while ((line = await reader.ReadLineAsync()) != null)
+                        {
+                            Match m = Regex.Match(line, @"(?<=live)\d+(?=\.ts)");
+                            if (m.Success)
+                            {
+                                lastLiveIndex = int.Parse(m.Value);
+                            }
+                        }
+
+                        if (lastLiveIndex >= 0)
+                        {
+                            // TODO: below is the second call to GetLatestS3TimestampAsync.
+                            // We should cache result from before instead of calling it a second time.
+                            TimestampResult? result = await GetLatestS3TimestampAsync(node, true, logger);
+                            if (result?.Offset != null)
+                            {
+                                DateTimeOffset offset = result.Offset.Value;
+                                DateTimeOffset clipEndTime = offset.AddSeconds((lastLiveIndex * 10) + 12);
+                                DateTimeOffset now = DateTimeOffset.Now;
+                                node.OrcaHelloInferencePodLag = (now - clipEndTime);
+                            }
                         }
                     }
                     else

@@ -18,6 +18,7 @@ namespace OrcanodeMonitor.Models
         NoView,
         Silent,
         Unstable,
+        Lagged,
     }
     public enum OrcanodeUpgradeStatus
     {
@@ -208,6 +209,11 @@ namespace OrcanodeMonitor.Models
         public string OrcaHelloId { get; set; }
 
         /// <summary>
+        /// How far behind the OrcaHello inference pod is.
+        /// </summary>
+        public TimeSpan? OrcaHelloInferencePodLag { get; set; }
+
+        /// <summary>
         /// Whether the OrcaHello InferenceSystem pod is ready.
         /// </summary>
         public bool? OrcaHelloInferencePodReady { get; set; }
@@ -356,6 +362,10 @@ namespace OrcanodeMonitor.Models
                 if ((OrcaHelloInferenceRestartCount ?? 0) > 0)
                 {
                     return OrcanodeOnlineStatus.Unstable;
+                }
+                if ((OrcaHelloInferencePodLag ?? TimeSpan.Zero) > TimeSpan.FromMinutes(5))
+                {
+                    return OrcanodeOnlineStatus.Lagged;
                 }
                 return OrcanodeOnlineStatus.Online;
             }

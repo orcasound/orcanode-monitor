@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
+using System;
 using System.Drawing;
 
 namespace OrcanodeMonitor.Pages
@@ -30,6 +31,15 @@ namespace OrcanodeMonitor.Pages
             _nodes = new List<Orcanode>();
             _recentEvents = new List<OrcanodeEvent>();
         }
+
+        public string FormatTimeSpan(TimeSpan ts)
+        {
+            if (ts.Days > 0) return $"{ts.Days} days";
+            if (ts.Hours > 0) return $"{ts.Hours} hours";
+            if (ts.Minutes > 0) return $"{ts.Minutes} mins";
+            return $"{ts.Seconds}s";
+        }
+
         public string LastChecked
         {
             get
@@ -51,7 +61,7 @@ namespace OrcanodeMonitor.Pages
                 return ColorTranslator.ToHtml(Color.LightGreen);
             }
             if (status == OrcanodeOnlineStatus.Hidden || status == OrcanodeOnlineStatus.NoView ||
-                status == OrcanodeOnlineStatus.Unstable)
+                status == OrcanodeOnlineStatus.Unstable || status == OrcanodeOnlineStatus.Lagged)
             {
                 return ColorTranslator.ToHtml(Color.Yellow);
             }
@@ -74,6 +84,16 @@ namespace OrcanodeMonitor.Pages
         public string NodeS3BackgroundColor(Orcanode node) => GetBackgroundColor(node.S3StreamStatus, node.OrcasoundStatus);
 
         public string NodeS3TextColor(Orcanode node) => GetTextColor(NodeS3BackgroundColor(node));
+
+        public string NodeOrcaHelloStatus(Orcanode node)
+        {
+            var status = node.OrcaHelloStatus;
+            if ((status == OrcanodeOnlineStatus.Lagged) && (node.OrcaHelloInferencePodLag.HasValue))
+            {
+                return $"{FormatTimeSpan(node.OrcaHelloInferencePodLag.Value)} behind";
+            }
+            return status.ToString();
+        }
 
         public string NodeOrcaHelloTextColor(Orcanode node) => GetTextColor(NodeOrcaHelloBackgroundColor(node));
 

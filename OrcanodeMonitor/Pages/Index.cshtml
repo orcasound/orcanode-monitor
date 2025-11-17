@@ -82,8 +82,8 @@
             else
             {
                 <td style="background-color: @Model.NodeOrcaHelloBackgroundColor(item)">
-                        <a href="@Model.AksUrl" style="color: @Model.NodeOrcaHelloTextColor(item)" target="_blank">
-                        @Html.DisplayFor(modelItem => item.OrcaHelloStatus)
+                    <a href="@Model.AksUrl" style="color: @Model.NodeOrcaHelloTextColor(item)" target="_blank">
+                        @Model.NodeOrcaHelloStatus(item)
                     </a>
                 </td>
             }
