@@ -233,26 +233,28 @@ namespace OrcanodeMonitor.Core
                 return null;
             }
             byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
-            var caCert = new X509Certificate2(caCertBytes);
-            string? host = Environment.GetEnvironmentVariable("KUBERNETES_SERVICE_HOST");
-            if (host == null)
+            using (var caCert = new X509Certificate2(caCertBytes))
             {
-                return null;
-            }
-            string? accessToken = Environment.GetEnvironmentVariable("KUBERNETES_TOKEN");
-            if (accessToken == null)
-            {
-                return null;
-            }
-            var config = new KubernetesClientConfiguration
-            {
-                Host = host,
-                AccessToken = accessToken,
-                SslCaCerts = new X509Certificate2Collection(caCert)
-            };
+                string? host = Environment.GetEnvironmentVariable("KUBERNETES_SERVICE_HOST");
+                if (host == null)
+                {
+                    return null;
+                }
+                string? accessToken = Environment.GetEnvironmentVariable("KUBERNETES_TOKEN");
+                if (accessToken == null)
+                {
+                    return null;
+                }
+                var config = new KubernetesClientConfiguration
+                {
+                    Host = host,
+                    AccessToken = accessToken,
+                    SslCaCerts = new X509Certificate2Collection(caCert)
+                };
 
-            var client = new Kubernetes(config);
-            return client;
+                var client = new Kubernetes(config);
+                return client;
+            }
         }
 
         public async static Task<string> GetOrcaHelloLogAsync(string slug, ILogger logger)
