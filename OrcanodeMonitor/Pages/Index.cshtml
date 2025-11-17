@@ -82,7 +82,7 @@
             else
             {
                 <td style="background-color: @Model.NodeOrcaHelloBackgroundColor(item)">
-                    <a href="@Model.AksUrl" style="color: @Model.NodeOrcaHelloTextColor(item)" target="_blank">
+                    <a asp-page="/OrcaHelloNode" asp-route-slug="@item.OrcasoundSlug" style="color: @Model.NodeOrcaHelloTextColor(item)">
                         @Model.NodeOrcaHelloStatus(item)
                     </a>
                 </td>

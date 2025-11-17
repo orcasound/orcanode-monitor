@@ -225,6 +225,58 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         const int RestartStabilityHours = 6;
 
+        private static Kubernetes? GetK8sClient()
+        {
+            string? k8sCACert = Environment.GetEnvironmentVariable("KUBERNETES_CA_CERT");
+            if (k8sCACert == null)
+            {
+                return null;
+            }
+            byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
+            var caCert = new X509Certificate2(caCertBytes);
+            string? host = Environment.GetEnvironmentVariable("KUBERNETES_SERVICE_HOST");
+            if (host == null)
+            {
+                return null;
+            }
+            string? accessToken = Environment.GetEnvironmentVariable("KUBERNETES_TOKEN");
+            if (accessToken == null)
+            {
+                return null;
+            }
+            var config = new KubernetesClientConfiguration
+            {
+                Host = host,
+                AccessToken = accessToken,
+                SslCaCerts = new X509Certificate2Collection(caCert)
+            };
+
+            var client = new Kubernetes(config);
+            return client;
+        }
+
+        public async static Task<string> GetOrcaHelloLogAsync(OrcanodeMonitorContext context, string slug, ILogger logger)
+        {
+            Kubernetes? client = GetK8sClient();
+            if (client == null)
+            {
+                return string.Empty;
+            }
+
+            V1PodList pods = await client.ListNamespacedPodAsync(slug);
+            foreach (var pod in pods)
+            {
+                Stream? logs = await client.ReadNamespacedPodLogAsync(
+                    name: pod?.Metadata?.Name,
+                    namespaceParameter: slug,
+                    tailLines: 300);
+                using var reader = new StreamReader(logs);
+                string text = reader.ReadToEnd();
+                return text;
+            }
+            return string.Empty;
+        }
+
         /// <summary>
         /// Update the list of Orcanodes using data about InferenceSystem containers in Azure.
         /// </summary>
@@ -235,37 +287,17 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                string? k8sCACert = Environment.GetEnvironmentVariable("KUBERNETES_CA_CERT");
-                if (k8sCACert == null)
-                {
-                    return;
-                }
-                byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
-                var caCert = new X509Certificate2(caCertBytes);
-                string? host = Environment.GetEnvironmentVariable("KUBERNETES_SERVICE_HOST");
-                if (host == null)
-                {
-                    return;
-                }
-                string? accessToken = Environment.GetEnvironmentVariable("KUBERNETES_TOKEN");
-                if (accessToken == null)
-                {
-                    return;
-                }
-                var config = new KubernetesClientConfiguration
-                {
-                    Host = host,
-                    AccessToken = accessToken,
-                    SslCaCerts = new X509Certificate2Collection(caCert)
-                };
-
                 // Get a snapshot to use during the loop to avoid multiple queries.
                 var foundList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = foundList.ToList();
 
-                var client = new Kubernetes(config);
+                Kubernetes? client = GetK8sClient();
+                if (client == null)
+                {
+                    return;
+                }
                 var pods = await client.ListPodForAllNamespacesAsync();
                 foreach (Orcanode node in foundList)
                 {
