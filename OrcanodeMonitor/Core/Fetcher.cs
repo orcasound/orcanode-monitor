@@ -360,6 +360,10 @@ namespace OrcanodeMonitor.Core
                         node.OrcaHelloInferenceImage = bestContainerStatus.Image ?? string.Empty;
                         node.OrcaHelloInferencePodReady = bestContainerStatus.Ready;
                         DateTime? runningSince = bestContainerStatus.State?.Running?.StartedAt;
+                        if (runningSince != null)
+                        {
+                            node.OrcaHelloInferencePodRunningSince = runningSince;
+                        }
                         if (runningSince == null || (DateTime.UtcNow - runningSince < TimeSpan.FromHours(RestartStabilityHours)))
                         {
                             node.OrcaHelloInferenceRestartCount = bestContainerStatus.RestartCount;

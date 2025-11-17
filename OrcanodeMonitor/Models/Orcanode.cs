@@ -229,6 +229,11 @@ namespace OrcanodeMonitor.Models
         public int? OrcaHelloInferenceRestartCount { get; set; }
 
         /// <summary>
+        /// The time when the OrcaHello inference pod was started.
+        /// </summary>
+        public DateTime? OrcaHelloInferencePodRunningSince { get; set; }
+
+        /// <summary>
         /// Partition key fixed value.
         /// </summary>
         public int PartitionValue { get; set; }
