@@ -255,7 +255,7 @@ namespace OrcanodeMonitor.Core
             return client;
         }
 
-        public async static Task<string> GetOrcaHelloLogAsync(OrcanodeMonitorContext context, string slug, ILogger logger)
+        public async static Task<string> GetOrcaHelloLogAsync(string slug, ILogger logger)
         {
             Kubernetes? client = GetK8sClient();
             if (client == null)
@@ -264,17 +264,14 @@ namespace OrcanodeMonitor.Core
             }
 
             V1PodList pods = await client.ListNamespacedPodAsync(slug);
-            foreach (var pod in pods)
-            {
-                Stream? logs = await client.ReadNamespacedPodLogAsync(
-                    name: pod?.Metadata?.Name,
-                    namespaceParameter: slug,
-                    tailLines: 300);
-                using var reader = new StreamReader(logs);
-                string text = reader.ReadToEnd();
-                return text;
-            }
-            return string.Empty;
+            GetBestPodStatus(pods.Items, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+            Stream? logs = await client.ReadNamespacedPodLogAsync(
+                name: bestPod?.Metadata?.Name,
+                namespaceParameter: slug,
+                tailLines: 300);
+            using var reader = new StreamReader(logs);
+            string text = reader.ReadToEnd();
+            return text;
         }
 
         /// <summary>
