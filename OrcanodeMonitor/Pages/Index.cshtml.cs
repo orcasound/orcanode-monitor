@@ -1,6 +1,5 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcanodeMonitor.Core;
@@ -30,6 +29,20 @@ namespace OrcanodeMonitor.Pages
             _nodes = new List<Orcanode>();
             _recentEvents = new List<OrcanodeEvent>();
         }
+
+        public string FormatTimeSpan(TimeSpan ts)
+        {
+            string result = string.Empty;
+
+            // If >1 day old, just say days.
+            if (ts.Days > 0) return $"{ts.Days} days";
+            if (ts.Hours > 0) result += $"{ts.Hours}h ";
+            if (ts.Minutes > 0) result += $"{ts.Minutes}m ";
+            if (ts.Seconds > 0) result += $"{ts.Seconds}s";
+
+            return string.IsNullOrWhiteSpace(result) ? "0s" : result.Trim();
+        }
+
         public string LastChecked
         {
             get
@@ -51,7 +64,7 @@ namespace OrcanodeMonitor.Pages
                 return ColorTranslator.ToHtml(Color.LightGreen);
             }
             if (status == OrcanodeOnlineStatus.Hidden || status == OrcanodeOnlineStatus.NoView ||
-                status == OrcanodeOnlineStatus.Unstable)
+                status == OrcanodeOnlineStatus.Unstable || status == OrcanodeOnlineStatus.Lagged)
             {
                 return ColorTranslator.ToHtml(Color.Yellow);
             }
@@ -75,9 +88,51 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeS3TextColor(Orcanode node) => GetTextColor(NodeS3BackgroundColor(node));
 
-        public string NodeOrcaHelloTextColor(Orcanode node) => GetTextColor(NodeOrcaHelloBackgroundColor(node));
+        public string NodeOrcaHelloStatus(Orcanode node)
+        {
+            var status = node.OrcaHelloStatus;
+            if ((status == OrcanodeOnlineStatus.Lagged) && (node.OrcaHelloInferencePodLag.HasValue))
+            {
+                return $"{FormatTimeSpan(node.OrcaHelloInferencePodLag.Value)}";
+            }
+            return status.ToString();
+        }
 
-        public string NodeOrcaHelloBackgroundColor(Orcanode node) => GetBackgroundColor(node.OrcaHelloStatus, node.OrcasoundStatus);
+        public string NodeOrcaHelloUptime(Orcanode node)
+        {
+            if (node.OrcaHelloInferencePodRunningSince.HasValue)
+            {
+                TimeSpan runTime = DateTime.UtcNow - node.OrcaHelloInferencePodRunningSince.Value;
+                return $"{FormatTimeSpan(runTime)}";
+            }
+            return "None";
+        }
+
+        public string NodeOrcaHelloTextColor(Orcanode node) => GetTextColor(NodeOrcaHelloStatusBackgroundColor(node));
+
+        public string NodeOrcaHelloStatusBackgroundColor(Orcanode node) => GetBackgroundColor(node.OrcaHelloStatus, node.OrcasoundStatus);
+
+        public string NodeOrcaHelloUptimeBackgroundColor(Orcanode node)
+        {
+            DateTime? since = node.OrcaHelloInferencePodRunningSince;
+            if (since.HasValue)
+            {
+                var ts = DateTime.UtcNow - since.Value;
+                if (ts > TimeSpan.FromDays(1))
+                {
+                    return ColorTranslator.ToHtml(Color.LightGreen);
+                }
+
+                return ColorTranslator.ToHtml(Color.Yellow);
+            }
+            var orcasoundStatus = node.OrcasoundStatus;
+            if (orcasoundStatus != OrcanodeOnlineStatus.Online)
+            {
+                return ColorTranslator.ToHtml(LightRed);
+            }
+            return ColorTranslator.ToHtml(Color.Red);
+        }
+
 
         /// <summary>
         /// Gets the text color for the Mezmo status of the specified node.

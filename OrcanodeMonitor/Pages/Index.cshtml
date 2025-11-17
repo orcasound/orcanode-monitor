@@ -18,7 +18,8 @@
             <th>Up%</th>
             <th>Real dB</th>
             <th>Hum dB</th>
-            <th><a href="@Model.AksUrl" target="_blank">OrcaHello</a></th>
+            <th><a href="@Model.AksUrl" target="_blank">OrcaHello Lag</a></th>
+            <th>OrcaHello Uptime</th>
             <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Logging</a></th>
             <th><a href="https://www.dataplicity.com/app/" target="_blank">Dataplicity</a></th>
             <th>Agent Version</th>
@@ -75,16 +76,28 @@
             </td>
             @if (item.OrcaHelloStatus == Models.OrcanodeOnlineStatus.Absent)
             {
-                <td style="background-color: @Model.NodeOrcaHelloBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
+                <td style="background-color: @Model.NodeOrcaHelloStatusBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
                     @Html.DisplayFor(modelItem => item.OrcaHelloStatus)
                 </td>
             }
             else
             {
-                <td style="background-color: @Model.NodeOrcaHelloBackgroundColor(item)">
-                        <a href="@Model.AksUrl" style="color: @Model.NodeOrcaHelloTextColor(item)" target="_blank">
-                        @Html.DisplayFor(modelItem => item.OrcaHelloStatus)
+                <td style="background-color: @Model.NodeOrcaHelloStatusBackgroundColor(item)">
+                    <a asp-page="/OrcaHelloNode" asp-route-slug="@item.OrcasoundSlug" style="color: @Model.NodeOrcaHelloTextColor(item)">
+                        @Model.NodeOrcaHelloStatus(item)
                     </a>
+                </td>
+            }
+            @if (item.OrcaHelloStatus == Models.OrcanodeOnlineStatus.Absent)
+            {
+                <td style="background-color: @Model.NodeOrcaHelloUptimeBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
+                    @Html.DisplayFor(modelItem => item.OrcaHelloStatus)
+                </td>
+            }
+            else
+            {
+                <td style="background-color: @Model.NodeOrcaHelloUptimeBackgroundColor(item)">
+                    @Model.NodeOrcaHelloUptime(item)
                 </td>
             }
             @if (item.MezmoStatus == Models.OrcanodeOnlineStatus.Absent)
@@ -174,10 +187,13 @@
             <b>OrcaHello Offline</b>: AI inference container is not running.
         </li>
         <li>
-            <b>OrcaHello Online</b>: AI inference container up and running.
+            <b>OrcaHello Lag</b>: Time behind current audio that the AI inference container is running.
         </li>
         <li>
             <b>OrcaHello Unstable</b>: AI inference container was crashing.
+        </li>
+        <li>
+            <b>OrcaHello Uptime</b>: Time since AI inference container started.
         </li>
         <li>
             <b>Logging Absent</b>: Mezmo does not know about the node.

@@ -1,0 +1,13 @@
+﻿@page "{slug}"
+@model OrcanodeMonitor.Pages.OrcaHelloNodeModel
+@{
+    ViewData["Title"] = "OrcaHello Pod";
+}
+
+<div class="text-center">
+    <h1 class="display-4"><a href="@Model.AksUrl" target="_blank">OrcaHello</a> Pod</h1>
+    <h2>Recent Log</h2>
+    <div style="border: 1px solid #ccc; padding: 10px; text-align: left;">
+        <pre>@Model.LogData</pre>
+    </div>
+</div>

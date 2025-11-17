@@ -12,6 +12,7 @@ using System.Dynamic;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace OrcanodeMonitor.Core
 {
@@ -224,6 +225,68 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         const int RestartStabilityHours = 6;
 
+        private static Kubernetes? GetK8sClient()
+        {
+            string? k8sCACert = Environment.GetEnvironmentVariable("KUBERNETES_CA_CERT");
+            if (k8sCACert == null)
+            {
+                return null;
+            }
+            byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
+            using (var caCert = new X509Certificate2(caCertBytes))
+            {
+                string? host = Environment.GetEnvironmentVariable("KUBERNETES_SERVICE_HOST");
+                if (host == null)
+                {
+                    return null;
+                }
+                string? accessToken = Environment.GetEnvironmentVariable("KUBERNETES_TOKEN");
+                if (accessToken == null)
+                {
+                    return null;
+                }
+                var config = new KubernetesClientConfiguration
+                {
+                    Host = host,
+                    AccessToken = accessToken,
+                    SslCaCerts = new X509Certificate2Collection(caCert)
+                };
+
+                var client = new Kubernetes(config);
+                return client;
+            }
+        }
+
+        public async static Task<string> GetOrcaHelloLogAsync(string slug, ILogger logger)
+        {
+            Kubernetes? client = GetK8sClient();
+            if (client == null)
+            {
+                return string.Empty;
+            }
+
+            V1PodList pods = await client.ListNamespacedPodAsync(slug);
+            GetBestPodStatus(pods.Items, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+
+            string podName = bestPod?.Metadata?.Name ?? string.Empty;
+            if (string.IsNullOrEmpty(bestPod?.Metadata?.Name))
+            {
+                return string.Empty;
+            }
+
+            Stream? logs = await client.ReadNamespacedPodLogAsync(
+                name: podName,
+                namespaceParameter: slug,
+                tailLines: 300);
+            if (logs == null)
+            {
+                return string.Empty;
+            }
+            using var reader = new StreamReader(logs);
+            string text = reader.ReadToEnd();
+            return text;
+        }
+
         /// <summary>
         /// Update the list of Orcanodes using data about InferenceSystem containers in Azure.
         /// </summary>
@@ -234,37 +297,17 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                string? k8sCACert = Environment.GetEnvironmentVariable("KUBERNETES_CA_CERT");
-                if (k8sCACert == null)
-                {
-                    return;
-                }
-                byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
-                var caCert = new X509Certificate2(caCertBytes);
-                string? host = Environment.GetEnvironmentVariable("KUBERNETES_SERVICE_HOST");
-                if (host == null)
-                {
-                    return;
-                }
-                string? accessToken = Environment.GetEnvironmentVariable("KUBERNETES_TOKEN");
-                if (accessToken == null)
-                {
-                    return;
-                }
-                var config = new KubernetesClientConfiguration
-                {
-                    Host = host,
-                    AccessToken = accessToken,
-                    SslCaCerts = new X509Certificate2Collection(caCert)
-                };
-
                 // Get a snapshot to use during the loop to avoid multiple queries.
                 var foundList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = foundList.ToList();
 
-                var client = new Kubernetes(config);
+                Kubernetes? client = GetK8sClient();
+                if (client == null)
+                {
+                    return;
+                }
                 var pods = await client.ListPodForAllNamespacesAsync();
                 foreach (Orcanode node in foundList)
                 {
@@ -287,6 +330,47 @@ namespace OrcanodeMonitor.Core
                         {
                             unfoundList.Remove(nodeToRemove);
                         }
+
+                        string podName = bestPod?.Metadata?.Name ?? string.Empty;
+                        if (string.IsNullOrEmpty(podName))
+                        {
+                            continue;
+                        }
+
+                        Stream? logs = await client.ReadNamespacedPodLogAsync(
+                            name: podName,
+                            namespaceParameter: slug,
+                            tailLines: 300);
+                        if (logs == null)
+                        {
+                            continue;
+                        }
+
+                        int lastLiveIndex = -1;
+                        using var reader = new StreamReader(logs);
+                        string line;
+                        while ((line = await reader.ReadLineAsync()) != null)
+                        {
+                            Match m = Regex.Match(line, @"(?<=live)\d+(?=\.ts)");
+                            if (m.Success)
+                            {
+                                lastLiveIndex = int.Parse(m.Value);
+                            }
+                        }
+
+                        if (lastLiveIndex >= 0)
+                        {
+                            // TODO: below is the second call to GetLatestS3TimestampAsync.
+                            // We should cache result from before instead of calling it a second time.
+                            TimestampResult? result = await GetLatestS3TimestampAsync(node, true, logger);
+                            if (result?.Offset != null)
+                            {
+                                DateTimeOffset offset = result.Offset.Value;
+                                DateTimeOffset clipEndTime = offset.AddSeconds((lastLiveIndex * 10) + 12);
+                                DateTimeOffset now = DateTimeOffset.UtcNow;
+                                node.OrcaHelloInferencePodLag = (now - clipEndTime);
+                            }
+                        }
                     }
                     else
                     {
@@ -299,6 +383,10 @@ namespace OrcanodeMonitor.Core
                         node.OrcaHelloInferenceImage = bestContainerStatus.Image ?? string.Empty;
                         node.OrcaHelloInferencePodReady = bestContainerStatus.Ready;
                         DateTime? runningSince = bestContainerStatus.State?.Running?.StartedAt;
+                        if (runningSince != null)
+                        {
+                            node.OrcaHelloInferencePodRunningSince = runningSince;
+                        }
                         if (runningSince == null || (DateTime.UtcNow - runningSince < TimeSpan.FromHours(RestartStabilityHours)))
                         {
                             node.OrcaHelloInferenceRestartCount = bestContainerStatus.RestartCount;
