@@ -209,6 +209,14 @@ namespace OrcanodeMonitor.Core
                 {
                     continue;
                 }
+
+                // Only process inference-system pods, skipping any benchmark and other auxiliary pods.
+                var podName = pod.Metadata?.Name;
+                if (string.IsNullOrEmpty(podName) || !podName.StartsWith("inference-system"))
+                {
+                    continue;
+                }
+
                 foreach (V1ContainerStatus podStatus in pod.Status.ContainerStatuses)
                 {
                     if (IsBetterContainerStatus(bestPodStatus, podStatus))
