@@ -91,7 +91,8 @@ namespace OrcanodeMonitor.Pages
         public string NodeOrcaHelloStatus(Orcanode node)
         {
             var status = node.OrcaHelloStatus;
-            if ((status == OrcanodeOnlineStatus.Lagged) && (node.OrcaHelloInferencePodLag.HasValue))
+            if ((status == OrcanodeOnlineStatus.Lagged || status == OrcanodeOnlineStatus.Online) &&
+                (node.OrcaHelloInferencePodLag.HasValue))
             {
                 return $"{FormatTimeSpan(node.OrcaHelloInferencePodLag.Value)}";
             }
@@ -118,7 +119,7 @@ namespace OrcanodeMonitor.Pages
             if (since.HasValue)
             {
                 var ts = DateTime.UtcNow - since.Value;
-                if (ts > TimeSpan.FromDays(1))
+                if (ts > TimeSpan.FromHours(1))
                 {
                     return ColorTranslator.ToHtml(Color.LightGreen);
                 }

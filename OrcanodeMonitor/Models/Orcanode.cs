@@ -1,9 +1,9 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
-using System.Text.Json.Serialization;
 using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Core;
+using System.Text.Json.Serialization;
 
 namespace OrcanodeMonitor.Models
 {
@@ -352,6 +352,25 @@ namespace OrcanodeMonitor.Models
             }
         }
 
+        /// <summary>
+        /// Check whether an OrcaHello container has been stable for a while.
+        /// </summary>
+        private bool IsOrcaHelloStable
+        {
+            get
+            {
+                if (OrcaHelloInferencePodRunningSince.HasValue)
+                {
+                    TimeSpan runTime = DateTime.UtcNow - OrcaHelloInferencePodRunningSince.Value;
+                    if (runTime > TimeSpan.FromMinutes(20))
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        }
+
         public OrcanodeOnlineStatus OrcaHelloStatus
         {
             get
@@ -364,7 +383,7 @@ namespace OrcanodeMonitor.Models
                 {
                     return OrcanodeOnlineStatus.Offline;
                 }
-                if ((OrcaHelloInferenceRestartCount ?? 0) > 0)
+                if (((OrcaHelloInferenceRestartCount ?? 0) > 0) && !IsOrcaHelloStable)
                 {
                     return OrcanodeOnlineStatus.Unstable;
                 }
