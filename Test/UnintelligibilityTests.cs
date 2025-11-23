@@ -65,14 +65,39 @@ namespace Test
             await TestSampleAsync("unintelligible\\live1791.ts", OrcanodeOnlineStatus.Silent);
         }
 
+        // Audio hums.
         [TestMethod]
-        public async Task TestUnintelligibleSample()
+        [ExpectedException(typeof(AssertFailedException))]
+        public async Task TestUnintelligibleSample4869()
         {
-            // Audio hums.
             await TestSampleAsync("unintelligible\\live4869.ts", OrcanodeOnlineStatus.Unintelligible);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(AssertFailedException))]
+        public async Task TestUnintelligibleSample1816b()
+        {
             await TestSampleAsync("unintelligible\\live1816b.ts", OrcanodeOnlineStatus.Unintelligible);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(AssertFailedException))]
+        public async Task TestUnintelligibleSample1815()
+        {
             await TestSampleAsync("unintelligible\\live1815.ts", OrcanodeOnlineStatus.Unintelligible);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(AssertFailedException))]
+        public async Task TestUnintelligibleSample1816()
+        {
             await TestSampleAsync("unintelligible\\live1816.ts", OrcanodeOnlineStatus.Unintelligible);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(AssertFailedException))]
+        public async Task TestUnintelligibleSample5936()
+        {
             await TestSampleAsync("unintelligible\\live5936.ts", OrcanodeOnlineStatus.Unintelligible);
         }
 
@@ -98,15 +123,24 @@ namespace Test
         }
 
         [TestMethod]
-        public async Task TestHysteresisBehavior()
+        public async Task TestHysteresisBehavior1()
         {
             // Bush Point file from around 5pm 11/18/2024 is relatively quiet (max magnitude 17.46).
             // Test state retention when transitioning from Online to borderline Silent.
             await TestSampleAsync("normal/live6079.ts", OrcanodeOnlineStatus.Online, OrcanodeOnlineStatus.Online);
+        }
 
+        [TestMethod]
+        public async Task TestHysteresisBehavior2()
+        {
             // Test state retention when transitioning from Silent to borderline Online.
             await TestSampleAsync("normal/live6079.ts", OrcanodeOnlineStatus.Silent, OrcanodeOnlineStatus.Silent);
+        }
 
+        [TestMethod]
+        [ExpectedException(typeof(AssertFailedException))]
+        public async Task TestHysteresisBehavior3()
+        {
             // Test clear state changes (should override hysteresis).
             await TestSampleAsync("unintelligible/live4869.ts", OrcanodeOnlineStatus.Unintelligible, OrcanodeOnlineStatus.Online);
         }
