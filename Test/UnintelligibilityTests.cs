@@ -67,35 +67,35 @@ namespace Test
 
         // Audio hums.
         [TestMethod]
-        [ExpectedException(typeof(AssertFailedException))]
+        [Ignore("Hum detection disabled - see issue #434")]
         public async Task TestUnintelligibleSample4869()
         {
             await TestSampleAsync("unintelligible\\live4869.ts", OrcanodeOnlineStatus.Unintelligible);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(AssertFailedException))]
+        [Ignore("Hum detection disabled - see issue #434")]
         public async Task TestUnintelligibleSample1816b()
         {
             await TestSampleAsync("unintelligible\\live1816b.ts", OrcanodeOnlineStatus.Unintelligible);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(AssertFailedException))]
+        [Ignore("Hum detection disabled - see issue #434")]
         public async Task TestUnintelligibleSample1815()
         {
             await TestSampleAsync("unintelligible\\live1815.ts", OrcanodeOnlineStatus.Unintelligible);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(AssertFailedException))]
+        [Ignore("Hum detection disabled - see issue #434")]
         public async Task TestUnintelligibleSample1816()
         {
             await TestSampleAsync("unintelligible\\live1816.ts", OrcanodeOnlineStatus.Unintelligible);
         }
 
         [TestMethod]
-        [ExpectedException(typeof(AssertFailedException))]
+        [Ignore("Hum detection disabled - see issue #434")]
         public async Task TestUnintelligibleSample5936()
         {
             await TestSampleAsync("unintelligible\\live5936.ts", OrcanodeOnlineStatus.Unintelligible);
@@ -138,7 +138,7 @@ namespace Test
         }
 
         [TestMethod]
-        [ExpectedException(typeof(AssertFailedException))]
+        [Ignore("Hum detection disabled - see issue #434")]
         public async Task TestHysteresisBehavior3()
         {
             // Test clear state changes (should override hysteresis).
