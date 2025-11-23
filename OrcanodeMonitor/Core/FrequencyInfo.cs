@@ -697,8 +697,11 @@ namespace OrcanodeMonitor.Core
                 return OrcanodeOnlineStatus.Unintelligible;
             }
 
-#if false
-            // Hum detection is disabled for now since it seems too flaky.
+            if (maxNonHumDecibels > MaxSilenceDecibels)
+            {
+                // Definitely louder than max silence, so online.
+                return OrcanodeOnlineStatus.Online;
+            }
 
             // Find the total magnitude outside the audio hum range.
             double totalNonHumMagnitude = GetTotalNonHumMagnitude(channel);
@@ -709,7 +712,6 @@ namespace OrcanodeMonitor.Core
                 // Essentially just silence outside the hum range, no signal.
                 return OrcanodeOnlineStatus.Unintelligible;
             }
-#endif
 
             // Signal outside the hum range.
             return OrcanodeOnlineStatus.Online;
