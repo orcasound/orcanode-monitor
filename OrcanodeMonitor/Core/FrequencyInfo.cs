@@ -688,7 +688,7 @@ namespace OrcanodeMonitor.Core
                 return oldStatus;
             }
 
-            // Find the total magnitude outside the audio hum range.
+            // Find the maximum magnitude outside the audio hum range.
             double maxNonHumMagnitude = GetMaxNonHumMagnitude(channel);
             double maxNonHumDecibels = MagnitudeToDecibels(maxNonHumMagnitude);
             if (maxNonHumDecibels < MinNoiseDecibels)
@@ -697,6 +697,10 @@ namespace OrcanodeMonitor.Core
                 return OrcanodeOnlineStatus.Unintelligible;
             }
 
+#if false
+            // Hum detection is disabled for now since it seems too flaky.
+
+            // Find the total magnitude outside the audio hum range.
             double totalNonHumMagnitude = GetTotalNonHumMagnitude(channel);
             double totalHumMagnitude = GetTotalHumMagnitude(channel);
             double signalRatio = totalNonHumMagnitude / totalHumMagnitude;
@@ -705,6 +709,7 @@ namespace OrcanodeMonitor.Core
                 // Essentially just silence outside the hum range, no signal.
                 return OrcanodeOnlineStatus.Unintelligible;
             }
+#endif
 
             // Signal outside the hum range.
             return OrcanodeOnlineStatus.Online;
