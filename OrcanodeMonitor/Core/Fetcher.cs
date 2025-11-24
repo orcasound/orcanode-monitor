@@ -296,7 +296,7 @@ namespace OrcanodeMonitor.Core
             // Split into lines, filter, and rejoin
             var filtered = string.Join(
                 Environment.NewLine,
-                text.Split(Environment.NewLine)
+                Regex.Split(text, "\r?\n")
                     .Where(line => !line.StartsWith("INSTRUMENTATION KEY:", StringComparison.OrdinalIgnoreCase))
             );
 
