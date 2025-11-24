@@ -292,7 +292,15 @@ namespace OrcanodeMonitor.Core
             }
             using var reader = new StreamReader(logs);
             string text = reader.ReadToEnd();
-            return text;
+
+            // Split into lines, filter, and rejoin
+            var filtered = string.Join(
+                Environment.NewLine,
+                text.Split(Environment.NewLine)
+                    .Where(line => !line.StartsWith("INSTRUMENTATION KEY:", StringComparison.OrdinalIgnoreCase))
+            );
+
+            return filtered;
         }
 
         /// <summary>
