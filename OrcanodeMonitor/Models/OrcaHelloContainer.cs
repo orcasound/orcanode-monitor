@@ -10,11 +10,12 @@ namespace OrcanodeMonitor.Models
         public string PodName => _pod.Metadata?.Name ?? string.Empty;
         public string NamespaceName => _pod.Metadata?.NamespaceProperty ?? string.Empty;
         public string NodeName => _pod.Spec.NodeName;
-        public double CpuUsageCores { get; set; }
-        public double CpuCapacityCores { get; set; }
+        public string LastTerminationReason { get; private set; }
+        public double CpuUsageCores { get; private set; }
+        public double CpuCapacityCores { get; private set; }
         public double CpuPercent => CpuUsageCores / CpuCapacityCores * 100.0;
-        public long MemoryUsageInKi { get; set; }
-        public long MemoryCapacityInKi { get; set; }
+        public long MemoryUsageInKi { get; private set; }
+        public long MemoryCapacityInKi { get; private set; }
         public double MemoryPercent => 100.0 * MemoryUsageInKi / MemoryCapacityInKi;
         public string ImageName
         {
@@ -45,6 +46,17 @@ namespace OrcanodeMonitor.Models
                 CpuCapacityCores = limits.ContainsKey("cpu") ? limits["cpu"].ToInt64() : 0;
                 MemoryCapacityInKi = limits.ContainsKey("memory") ? limits["memory"].ToInt64() / 1024 : 0;
             }
+
+            var latest = pod.Status.ContainerStatuses
+                .Select(cs => new {
+                    Status = cs,
+                    StartedAt = cs.State?.Running?.StartedAt ?? cs.LastState?.Terminated?.StartedAt
+                })
+                .Where(x => x.StartedAt != null)
+                .OrderByDescending(x => x.StartedAt)
+                .FirstOrDefault();
+
+            LastTerminationReason = latest?.Status.LastState?.Terminated?.Reason ?? "Unknown";
         }
     }
 }
