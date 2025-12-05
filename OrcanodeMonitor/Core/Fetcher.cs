@@ -323,8 +323,8 @@ namespace OrcanodeMonitor.Core
 
             NodeMetricsList metricsList = await client.GetKubernetesNodesMetricsAsync();
             NodeMetrics? nodeMetric = metricsList.Items.FirstOrDefault(n => n.Metadata.Name == container.NodeName);
-            string cpuUsage = nodeMetric?.Usage["cpu"].ToString() ?? string.Empty;
-            string memoryUsage = nodeMetric?.Usage["memory"].ToString() ?? string.Empty;
+            string cpuUsage = nodeMetric?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : string.Empty;
+            string memoryUsage = nodeMetric?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : string.Empty;
 
             string lscpuOutput = await GetContainerLscpuOutput(container);
 
