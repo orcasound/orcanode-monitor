@@ -11,10 +11,10 @@ namespace OrcanodeMonitor.Models
         public string InstanceType { get; private set; }
         public double CpuUsageCores { get; private set; }
         public double CpuCapacityCores { get; private set; }
-        public double CpuPercent => CpuCapacityCores > 0 ? CpuUsageCores / CpuCapacityCores * 100.0 : 0.0;
+        public double CpuPercent => CpuCapacityCores > 0 ? (100.0 * CpuUsageCores / CpuCapacityCores) : 0;
         public long MemoryUsageInKi { get; private set; }
         public long MemoryCapacityInKi { get; private set; }
-        public double MemoryPercent => MemoryCapacityInKi > 0 ? 100.0 * MemoryUsageInKi / MemoryCapacityInKi : 0.0;
+        public double MemoryPercent => MemoryCapacityInKi > 0 ? (100.0 * MemoryUsageInKi / MemoryCapacityInKi) : 0;
         public string CpuModel { get; private set; }
         public bool HasAvx2 { get; private set; }
         public bool HasAvx512 { get; private set; }

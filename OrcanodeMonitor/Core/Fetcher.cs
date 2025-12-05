@@ -378,9 +378,8 @@ namespace OrcanodeMonitor.Core
             return podName;
         }
 
-        public async static Task<string> GetOrcaHelloLogAsync(string namespaceName, ILogger logger)
+        public async static Task<string> GetOrcaHelloLogAsync(OrcaHelloContainer? container, string namespaceName, ILogger logger)
         {
-            OrcaHelloContainer? container = await GetOrcaHelloPodAsync(namespaceName);
             if (container == null)
             {
                 return string.Empty;

@@ -117,7 +117,7 @@ namespace OrcanodeMonitor.Pages
 
             PodNamespace = podNamespace;
 
-            _logData = await Fetcher.GetOrcaHelloLogAsync(podNamespace, _logger);
+            _logData = await Fetcher.GetOrcaHelloLogAsync(_container, podNamespace, _logger);
             if (_logData.IsNullOrEmpty())
             {
                 return NotFound(); // Return a 404 error page
