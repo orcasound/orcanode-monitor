@@ -5,14 +5,13 @@ using k8s.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Mono.TextTemplating;
-using Newtonsoft.Json.Linq;
-using NuGet.Protocol;
 using OrcanodeMonitor.Api;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Dynamic;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -268,28 +267,51 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public async static Task<OrcaHelloNode?> GetOrcaHelloNodeAsync(string nodeName)
+        public async static Task<OrcaHelloNode?> GetOrcaHelloNodeAsync(OrcaHelloContainer? container)
         {
+            if (container == null)
+            {
+                return null;
+            }
             Kubernetes? client = _k8sClient;
             if (client == null)
             {
                 return null;
             }
 
-            V1Node node = await client.ReadNodeAsync(nodeName);
+            V1Node node = await client.ReadNodeAsync(container.NodeName);
 
-            object nodeMetrics = await client.GetClusterCustomObjectAsync(
-                group: "metrics.k8s.io",
-                version: "v1beta1",
-                plural: "nodes",
-                name: nodeName);
-            var metrics = (JsonElement)nodeMetrics;
+            NodeMetricsList metricsList = await client.GetKubernetesNodesMetricsAsync();
+            NodeMetrics? nodeMetric = metricsList.Items.FirstOrDefault(n => n.Metadata.Name == container.NodeName);
+            string cpuUsage = nodeMetric?.Usage["cpu"].ToString() ?? string.Empty;
+            string memoryUsage = nodeMetric?.Usage["memory"].ToString() ?? string.Empty;
 
-            string json = metrics.ToJson();
-            string cpu = metrics.GetProperty("usage").GetProperty("cpu").GetString() ?? string.Empty;
-            string memory = metrics.GetProperty("usage").GetProperty("memory").GetString() ?? string.Empty;
+            // Exec into a pod running on the node.
+            var cmd = new[] { "lscpu" };
+            var sb = new StringBuilder();
+            ExecAsyncCallback callback = async (stdIn, stdOut, stdErr) =>
+            {
+                using var readerOut = new StreamReader(stdOut);
+                using var readerErr = new StreamReader(stdErr);
 
-            return new OrcaHelloNode(node, cpu, memory);
+                string outText = await readerOut.ReadToEndAsync();
+                string errText = await readerErr.ReadToEndAsync();
+
+                sb.Append(outText);
+                sb.Append(errText);
+            };
+
+            await client.NamespacedPodExecAsync(
+                name: container.PodName,
+                @namespace: container.NamespaceName,
+                container: null,
+                command: cmd,
+                tty: false,
+                action: callback,
+                cancellationToken: CancellationToken.None
+            );
+            string output = sb.ToString();
+            return new OrcaHelloNode(node, cpuUsage, memoryUsage, output);
         }
 
         public async static Task<OrcaHelloContainer?> GetOrcaHelloPodAsync(string namespaceName)
@@ -306,7 +328,14 @@ namespace OrcanodeMonitor.Core
             {
                 return null;
             }
-            return new OrcaHelloContainer(bestPod);
+
+            PodMetricsList? metricsList = await client.GetKubernetesPodsMetricsByNamespaceAsync(namespaceName);
+            PodMetrics? podMetric = metricsList.Items.FirstOrDefault(n => n.Metadata.Name.StartsWith("inference-system-"));
+            var container = podMetric?.Containers.FirstOrDefault(c => c.Name == "inference-system");
+            string cpuUsage = container?.Usage["cpu"].ToString() ?? string.Empty;
+            string memoryUsage = container?.Usage["memory"].ToString() ?? string.Empty;
+
+            return new OrcaHelloContainer(bestPod, cpuUsage, memoryUsage);
         }
 
         public async static Task<string> GetOrcaHelloPodNameAsync(string namespaceName)

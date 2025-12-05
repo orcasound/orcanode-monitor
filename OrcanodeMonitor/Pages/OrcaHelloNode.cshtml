@@ -16,12 +16,12 @@
                 </th>
             </tr>
             <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Namespace:</td>
-                <td style="text-align: left; padding: 4px;">@Model.PodNamespace</td>
-            </tr>
-            <tr>
                 <td style="text-align: right; font-weight: bold; padding: 4px;">Name:</td>
                 <td style="text-align: left; padding: 4px;">@Model.PodName</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Namespace:</td>
+                <td style="text-align: left; padding: 4px;">@Model.PodNamespace</td>
             </tr>
             <tr>
                 <td style="text-align: right; font-weight: bold; padding: 4px;">Image:</td>
@@ -29,11 +29,19 @@
             </tr>
             <tr>
                 <td style="text-align: right; font-weight: bold; padding: 4px;">Uptime:</td>
-                <td style="text-align: left; padding: 4px;">@Model.Uptime</td>
+                <td style="text-align: left; padding: 4px;">@Model.ContainerUptime</td>
             </tr>
             <tr>
                 <td style="text-align: right; font-weight: bold; padding: 4px;">Lag:</td>
                 <td style="text-align: left; padding: 4px;">@Model.Lag</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">CPU:</td>
+                <td style="text-align: left; padding: 4px;">@(Math.Round(Model.ContainerCpuPercent))% (@Model.ContainerCpuUsageCores.ToString("F2") / @Model.ContainerCpuCapacityCores cores)</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Memory:</td>
+                <td style="text-align: left; padding: 4px;">@(Math.Round(Model.ContainerMemoryPercent))% (@Model.ContainerMemoryUsage / @Model.ContainerMemoryCapacity)</td>
             </tr>
         </table>
         <table style="border: 1px solid #ccc; border-collapse: separate;">
@@ -49,28 +57,32 @@
                 <td style="text-align: left; padding: 4px;">@Model.NodeName</td>
             </tr>
             <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Cores:</td>
-                <td style="text-align: left; padding: 4px;">@Model.NodeCpuCapacityCores</td>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Instance Type:</td>
+                <td style="text-align: left; padding: 4px;">@Model.NodeInstanceType</td>
             </tr>
             <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">CPU Usage:</td>
-                <td style="text-align: left; padding: 4px;">@Model.NodeCpuUsageCores.ToString("F2")</td>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">CPU Model:</td>
+                <td style="text-align: left; padding: 4px;">@Model.NodeCpuModel</td>
             </tr>
             <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">CPU %:</td>
-                <td style="text-align: left; padding: 4px;">@(Math.Round(Model.NodeCpuPercent))%</td>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">AVX2 Support:</td>
+                <td style="text-align: left; padding: 4px;">@Model.NodeHasAvx2</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">AVX-512 Support:</td>
+                <td style="text-align: left; padding: 4px;">@Model.NodeHasAvx512</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Uptime:</td>
+                <td style="text-align: left; padding: 4px;">@Model.NodeUptime</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">CPU:</td>
+                <td style="text-align: left; padding: 4px;">@(Math.Round(Model.NodeCpuPercent))% (@Model.NodeCpuUsageCores.ToString("F2") / @Model.NodeCpuCapacityCores cores)</td>
             </tr>
             <tr>
                 <td style="text-align: right; font-weight: bold; padding: 4px;">Memory:</td>
-                <td style="text-align: left; padding: 4px;">@Model.NodeMemoryCapacity</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Memory Usage:</td>
-                <td style="text-align: left; padding: 4px;">@Model.NodeMemoryUsage</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Memory %:</td>
-                <td style="text-align: left; padding: 4px;">@(Math.Round(Model.NodeMemoryPercent))%</td>
+                <td style="text-align: left; padding: 4px;">@(Math.Round(Model.NodeMemoryPercent))% (@Model.NodeMemoryUsage / @Model.NodeMemoryCapacity)</td>
             </tr>
         </table>
     </div>

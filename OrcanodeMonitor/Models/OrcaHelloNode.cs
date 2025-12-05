@@ -1,5 +1,6 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
+using k8s;
 using k8s.Models;
 
 namespace OrcanodeMonitor.Models
@@ -7,24 +8,73 @@ namespace OrcanodeMonitor.Models
     public class OrcaHelloNode
     {
         V1Node _node;
-        public double CpuUsageCores { get; set; }
-        public double CpuCapacityCores { get; set; }
+        public string InstanceType { get; private set; }
+        public double CpuUsageCores { get; private set; }
+        public double CpuCapacityCores { get; private set; }
         public double CpuPercent => CpuUsageCores / CpuCapacityCores * 100.0;
-        public long MemoryUsageInKi { get; set; }
-        public long MemoryCapacityInKi { get; set; }
+        public long MemoryUsageInKi { get; private set; }
+        public long MemoryCapacityInKi { get; private set; }
         public double MemoryPercent => 100.0 * MemoryUsageInKi / MemoryCapacityInKi;
+        public string CpuModel { get; private set; }
+        public bool HasAvx2 { get; private set; }
+        public bool HasAvx512 { get; private set; }
+        public DateTime? CreationTimestamp => _node.Metadata.CreationTimestamp;
+        public TimeSpan Uptime
+        {
+            get
+            {
+                if (CreationTimestamp.HasValue)
+                {
+                    return DateTime.UtcNow - CreationTimestamp.Value;
+                }
+                return TimeSpan.Zero;
+            }
+        }
 
-        public OrcaHelloNode(V1Node node, string cpuUsed, string memoryUsed)
+        private static string GetLabelStringValue(IDictionary<string, string> labels, string key)
+        {
+            return labels.ContainsKey(key) ? labels[key] : "Unknown";
+        }
+
+        private static bool GetLabelBoolValue(IDictionary<string, string> labels, string key)
+        {
+            return labels.ContainsKey(key);
+        }
+
+        public OrcaHelloNode(V1Node node, string cpuUsage, string memoryUsage, string lscpuOutput)
         {
             _node = node;
 
-            long nanocores = long.Parse(cpuUsed.Replace("n", ""));
+            long nanocores = long.Parse(cpuUsage.Replace("n", ""));
             CpuUsageCores = nanocores / 1_000_000_000.0;
-            CpuCapacityCores = node.Status.Capacity["cpu"].ToDouble();
+            CpuCapacityCores = node.Status.Allocatable["cpu"].ToDouble();
 
-            MemoryUsageInKi = long.Parse(memoryUsed.Replace("Ki", ""));
-            string memoryCapacity = node.Status.Capacity["memory"].ToString();
-            MemoryCapacityInKi = long.Parse(memoryCapacity.Replace("Ki", ""));
+            MemoryUsageInKi = long.Parse(memoryUsage.Replace("Ki", ""));
+            MemoryCapacityInKi = node.Status.Allocatable["memory"].ToInt64() / 1024;
+
+            IDictionary<string, string> labels = node.Metadata.Labels;
+            InstanceType = GetLabelStringValue(node.Metadata.Labels, "node.kubernetes.io/instance-type");
+
+#if false
+            // NFD would return labels but NFD consumes CPU and Memory which we want to keep for the AI use.
+            CpuModel = GetLabelStringValue(node.Metadata.Labels, "feature.node.kubernetes.io/cpu-model");
+            HasAvx2 = GetLabelBoolValue(node.Metadata.Labels, "feature.node.kubernetes.io/cpu-avx2");
+            HasAvx512 = GetLabelBoolValue(node.Metadata.Labels, "feature.node.kubernetes.io/cpu-avx512");
+#endif
+
+            // Parse CPU model.
+            CpuModel = "Unknown";
+            foreach (var line in lscpuOutput.Split('\n'))
+            {
+                if (line.StartsWith("Model name"))
+                {
+                    CpuModel = line.Split(':')[1].Trim();
+                }
+            }
+
+            // Check flags.
+            HasAvx2 = lscpuOutput.Contains("avx2");
+            HasAvx512 = lscpuOutput.Contains("avx512");
         }
     }
 }
