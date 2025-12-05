@@ -6,10 +6,10 @@ namespace OrcanodeMonitor.Models
 {
     public class OrcaHelloContainer
     {
-        private V1Pod _pod;
+        private readonly V1Pod _pod;
         public string PodName => _pod.Metadata?.Name ?? string.Empty;
         public string NamespaceName => _pod.Metadata?.NamespaceProperty ?? string.Empty;
-        public string NodeName => _pod.Spec.NodeName;
+        public string NodeName => _pod.Spec?.NodeName ?? string.Empty;
         public string LastTerminationReason { get; private set; }
         public double CpuUsageCores { get; private set; }
         public double CpuCapacityCores { get; private set; }
@@ -40,14 +40,13 @@ namespace OrcanodeMonitor.Models
 
             V1Container? container = pod.Spec.Containers.FirstOrDefault(c => c.Name == "inference-system");
             var limits = container?.Resources?.Limits;
-            string memoryLimit = string.Empty;
             if (limits != null)
             {
                 CpuCapacityCores = limits.ContainsKey("cpu") ? limits["cpu"].ToInt64() : 0;
                 MemoryCapacityInKi = limits.ContainsKey("memory") ? limits["memory"].ToInt64() / 1024 : 0;
             }
 
-            var latest = pod.Status.ContainerStatuses
+            var latest = pod.Status?.ContainerStatuses?
                 .Select(cs => new {
                     Status = cs,
                     StartedAt = cs.State?.Running?.StartedAt ?? cs.LastState?.Terminated?.StartedAt

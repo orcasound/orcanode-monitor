@@ -7,14 +7,14 @@ namespace OrcanodeMonitor.Models
 {
     public class OrcaHelloNode
     {
-        V1Node _node;
+        readonly V1Node _node;
         public string InstanceType { get; private set; }
         public double CpuUsageCores { get; private set; }
         public double CpuCapacityCores { get; private set; }
-        public double CpuPercent => CpuUsageCores / CpuCapacityCores * 100.0;
+        public double CpuPercent => CpuCapacityCores > 0 ? CpuUsageCores / CpuCapacityCores * 100.0 : 0.0;
         public long MemoryUsageInKi { get; private set; }
         public long MemoryCapacityInKi { get; private set; }
-        public double MemoryPercent => 100.0 * MemoryUsageInKi / MemoryCapacityInKi;
+        public double MemoryPercent => MemoryCapacityInKi > 0 ? 100.0 * MemoryUsageInKi / MemoryCapacityInKi : 0.0;
         public string CpuModel { get; private set; }
         public bool HasAvx2 { get; private set; }
         public bool HasAvx512 { get; private set; }
@@ -33,7 +33,7 @@ namespace OrcanodeMonitor.Models
 
         private static string GetLabelStringValue(IDictionary<string, string> labels, string key)
         {
-            return labels.ContainsKey(key) ? labels[key] : "Unknown";
+            return labels.TryGetValue(key, out var value) ? value : "Unknown";
         }
 
         private static bool GetLabelBoolValue(IDictionary<string, string> labels, string key)
@@ -52,7 +52,6 @@ namespace OrcanodeMonitor.Models
             MemoryUsageInKi = long.Parse(memoryUsage.Replace("Ki", ""));
             MemoryCapacityInKi = node.Status.Allocatable["memory"].ToInt64() / 1024;
 
-            IDictionary<string, string> labels = node.Metadata.Labels;
             InstanceType = GetLabelStringValue(node.Metadata.Labels, "node.kubernetes.io/instance-type");
 
 #if false
@@ -68,7 +67,11 @@ namespace OrcanodeMonitor.Models
             {
                 if (line.StartsWith("Model name"))
                 {
-                    CpuModel = line.Split(':')[1].Trim();
+                    var parts = line.Split(':');
+                    if (parts.Length >= 2)
+                    {
+                        CpuModel = parts[1].Trim();
+                    }
                 }
             }
 
