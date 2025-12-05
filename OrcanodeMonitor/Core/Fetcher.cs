@@ -327,16 +327,24 @@ namespace OrcanodeMonitor.Core
                 return null;
             }
 
-            V1Node node = await client.ReadNodeAsync(container.NodeName);
+            try
+            {
+                V1Node node = await client.ReadNodeAsync(container.NodeName);
 
-            NodeMetricsList metricsList = await client.GetKubernetesNodesMetricsAsync();
-            NodeMetrics? nodeMetric = metricsList.Items.FirstOrDefault(n => n.Metadata.Name == container.NodeName);
-            string cpuUsage = nodeMetric?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : string.Empty;
-            string memoryUsage = nodeMetric?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : string.Empty;
+                NodeMetricsList metricsList = await client.GetKubernetesNodesMetricsAsync();
+                NodeMetrics? nodeMetric = metricsList.Items.FirstOrDefault(n => n.Metadata.Name == container.NodeName);
+                string cpuUsage = nodeMetric?.Usage["cpu"].ToString() ?? string.Empty;
+                string memoryUsage = nodeMetric?.Usage["memory"].ToString() ?? string.Empty;
 
-            string lscpuOutput = await GetContainerLscpuOutput(container);
+                string lscpuOutput = await GetContainerLscpuOutput(container);
 
-            return new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput);
+                return new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[GetOrcaHelloNodeAsync] Error retrieving node info for '{container?.NodeName}': {ex}");
+                return null;
+            }
         }
 
         public async static Task<OrcaHelloContainer?> GetOrcaHelloPodAsync(string namespaceName)
