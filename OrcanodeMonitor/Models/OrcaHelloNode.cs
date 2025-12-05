@@ -18,7 +18,7 @@ namespace OrcanodeMonitor.Models
         public string CpuModel { get; private set; }
         public bool HasAvx2 { get; private set; }
         public bool HasAvx512 { get; private set; }
-        public DateTime? CreationTimestamp => _node.Metadata.CreationTimestamp;
+        public DateTime? CreationTimestamp => _node.Metadata?.CreationTimestamp;
         public TimeSpan Uptime
         {
             get
@@ -54,7 +54,9 @@ namespace OrcanodeMonitor.Models
                 memUsageKi = 0;
             }
             MemoryUsageInKi = memUsageKi;
-            MemoryCapacityInKi = node.Status.Allocatable["memory"].ToInt64() / 1024;
+            MemoryCapacityInKi = node.Status?.Allocatable?.TryGetValue("memory", out var memAlloc) == true
+                ? memAlloc.ToInt64() / 1024
+                : 0;
 
             InstanceType = GetLabelStringValue(node.Metadata.Labels, "node.kubernetes.io/instance-type");
 

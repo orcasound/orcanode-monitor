@@ -21,12 +21,7 @@ namespace OrcanodeMonitor.Models
         {
             get
             {
-                // From the spec (desired state)
-                foreach (var container in _pod.Spec.Containers)
-                {
-                    return container.Image;
-                }
-                return string.Empty;
+                return _pod.Spec?.Containers?.FirstOrDefault()?.Image ?? string.Empty;
             }
         }
         public OrcaHelloContainer(V1Pod pod, string cpuUsage, string memoryUsage)

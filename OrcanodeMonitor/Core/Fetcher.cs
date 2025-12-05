@@ -365,8 +365,8 @@ namespace OrcanodeMonitor.Core
             PodMetricsList? metricsList = await client.GetKubernetesPodsMetricsByNamespaceAsync(namespaceName);
             PodMetrics? podMetric = metricsList?.Items?.FirstOrDefault(n => n.Metadata?.Name?.StartsWith("inference-system-") == true);
             var container = podMetric?.Containers.FirstOrDefault(c => c.Name == "inference-system");
-            string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : string.Empty;
-            string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : string.Empty;
+            string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
+            string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
             return new OrcaHelloContainer(bestPod, cpuUsage, memoryUsage);
         }
