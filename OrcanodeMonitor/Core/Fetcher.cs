@@ -30,7 +30,7 @@ namespace OrcanodeMonitor.Core
         private static string _defaultProdS3Bucket = "audio-orcasound-net";
         private static string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
         public static string IftttServiceKey => _iftttServiceKey;
-        private static Kubernetes? _k8sClient = GetK8sClient();
+        private static readonly Kubernetes? _k8sClient = GetK8sClient();
 
         /// <summary>
         /// Test for a match between a human-readable name at Orcasound, and
@@ -271,7 +271,7 @@ namespace OrcanodeMonitor.Core
         /// Exec into a container running to get CPU info.
         /// </summary>
         /// <param name="container">container to exec into</param>
-        /// <returns></returns>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the <c>lscpu</c> command executed in the container, as a string.</returns>
         private async static Task<string> GetContainerLscpuOutput(OrcaHelloContainer container)
         {
             Kubernetes? client = _k8sClient;
@@ -294,15 +294,23 @@ namespace OrcanodeMonitor.Core
                 sb.Append(errText);
             };
 
-            await client.NamespacedPodExecAsync(
-                name: container.PodName,
-                @namespace: container.NamespaceName,
-                container: null,
-                command: cmd,
-                tty: false,
-                action: callback,
-                cancellationToken: CancellationToken.None
-            );
+            try
+            {
+                await client.NamespacedPodExecAsync(
+                    name: container.PodName,
+                    @namespace: container.NamespaceName,
+                    container: null,
+                    command: cmd,
+                    tty: false,
+                    action: callback,
+                    cancellationToken: CancellationToken.None
+                );
+            }
+            catch (Exception)
+            {
+                // Optionally log the exception here if logging is available
+                return string.Empty;
+            }
 
             return sb.ToString();
         }

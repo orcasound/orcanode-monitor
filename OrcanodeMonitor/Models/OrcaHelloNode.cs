@@ -49,7 +49,11 @@ namespace OrcanodeMonitor.Models
             CpuUsageCores = nanocores / 1_000_000_000.0;
             CpuCapacityCores = node.Status.Allocatable["cpu"].ToDouble();
 
-            MemoryUsageInKi = long.Parse(memoryUsage.Replace("Ki", ""));
+            if (!long.TryParse(memoryUsage.Replace("Ki", ""), out long memUsageKi))
+            {
+                memUsageKi = 0;
+            }
+            MemoryUsageInKi = memUsageKi;
             MemoryCapacityInKi = node.Status.Allocatable["memory"].ToInt64() / 1024;
 
             InstanceType = GetLabelStringValue(node.Metadata.Labels, "node.kubernetes.io/instance-type");
