@@ -312,6 +312,19 @@ namespace OrcanodeMonitor.Models
             }
         }
 
+        public static string FormatTimeSpan(TimeSpan ts)
+        {
+            string result = string.Empty;
+
+            // If >1 day old, just say days.
+            if (ts.Days > 0) return $"{ts.Days} days";
+            if (ts.Hours > 0) result += $"{ts.Hours}h ";
+            if (ts.Minutes > 0) result += $"{ts.Minutes}m ";
+            if (ts.Seconds > 0) result += $"{ts.Seconds}s";
+
+            return string.IsNullOrWhiteSpace(result) ? "0s" : result.Trim();
+        }
+
         /// <summary>
         /// Value in the latest.txt file, as a Local DateTime.
         /// </summary>
