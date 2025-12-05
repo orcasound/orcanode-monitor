@@ -11,6 +11,7 @@ using OrcanodeMonitor.Models;
 using System.Dynamic;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -29,6 +30,7 @@ namespace OrcanodeMonitor.Core
         private static string _defaultProdS3Bucket = "audio-orcasound-net";
         private static string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
         public static string IftttServiceKey => _iftttServiceKey;
+        private static readonly Kubernetes? _k8sClient = GetK8sClient();
 
         /// <summary>
         /// Test for a match between a human-readable name at Orcasound, and
@@ -265,26 +267,144 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public async static Task<string> GetOrcaHelloLogAsync(string slug, ILogger logger)
+        /// <summary>
+        /// Exec into a container running to get CPU info.
+        /// </summary>
+        /// <param name="container">container to exec into</param>
+        /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the <c>lscpu</c> command executed in the container, as a string.</returns>
+        private async static Task<string> GetContainerLscpuOutput(OrcaHelloContainer container)
         {
-            Kubernetes? client = GetK8sClient();
+            Kubernetes? client = _k8sClient;
             if (client == null)
             {
                 return string.Empty;
             }
 
-            V1PodList pods = await client.ListNamespacedPodAsync(slug);
-            GetBestPodStatus(pods.Items, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+            var cmd = new[] { "lscpu" };
+            var sb = new StringBuilder();
+            ExecAsyncCallback callback = async (stdIn, stdOut, stdErr) =>
+            {
+                using var readerOut = new StreamReader(stdOut);
+                using var readerErr = new StreamReader(stdErr);
 
-            string podName = bestPod?.Metadata?.Name ?? string.Empty;
-            if (string.IsNullOrEmpty(bestPod?.Metadata?.Name))
+                string outText = await readerOut.ReadToEndAsync();
+                string errText = await readerErr.ReadToEndAsync();
+
+                sb.Append(outText);
+                sb.Append(errText);
+            };
+
+            try
+            {
+                await client.NamespacedPodExecAsync(
+                    name: container.PodName,
+                    @namespace: container.NamespaceName,
+                    container: null,
+                    command: cmd,
+                    tty: false,
+                    action: callback,
+                    cancellationToken: CancellationToken.None
+                );
+            }
+            catch (Exception)
+            {
+                // Optionally log the exception here if logging is available
+                return string.Empty;
+            }
+
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// Get an object representing a node hosting an OrcaHello inference container.
+        /// </summary>
+        /// <param name="container">Container</param>
+        /// <returns>OrcaHelloNode</returns>
+        public async static Task<OrcaHelloNode?> GetOrcaHelloNodeAsync(OrcaHelloContainer? container)
+        {
+            if (container == null)
+            {
+                return null;
+            }
+            Kubernetes? client = _k8sClient;
+            if (client == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                V1Node node = await client.ReadNodeAsync(container.NodeName);
+
+                NodeMetricsList metricsList = await client.GetKubernetesNodesMetricsAsync();
+                NodeMetrics? nodeMetric = metricsList.Items.FirstOrDefault(n => n.Metadata.Name == container.NodeName);
+                string cpuUsage = nodeMetric?.Usage["cpu"].ToString() ?? string.Empty;
+                string memoryUsage = nodeMetric?.Usage["memory"].ToString() ?? string.Empty;
+
+                string lscpuOutput = await GetContainerLscpuOutput(container);
+
+                return new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[GetOrcaHelloNodeAsync] Error retrieving node info for '{container?.NodeName}': {ex}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Get an object representing an OrcaHello inference pod.
+        /// </summary>
+        /// <param name="namespaceName">Namespace name</param>
+        /// <returns>OrcaHelloContainer</returns>
+        public async static Task<OrcaHelloContainer?> GetOrcaHelloPodAsync(string namespaceName)
+        {
+            Kubernetes? client = _k8sClient;
+            if (client == null)
+            {
+                return null;
+            }
+
+            V1PodList pods = await client.ListNamespacedPodAsync(namespaceName);
+            GetBestPodStatus(pods.Items, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+            if (bestPod == null)
+            {
+                return null;
+            }
+
+            PodMetricsList? metricsList = await client.GetKubernetesPodsMetricsByNamespaceAsync(namespaceName);
+            PodMetrics? podMetric = metricsList?.Items?.FirstOrDefault(n => n.Metadata?.Name?.StartsWith("inference-system-") == true);
+            var container = podMetric?.Containers.FirstOrDefault(c => c.Name == "inference-system");
+            string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
+            string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
+
+            return new OrcaHelloContainer(bestPod, cpuUsage, memoryUsage);
+        }
+
+        /// <summary>
+        /// Get pod logs
+        /// </summary>
+        /// <param name="container">Container</param>
+        /// <param name="namespaceName">Namespace</param>
+        /// <param name="logger">Logger</param>
+        /// <returns>Log</returns>
+        public async static Task<string> GetOrcaHelloLogAsync(OrcaHelloContainer? container, string namespaceName, ILogger logger)
+        {
+            if (container == null)
+            {
+                return string.Empty;
+            }
+            string podName = container.PodName;
+
+            Kubernetes? client = _k8sClient;
+            if (client == null)
             {
                 return string.Empty;
             }
 
             Stream? logs = await client.ReadNamespacedPodLogAsync(
                 name: podName,
-                namespaceParameter: slug,
+                namespaceParameter: namespaceName,
                 tailLines: 300);
             if (logs == null)
             {
@@ -313,17 +433,18 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
+                Kubernetes? client = _k8sClient;
+                if (client == null)
+                {
+                    return;
+                }
+
                 // Get a snapshot to use during the loop to avoid multiple queries.
                 var foundList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = foundList.ToList();
 
-                Kubernetes? client = GetK8sClient();
-                if (client == null)
-                {
-                    return;
-                }
                 var pods = await client.ListPodForAllNamespacesAsync();
                 foreach (Orcanode node in foundList)
                 {

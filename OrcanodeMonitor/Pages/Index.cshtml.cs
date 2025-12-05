@@ -30,19 +30,6 @@ namespace OrcanodeMonitor.Pages
             _recentEvents = new List<OrcanodeEvent>();
         }
 
-        public string FormatTimeSpan(TimeSpan ts)
-        {
-            string result = string.Empty;
-
-            // If >1 day old, just say days.
-            if (ts.Days > 0) return $"{ts.Days} days";
-            if (ts.Hours > 0) result += $"{ts.Hours}h ";
-            if (ts.Minutes > 0) result += $"{ts.Minutes}m ";
-            if (ts.Seconds > 0) result += $"{ts.Seconds}s";
-
-            return string.IsNullOrWhiteSpace(result) ? "0s" : result.Trim();
-        }
-
         public string LastChecked
         {
             get
@@ -94,7 +81,7 @@ namespace OrcanodeMonitor.Pages
             if ((status == OrcanodeOnlineStatus.Lagged || status == OrcanodeOnlineStatus.Online) &&
                 (node.OrcaHelloInferencePodLag.HasValue))
             {
-                return $"{FormatTimeSpan(node.OrcaHelloInferencePodLag.Value)}";
+                return $"{Orcanode.FormatTimeSpan(node.OrcaHelloInferencePodLag.Value)}";
             }
             return status.ToString();
         }
@@ -104,7 +91,7 @@ namespace OrcanodeMonitor.Pages
             if (node.OrcaHelloInferencePodRunningSince.HasValue)
             {
                 TimeSpan runTime = DateTime.UtcNow - node.OrcaHelloInferencePodRunningSince.Value;
-                return $"{FormatTimeSpan(runTime)}";
+                return $"{Orcanode.FormatTimeSpan(runTime)}";
             }
             return "None";
         }
@@ -115,16 +102,19 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeOrcaHelloUptimeBackgroundColor(Orcanode node)
         {
-            DateTime? since = node.OrcaHelloInferencePodRunningSince;
-            if (since.HasValue)
+            if (node.OrcaHelloStatus == OrcanodeOnlineStatus.Online)
             {
-                var ts = DateTime.UtcNow - since.Value;
-                if (ts > TimeSpan.FromHours(1))
+                DateTime? since = node.OrcaHelloInferencePodRunningSince;
+                if (since.HasValue)
                 {
-                    return ColorTranslator.ToHtml(Color.LightGreen);
-                }
+                    var ts = DateTime.UtcNow - since.Value;
+                    if (ts > TimeSpan.FromHours(1))
+                    {
+                        return ColorTranslator.ToHtml(Color.LightGreen);
+                    }
 
-                return ColorTranslator.ToHtml(Color.Yellow);
+                    return ColorTranslator.ToHtml(Color.Yellow);
+                }
             }
             var orcasoundStatus = node.OrcasoundStatus;
             if (orcasoundStatus != OrcanodeOnlineStatus.Online)
