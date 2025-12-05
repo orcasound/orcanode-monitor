@@ -315,6 +315,11 @@ namespace OrcanodeMonitor.Core
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Get an object representing a node hosting an OrcaHello inference container.
+        /// </summary>
+        /// <param name="container">Container</param>
+        /// <returns>OrcaHelloNode</returns>
         public async static Task<OrcaHelloNode?> GetOrcaHelloNodeAsync(OrcaHelloContainer? container)
         {
             if (container == null)
@@ -347,6 +352,11 @@ namespace OrcanodeMonitor.Core
             }
         }
 
+        /// <summary>
+        /// Get an object representing an OrcaHello inference pod.
+        /// </summary>
+        /// <param name="namespaceName">Namespace name</param>
+        /// <returns>OrcaHelloContainer</returns>
         public async static Task<OrcaHelloContainer?> GetOrcaHelloPodAsync(string namespaceName)
         {
             Kubernetes? client = _k8sClient;
@@ -371,13 +381,13 @@ namespace OrcanodeMonitor.Core
             return new OrcaHelloContainer(bestPod, cpuUsage, memoryUsage);
         }
 
-        public async static Task<string> GetOrcaHelloPodNameAsync(string namespaceName)
-        {
-            OrcaHelloContainer? container = await GetOrcaHelloPodAsync(namespaceName);
-            string podName = container?.PodName ?? string.Empty;
-            return podName;
-        }
-
+        /// <summary>
+        /// Get pod logs
+        /// </summary>
+        /// <param name="container">Container</param>
+        /// <param name="namespaceName">Namespace</param>
+        /// <param name="logger">Logger</param>
+        /// <returns>Log</returns>
         public async static Task<string> GetOrcaHelloLogAsync(OrcaHelloContainer? container, string namespaceName, ILogger logger)
         {
             if (container == null)
