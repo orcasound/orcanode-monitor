@@ -23,6 +23,7 @@ namespace OrcanodeMonitor.Pages
         public string PodNamespace { get; set; }
         public string PodName => _container?.PodName ?? "Unknown";
         public string ImageName => _container?.ImageName ?? "Unknown";
+        public string ModelTimestamp => _container?.ModelTimestamp ?? "Unknown";
         public double ContainerCpuCapacityCores => _container?.CpuCapacityCores ?? 0;
         public double ContainerCpuUsageCores => _container?.CpuUsageCores ?? 0;
         public double ContainerCpuPercent => _container?.CpuPercent ?? 0;

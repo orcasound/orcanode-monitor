@@ -11,6 +11,7 @@ namespace OrcanodeMonitor.Models
         public string NamespaceName => _pod.Metadata?.NamespaceProperty ?? string.Empty;
         public string NodeName => _pod.Spec?.NodeName ?? string.Empty;
         public string LastTerminationReason { get; private set; }
+        public string ModelTimestamp { get; private set; }
         public double CpuUsageCores { get; private set; }
         public double CpuCapacityCores { get; private set; }
         public double CpuPercent => CpuCapacityCores > 0 ? (100.0 * CpuUsageCores / CpuCapacityCores) : 0;
@@ -24,9 +25,10 @@ namespace OrcanodeMonitor.Models
                 return _pod.Spec?.Containers?.FirstOrDefault()?.Image ?? string.Empty;
             }
         }
-        public OrcaHelloContainer(V1Pod pod, string cpuUsage, string memoryUsage)
+        public OrcaHelloContainer(V1Pod pod, string cpuUsage, string memoryUsage, string modelTimestamp)
         {
             _pod = pod;
+            ModelTimestamp = modelTimestamp;
 
             long nanocores = long.Parse(cpuUsage.Replace("n", ""));
             CpuUsageCores = nanocores / 1_000_000_000.0;
