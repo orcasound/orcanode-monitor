@@ -5,7 +5,7 @@
 }
 
 <div class="text-center">
-    <h1 class="display-4"><a href="@Model.AksUrl" target="_blank">OrcaHello</a> for @Model.Location</h1>
+    <h1 class="display-4"><a asp-page="/OrcaHelloOverview" target="_blank">OrcaHello</a> for @Model.Location</h1>
     <div style="display: flex; gap: 20px;">
         <table style="border: 1px solid #ccc; border-collapse: separate;">
             <tr>
@@ -26,6 +26,10 @@
             <tr>
                 <td style="text-align: right; font-weight: bold; padding: 4px;">Image:</td>
                 <td style="text-align: left; padding: 4px;">@Model.ImageName</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Model Timestamp:</td>
+                <td style="text-align: left; padding: 4px;">@Model.ModelTimestamp</td>
             </tr>
             <tr>
                 <td style="text-align: right; font-weight: bold; padding: 4px;">Last Termination Reason:</td>

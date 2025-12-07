@@ -8,6 +8,12 @@ namespace OrcanodeMonitor.Models
     public class OrcaHelloNode
     {
         readonly V1Node _node;
+
+        /// <summary>
+        /// VMSS node name.
+        /// </summary>
+        public string Name => _node.Metadata.Name;
+
         public string InstanceType { get; private set; }
         public double CpuUsageCores { get; private set; }
         public double CpuCapacityCores { get; private set; }
