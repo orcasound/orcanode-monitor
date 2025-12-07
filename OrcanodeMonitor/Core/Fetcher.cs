@@ -1618,6 +1618,11 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
+                    // Filter out Terminating pods - only include Running pods
+                    if (pod.Status?.Phase != "Running")
+                    {
+                        continue;
+                    }
                     PodMetrics? podMetrics = metricsList?.Items.FirstOrDefault(n => n.Metadata.Name == pod.Metadata.Name);
                     var container = podMetrics?.Containers.FirstOrDefault(c => c.Name == "inference-system");
                     string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
