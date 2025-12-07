@@ -1613,7 +1613,7 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
-                    // Filter out Terminating pods - only include Running pods
+                    // Filter out non-Running pods (including Terminating, Pending, etc.)
                     if (pod.Status?.Phase != "Running")
                     {
                         continue;
