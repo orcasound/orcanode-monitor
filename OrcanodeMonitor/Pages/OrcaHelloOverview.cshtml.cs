@@ -1,0 +1,92 @@
+using k8s;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
+using OrcanodeMonitor.Core;
+using OrcanodeMonitor.Data;
+using OrcanodeMonitor.Models;
+using System.Threading.Tasks;
+using System.Xml.Linq;
+
+namespace OrcanodeMonitor.Pages
+{
+    public class OrcaHelloOverviewModel : PageModel
+    {
+        private OrcanodeMonitorContext _databaseContext;
+        private readonly ILogger<OrcaHelloOverviewModel> _logger;
+        public List<Orcanode> Orcanodes { get; private set; }
+        public List<OrcaHelloNode> Nodes { get; private set; }
+        public List<OrcaHelloContainer> Containers { get; private set; }
+        public string AksUrl => Environment.GetEnvironmentVariable("AZURE_AKS_URL") ?? "";
+        public OrcaHelloOverviewModel(OrcanodeMonitorContext context, ILogger<OrcaHelloOverviewModel> logger)
+        {
+            _databaseContext = context;
+            _logger = logger;
+            Nodes = new List<OrcaHelloNode>();
+            Containers = new List<OrcaHelloContainer>();
+            Orcanodes = new List<Orcanode>();
+        }
+
+        /// <summary>
+        /// Get a list of Kubernetes namespaces of pods running on a given node.
+        /// </summary>
+        /// <param name="node">VMSS node</param>
+        /// <returns>Comma-separated list of namespaces</returns>
+        public string GetLocations(OrcaHelloNode node)
+        {
+            string result = string.Empty;
+            foreach (var container in Containers)
+            {
+                if (container.NodeName == node.Name)
+                {
+                    if (!string.IsNullOrEmpty(result))
+                    {
+                        result += ", ";
+                    }
+                    result += container.NamespaceName;
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Get how far behind an AI container is running in its audio stream.
+        /// </summary>
+        /// <param name="container"></param>
+        /// <returns></returns>
+        public string GetLag(OrcaHelloContainer container)
+        {
+            Orcanode? node = Orcanodes.Where(n => n.OrcasoundSlug == container.NamespaceName).FirstOrDefault();
+            if (node == null)
+            {
+                return string.Empty;
+            }
+            var status = node.OrcaHelloStatus;
+            if ((status == OrcanodeOnlineStatus.Lagged || status == OrcanodeOnlineStatus.Online) &&
+                (node.OrcaHelloInferencePodLag.HasValue))
+            {
+                return $"{Orcanode.FormatTimeSpan(node.OrcaHelloInferencePodLag.Value)}";
+            }
+            return status.ToString();
+        }
+
+        public async Task OnGetAsync()
+        {
+            var orcanodes = await _databaseContext.Orcanodes.ToListAsync();
+            Orcanodes = orcanodes.Where(n => ((n.DataplicityConnectionStatus != OrcanodeOnlineStatus.Absent) ||
+                                       (n.OrcasoundStatus != OrcanodeOnlineStatus.Absent) ||
+                                       (n.S3StreamStatus != OrcanodeOnlineStatus.Absent &&
+                                        n.S3StreamStatus != OrcanodeOnlineStatus.Unauthorized)) &&
+                                      (n.OrcasoundHost != "dev.orcasound.net"))
+                          .OrderBy(n => n.DisplayName)
+                          .ToList();
+
+            // Fetch containers and nodes for display.
+            List<OrcaHelloContainer> containers = await Fetcher.FetchContainerMetricsAsync();
+            Containers = containers.OrderBy(n => n.NamespaceName).ToList();
+
+            List<OrcaHelloNode> nodes = await Fetcher.FetchNodeMetricsAsync(containers);
+            Nodes = nodes.OrderBy(n => n.Name).ToList();
+        }
+    }
+}

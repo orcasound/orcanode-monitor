@@ -18,13 +18,20 @@ namespace OrcanodeMonitor.Models
         public long MemoryUsageInKi { get; private set; }
         public long MemoryCapacityInKi { get; private set; }
         public double MemoryPercent => MemoryCapacityInKi > 0 ? (100.0 * MemoryUsageInKi / MemoryCapacityInKi) : 0;
+
+        /// <summary>
+        /// Get the image name not including the "orcaconservancy.io/" prefix.
+        /// </summary>
         public string ImageName
         {
             get
             {
-                return _pod.Spec?.Containers?.FirstOrDefault()?.Image ?? string.Empty;
+                string imageName = _pod.Spec?.Containers?.FirstOrDefault()?.Image ?? string.Empty;
+                int index = imageName.IndexOf('/');
+                return (index >= 0) ? imageName.Substring(index + 1) : imageName;
             }
         }
+
         public OrcaHelloContainer(V1Pod pod, string cpuUsage, string memoryUsage, string modelTimestamp)
         {
             _pod = pod;

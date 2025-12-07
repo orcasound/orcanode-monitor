@@ -197,6 +197,24 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
+        /// Get the best status of any inference container in the pod.
+        /// </summary>
+        /// <param name="pod">pod to look in</param>
+        /// <returns>Container status</returns>
+        private static V1ContainerStatus? GetBestContainerStatus(V1Pod pod)
+        {
+            V1ContainerStatus? bestPodStatus = null;
+            foreach (V1ContainerStatus podStatus in pod.Status.ContainerStatuses)
+            {
+                if (IsBetterContainerStatus(bestPodStatus, podStatus))
+                {
+                    bestPodStatus = podStatus;
+                }
+            }
+            return bestPodStatus;
+        }
+
+        /// <summary>
         /// Get the best pod status.
         /// </summary>
         /// <param name="nodepods">List of pods</param>
@@ -1588,6 +1606,11 @@ namespace OrcanodeMonitor.Core
                 {
                     continue;
                 }
+                V1ContainerStatus? status = GetBestContainerStatus(pod);
+                if (status?.Ready != true)
+                {
+                    continue;
+                }
                 PodMetrics? podMetrics = metricsList.Items.FirstOrDefault(n => n.Metadata.Name == pod.Metadata.Name);
                 var container = podMetrics?.Containers.FirstOrDefault(c => c.Name == "inference-system");
                 string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
@@ -1602,8 +1625,9 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Get a list of OrcaHelloNode objects, not including processor info.
         /// </summary>
+        /// <param name="containers">List of OrcaHelloContainer objects</param>
         /// <returns>List of OrcaHelloNode objects</returns>
-        public static async Task<List<OrcaHelloNode>> FetchNodeMetricsAsync()
+        public static async Task<List<OrcaHelloNode>> FetchNodeMetricsAsync(List<OrcaHelloContainer> containers)
         {
             var resultList = new List<OrcaHelloNode>();
             Kubernetes? client = _k8sClient;
@@ -1620,7 +1644,13 @@ namespace OrcanodeMonitor.Core
                 string cpuUsage = nodeMetrics?.Usage["cpu"].ToString() ?? string.Empty;
                 string memoryUsage = nodeMetrics?.Usage["memory"].ToString() ?? string.Empty;
 
-                var orcaHelloNode = new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput: string.Empty);
+                string lscpuOutput = string.Empty;
+                OrcaHelloContainer? container = containers.Where(c => c.NodeName == node.Metadata.Name).FirstOrDefault();
+                if (container != null)
+                {
+                    lscpuOutput = await GetContainerLscpuOutputAsync(container);
+                }
+                var orcaHelloNode = new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput);
                 resultList.Add(orcaHelloNode);
             }
             return resultList;

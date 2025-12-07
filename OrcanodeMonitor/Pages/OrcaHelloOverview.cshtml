@@ -1,0 +1,80 @@
+﻿@page
+@model OrcaHelloOverviewModel
+@{
+    ViewData["Title"] = "OrcaHello Overview";
+}
+
+<div class="text-center">
+    <h1 class="display-4"><a href="@Model.AksUrl" target="_blank">OrcaHello Overview</a></h1>
+    <h2>Nodes</h2>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>CPU%</th>
+            <th>Memory%</th>
+            <th>AVX-512</th>
+            <th>Locations</th>
+        </tr>
+        @foreach (Models.OrcaHelloNode item in Model.Nodes)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Name)
+                </td>
+                <td>
+                    @(Math.Round(item.CpuPercent))%
+                </td>
+                <td>
+                    @(Math.Round(item.MemoryPercent))%
+                </td>
+                <td>
+                    @(item.HasAvx512 ? "Yes" : "No")
+                </td>
+                <td>
+                    @Model.GetLocations(item)
+                </td>
+            </tr>
+        }
+    </table>
+
+    <h2>Pods</h2>
+    <table>
+        <tr>
+            <th>Location</th>
+            <th>Lag</th>
+            <th>CPU%</th>
+            <th>Memory%</th>
+            <th>Image</th>
+            <th>Node</th>
+            <th>Last Reason</th>
+        </tr>
+        @foreach (Models.OrcaHelloContainer item in Model.Containers)
+        {
+            <tr>
+                <td>
+                    <a asp-page="/OrcaHelloNode" asp-route-podNamespace="@item.NamespaceName">
+                        @Html.DisplayFor(modelItem => item.NamespaceName)
+                    </a>
+                </td>
+                <td>
+                    @Model.GetLag(item)
+                </td>
+                <td>
+                    @(Math.Round(item.CpuPercent))%
+                </td>
+                <td>
+                    @(Math.Round(item.MemoryPercent))%
+                </td>
+                <td>
+                    @item.ImageName
+                </td>
+                <td>
+                    @item.NodeName
+                </td>
+                <td>
+                    @item.LastTerminationReason
+                </td>
+            </tr>
+        }
+    </table>
+</div>
