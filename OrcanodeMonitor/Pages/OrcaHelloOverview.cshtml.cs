@@ -23,7 +23,14 @@ namespace OrcanodeMonitor.Pages
             Nodes = new List<OrcaHelloNode>();
             Containers = new List<OrcaHelloContainer>();
             Orcanodes = new List<Orcanode>();
+            NowLocal = Fetcher.UtcToLocalDateTime(DateTime.UtcNow)?.ToString() ?? "Unknown";
+
         }
+
+        /// <summary>
+        /// Current timestamp, in local time.
+        /// </summary>
+        public string NowLocal { get; private set; }
 
         /// <summary>
         /// Get a list of Kubernetes namespaces of pods running on a given node.

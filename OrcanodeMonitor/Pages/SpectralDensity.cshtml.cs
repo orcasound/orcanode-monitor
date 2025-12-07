@@ -59,6 +59,9 @@ namespace OrcanodeMonitor.Pages
             _id = string.Empty;
             Status = string.Empty;
             LastModifiedLocal = string.Empty;
+            JsonChannelDatasets = string.Empty;
+            JsonHumChannelDatasets = string.Empty;
+            JsonNonHumChannelDatasets = string.Empty;
         }
 
         private void UpdateFrequencyInfo()
