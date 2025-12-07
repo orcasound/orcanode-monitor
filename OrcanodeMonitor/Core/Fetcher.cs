@@ -384,9 +384,9 @@ namespace OrcanodeMonitor.Core
                 V1Node node = await client.ReadNodeAsync(container.NodeName);
 
                 NodeMetricsList metricsList = await client.GetKubernetesNodesMetricsAsync();
-                NodeMetrics? nodeMetric = metricsList.Items.FirstOrDefault(n => n.Metadata.Name == container.NodeName);
-                string cpuUsage = nodeMetric?.Usage["cpu"].ToString() ?? string.Empty;
-                string memoryUsage = nodeMetric?.Usage["memory"].ToString() ?? string.Empty;
+                NodeMetrics? nodeMetrics = metricsList.Items.FirstOrDefault(n => n.Metadata.Name == container.NodeName);
+                string cpuUsage = nodeMetrics?.Usage.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
+                string memoryUsage = nodeMetrics?.Usage.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
                 string lscpuOutput = await GetContainerLscpuOutputAsync(container);
 
@@ -1635,7 +1635,7 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get a list of OrcaHelloNode objects, not including processor info.
+        /// Get a list of OrcaHelloNode objects.
         /// </summary>
         /// <param name="containers">List of OrcaHelloContainer objects</param>
         /// <returns>List of OrcaHelloNode objects</returns>
@@ -1655,8 +1655,8 @@ namespace OrcanodeMonitor.Core
                 foreach (V1Node node in allNodes)
                 {
                     NodeMetrics? nodeMetrics = metricsList.Items.FirstOrDefault(n => n.Metadata.Name == node.Metadata.Name);
-                    string cpuUsage = nodeMetrics?.Usage["cpu"].ToString() ?? string.Empty;
-                    string memoryUsage = nodeMetrics?.Usage["memory"].ToString() ?? string.Empty;
+                    string cpuUsage = nodeMetrics?.Usage.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
+                    string memoryUsage = nodeMetrics?.Usage.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
                     string lscpuOutput = string.Empty;
                     OrcaHelloContainer? container = containers.Where(c => c.NodeName == node.Metadata.Name).FirstOrDefault();

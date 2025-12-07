@@ -32,19 +32,12 @@ namespace OrcanodeMonitor.Pages
         /// <returns>Comma-separated list of namespaces</returns>
         public string GetLocations(OrcaHelloNode node)
         {
-            string result = string.Empty;
-            foreach (var container in Containers)
-            {
-                if (container.NodeName == node.Name)
-                {
-                    if (!string.IsNullOrEmpty(result))
-                    {
-                        result += ", ";
-                    }
-                    result += container.NamespaceName;
-                }
-            }
-            return result;
+            // Get unique namespace names for containers running on the given node.
+            var namespaces = Containers
+                .Where(c => c.NodeName == node.Name)
+                .Select(c => c.NamespaceName)
+                .Distinct();
+            return string.Join(", ", namespaces);
         }
 
         /// <summary>
