@@ -1,18 +1,16 @@
-using k8s;
-using Microsoft.AspNetCore.Mvc;
+// Copyright (c) Orcanode Monitor contributors
+// SPDX-License-Identifier: MIT
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
-using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace OrcanodeMonitor.Pages
 {
     public class OrcaHelloOverviewModel : PageModel
     {
-        private OrcanodeMonitorContext _databaseContext;
+        private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<OrcaHelloOverviewModel> _logger;
         public List<Orcanode> Orcanodes { get; private set; }
         public List<OrcaHelloNode> Nodes { get; private set; }
@@ -52,8 +50,8 @@ namespace OrcanodeMonitor.Pages
         /// <summary>
         /// Get how far behind an AI container is running in its audio stream.
         /// </summary>
-        /// <param name="container"></param>
-        /// <returns></returns>
+        /// <param name="container">The OrcaHello container to check for lag.</param>
+        /// <returns>A string representation of the lag time if available, or the container's status otherwise.</returns>
         public string GetLag(OrcaHelloContainer container)
         {
             Orcanode? node = Orcanodes.Where(n => n.OrcasoundSlug == container.NamespaceName).FirstOrDefault();

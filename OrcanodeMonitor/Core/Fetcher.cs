@@ -14,7 +14,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Xml.Linq;
 
 namespace OrcanodeMonitor.Core
 {
@@ -203,6 +202,11 @@ namespace OrcanodeMonitor.Core
         /// <returns>Container status</returns>
         private static V1ContainerStatus? GetBestContainerStatus(V1Pod pod)
         {
+            if (pod.Status?.ContainerStatuses == null)
+            {
+                return null;
+            }
+
             V1ContainerStatus? bestPodStatus = null;
             foreach (V1ContainerStatus podStatus in pod.Status.ContainerStatuses)
             {
@@ -291,6 +295,7 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="podName">name of pod to exec into</param>
         /// <param name="namespaceName">pod namespace</param>
+        /// <param name="cmd">The command to execute in the container.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the specified command executed in the container, as a string.</returns>
         private async static Task<string> GetContainerCommandOutput(string podName, string namespaceName, string[] cmd)
         {
@@ -1598,25 +1603,32 @@ namespace OrcanodeMonitor.Core
                 return resultList;
             }
 
-            V1PodList allPods = await client.ListPodForAllNamespacesAsync();
-            PodMetricsList? metricsList = await client.GetKubernetesPodsMetricsAsync();
-            foreach (V1Pod pod in allPods)
+            try
             {
-                if (pod.Metadata == null || !pod.Metadata.Name.StartsWith("inference-system-"))
+                V1PodList allPods = await client.ListPodForAllNamespacesAsync();
+                PodMetricsList? metricsList = await client.GetKubernetesPodsMetricsAsync();
+                foreach (V1Pod pod in allPods)
                 {
-                    continue;
+                    if (pod.Metadata == null || !pod.Metadata.Name.StartsWith("inference-system-"))
+                    {
+                        continue;
+                    }
+                    V1ContainerStatus? status = GetBestContainerStatus(pod);
+                    if (status?.Ready != true)
+                    {
+                        continue;
+                    }
+                    PodMetrics? podMetrics = metricsList?.Items.FirstOrDefault(n => n.Metadata.Name == pod.Metadata.Name);
+                    var container = podMetrics?.Containers.FirstOrDefault(c => c.Name == "inference-system");
+                    string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
+                    string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
+                    var orcaHelloContainer = new OrcaHelloContainer(pod, cpuUsage, memoryUsage, modelTimestamp: string.Empty);
+                    resultList.Add(orcaHelloContainer);
                 }
-                V1ContainerStatus? status = GetBestContainerStatus(pod);
-                if (status?.Ready != true)
-                {
-                    continue;
-                }
-                PodMetrics? podMetrics = metricsList.Items.FirstOrDefault(n => n.Metadata.Name == pod.Metadata.Name);
-                var container = podMetrics?.Containers.FirstOrDefault(c => c.Name == "inference-system");
-                string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
-                string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
-                var orcaHelloContainer = new OrcaHelloContainer(pod, cpuUsage, memoryUsage, modelTimestamp: string.Empty);
-                resultList.Add(orcaHelloContainer);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[FetchContainerMetricsAsync] Error retrieving container metrics: {ex}");
             }
 
             return resultList;
@@ -1636,23 +1648,31 @@ namespace OrcanodeMonitor.Core
                 return resultList;
             }
 
-            V1NodeList allNodes = await client.ListNodeAsync();
-            NodeMetricsList metricsList = await client.GetKubernetesNodesMetricsAsync();
-            foreach (V1Node node in allNodes)
+            try
             {
-                NodeMetrics? nodeMetrics = metricsList.Items.FirstOrDefault(n => n.Metadata.Name == node.Metadata.Name);
-                string cpuUsage = nodeMetrics?.Usage["cpu"].ToString() ?? string.Empty;
-                string memoryUsage = nodeMetrics?.Usage["memory"].ToString() ?? string.Empty;
-
-                string lscpuOutput = string.Empty;
-                OrcaHelloContainer? container = containers.Where(c => c.NodeName == node.Metadata.Name).FirstOrDefault();
-                if (container != null)
+                V1NodeList allNodes = await client.ListNodeAsync();
+                NodeMetricsList metricsList = await client.GetKubernetesNodesMetricsAsync();
+                foreach (V1Node node in allNodes)
                 {
-                    lscpuOutput = await GetContainerLscpuOutputAsync(container);
+                    NodeMetrics? nodeMetrics = metricsList.Items.FirstOrDefault(n => n.Metadata.Name == node.Metadata.Name);
+                    string cpuUsage = nodeMetrics?.Usage["cpu"].ToString() ?? string.Empty;
+                    string memoryUsage = nodeMetrics?.Usage["memory"].ToString() ?? string.Empty;
+
+                    string lscpuOutput = string.Empty;
+                    OrcaHelloContainer? container = containers.Where(c => c.NodeName == node.Metadata.Name).FirstOrDefault();
+                    if (container != null)
+                    {
+                        lscpuOutput = await GetContainerLscpuOutputAsync(container);
+                    }
+                    var orcaHelloNode = new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput);
+                    resultList.Add(orcaHelloNode);
                 }
-                var orcaHelloNode = new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput);
-                resultList.Add(orcaHelloNode);
             }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[FetchNodeMetricsAsync] Error retrieving node metrics: {ex}");
+            }
+
             return resultList;
         }
     }
