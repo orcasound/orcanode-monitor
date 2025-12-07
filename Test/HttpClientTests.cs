@@ -21,15 +21,15 @@ namespace Test
 
             // Check HttpClient properties to verify it's configured properly.
             Assert.IsNotNull(httpClient.DefaultRequestHeaders, "DefaultRequestHeaders should not be null");
-            
+
             // Create a request and check the handler behavior.
             var request = new HttpRequestMessage(HttpMethod.Get, "https://httpbin.org/redirect/1");
-            
+
             // The HttpClient should be configured to not follow redirects.
             // We can verify this indirectly by checking that the client throws or returns non-success on redirect.
             // Since we can't easily access the handler property due to internal implementation,
             // we'll verify by attempting a redirect request and checking the response.
-            
+
             // For now, just verify that the HttpClient instance exists and is properly initialized.
             Assert.IsNotNull(httpClient, "HttpClient should be properly initialized");
         }
@@ -46,7 +46,7 @@ namespace Test
 
             // Check HttpClient properties to verify it's configured properly.
             Assert.IsNotNull(httpClient.DefaultRequestHeaders, "DefaultRequestHeaders should not be null");
-            
+
             // For now, just verify that the HttpClient instance exists and is properly initialized.
             Assert.IsNotNull(httpClient, "HttpClient should be properly initialized");
         }
@@ -57,7 +57,7 @@ namespace Test
             // Test that HttpClient doesn't follow redirects by making a request to a redirect URL.
             var httpClientField = typeof(Fetcher).GetField("_httpClient", BindingFlags.NonPublic | BindingFlags.Static);
             var httpClient = httpClientField.GetValue(null) as HttpClient;
-            
+
             try
             {
                 // Use httpbin redirect endpoint - it will return 302 if redirects are disabled.
@@ -88,7 +88,7 @@ namespace Test
             // Test that HttpClient doesn't follow redirects by making a request to a redirect URL.
             var httpClientField = typeof(MezmoFetcher).GetField("_httpClient", BindingFlags.NonPublic | BindingFlags.Static);
             var httpClient = httpClientField.GetValue(null) as HttpClient;
-            
+
             try
             {
                 // Use httpbin redirect endpoint - it will return 302 if redirects are disabled.
