@@ -11,8 +11,8 @@
     <table>
         <tr>
             <th>Name</th>
-            <th>CPU%</th>
-            <th>Memory%</th>
+            <th>CPU</th>
+            <th>Memory</th>
             <th>AVX-512</th>
             <th>Locations</th>
         </tr>
@@ -26,7 +26,7 @@
                     @(Math.Round(item.CpuPercent))%
                 </td>
                 <td>
-                    @(Math.Round(item.MemoryPercent))%
+                    @Model.GetNodeMemoryUsage(item) (@(Math.Round(item.MemoryPercent))%)
                 </td>
                 <td>
                     @(item.HasAvx512 ? "Yes" : "No")
@@ -43,11 +43,11 @@
         <tr>
             <th>Location</th>
             <th>Lag</th>
-            <th>CPU%</th>
-            <th>Memory%</th>
+            <th>CPU</th>
+            <th>Memory</th>
             <th>Image</th>
             <th>Node</th>
-            <th>Last Reason</th>
+            <th>Last Error</th>
         </tr>
         @foreach (Models.OrcaHelloContainer item in Model.Containers)
         {
