@@ -62,7 +62,7 @@ namespace OrcanodeMonitor.Models
                 .OrderByDescending(x => x.StartedAt)
                 .FirstOrDefault();
 
-            LastTerminationReason = latest?.Status.LastState?.Terminated?.Reason ?? "Unknown";
+            LastTerminationReason = latest?.Status.LastState?.Terminated?.Reason ?? string.Empty;
         }
     }
 }
