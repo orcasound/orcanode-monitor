@@ -1613,6 +1613,11 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
+                    // Filter out non-Running pods (including Terminating, Pending, etc.)
+                    if (pod.Status?.Phase != "Running")
+                    {
+                        continue;
+                    }
                     V1ContainerStatus? status = GetBestContainerStatus(pod);
                     if (status?.Ready != true)
                     {
