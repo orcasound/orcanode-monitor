@@ -1613,13 +1613,13 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
-                    V1ContainerStatus? status = GetBestContainerStatus(pod);
-                    if (status?.Ready != true)
+                    // Filter out Terminating pods - only include Running pods
+                    if (pod.Status?.Phase != "Running")
                     {
                         continue;
                     }
-                    // Filter out Terminating pods - only include Running pods
-                    if (pod.Status?.Phase != "Running")
+                    V1ContainerStatus? status = GetBestContainerStatus(pod);
+                    if (status?.Ready != true)
                     {
                         continue;
                     }
