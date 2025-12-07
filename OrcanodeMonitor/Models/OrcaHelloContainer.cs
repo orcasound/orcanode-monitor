@@ -18,6 +18,8 @@ namespace OrcanodeMonitor.Models
         public long MemoryUsageInKi { get; private set; }
         public long MemoryCapacityInKi { get; private set; }
         public double MemoryPercent => MemoryCapacityInKi > 0 ? (100.0 * MemoryUsageInKi / MemoryCapacityInKi) : 0;
+        public string MemoryUsage => $"{(MemoryUsageInKi / 1024f / 1024f):F1} GiB";
+        public string MemoryCapacity => $"{(MemoryCapacityInKi / 1024f / 1024f):F1} GiB";
 
         /// <summary>
         /// Get the image name not including the "orcaconservancy.io/" prefix.
@@ -51,7 +53,8 @@ namespace OrcanodeMonitor.Models
             }
 
             var latest = pod.Status?.ContainerStatuses?
-                .Select(cs => new {
+                .Select(cs => new
+                {
                     Status = cs,
                     StartedAt = cs.State?.Running?.StartedAt ?? cs.LastState?.Terminated?.StartedAt
                 })
