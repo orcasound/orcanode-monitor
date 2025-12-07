@@ -102,7 +102,7 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeOrcaHelloUptimeBackgroundColor(Orcanode node)
         {
-            if (node.OrcaHelloStatus == OrcanodeOnlineStatus.Online)
+            if (node.OrcaHelloStatus == OrcanodeOnlineStatus.Online || node.OrcaHelloStatus == OrcanodeOnlineStatus.Lagged)
             {
                 DateTime? since = node.OrcaHelloInferencePodRunningSince;
                 if (since.HasValue)
