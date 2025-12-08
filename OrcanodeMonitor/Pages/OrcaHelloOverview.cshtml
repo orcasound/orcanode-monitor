@@ -42,6 +42,7 @@
     <table>
         <tr>
             <th>Location</th>
+            <th>Detections</th>
             <th>Lag</th>
             <th>CPU</th>
             <th>Memory</th>
@@ -56,6 +57,9 @@
                     <a asp-page="/OrcaHelloNode" asp-route-podNamespace="@item.NamespaceName">
                         @Html.DisplayFor(modelItem => item.NamespaceName)
                     </a>
+                </td>
+                <td>
+                    @item.DetectionCount
                 </td>
                 <td>
                     @Model.GetLag(item)

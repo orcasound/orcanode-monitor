@@ -402,9 +402,10 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Get an object representing an OrcaHello inference pod.
         /// </summary>
+        /// <param name="orcanode">Orcanode object associated with the pod</param>
         /// <param name="namespaceName">Namespace name</param>
         /// <returns>OrcaHelloContainer</returns>
-        public async static Task<OrcaHelloContainer?> GetOrcaHelloPodAsync(string namespaceName)
+        public async static Task<OrcaHelloContainer?> GetOrcaHelloPodAsync(Orcanode orcanode, string namespaceName)
         {
             Kubernetes? client = _k8sClient;
             if (client == null)
@@ -427,7 +428,9 @@ namespace OrcanodeMonitor.Core
 
             string modelTimestamp = await GetContainerModelTimestampAsync(bestPod);
 
-            return new OrcaHelloContainer(bestPod, cpuUsage, memoryUsage, modelTimestamp);
+            long detectionCount = await GetContainerDetectionCountAsync(orcanode);
+
+            return new OrcaHelloContainer(bestPod, cpuUsage, memoryUsage, modelTimestamp, detectionCount);
         }
 
         /// <summary>
@@ -1591,10 +1594,46 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
+        /// Get the AI detection count for a given location.
+        /// </summary>
+        /// <param name="orcanode">Node to check</param>
+        /// <returns>Count of AI detections</returns>
+        public static async Task<long> GetContainerDetectionCountAsync(Orcanode orcanode)
+        {
+            try
+            {
+                string location = Uri.EscapeDataString(orcanode.OrcaHelloDisplayName);
+                var uri = new Uri($"https://aifororcasdetections.azurewebsites.net/api/detections?Timeframe=1w&Location={location}&RecordsPerPage=1");
+
+                using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+                using var response = await _httpClient.SendAsync(request);
+
+                // Try to get the custom header
+                if (!response.Headers.TryGetValues("totalnumberrecords", out var values))
+                {
+                    return 0;
+                }
+
+                string headerValue = values?.FirstOrDefault() ?? string.Empty;
+                if (!long.TryParse(headerValue, out long totalRecords))
+                {
+                    return 0;
+                }
+
+                return totalRecords;
+            }
+            catch (Exception)
+            {
+                return 0;
+            }
+        }
+
+        /// <summary>
         /// Get a list of OrcaHelloContainer objects.
         /// </summary>
+        /// <param name="orcanodes">List of orcanodes</param>
         /// <returns>List of OrcaHelloContainer objects</returns>
-        public static async Task<List<OrcaHelloContainer>> FetchContainerMetricsAsync()
+        public static async Task<List<OrcaHelloContainer>> FetchContainerMetricsAsync(List<Orcanode> orcanodes)
         {
             var resultList = new List<OrcaHelloContainer>();
             Kubernetes? client = _k8sClient;
@@ -1627,7 +1666,11 @@ namespace OrcanodeMonitor.Core
                     var container = podMetrics?.Containers.FirstOrDefault(c => c.Name == "inference-system");
                     string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
                     string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
-                    var orcaHelloContainer = new OrcaHelloContainer(pod, cpuUsage, memoryUsage, modelTimestamp: string.Empty);
+
+                    Orcanode? orcanode = orcanodes.Find(a => a.OrcasoundSlug == pod.Metadata.NamespaceProperty);
+                    long detectionCount = (orcanode != null) ? await GetContainerDetectionCountAsync(orcanode) : 0;
+
+                    var orcaHelloContainer = new OrcaHelloContainer(pod, cpuUsage, memoryUsage, modelTimestamp: string.Empty, detectionCount);
                     resultList.Add(orcaHelloContainer);
                 }
             }

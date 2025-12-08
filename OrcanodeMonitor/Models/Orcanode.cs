@@ -300,6 +300,26 @@ namespace OrcanodeMonitor.Models
         }
 
         /// <summary>
+        /// Extracts the location portion from the DisplayName by removing the prefix before " at ".
+        /// For example, "Hydrophone at Bush Point" becomes "Bush Point".
+        /// Used for matching with OrcaHello detection location names.
+        /// This is a temporary workaround since ideally it should be the same as the DisplayName.
+        /// </summary>
+        public string OrcaHelloDisplayName
+        {
+            get
+            {
+                string displayName = this.DisplayName;
+                int index = displayName.IndexOf(" at ");
+                if (index >= 0)
+                {
+                    return displayName.Substring(index + 4);
+                }
+                return displayName;
+            }
+        }
+
+        /// <summary>
         /// If the manifest file is older than this, the node will be considered offline.
         /// </summary>
         private static TimeSpan MaxUploadDelay

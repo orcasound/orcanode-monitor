@@ -76,6 +76,8 @@ namespace OrcanodeMonitor.Pages
             _logData = string.Empty;
         }
 
+        public long DetectionCount => _container?.DetectionCount ?? 0;
+
         public string Lag
         {
             get
@@ -124,7 +126,7 @@ namespace OrcanodeMonitor.Pages
                 return NotFound(); // Return a 404 error page
             }
 
-            _container = await Fetcher.GetOrcaHelloPodAsync(podNamespace);
+            _container = await Fetcher.GetOrcaHelloPodAsync(_node, podNamespace);
             if (_container == null)
             {
                 return NotFound(); // Return a 404 error page
