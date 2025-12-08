@@ -53,6 +53,20 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
+        /// Get the reason the container last terminated, if any.
+        /// </summary>
+        /// <param name="container">Container to check</param>
+        /// <returns>Reason, in parentheses</returns>
+        public string ContainerLastTerminationReason(OrcaHelloContainer container)
+        {
+            if (string.IsNullOrEmpty(container.LastTerminationReason))
+            {
+                return string.Empty;
+            }
+            return "(" + container.LastTerminationReason + ")";
+        }
+
+        /// <summary>
         /// Get how far behind an AI container is running in its audio stream.
         /// </summary>
         /// <param name="container">The OrcaHello container to check for lag.</param>

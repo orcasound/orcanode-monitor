@@ -47,7 +47,7 @@
             <th>Memory</th>
             <th>Image</th>
             <th>Node</th>
-            <th>Last Error</th>
+            <th>Restarts</th>
         </tr>
         @foreach (Models.OrcaHelloContainer item in Model.Containers)
         {
@@ -73,7 +73,7 @@
                     @item.NodeName
                 </td>
                 <td>
-                    @item.LastTerminationReason
+                    @item.RestartCount @Model.ContainerLastTerminationReason(item)
                 </td>
             </tr>
         }

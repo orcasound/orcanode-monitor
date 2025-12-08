@@ -32,7 +32,27 @@ namespace OrcanodeMonitor.Pages
         private long _containerMemoryCapacityInKi => _container?.MemoryCapacityInKi ?? 0;
         public string ContainerMemoryCapacity => $"{(_containerMemoryCapacityInKi / 1024f / 1024f):F1} GiB";
         public double ContainerMemoryPercent => _container?.MemoryPercent ?? 0;
-        public string ContainerLastTerminationReason => _container?.LastTerminationReason ?? "Unknown";
+
+        /// <summary>
+        /// Get the reason (in parentheses) the container last terminated, if any.
+        /// </summary>
+        public string ContainerLastTerminationReason
+        {
+            get
+            {
+                if (_container == null || string.IsNullOrEmpty(_container.LastTerminationReason))
+                {
+                    return string.Empty;
+                }
+                return "(" + _container.LastTerminationReason + ")";
+            }
+        }
+
+        /// <summary>
+        /// Number of times this container has been restarted.
+        /// </summary>
+        public long ContainerRestartCount => _container?.RestartCount ?? 0;
+
         public string NodeName => _container?.NodeName ?? "Unknown";
         public string NodeCpuModel => _k8sNode?.CpuModel ?? "Unknown";
         public bool NodeHasAvx2 => _k8sNode?.HasAvx2 ?? false;
