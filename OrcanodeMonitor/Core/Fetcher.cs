@@ -1593,27 +1593,39 @@ namespace OrcanodeMonitor.Core
             return errorResponse;
         }
 
+        /// <summary>
+        /// Get the AI detection count for a given location.
+        /// </summary>
+        /// <param name="orcanode">Node to check</param>
+        /// <returns>Count of AI detections</returns>
         public static async Task<long> GetContainerDetectionCountAsync(Orcanode orcanode)
         {
-            string location = orcanode.OrcaHelloDisplayName.Replace(" ", "%20");
-            var uri = new Uri($"https://aifororcasdetections.azurewebsites.net/api/detections?Timeframe=1w&Location={location}&RecordsPerPage=1");
+            try
+            {
+                string location = Uri.EscapeDataString(orcanode.OrcaHelloDisplayName);
+                var uri = new Uri($"https://aifororcasdetections.azurewebsites.net/api/detections?Timeframe=1w&Location={location}&RecordsPerPage=1");
 
-            using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-            using var response = await _httpClient.SendAsync(request);
+                using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+                using var response = await _httpClient.SendAsync(request);
 
-            // Try to get the custom header
-            if (!response.Headers.TryGetValues("totalnumberrecords", out var values))
+                // Try to get the custom header
+                if (!response.Headers.TryGetValues("totalnumberrecords", out var values))
+                {
+                    return 0;
+                }
+
+                string headerValue = values?.FirstOrDefault() ?? string.Empty;
+                if (!long.TryParse(headerValue, out long totalRecords))
+                {
+                    return 0;
+                }
+
+                return totalRecords;
+            }
+            catch (Exception)
             {
                 return 0;
             }
-
-            string headerValue = values?.FirstOrDefault() ?? string.Empty;
-            if (!long.TryParse(headerValue, out long totalRecords))
-            {
-                return 0;
-            }
-
-            return totalRecords;
         }
 
         /// <summary>

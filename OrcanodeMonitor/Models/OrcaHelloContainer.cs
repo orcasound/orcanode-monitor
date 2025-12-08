@@ -24,7 +24,7 @@ namespace OrcanodeMonitor.Models
         public long RestartCount { get; private set; }
 
         /// <summary>
-        /// Number of detections in the past week.
+        /// Number of AI detections in the past week from OrcaHello.
         /// </summary>
         public long DetectionCount { get; private set; }
 

@@ -86,7 +86,7 @@ namespace OrcanodeMonitor.Pages
             return status.ToString();
         }
 
-        Dictionary<string, long> _orcaHelloDetectionCounts = new Dictionary<string, long>();
+        private readonly Dictionary<string, long> _orcaHelloDetectionCounts = new Dictionary<string, long>();
 
         public long GetOrcaHelloDetectionCount(Orcanode node)
         {
@@ -270,11 +270,16 @@ namespace OrcanodeMonitor.Pages
             var events = await _databaseContext.OrcanodeEvents.ToListAsync();
             _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
 
-            // Fetch AI detection counts.
-            foreach (var node in _nodes)
+            // Fetch AI detection counts in parallel.
+            var detectionTasks = _nodes.Select(async node => new
             {
-                long count = await Fetcher.GetContainerDetectionCountAsync(node);
-                _orcaHelloDetectionCounts[node.OrcasoundSlug] = count;
+                Slug = node.OrcasoundSlug,
+                Count = await Fetcher.GetContainerDetectionCountAsync(node)
+            });
+            var results = await Task.WhenAll(detectionTasks);
+            foreach (var result in results)
+            {
+                _orcaHelloDetectionCounts[result.Slug] = result.Count;
             }
 
             _recentEvents = await Fetcher.GetRecentEventsAsync(_databaseContext, DateTime.UtcNow.AddDays(-7), _logger) ?? new List<OrcanodeEvent>();
