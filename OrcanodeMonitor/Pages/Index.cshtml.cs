@@ -86,6 +86,17 @@ namespace OrcanodeMonitor.Pages
             return status.ToString();
         }
 
+        Dictionary<string, long> _orcaHelloDetectionCounts = new Dictionary<string, long>();
+
+        public long GetOrcaHelloDetectionCount(Orcanode node)
+        {
+            if (!_orcaHelloDetectionCounts.TryGetValue(node.OrcasoundSlug, out long count))
+            {
+                return 0;
+            }
+            return count;
+        }
+
         public string NodeOrcaHelloUptime(Orcanode node)
         {
             if (node.OrcaHelloInferencePodRunningSince.HasValue)
@@ -258,6 +269,13 @@ namespace OrcanodeMonitor.Pages
             // Fetch events for uptime computation.
             var events = await _databaseContext.OrcanodeEvents.ToListAsync();
             _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
+
+            // Fetch AI detection counts.
+            foreach (var node in _nodes)
+            {
+                long count = await Fetcher.GetContainerDetectionCountAsync(node);
+                _orcaHelloDetectionCounts[node.OrcasoundSlug] = count;
+            }
 
             _recentEvents = await Fetcher.GetRecentEventsAsync(_databaseContext, DateTime.UtcNow.AddDays(-7), _logger) ?? new List<OrcanodeEvent>();
         }

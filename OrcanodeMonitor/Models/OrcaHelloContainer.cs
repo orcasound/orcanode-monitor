@@ -17,7 +17,17 @@ namespace OrcanodeMonitor.Models
         public double CpuPercent => CpuCapacityCores > 0 ? (100.0 * CpuUsageCores / CpuCapacityCores) : 0;
         public long MemoryUsageInKi { get; private set; }
         public long MemoryCapacityInKi { get; private set; }
+
+        /// <summary>
+        /// Number of times this container has been restarted.
+        /// </summary>
         public long RestartCount { get; private set; }
+
+        /// <summary>
+        /// Number of detections in the past week.
+        /// </summary>
+        public long DetectionCount { get; private set; }
+
         public double MemoryPercent => MemoryCapacityInKi > 0 ? (100.0 * MemoryUsageInKi / MemoryCapacityInKi) : 0;
         public string MemoryUsage => $"{(MemoryUsageInKi / 1024f / 1024f):F1} GiB";
         public string MemoryCapacity => $"{(MemoryCapacityInKi / 1024f / 1024f):F1} GiB";
@@ -35,10 +45,11 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        public OrcaHelloContainer(V1Pod pod, string cpuUsage, string memoryUsage, string modelTimestamp)
+        public OrcaHelloContainer(V1Pod pod, string cpuUsage, string memoryUsage, string modelTimestamp, long detectionCount)
         {
             _pod = pod;
             ModelTimestamp = modelTimestamp;
+            DetectionCount = detectionCount;
 
             long nanocores = long.Parse(cpuUsage.Replace("n", ""));
             CpuUsageCores = nanocores / 1_000_000_000.0;

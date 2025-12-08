@@ -299,6 +299,20 @@ namespace OrcanodeMonitor.Models
             }
         }
 
+        public string OrcaHelloDisplayName
+        {
+            get
+            {
+                string displayName = this.DisplayName;
+                int index = displayName.IndexOf(" at ");
+                if (index >= 0)
+                {
+                    return displayName.Substring(index + 4);
+                }
+                return displayName;
+            }
+        }
+
         /// <summary>
         /// If the manifest file is older than this, the node will be considered offline.
         /// </summary>

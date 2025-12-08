@@ -19,7 +19,8 @@
             <th>Real dB</th>
             <th>Hum dB</th>
             <th><a asp-page="/OrcaHelloOverview" target="_blank">OrcaHello</a> Lag</th>
-            <th>OrcaHello Uptime</th>
+            <th>OrcaHello Detections</th>
+            <!-- th>OrcaHello Uptime</th -->
             <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Logging</a></th>
             <th><a href="https://www.dataplicity.com/app/" target="_blank">Dataplicity</a></th>
             <th>Agent Version</th>
@@ -88,17 +89,20 @@
                     </a>
                 </td>
             }
+            <td>
+                @Model.GetOrcaHelloDetectionCount(item)
+            </td>
             @if (item.OrcaHelloStatus == Models.OrcanodeOnlineStatus.Absent)
             {
-                <td style="background-color: @Model.NodeOrcaHelloUptimeBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
+                <!-- td style="background-color: @Model.NodeOrcaHelloUptimeBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
                     @Html.DisplayFor(modelItem => item.OrcaHelloStatus)
-                </td>
+                </td -->
             }
             else
             {
-                <td style="background-color: @Model.NodeOrcaHelloUptimeBackgroundColor(item)">
+                <!-- td style="background-color: @Model.NodeOrcaHelloUptimeBackgroundColor(item)">
                     @Model.NodeOrcaHelloUptime(item)
-                </td>
+                </td -->
             }
             @if (item.MezmoStatus == Models.OrcanodeOnlineStatus.Absent)
             {

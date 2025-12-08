@@ -99,7 +99,7 @@ namespace OrcanodeMonitor.Pages
                           .ToList();
 
             // Fetch containers and nodes for display.
-            List<OrcaHelloContainer> containers = await Fetcher.FetchContainerMetricsAsync();
+            List<OrcaHelloContainer> containers = await Fetcher.FetchContainerMetricsAsync(Orcanodes);
             Containers = containers.OrderBy(n => n.NamespaceName).ToList();
 
             List<OrcaHelloNode> nodes = await Fetcher.FetchNodeMetricsAsync(containers);
