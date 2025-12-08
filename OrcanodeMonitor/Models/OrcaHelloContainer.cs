@@ -17,6 +17,7 @@ namespace OrcanodeMonitor.Models
         public double CpuPercent => CpuCapacityCores > 0 ? (100.0 * CpuUsageCores / CpuCapacityCores) : 0;
         public long MemoryUsageInKi { get; private set; }
         public long MemoryCapacityInKi { get; private set; }
+        public long RestartCount { get; private set; }
         public double MemoryPercent => MemoryCapacityInKi > 0 ? (100.0 * MemoryUsageInKi / MemoryCapacityInKi) : 0;
         public string MemoryUsage => $"{(MemoryUsageInKi / 1024f / 1024f):F1} GiB";
         public string MemoryCapacity => $"{(MemoryCapacityInKi / 1024f / 1024f):F1} GiB";
@@ -63,6 +64,7 @@ namespace OrcanodeMonitor.Models
                 .FirstOrDefault();
 
             LastTerminationReason = latest?.Status.LastState?.Terminated?.Reason ?? string.Empty;
+            RestartCount = latest?.Status.RestartCount ?? 0;
         }
     }
 }
