@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
+using System.Drawing;
 
 namespace OrcanodeMonitor.Pages
 {
@@ -85,6 +86,92 @@ namespace OrcanodeMonitor.Pages
                 return $"{Orcanode.FormatTimeSpan(node.OrcaHelloInferencePodLag.Value)}";
             }
             return status.ToString();
+        }
+
+        /// <summary>
+        /// Get the online status of a container.
+        /// </summary>
+        /// <param name="container">Container</param>
+        /// <returns>Status value</returns>
+        public OrcanodeOnlineStatus GetContainerStatus(OrcaHelloContainer container)
+        {
+            Orcanode? node = Orcanodes.Where(n => n.OrcasoundSlug == container.NamespaceName).FirstOrDefault();
+            if (node == null)
+            {
+                return OrcanodeOnlineStatus.Absent;
+            }
+            return node.OrcaHelloStatus;
+        }
+
+        /// <summary>
+        /// Get the HTML color for a container's uptime text.
+        /// </summary>
+        /// <param name="container">Container</param>
+        /// <returns>HTML color string</returns>
+        public string GetContainerUptimeTextColor(OrcaHelloContainer container)
+        {
+            Orcanode? node = Orcanodes.Where(n => n.OrcasoundSlug == container.NamespaceName).FirstOrDefault();
+            if (node == null)
+            {
+                return ColorTranslator.ToHtml(Color.Red);
+            }
+            return IndexModel.GetTextColor(GetContainerUptimeBackgroundColor(container));
+        }
+
+        /// <summary>
+        /// Get the container uptime as a formatted string.
+        /// </summary>
+        /// <param name="container">Container</param>
+        /// <returns>Uptime string</returns>
+        public string GetContainerUptime(OrcaHelloContainer container)
+        {
+            Orcanode? node = Orcanodes.Where(n => n.OrcasoundSlug == container.NamespaceName).FirstOrDefault();
+            if (node == null)
+            {
+                return string.Empty;
+            }
+            if (node.OrcaHelloInferencePodRunningSince.HasValue)
+            {
+                TimeSpan runTime = DateTime.UtcNow - node.OrcaHelloInferencePodRunningSince.Value;
+                return $"{Orcanode.FormatTimeSpan(runTime)}";
+            }
+            return "None";
+        }
+
+        private Color LightRed => Color.FromArgb(0xff, 0xcc, 0xcb);
+
+        /// <summary>
+        /// Get the HTML background color for a container's uptime cell.
+        /// </summary>
+        /// <param name="container">Container</param>
+        /// <returns>HTML color string</returns>
+        public string GetContainerUptimeBackgroundColor(OrcaHelloContainer container)
+        {
+            Orcanode? node = Orcanodes.Where(n => n.OrcasoundSlug == container.NamespaceName).FirstOrDefault();
+            if (node == null)
+            {
+                return ColorTranslator.ToHtml(Color.Red);
+            }
+            if (node.OrcaHelloStatus == OrcanodeOnlineStatus.Online || node.OrcaHelloStatus == OrcanodeOnlineStatus.Lagged)
+            {
+                DateTime? since = node.OrcaHelloInferencePodRunningSince;
+                if (since.HasValue)
+                {
+                    var ts = DateTime.UtcNow - since.Value;
+                    if (ts > TimeSpan.FromHours(1))
+                    {
+                        return ColorTranslator.ToHtml(Color.LightGreen);
+                    }
+
+                    return ColorTranslator.ToHtml(Color.Yellow);
+                }
+            }
+            var orcasoundStatus = node.OrcasoundStatus;
+            if (orcasoundStatus != OrcanodeOnlineStatus.Online)
+            {
+                return ColorTranslator.ToHtml(LightRed);
+            }
+            return ColorTranslator.ToHtml(Color.Red);
         }
 
         public async Task OnGetAsync()

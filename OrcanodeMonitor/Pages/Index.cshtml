@@ -20,7 +20,6 @@
             <th>Hum dB</th>
             <th><a asp-page="/OrcaHelloOverview" target="_blank">OrcaHello</a> Lag</th>
             <th>OrcaHello Detections</th>
-            <!-- th>OrcaHello Uptime</th -->
             <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Logging</a></th>
             <th><a href="https://www.dataplicity.com/app/" target="_blank">Dataplicity</a></th>
             <th>Agent Version</th>
@@ -78,32 +77,20 @@
             @if (item.OrcaHelloStatus == Models.OrcanodeOnlineStatus.Absent)
             {
                 <td style="background-color: @Model.NodeOrcaHelloStatusBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
-                    @Html.DisplayFor(modelItem => item.OrcaHelloStatus)
+                    @item.OrcaHelloStatusString
                 </td>
             }
             else
             {
                 <td style="background-color: @Model.NodeOrcaHelloStatusBackgroundColor(item)">
                     <a asp-page="/OrcaHelloNode" asp-route-podNamespace="@item.OrcasoundSlug" style="color: @Model.NodeOrcaHelloTextColor(item)">
-                        @Model.NodeOrcaHelloStatus(item)
+                        @item.OrcaHelloStatusString
                     </a>
                 </td>
             }
             <td style="background-color: @Model.NodeOrcaHelloDetectionsBackgroundColor(item)">
                 @Model.GetOrcaHelloDetectionCount(item)
             </td>
-            @if (item.OrcaHelloStatus == Models.OrcanodeOnlineStatus.Absent)
-            {
-                <!-- td style="background-color: @Model.NodeOrcaHelloUptimeBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
-                    @Html.DisplayFor(modelItem => item.OrcaHelloStatus)
-                </td -->
-            }
-            else
-            {
-                <!-- td style="background-color: @Model.NodeOrcaHelloUptimeBackgroundColor(item)">
-                    @Model.NodeOrcaHelloUptime(item)
-                </td -->
-            }
             @if (item.MezmoStatus == Models.OrcanodeOnlineStatus.Absent)
             {
                 <td style="background-color: @Model.NodeMezmoBackgroundColor(item); color: @Model.NodeMezmoTextColor(item)">
@@ -199,9 +186,6 @@
         <li>
             <b>OrcaHello Detections</b>: Number of detections within the past week.
         </li>
-        <!--li>
-            <b>OrcaHello Uptime</b>: Time since AI inference container started.
-        </li -->
         <li>
             <b>Logging Absent</b>: Mezmo does not know about the node.
         </li>

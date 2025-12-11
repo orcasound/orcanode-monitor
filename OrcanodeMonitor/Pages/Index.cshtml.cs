@@ -44,7 +44,7 @@ namespace OrcanodeMonitor.Pages
             }
         }
 
-        private string GetBackgroundColor(OrcanodeOnlineStatus status, OrcanodeOnlineStatus? orcasoundStatus = null)
+        private static string GetBackgroundColor(OrcanodeOnlineStatus status, OrcanodeOnlineStatus? orcasoundStatus = null)
         {
             if (status == OrcanodeOnlineStatus.Online)
             {
@@ -62,7 +62,7 @@ namespace OrcanodeMonitor.Pages
             return ColorTranslator.ToHtml(Color.Red);
         }
 
-        private string GetTextColor(string backgroundColor)
+        public static string GetTextColor(string backgroundColor)
         {
             if (backgroundColor == ColorTranslator.ToHtml(Color.Red))
             {
@@ -74,17 +74,6 @@ namespace OrcanodeMonitor.Pages
         public string NodeS3BackgroundColor(Orcanode node) => GetBackgroundColor(node.S3StreamStatus, node.OrcasoundStatus);
 
         public string NodeS3TextColor(Orcanode node) => GetTextColor(NodeS3BackgroundColor(node));
-
-        public string NodeOrcaHelloStatus(Orcanode node)
-        {
-            var status = node.OrcaHelloStatus;
-            if ((status == OrcanodeOnlineStatus.Lagged || status == OrcanodeOnlineStatus.Online) &&
-                (node.OrcaHelloInferencePodLag.HasValue))
-            {
-                return $"{Orcanode.FormatTimeSpan(node.OrcaHelloInferencePodLag.Value)}";
-            }
-            return status.ToString();
-        }
 
         private readonly Dictionary<string, long> _orcaHelloDetectionCounts = new Dictionary<string, long>();
 
@@ -123,44 +112,9 @@ namespace OrcanodeMonitor.Pages
             return ColorTranslator.ToHtml(Color.LightGreen);
         }
 
-        public string NodeOrcaHelloUptime(Orcanode node)
-        {
-            if (node.OrcaHelloInferencePodRunningSince.HasValue)
-            {
-                TimeSpan runTime = DateTime.UtcNow - node.OrcaHelloInferencePodRunningSince.Value;
-                return $"{Orcanode.FormatTimeSpan(runTime)}";
-            }
-            return "None";
-        }
-
         public string NodeOrcaHelloTextColor(Orcanode node) => GetTextColor(NodeOrcaHelloStatusBackgroundColor(node));
 
         public string NodeOrcaHelloStatusBackgroundColor(Orcanode node) => GetBackgroundColor(node.OrcaHelloStatus, node.OrcasoundStatus);
-
-        public string NodeOrcaHelloUptimeBackgroundColor(Orcanode node)
-        {
-            if (node.OrcaHelloStatus == OrcanodeOnlineStatus.Online || node.OrcaHelloStatus == OrcanodeOnlineStatus.Lagged)
-            {
-                DateTime? since = node.OrcaHelloInferencePodRunningSince;
-                if (since.HasValue)
-                {
-                    var ts = DateTime.UtcNow - since.Value;
-                    if (ts > TimeSpan.FromHours(1))
-                    {
-                        return ColorTranslator.ToHtml(Color.LightGreen);
-                    }
-
-                    return ColorTranslator.ToHtml(Color.Yellow);
-                }
-            }
-            var orcasoundStatus = node.OrcasoundStatus;
-            if (orcasoundStatus != OrcanodeOnlineStatus.Online)
-            {
-                return ColorTranslator.ToHtml(LightRed);
-            }
-            return ColorTranslator.ToHtml(Color.Red);
-        }
-
 
         /// <summary>
         /// Gets the text color for the Mezmo status of the specified node.
@@ -190,7 +144,7 @@ namespace OrcanodeMonitor.Pages
             return color;
         }
 
-        private Color LightRed => Color.FromArgb(0xff, 0xcc, 0xcb);
+        private static Color LightRed => Color.FromArgb(0xff, 0xcc, 0xcb);
 
         public string NodeOrcasoundTextColor(Orcanode node) => GetTextColor(NodeOrcasoundBackgroundColor(node));
 
