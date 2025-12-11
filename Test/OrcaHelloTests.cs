@@ -5,10 +5,10 @@ using OrcanodeMonitor.Models;
 namespace Test
 {
     [TestClass]
-    public class OrcaHelloDetectionsColorTests
+    public class OrcaHelloTests
     {
         [TestMethod]
-        public void TestDetectionsColorWhenOrcaHelloAbsent()
+        public void TestStatusWhenOrcaHelloAbsent()
         {
             // Test that OrcaHello status is Absent when OrcaHelloId is empty.
             var node = new Orcanode
@@ -23,7 +23,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void TestDetectionsColorWhenOrcaHelloOnline()
+        public void TestStatusWhenOrcaHelloOnline()
         {
             // Test that OrcaHello status is Online when properly configured.
             var node = new Orcanode
@@ -40,7 +40,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void TestDetectionsColorWhenOrcaHelloOffline()
+        public void TestStatusWhenOrcaHelloOffline()
         {
             // Test that OrcaHello status is Offline when pod is not ready.
             var node = new Orcanode
@@ -56,7 +56,7 @@ namespace Test
         }
 
         [TestMethod]
-        public void TestDetectionsColorWhenOrcaHelloLagged()
+        public void TestStatusWhenOrcaHelloLagged()
         {
             // Test that OrcaHello status is Lagged when lag exceeds 5 minutes.
             var node = new Orcanode
