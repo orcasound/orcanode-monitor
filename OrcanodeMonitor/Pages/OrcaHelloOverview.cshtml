@@ -79,7 +79,7 @@
                 </td>
                 @if (Model.GetContainerStatus(item) == Models.OrcanodeOnlineStatus.Absent)
                 {
-                    <td style="background-color: @Model.GetContainerUptimeBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
+                    <td style="background-color: @Model.GetContainerUptimeBackgroundColor(item); color: @Model.GetContainerUptimeTextColor(item)">
                         @Html.DisplayFor(modelItem => Models.OrcanodeOnlineStatus.Absent)
                     </td>
                 }
