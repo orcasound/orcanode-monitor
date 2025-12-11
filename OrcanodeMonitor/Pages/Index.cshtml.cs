@@ -99,7 +99,7 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeOrcaHelloDetectionsBackgroundColor(Orcanode node)
         {
-            // Light Red if OrcaHello Lag is "Absent"
+            // Light Red if OrcaHello Status is "Absent"
             if (node.OrcaHelloStatus == OrcanodeOnlineStatus.Absent)
             {
                 return ColorTranslator.ToHtml(LightRed);
