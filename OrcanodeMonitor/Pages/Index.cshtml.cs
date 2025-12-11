@@ -99,13 +99,13 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeOrcaHelloDetectionsBackgroundColor(Orcanode node)
         {
-            // Light Red if OrcaHello Status is "Absent"
+            // Light Red if OrcaHello Status is "Absent".
             if (node.OrcaHelloStatus == OrcanodeOnlineStatus.Absent)
             {
                 return ColorTranslator.ToHtml(LightRed);
             }
 
-            // Yellow if detections value is unusually high
+            // Yellow if detections value is unusually high.
             long detectionCount = GetOrcaHelloDetectionCount(node);
             string? highThresholdString = Environment.GetEnvironmentVariable("ORCAHELLO_HIGH_DETECTION_THRESHOLD");
             long highThreshold = 100; // Default threshold
@@ -119,7 +119,7 @@ namespace OrcanodeMonitor.Pages
                 return ColorTranslator.ToHtml(Color.Yellow);
             }
 
-            // Light Green otherwise
+            // Light Green otherwise.
             return ColorTranslator.ToHtml(Color.LightGreen);
         }
 
