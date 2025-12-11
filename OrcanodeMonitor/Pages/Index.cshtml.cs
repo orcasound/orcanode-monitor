@@ -97,6 +97,32 @@ namespace OrcanodeMonitor.Pages
             return count;
         }
 
+        public string NodeOrcaHelloDetectionsBackgroundColor(Orcanode node)
+        {
+            // Light Red if OrcaHello Lag is "Absent"
+            if (node.OrcaHelloStatus == OrcanodeOnlineStatus.Absent)
+            {
+                return ColorTranslator.ToHtml(LightRed);
+            }
+
+            // Yellow if detections value is unusually high
+            long detectionCount = GetOrcaHelloDetectionCount(node);
+            string? highThresholdString = Environment.GetEnvironmentVariable("ORCAHELLO_HIGH_DETECTION_THRESHOLD");
+            long highThreshold = 100; // Default threshold
+            if (!string.IsNullOrEmpty(highThresholdString) && long.TryParse(highThresholdString, out long parsedThreshold))
+            {
+                highThreshold = parsedThreshold;
+            }
+
+            if (detectionCount >= highThreshold)
+            {
+                return ColorTranslator.ToHtml(Color.Yellow);
+            }
+
+            // Light Green otherwise
+            return ColorTranslator.ToHtml(Color.LightGreen);
+        }
+
         public string NodeOrcaHelloUptime(Orcanode node)
         {
             if (node.OrcaHelloInferencePodRunningSince.HasValue)

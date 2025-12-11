@@ -89,7 +89,7 @@
                     </a>
                 </td>
             }
-            <td>
+            <td style="background-color: @Model.NodeOrcaHelloDetectionsBackgroundColor(item)">
                 @Model.GetOrcaHelloDetectionCount(item)
             </td>
             @if (item.OrcaHelloStatus == Models.OrcanodeOnlineStatus.Absent)
