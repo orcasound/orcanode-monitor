@@ -117,6 +117,8 @@ The following state will be stored per orcanode:
 
 **ORCANODE_MONITOR_READONLY**: If set to "true", the Cosmos database is not updated by the Orcanode Monitor service. The service will continue to read data but will skip all database write operations.
 
+**ORCAHELLO_HIGH_DETECTION_THRESHOLD**: The minimum number of detections within the past week to be considered unusually high, which will display the OrcaHello Detections cell with a yellow background color. Default: 100
+
 **ORCASOUND_DATAPLICITY_TOKEN**: Security token that allows reading state from Dataplicity.
 
 **ORCASOUND_REBOOT_HOUR_OFFSET_MINUTES**: The number of minutes from the top of the hour when reboot checks should occur. This allows multiple deployments (production and staging) to avoid conflicts by running at different times. Default: 0 (top of hour)
