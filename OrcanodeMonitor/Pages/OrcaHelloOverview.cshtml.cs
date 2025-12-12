@@ -6,8 +6,6 @@ using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Drawing;
-using System.Xml.Linq;
-
 namespace OrcanodeMonitor.Pages
 {
     public class OrcaHelloOverviewModel : PageModel
