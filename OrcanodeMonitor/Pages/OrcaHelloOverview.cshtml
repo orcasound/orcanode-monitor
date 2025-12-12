@@ -59,10 +59,10 @@
                         @Html.DisplayFor(modelItem => item.NamespaceName)
                     </a>
                 </td>
-                <td>
+                <td style="background-color: @Model.GetContainerDetectionsBackgroundColor(item)">
                     @item.DetectionCount
                 </td>
-                <td>
+                <td style="background-color: @Model.GetContainerLagBackgroundColor(item)">
                     @Model.GetLag(item)
                 </td>
                 <td>

@@ -6,6 +6,7 @@ using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Drawing;
+using System.Xml.Linq;
 
 namespace OrcanodeMonitor.Pages
 {
@@ -157,6 +158,32 @@ namespace OrcanodeMonitor.Pages
                 return ColorTranslator.ToHtml(Color.Yellow);
             }
             return ColorTranslator.ToHtml(IndexModel.LightRed);
+        }
+
+        /// <summary>
+        /// Get the HTML background color for a container's detections cell.
+        /// </summary>
+        /// <param name="container">Container</param>
+        /// <returns>HTML color string</returns>
+        public string GetContainerDetectionsBackgroundColor(OrcaHelloContainer container)
+        {
+            Orcanode? node = GetOrcanode(container);
+            return IndexModel.GetNodeOrcaHelloDetectionsBackgroundColor(node, container.DetectionCount);
+        }
+
+        /// <summary>
+        /// Get the HTML background color for a container's lag cell.
+        /// </summary>
+        /// <param name="container">Container</param>
+        /// <returns>HTML color string</returns>
+        public string GetContainerLagBackgroundColor(OrcaHelloContainer container)
+        {
+            Orcanode? node = GetOrcanode(container);
+            if (node == null)
+            {
+                return ColorTranslator.ToHtml(Color.Red);
+            }
+            return IndexModel.GetBackgroundColor(node.OrcaHelloStatus, node.OrcasoundStatus);
         }
 
         /// <summary>
