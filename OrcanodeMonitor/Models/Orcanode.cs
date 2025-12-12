@@ -693,6 +693,20 @@ namespace OrcanodeMonitor.Models
             return s3Name;
         }
 
+        public string OrcaHelloStatusString
+        {
+            get
+            {
+                var status = OrcaHelloStatus;
+                if ((status == OrcanodeOnlineStatus.Lagged || status == OrcanodeOnlineStatus.Online) &&
+                    (OrcaHelloInferencePodLag.HasValue))
+                {
+                    return $"{Orcanode.FormatTimeSpan(OrcaHelloInferencePodLag.Value)}";
+                }
+                return status.ToString();
+            }
+        }
+
         public override string ToString() => DisplayName;
 
         #endregion methods

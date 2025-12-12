@@ -48,6 +48,7 @@
             <th>Memory</th>
             <th>Image</th>
             <th>Node</th>
+            <th>Uptime</th>
             <th>Restarts</th>
         </tr>
         @foreach (Models.OrcaHelloContainer item in Model.Containers)
@@ -76,6 +77,18 @@
                 <td>
                     @item.NodeName
                 </td>
+                @if (Model.GetContainerStatus(item) == Models.OrcanodeOnlineStatus.Absent)
+                {
+                    <td style="background-color: @Model.GetContainerUptimeBackgroundColor(item); color: @Model.GetContainerUptimeTextColor(item)">
+                        @nameof(Models.OrcanodeOnlineStatus.Absent)
+                    </td>
+                }
+                else
+                {
+                    <td style="background-color: @Model.GetContainerUptimeBackgroundColor(item)">
+                        @Model.GetContainerUptime(item)
+                    </td>
+                }
                 <td>
                     @item.RestartCount @Model.ContainerLastTerminationReason(item)
                 </td>
