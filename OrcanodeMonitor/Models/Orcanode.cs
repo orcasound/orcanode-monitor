@@ -525,9 +525,10 @@ namespace OrcanodeMonitor.Models
                     // Dataplicity must be online.
                     return false;
                 }
-                if (this.S3StreamStatus != OrcanodeOnlineStatus.Offline)
+                if (this.S3StreamStatus != OrcanodeOnlineStatus.Offline &&
+                    this.S3StreamStatus != OrcanodeOnlineStatus.Silent)
                 {
-                    // S3 Stream status must be offline.
+                    // S3 Stream status must be offline or silent.
                     return false;
                 }
                 TimeSpan interval = PeriodicTasks.FrequencyToPoll;
