@@ -142,6 +142,24 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
+        /// Get the HTML background color for a container's restarts cell.
+        /// </summary>
+        /// <param name="container">Container</param>
+        /// <returns>HTML color string</returns>
+        public string GetContainerRestartsBackgroundColor(OrcaHelloContainer container)
+        {
+            if (container.RestartCount == 0)
+            {
+                return ColorTranslator.ToHtml(Color.LightGreen);
+            }
+            if (container.RestartCount <= 3)
+            {
+                return ColorTranslator.ToHtml(Color.Yellow);
+            }
+            return ColorTranslator.ToHtml(IndexModel.LightRed);
+        }
+
+        /// <summary>
         /// Get the HTML background color for a container's uptime cell.
         /// </summary>
         /// <param name="container">Container</param>

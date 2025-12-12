@@ -89,7 +89,7 @@
                         @Model.GetContainerUptime(item)
                     </td>
                 }
-                <td>
+                <td style="background-color: @Model.GetContainerRestartsBackgroundColor(item)">
                     @item.RestartCount @Model.ContainerLastTerminationReason(item)
                 </td>
             </tr>

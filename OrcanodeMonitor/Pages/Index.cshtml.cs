@@ -97,7 +97,7 @@ namespace OrcanodeMonitor.Pages
             // Yellow if detections value is unusually high.
             long detectionCount = GetOrcaHelloDetectionCount(node);
             string? highThresholdString = Environment.GetEnvironmentVariable("ORCAHELLO_HIGH_DETECTION_THRESHOLD");
-            long highThreshold = 100; // Default threshold
+            long highThreshold = 150; // Default threshold
             if (!string.IsNullOrEmpty(highThresholdString) && long.TryParse(highThresholdString, out long parsedThreshold))
             {
                 highThreshold = parsedThreshold;
