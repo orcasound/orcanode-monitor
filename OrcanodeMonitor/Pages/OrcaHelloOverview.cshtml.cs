@@ -6,7 +6,6 @@ using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Drawing;
-
 namespace OrcanodeMonitor.Pages
 {
     public class OrcaHelloOverviewModel : PageModel
@@ -139,6 +138,50 @@ namespace OrcanodeMonitor.Pages
                 return $"{Orcanode.FormatTimeSpan(runTime)}";
             }
             return "None";
+        }
+
+        /// <summary>
+        /// Get the HTML background color for a container's restarts cell.
+        /// </summary>
+        /// <param name="container">Container</param>
+        /// <returns>HTML color string</returns>
+        public string GetContainerRestartsBackgroundColor(OrcaHelloContainer container)
+        {
+            if (container.RestartCount == 0)
+            {
+                return ColorTranslator.ToHtml(Color.LightGreen);
+            }
+            if (container.RestartCount <= 3)
+            {
+                return ColorTranslator.ToHtml(Color.Yellow);
+            }
+            return ColorTranslator.ToHtml(IndexModel.LightRed);
+        }
+
+        /// <summary>
+        /// Get the HTML background color for a container's detections cell.
+        /// </summary>
+        /// <param name="container">Container</param>
+        /// <returns>HTML color string</returns>
+        public string GetContainerDetectionsBackgroundColor(OrcaHelloContainer container)
+        {
+            Orcanode? node = GetOrcanode(container);
+            return IndexModel.GetNodeOrcaHelloDetectionsBackgroundColor(node, container.DetectionCount);
+        }
+
+        /// <summary>
+        /// Get the HTML background color for a container's lag cell.
+        /// </summary>
+        /// <param name="container">Container</param>
+        /// <returns>HTML color string</returns>
+        public string GetContainerLagBackgroundColor(OrcaHelloContainer container)
+        {
+            Orcanode? node = GetOrcanode(container);
+            if (node == null)
+            {
+                return ColorTranslator.ToHtml(Color.Red);
+            }
+            return IndexModel.GetBackgroundColor(node.OrcaHelloStatus, node.OrcasoundStatus);
         }
 
         /// <summary>

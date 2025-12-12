@@ -59,10 +59,10 @@
                         @Html.DisplayFor(modelItem => item.NamespaceName)
                     </a>
                 </td>
-                <td>
+                <td style="background-color: @Model.GetContainerDetectionsBackgroundColor(item)">
                     @item.DetectionCount
                 </td>
-                <td>
+                <td style="background-color: @Model.GetContainerLagBackgroundColor(item)">
                     @Model.GetLag(item)
                 </td>
                 <td>
@@ -89,7 +89,7 @@
                         @Model.GetContainerUptime(item)
                     </td>
                 }
-                <td>
+                <td style="background-color: @Model.GetContainerRestartsBackgroundColor(item)">
                     @item.RestartCount @Model.ContainerLastTerminationReason(item)
                 </td>
             </tr>

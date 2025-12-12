@@ -44,7 +44,13 @@ namespace OrcanodeMonitor.Pages
             }
         }
 
-        private static string GetBackgroundColor(OrcanodeOnlineStatus status, OrcanodeOnlineStatus? orcasoundStatus = null)
+        /// <summary>
+        /// Get the background color associated with a status value.
+        /// </summary>
+        /// <param name="status">Status value</param>
+        /// <param name="orcasoundStatus">Orcasound status value</param>
+        /// <returns>HTML color string</returns>
+        public static string GetBackgroundColor(OrcanodeOnlineStatus status, OrcanodeOnlineStatus? orcasoundStatus = null)
         {
             if (status == OrcanodeOnlineStatus.Online)
             {
@@ -86,8 +92,19 @@ namespace OrcanodeMonitor.Pages
             return count;
         }
 
-        public string NodeOrcaHelloDetectionsBackgroundColor(Orcanode node)
+        /// <summary>
+        /// Gets the background color for the OrcaHello detections of the specified node.
+        /// </summary>
+        /// <param name="node">Node, or null if none</param>
+        /// <param name="detectionCount">Detection count</param>
+        /// <returns>HTML color string</returns>
+        public static string GetNodeOrcaHelloDetectionsBackgroundColor(Orcanode? node, long detectionCount)
         {
+            if (node == null)
+            {
+                return ColorTranslator.ToHtml(Color.Red);
+            }
+
             // Light Red if OrcaHello Status is "Absent".
             if (node.OrcaHelloStatus == OrcanodeOnlineStatus.Absent)
             {
@@ -95,9 +112,8 @@ namespace OrcanodeMonitor.Pages
             }
 
             // Yellow if detections value is unusually high.
-            long detectionCount = GetOrcaHelloDetectionCount(node);
             string? highThresholdString = Environment.GetEnvironmentVariable("ORCAHELLO_HIGH_DETECTION_THRESHOLD");
-            long highThreshold = 100; // Default threshold
+            long highThreshold = 150; // Default threshold
             if (!string.IsNullOrEmpty(highThresholdString) && long.TryParse(highThresholdString, out long parsedThreshold))
             {
                 highThreshold = parsedThreshold;
@@ -110,6 +126,17 @@ namespace OrcanodeMonitor.Pages
 
             // Light Green otherwise.
             return ColorTranslator.ToHtml(Color.LightGreen);
+        }
+
+        /// <summary>
+        /// Get the background color for the OrcaHello detections cell of the specified node.
+        /// </summary>
+        /// <param name="node">Node</param>
+        /// <returns>HTML color string</returns>
+        public string NodeOrcaHelloDetectionsBackgroundColor(Orcanode node)
+        {
+            long detectionCount = GetOrcaHelloDetectionCount(node);
+            return GetNodeOrcaHelloDetectionsBackgroundColor(node, detectionCount);
         }
 
         public string NodeOrcaHelloTextColor(Orcanode node) => GetTextColor(NodeOrcaHelloStatusBackgroundColor(node));
