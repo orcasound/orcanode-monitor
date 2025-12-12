@@ -68,13 +68,23 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
+        /// Get the Orcanode associated with a given OrcaHello container.
+        /// </summary>
+        /// <param name="container">container</param>
+        /// <returns>Orcanode object, or null on error</returns>
+        Orcanode? GetOrcanode(OrcaHelloContainer container)
+        {
+            return Orcanodes.Where(n => n.OrcasoundSlug == container.NamespaceName).FirstOrDefault();
+        }
+
+        /// <summary>
         /// Get how far behind an AI container is running in its audio stream.
         /// </summary>
         /// <param name="container">The OrcaHello container to check for lag.</param>
         /// <returns>A string representation of the lag time if available, or the container's status otherwise.</returns>
         public string GetLag(OrcaHelloContainer container)
         {
-            Orcanode? node = Orcanodes.Where(n => n.OrcasoundSlug == container.NamespaceName).FirstOrDefault();
+            Orcanode? node = GetOrcanode(container);
             if (node == null)
             {
                 return string.Empty;
@@ -93,15 +103,8 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="container">Container</param>
         /// <returns>Status value</returns>
-        public OrcanodeOnlineStatus GetContainerStatus(OrcaHelloContainer container)
-        {
-            Orcanode? node = Orcanodes.Where(n => n.OrcasoundSlug == container.NamespaceName).FirstOrDefault();
-            if (node == null)
-            {
-                return OrcanodeOnlineStatus.Absent;
-            }
-            return node.OrcaHelloStatus;
-        }
+        public OrcanodeOnlineStatus GetContainerStatus(OrcaHelloContainer container) =>
+            GetOrcanode(container)?.OrcaHelloStatus ?? OrcanodeOnlineStatus.Absent;
 
         /// <summary>
         /// Get the HTML color for a container's uptime text.
@@ -110,7 +113,7 @@ namespace OrcanodeMonitor.Pages
         /// <returns>HTML color string</returns>
         public string GetContainerUptimeTextColor(OrcaHelloContainer container)
         {
-            Orcanode? node = Orcanodes.Where(n => n.OrcasoundSlug == container.NamespaceName).FirstOrDefault();
+            Orcanode? node = GetOrcanode(container);
             if (node == null)
             {
                 return ColorTranslator.ToHtml(Color.Red);
@@ -125,7 +128,7 @@ namespace OrcanodeMonitor.Pages
         /// <returns>Uptime string</returns>
         public string GetContainerUptime(OrcaHelloContainer container)
         {
-            Orcanode? node = Orcanodes.Where(n => n.OrcasoundSlug == container.NamespaceName).FirstOrDefault();
+            Orcanode? node = GetOrcanode(container);
             if (node == null)
             {
                 return string.Empty;
@@ -138,8 +141,6 @@ namespace OrcanodeMonitor.Pages
             return "None";
         }
 
-        private Color LightRed => Color.FromArgb(0xff, 0xcc, 0xcb);
-
         /// <summary>
         /// Get the HTML background color for a container's uptime cell.
         /// </summary>
@@ -147,7 +148,7 @@ namespace OrcanodeMonitor.Pages
         /// <returns>HTML color string</returns>
         public string GetContainerUptimeBackgroundColor(OrcaHelloContainer container)
         {
-            Orcanode? node = Orcanodes.Where(n => n.OrcasoundSlug == container.NamespaceName).FirstOrDefault();
+            Orcanode? node = GetOrcanode(container);
             if (node == null)
             {
                 return ColorTranslator.ToHtml(Color.Red);
@@ -169,7 +170,7 @@ namespace OrcanodeMonitor.Pages
             var orcasoundStatus = node.OrcasoundStatus;
             if (orcasoundStatus != OrcanodeOnlineStatus.Online)
             {
-                return ColorTranslator.ToHtml(LightRed);
+                return ColorTranslator.ToHtml(IndexModel.LightRed);
             }
             return ColorTranslator.ToHtml(Color.Red);
         }

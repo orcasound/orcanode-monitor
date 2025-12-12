@@ -144,7 +144,7 @@ namespace OrcanodeMonitor.Pages
             return color;
         }
 
-        private static Color LightRed => Color.FromArgb(0xff, 0xcc, 0xcb);
+        public static Color LightRed => Color.FromArgb(0xff, 0xcc, 0xcb);
 
         public string NodeOrcasoundTextColor(Orcanode node) => GetTextColor(NodeOrcasoundBackgroundColor(node));
 
