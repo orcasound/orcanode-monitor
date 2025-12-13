@@ -13,7 +13,7 @@ namespace OrcanodeMonitor.Models
         /// VMSS node name.
         /// </summary>
         public string Name => _node.Metadata.Name;
-        private List<OrcaHelloPod> _pods = new List<OrcaHelloPod>();
+        private readonly List<OrcaHelloPod> _pods = new List<OrcaHelloPod>();
         public List<OrcaHelloPod> Pods => _pods;
 
         public string InstanceType { get; private set; }
