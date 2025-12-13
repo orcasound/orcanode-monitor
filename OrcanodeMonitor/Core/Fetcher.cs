@@ -1708,6 +1708,8 @@ namespace OrcanodeMonitor.Core
             {
                 V1NodeList allNodes = await client.ListNodeAsync();
                 NodeMetricsList metricsList = await client.GetKubernetesNodesMetricsAsync();
+                V1PodList v1Pods = await client.ListPodForAllNamespacesAsync();
+                PodMetricsList podMetrics = await client.GetKubernetesPodsMetricsAsync();
                 foreach (V1Node node in allNodes)
                 {
                     NodeMetrics? nodeMetrics = metricsList.Items.FirstOrDefault(n => n.Metadata.Name == node.Metadata.Name);
@@ -1715,7 +1717,6 @@ namespace OrcanodeMonitor.Core
                     string memoryUsage = nodeMetrics?.Usage.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
                     string lscpuOutput = string.Empty;
-                    V1PodList v1Pods = await client.ListPodForAllNamespacesAsync();
                     var allPodsOnNode = v1Pods.Items.Where(c => c.Spec.NodeName == node.Metadata.Name);
                     if (allPodsOnNode.Any())
                     {
@@ -1723,7 +1724,6 @@ namespace OrcanodeMonitor.Core
                         lscpuOutput = await GetPodLscpuOutputAsync(pod.Metadata.Name, pod.Metadata.NamespaceProperty);
                     }
 
-                    PodMetricsList podMetrics = await client.GetKubernetesPodsMetricsAsync();
                     var orcaHelloNode = new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput, v1Pods.Items, podMetrics.Items);
                     resultList.Add(orcaHelloNode);
                 }
