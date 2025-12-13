@@ -45,7 +45,7 @@ namespace OrcanodeMonitor.Pages
         /// <returns>Comma-separated list of namespaces</returns>
         public string GetLocations(OrcaHelloNode node)
         {
-            // Get unique namespace names for containers running on the given node.
+            // Get unique namespace names for pods running on the given node.
             var namespaces = Pods
                 .Where(c => c.NodeName == node.Name)
                 .Select(c => c.NamespaceName)
@@ -54,37 +54,37 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Get the reason the container last terminated, if any.
+        /// Get the reason the pod last terminated, if any.
         /// </summary>
-        /// <param name="container">Container to check</param>
+        /// <param name="pod">Pod to check</param>
         /// <returns>Reason, in parentheses</returns>
-        public string ContainerLastTerminationReason(OrcaHelloPod container)
+        public string GetPodLastTerminationReason(OrcaHelloPod pod)
         {
-            if (string.IsNullOrEmpty(container.LastTerminationReason))
+            if (string.IsNullOrEmpty(pod.LastTerminationReason))
             {
                 return string.Empty;
             }
-            return "(" + container.LastTerminationReason + ")";
+            return "(" + pod.LastTerminationReason + ")";
         }
 
         /// <summary>
-        /// Get the Orcanode associated with a given OrcaHello container.
+        /// Get the Orcanode associated with a given OrcaHello pod.
         /// </summary>
-        /// <param name="container">container</param>
+        /// <param name="pod">pod</param>
         /// <returns>Orcanode object, or null on error</returns>
-        Orcanode? GetOrcanode(OrcaHelloPod container)
+        Orcanode? GetOrcanode(OrcaHelloPod pod)
         {
-            return Orcanodes.Where(n => n.OrcasoundSlug == container.NamespaceName).FirstOrDefault();
+            return Orcanodes.Where(n => n.OrcasoundSlug == pod.NamespaceName).FirstOrDefault();
         }
 
         /// <summary>
-        /// Get how far behind an AI container is running in its audio stream.
+        /// Get how far behind an AI pod is running in its audio stream.
         /// </summary>
-        /// <param name="container">The OrcaHello container to check for lag.</param>
-        /// <returns>A string representation of the lag time if available, or the container's status otherwise.</returns>
-        public string GetLag(OrcaHelloPod container)
+        /// <param name="pod">The OrcaHello pod to check for lag.</param>
+        /// <returns>A string representation of the lag time if available, or the pod's status otherwise.</returns>
+        public string GetLag(OrcaHelloPod pod)
         {
-            Orcanode? node = GetOrcanode(container);
+            Orcanode? node = GetOrcanode(pod);
             if (node == null)
             {
                 return string.Empty;
@@ -99,36 +99,36 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Get the online status of a container.
+        /// Get the online status of a pod.
         /// </summary>
-        /// <param name="container">Container</param>
+        /// <param name="pod">Pod</param>
         /// <returns>Status value</returns>
-        public OrcanodeOnlineStatus GetContainerStatus(OrcaHelloPod container) =>
-            GetOrcanode(container)?.OrcaHelloStatus ?? OrcanodeOnlineStatus.Absent;
+        public OrcanodeOnlineStatus GetPodStatus(OrcaHelloPod pod) =>
+            GetOrcanode(pod)?.OrcaHelloStatus ?? OrcanodeOnlineStatus.Absent;
 
         /// <summary>
-        /// Get the HTML color for a container's uptime text.
+        /// Get the HTML color for a pod's uptime text.
         /// </summary>
-        /// <param name="container">Container</param>
+        /// <param name="pod">Pod</param>
         /// <returns>HTML color string</returns>
-        public string GetContainerUptimeTextColor(OrcaHelloPod container)
+        public string GetPodUptimeTextColor(OrcaHelloPod pod)
         {
-            Orcanode? node = GetOrcanode(container);
+            Orcanode? node = GetOrcanode(pod);
             if (node == null)
             {
                 return ColorTranslator.ToHtml(Color.Red);
             }
-            return IndexModel.GetTextColor(GetContainerUptimeBackgroundColor(container));
+            return IndexModel.GetTextColor(GetPodUptimeBackgroundColor(pod));
         }
 
         /// <summary>
-        /// Get the container uptime as a formatted string.
+        /// Get the pod uptime as a formatted string.
         /// </summary>
-        /// <param name="container">Container</param>
+        /// <param name="pod">Pod</param>
         /// <returns>Uptime string</returns>
-        public string GetContainerUptime(OrcaHelloPod container)
+        public string GetPodUptime(OrcaHelloPod pod)
         {
-            Orcanode? node = GetOrcanode(container);
+            Orcanode? node = GetOrcanode(pod);
             if (node == null)
             {
                 return string.Empty;
@@ -142,17 +142,17 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Get the HTML background color for a container's restarts cell.
+        /// Get the HTML background color for a pod's restarts cell.
         /// </summary>
-        /// <param name="container">Container</param>
+        /// <param name="pod">Pod</param>
         /// <returns>HTML color string</returns>
-        public string GetContainerRestartsBackgroundColor(OrcaHelloPod container)
+        public string GetPodRestartsBackgroundColor(OrcaHelloPod pod)
         {
-            if (container.RestartCount == 0)
+            if (pod.RestartCount == 0)
             {
                 return ColorTranslator.ToHtml(Color.LightGreen);
             }
-            if (container.RestartCount <= 3)
+            if (pod.RestartCount <= 3)
             {
                 return ColorTranslator.ToHtml(Color.Yellow);
             }
@@ -160,24 +160,24 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Get the HTML background color for a container's detections cell.
+        /// Get the HTML background color for a pod's detections cell.
         /// </summary>
-        /// <param name="container">Container</param>
+        /// <param name="pod">Pod</param>
         /// <returns>HTML color string</returns>
-        public string GetContainerDetectionsBackgroundColor(OrcaHelloPod container)
+        public string GetPodDetectionsBackgroundColor(OrcaHelloPod pod)
         {
-            Orcanode? node = GetOrcanode(container);
-            return IndexModel.GetNodeOrcaHelloDetectionsBackgroundColor(node, container.DetectionCount);
+            Orcanode? node = GetOrcanode(pod);
+            return IndexModel.GetNodeOrcaHelloDetectionsBackgroundColor(node, pod.DetectionCount);
         }
 
         /// <summary>
-        /// Get the HTML background color for a container's lag cell.
+        /// Get the HTML background color for a pod's lag cell.
         /// </summary>
-        /// <param name="container">Container</param>
+        /// <param name="pod">Pod</param>
         /// <returns>HTML color string</returns>
-        public string GetContainerLagBackgroundColor(OrcaHelloPod container)
+        public string GetPodLagBackgroundColor(OrcaHelloPod pod)
         {
-            Orcanode? node = GetOrcanode(container);
+            Orcanode? node = GetOrcanode(pod);
             if (node == null)
             {
                 return ColorTranslator.ToHtml(Color.Red);
@@ -186,13 +186,13 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Get the HTML background color for a container's uptime cell.
+        /// Get the HTML background color for a pod's uptime cell.
         /// </summary>
-        /// <param name="container">Container</param>
+        /// <param name="pod">Pod</param>
         /// <returns>HTML color string</returns>
-        public string GetContainerUptimeBackgroundColor(OrcaHelloPod container)
+        public string GetPodUptimeBackgroundColor(OrcaHelloPod pod)
         {
-            Orcanode? node = GetOrcanode(container);
+            Orcanode? node = GetOrcanode(pod);
             if (node == null)
             {
                 return ColorTranslator.ToHtml(Color.Red);
@@ -230,9 +230,9 @@ namespace OrcanodeMonitor.Pages
                           .OrderBy(n => n.DisplayName)
                           .ToList();
 
-            // Fetch containers and nodes for display.
-            List<OrcaHelloPod> containers = await Fetcher.FetchPodMetricsAsync(Orcanodes);
-            Pods = containers.OrderBy(n => n.NamespaceName).ToList();
+            // Fetch pods and nodes for display.
+            List<OrcaHelloPod> pods = await Fetcher.FetchPodMetricsAsync(Orcanodes);
+            Pods = pods.OrderBy(n => n.NamespaceName).ToList();
 
             List<OrcaHelloNode> nodes = await Fetcher.FetchNodeMetricsAsync();
             Nodes = nodes.OrderBy(n => n.Name).ToList();

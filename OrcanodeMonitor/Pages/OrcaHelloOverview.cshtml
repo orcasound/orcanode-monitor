@@ -56,14 +56,14 @@
         {
             <tr>
                 <td>
-                    <a asp-page="/OrcaHelloPod" asp-route-podNamespace="@item.NamespaceName">
+                    <a asp-page="/OrcaHelloNode" asp-route-podNamespace="@item.NamespaceName">
                         @Html.DisplayFor(modelItem => item.NamespaceName)
                     </a>
                 </td>
-                <td style="background-color: @Model.GetContainerDetectionsBackgroundColor(item)">
+                <td style="background-color: @Model.GetPodDetectionsBackgroundColor(item)">
                     @item.DetectionCount
                 </td>
-                <td style="background-color: @Model.GetContainerLagBackgroundColor(item)">
+                <td style="background-color: @Model.GetPodLagBackgroundColor(item)">
                     @Model.GetLag(item)
                 </td>
                 <td>
@@ -75,20 +75,20 @@
                 <td>
                     @item.ImageName
                 </td>
-                @if (Model.GetContainerStatus(item) == Models.OrcanodeOnlineStatus.Absent)
+                @if (Model.GetPodStatus(item) == Models.OrcanodeOnlineStatus.Absent)
                 {
-                    <td style="background-color: @Model.GetContainerUptimeBackgroundColor(item); color: @Model.GetContainerUptimeTextColor(item)">
+                    <td style="background-color: @Model.GetPodUptimeBackgroundColor(item); color: @Model.GetPodUptimeTextColor(item)">
                         @nameof(Models.OrcanodeOnlineStatus.Absent)
                     </td>
                 }
                 else
                 {
-                    <td style="background-color: @Model.GetContainerUptimeBackgroundColor(item)">
-                        @Model.GetContainerUptime(item)
+                    <td style="background-color: @Model.GetPodUptimeBackgroundColor(item)">
+                        @Model.GetPodUptime(item)
                     </td>
                 }
-                <td style="background-color: @Model.GetContainerRestartsBackgroundColor(item)">
-                    @item.RestartCount @Model.ContainerLastTerminationReason(item)
+                <td style="background-color: @Model.GetPodRestartsBackgroundColor(item)">
+                    @item.RestartCount @Model.GetPodLastTerminationReason(item)
                 </td>
             </tr>
         }

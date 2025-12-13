@@ -27,10 +27,10 @@ namespace OrcanodeMonitor.Pages
         public double CpuCapacityCores => _pod?.CpuCapacityCores ?? 0;
         public double CpuUsageCores => _pod?.CpuUsageCores ?? 0;
         public double CpuPercent => _pod?.CpuPercent ?? 0;
-        private long _MemoryUsageInKi => _pod?.MemoryUsageInKi ?? 0;
-        public string MemoryUsage => $"{(_MemoryUsageInKi / 1024f / 1024f):F1} GiB";
-        private long _MemoryCapacityInKi => _pod?.MemoryCapacityInKi ?? 0;
-        public string MemoryCapacity => $"{(_MemoryCapacityInKi / 1024f / 1024f):F1} GiB";
+        private long _memoryUsageInKi => _pod?.MemoryUsageInKi ?? 0;
+        public string MemoryUsage => $"{(_memoryUsageInKi / 1024f / 1024f):F1} GiB";
+        private long _memoryCapacityInKi => _pod?.MemoryCapacityInKi ?? 0;
+        public string MemoryCapacity => $"{(_memoryCapacityInKi / 1024f / 1024f):F1} GiB";
         public double MemoryPercent => _pod?.MemoryPercent ?? 0;
 
         /// <summary>
