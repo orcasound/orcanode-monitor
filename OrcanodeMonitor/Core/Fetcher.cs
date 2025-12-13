@@ -391,7 +391,7 @@ namespace OrcanodeMonitor.Core
                     .Where(p => p.Spec.NodeName == nodeName)
                     .ToList();
                 V1Pod? podOnNode = allPodsOnNode
-                    .Where(p => p.Spec.NodeName == nodeName && p.Metadata.Name.StartsWith("inference-system-"))
+                    .Where(p => p.Metadata.Name.StartsWith("inference-system-"))
                     .FirstOrDefault();
                 if (podOnNode != null)
                 {
