@@ -20,7 +20,9 @@
         {
             <tr>
                 <td>
-                    @Html.DisplayFor(modelItem => item.Name)
+                    <a asp-page="/OrcaHelloNode" asp-route-nodeName="@item.Name">
+                        @Html.DisplayFor(modelItem => item.Name)
+                    </a>
                 </td>
                 <td>
                     @(Math.Round(item.CpuPercent))%
@@ -47,15 +49,14 @@
             <th>CPU</th>
             <th>Memory</th>
             <th>Image</th>
-            <th>Node</th>
             <th>Uptime</th>
             <th>Restarts</th>
         </tr>
-        @foreach (Models.OrcaHelloContainer item in Model.Containers)
+        @foreach (Models.OrcaHelloPod item in Model.Pods)
         {
             <tr>
                 <td>
-                    <a asp-page="/OrcaHelloNode" asp-route-podNamespace="@item.NamespaceName">
+                    <a asp-page="/OrcaHelloPod" asp-route-podNamespace="@item.NamespaceName">
                         @Html.DisplayFor(modelItem => item.NamespaceName)
                     </a>
                 </td>
@@ -73,9 +74,6 @@
                 </td>
                 <td>
                     @item.ImageName
-                </td>
-                <td>
-                    @item.NodeName
                 </td>
                 @if (Model.GetContainerStatus(item) == Models.OrcanodeOnlineStatus.Absent)
                 {

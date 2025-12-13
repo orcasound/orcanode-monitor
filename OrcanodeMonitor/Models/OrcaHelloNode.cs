@@ -13,6 +13,8 @@ namespace OrcanodeMonitor.Models
         /// VMSS node name.
         /// </summary>
         public string Name => _node.Metadata.Name;
+        private List<OrcaHelloPod> _pods = new List<OrcaHelloPod>();
+        public List<OrcaHelloPod> Pods => _pods;
 
         public string InstanceType { get; private set; }
         public double CpuUsageCores { get; private set; }
@@ -47,7 +49,7 @@ namespace OrcanodeMonitor.Models
             return labels.ContainsKey(key);
         }
 
-        public OrcaHelloNode(V1Node node, string cpuUsage, string memoryUsage, string lscpuOutput)
+        public OrcaHelloNode(V1Node node, string cpuUsage, string memoryUsage, string lscpuOutput, IEnumerable<V1Pod> v1Pods, IEnumerable<PodMetrics> podMetricsList)
         {
             _node = node;
 
@@ -90,6 +92,28 @@ namespace OrcanodeMonitor.Models
             // Check flags.
             HasAvx2 = lscpuOutput.Contains("avx2");
             HasAvx512 = lscpuOutput.Contains("avx512");
+
+            foreach (V1Pod pod in v1Pods)
+            {
+                if (pod.Spec?.NodeName != Name)
+                {
+                    continue;
+                }
+
+                // Skip terminated pods (Succeeded/Failed).
+                if (pod.Status?.Phase == "Succeeded" || pod.Status?.Phase == "Failed")
+                {
+                    continue;
+                }
+
+                PodMetrics? podMetrics = podMetricsList.Where(pm => pm.Metadata.Name == pod.Metadata.Name).FirstOrDefault();
+                var container = podMetrics?.Containers.FirstOrDefault(c => c.Name == "inference-system");
+                string cpuUsagePod = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
+                string memoryUsagePod = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
+
+                OrcaHelloPod orcaPod = new OrcaHelloPod(pod, cpuUsagePod, memoryUsagePod, string.Empty, 0);
+                _pods.Add(orcaPod);
+            }
         }
     }
 }
