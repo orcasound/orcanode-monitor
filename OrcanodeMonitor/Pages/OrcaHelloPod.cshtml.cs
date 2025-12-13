@@ -13,7 +13,7 @@ namespace OrcanodeMonitor.Pages
     {
         public string AksUrl => Environment.GetEnvironmentVariable("AZURE_AKS_URL") ?? "";
 
-        private OrcanodeMonitorContext _databaseContext;
+        private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<OrcaHelloPodModel> _logger;
         private string _logData;
         private OrcaHelloPod? _pod = null;
