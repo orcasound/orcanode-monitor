@@ -366,7 +366,7 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Get an object representing a node hosting an OrcaHello inference pod.
         /// </summary>
-        /// <param name="name">OrcaHello node name</param>
+        /// <param name="nodeName">OrcaHello node name</param>
         /// <returns>OrcaHelloNode</returns>
         public async static Task<OrcaHelloNode?> GetOrcaHelloNodeAsync(string nodeName)
         {
