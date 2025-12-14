@@ -37,6 +37,11 @@ namespace OrcanodeMonitor.Pages
             }
         }
 
+        public bool IsInferencePod(OrcaHelloPod pod)
+        {
+            return pod.Name.StartsWith("inference-system-");
+        }
+
         /// <summary>
         /// Current timestamp, in local time.
         /// </summary>

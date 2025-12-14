@@ -58,9 +58,16 @@
         {
             <tr>
                 <td>
+                @if (Model.IsInferencePod(pod))
+                {
                     <a asp-page="/OrcaHelloPod" asp-route-podNamespace="@pod.NamespaceName">
                         @pod.NamespaceName
                     </a>
+                }
+                else
+                {
+                    @pod.NamespaceName
+                }
                 </td>
                 <td>@pod.Name</td>
                 <td>@(Math.Round(pod.CpuPercent))%</td>
