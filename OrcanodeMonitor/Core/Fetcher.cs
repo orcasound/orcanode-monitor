@@ -393,7 +393,7 @@ namespace OrcanodeMonitor.Core
                 V1Pod? podOnNode = allPodsOnNode
                     .Where(p => p.Metadata.Name.StartsWith("inference-system-"))
                     .FirstOrDefault();
-                if (podOnNode != null)
+                if (podOnNode != null && podOnNode.Metadata != null)
                 {
                     lscpuOutput = await GetPodLscpuOutputAsync(podOnNode.Metadata.Name, podOnNode.Metadata.NamespaceProperty);
                 }
