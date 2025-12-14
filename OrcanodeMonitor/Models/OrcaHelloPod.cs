@@ -4,10 +4,10 @@ using k8s.Models;
 
 namespace OrcanodeMonitor.Models
 {
-    public class OrcaHelloContainer
+    public class OrcaHelloPod
     {
         private readonly V1Pod _pod;
-        public string PodName => _pod.Metadata?.Name ?? string.Empty;
+        public string Name => _pod.Metadata?.Name ?? string.Empty;
         public string NamespaceName => _pod.Metadata?.NamespaceProperty ?? string.Empty;
         public string NodeName => _pod.Spec?.NodeName ?? string.Empty;
         public string LastTerminationReason { get; private set; }
@@ -19,7 +19,7 @@ namespace OrcanodeMonitor.Models
         public long MemoryCapacityInKi { get; private set; }
 
         /// <summary>
-        /// Number of times this container has been restarted.
+        /// Number of times this pod has been restarted.
         /// </summary>
         public long RestartCount { get; private set; }
 
@@ -45,7 +45,7 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        public OrcaHelloContainer(V1Pod pod, string cpuUsage, string memoryUsage, string modelTimestamp, long detectionCount)
+        public OrcaHelloPod(V1Pod pod, string cpuUsage, string memoryUsage, string modelTimestamp, long detectionCount)
         {
             _pod = pod;
             ModelTimestamp = modelTimestamp;

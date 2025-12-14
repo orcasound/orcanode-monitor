@@ -281,7 +281,7 @@ namespace OrcanodeMonitor.Pages
             var detectionTasks = _nodes.Select(async node => new
             {
                 Slug = node.OrcasoundSlug,
-                Count = await Fetcher.GetContainerDetectionCountAsync(node)
+                Count = await Fetcher.GetDetectionCountAsync(node)
             });
             var results = await Task.WhenAll(detectionTasks);
             foreach (var result in results)

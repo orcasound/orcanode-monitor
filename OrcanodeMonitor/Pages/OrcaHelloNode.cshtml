@@ -1,117 +1,80 @@
-﻿@page "{podNamespace}"
+﻿@page "{nodeName}"
 @model OrcanodeMonitor.Pages.OrcaHelloNodeModel
 @{
-    ViewData["Title"] = "OrcaHello for " + Model.Location;
+    ViewData["Title"] = "OrcaHello for " + Model.NodeName;
 }
 
 <div class="text-center">
-    <h1 class="display-4"><a asp-page="/OrcaHelloOverview" target="_blank">OrcaHello</a> for @Model.Location</h1>
-    <div style="display: flex; gap: 20px;">
-        <table style="border: 1px solid #ccc; border-collapse: separate;">
-            <tr>
-                <th colspan="2"
-                    style="text-align: center; font-size: 1.2em; font-weight: bold;
-                 border-bottom: 1px solid #ccc; padding: 8px;">
-                    Pod
-                </th>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Name:</td>
-                <td style="text-align: left; padding: 4px;">@Model.PodName</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Namespace:</td>
-                <td style="text-align: left; padding: 4px;">@Model.PodNamespace</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Image:</td>
-                <td style="text-align: left; padding: 4px;">@Model.ImageName</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Model Timestamp:</td>
-                <td style="text-align: left; padding: 4px;">@Model.ModelTimestamp</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Restarts:</td>
-                <td style="text-align: left; padding: 4px;">@Model.ContainerRestartCount @Model.ContainerLastTerminationReason</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Detections:</td>
-                <td style="text-align: left; padding: 4px;">@Model.DetectionCount</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Lag:</td>
-                <td style="text-align: left; padding: 4px;">@Model.Lag</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Uptime:</td>
-                <td style="text-align: left; padding: 4px;">@Model.ContainerUptime</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">CPU:</td>
-                <td style="text-align: left; padding: 4px;">@(Math.Round(Model.ContainerCpuPercent))% (@Model.ContainerCpuUsageCores.ToString("F2") / @Model.ContainerCpuCapacityCores cores)</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Memory:</td>
-                <td style="text-align: left; padding: 4px;">@(Math.Round(Model.ContainerMemoryPercent))% (@Model.ContainerMemoryUsage / @Model.ContainerMemoryCapacity)</td>
-            </tr>
-        </table>
-        <table style="border: 1px solid #ccc; border-collapse: separate;">
-            <tr>
-                <th colspan="2"
-                    style="text-align: center; font-size: 1.2em; font-weight: bold;
-                 border-bottom: 1px solid #ccc; padding: 8px;">
-                    Node
-                </th>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Name:</td>
-                <td style="text-align: left; padding: 4px;">@Model.NodeName</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Instance Type:</td>
-                <td style="text-align: left; padding: 4px;">@Model.NodeInstanceType</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">CPU Model:</td>
-                <td style="text-align: left; padding: 4px;">@Model.NodeCpuModel</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">AVX2 Support:</td>
-                <td style="text-align: left; padding: 4px;">@Model.NodeHasAvx2</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">AVX-512 Support:</td>
-                <td style="text-align: left; padding: 4px;">@Model.NodeHasAvx512</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Uptime:</td>
-                <td style="text-align: left; padding: 4px;">@Model.NodeUptime</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">CPU:</td>
-                <td style="text-align: left; padding: 4px;">@(Math.Round(Model.NodeCpuPercent))% (@Model.NodeCpuUsageCores.ToString("F2") / @Model.NodeCpuCapacityCores cores)</td>
-            </tr>
-            <tr>
-                <td style="text-align: right; font-weight: bold; padding: 4px;">Memory:</td>
-                <td style="text-align: left; padding: 4px;">@(Math.Round(Model.NodeMemoryPercent))% (@Model.NodeMemoryUsage / @Model.NodeMemoryCapacity)</td>
-            </tr>
-        </table>
-    </div>
+    <h1 class="display-4"><a asp-page="/OrcaHelloOverview" target="_blank">OrcaHello</a> for @Model.NodeName</h1>
+    As of: @Model.NowLocal (Pacific)<br />
 
-    <h2>Recent Log</h2>
-    <div id="logBox"
-         style="border: 1px solid #ccc; padding: 10px; text-align: left;
-            height: 400px; overflow-y: auto; white-space: pre-wrap;">
-        <pre>@Model.LogData</pre>
-    </div>
+    <table>
+        <tr>
+            <td style="text-align: right; font-weight: bold; padding: 4px;">Name:</td>
+            <td style="text-align: left; padding: 4px;">@Model.NodeName</td>
+        </tr>
+        <tr>
+            <td style="text-align: right; font-weight: bold; padding: 4px;">Instance Type:</td>
+            <td style="text-align: left; padding: 4px;">@Model.InstanceType</td>
+        </tr>
+        <tr>
+            <td style="text-align: right; font-weight: bold; padding: 4px;">CPU Model:</td>
+            <td style="text-align: left; padding: 4px;">@Model.CpuModel</td>
+        </tr>
+        <tr>
+            <td style="text-align: right; font-weight: bold; padding: 4px;">AVX2 Support:</td>
+            <td style="text-align: left; padding: 4px;">@Model.HasAvx2</td>
+        </tr>
+        <tr>
+            <td style="text-align: right; font-weight: bold; padding: 4px;">AVX-512 Support:</td>
+            <td style="text-align: left; padding: 4px;">@Model.HasAvx512</td>
+        </tr>
+        <tr>
+            <td style="text-align: right; font-weight: bold; padding: 4px;">Uptime:</td>
+            <td style="text-align: left; padding: 4px;">@Model.Uptime</td>
+        </tr>
+        <tr>
+            <td style="text-align: right; font-weight: bold; padding: 4px;">CPU:</td>
+            <td style="text-align: left; padding: 4px;">@(Math.Round(Model.CpuPercent))% (@Model.CpuUsageCores.ToString("F2") / @Model.CpuCapacityCores cores)</td>
+        </tr>
+        <tr>
+            <td style="text-align: right; font-weight: bold; padding: 4px;">Memory:</td>
+            <td style="text-align: left; padding: 4px;">@(Math.Round(Model.MemoryPercent))% (@Model.MemoryUsage / @Model.MemoryCapacity)</td>
+        </tr>
+    </table>
 
-    <script>
-        // Scroll to bottom once the DOM is ready
-        window.addEventListener("DOMContentLoaded", function () {
-            var box = document.getElementById("logBox");
-            box.scrollTop = box.scrollHeight;
-        });
-    </script>
-
+    <!-- List of all pods on this node. -->
+    <h2>Pods</h2>
+    <table>
+        <tr>
+            <th>Namespace</th>
+            <th>Name</th>
+            <th>Pod CPU</th>
+            <th>Node CPU</th>
+            <th>Pod Memory</th>
+            <th>Node Memory</th>
+        </tr>
+        @foreach (var pod in Model.Pods)
+        {
+            <tr>
+                <td>
+                @if (Model.IsInferencePod(pod))
+                {
+                    <a asp-page="/OrcaHelloPod" asp-route-podNamespace="@pod.NamespaceName">
+                        @pod.NamespaceName
+                    </a>
+                }
+                else
+                {
+                    @pod.NamespaceName
+                }
+                </td>
+                <td>@pod.Name</td>
+                <td>@(Math.Round(pod.CpuPercent))%</td>
+                <td>@(Math.Round(100.0 * pod.CpuUsageCores / Model.CpuCapacityCores))%</td>
+                <td>@pod.MemoryUsage (@(Math.Round(pod.MemoryPercent))%)</td>
+                <td>@(Math.Round(100.0 * pod.MemoryUsageInKi / Model.MemoryCapacityInKi))%</td>
+            </tr>
+        }
+    </table>
 </div>

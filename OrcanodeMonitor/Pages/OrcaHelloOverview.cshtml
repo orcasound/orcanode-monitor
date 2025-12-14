@@ -20,7 +20,9 @@
         {
             <tr>
                 <td>
-                    @Html.DisplayFor(modelItem => item.Name)
+                    <a asp-page="/OrcaHelloNode" asp-route-nodeName="@item.Name">
+                        @Html.DisplayFor(modelItem => item.Name)
+                    </a>
                 </td>
                 <td>
                     @(Math.Round(item.CpuPercent))%
@@ -47,11 +49,10 @@
             <th>CPU</th>
             <th>Memory</th>
             <th>Image</th>
-            <th>Node</th>
             <th>Uptime</th>
             <th>Restarts</th>
         </tr>
-        @foreach (Models.OrcaHelloContainer item in Model.Containers)
+        @foreach (Models.OrcaHelloPod item in Model.Pods)
         {
             <tr>
                 <td>
@@ -59,10 +60,10 @@
                         @Html.DisplayFor(modelItem => item.NamespaceName)
                     </a>
                 </td>
-                <td style="background-color: @Model.GetContainerDetectionsBackgroundColor(item)">
+                <td style="background-color: @Model.GetPodDetectionsBackgroundColor(item)">
                     @item.DetectionCount
                 </td>
-                <td style="background-color: @Model.GetContainerLagBackgroundColor(item)">
+                <td style="background-color: @Model.GetPodLagBackgroundColor(item)">
                     @Model.GetLag(item)
                 </td>
                 <td>
@@ -74,23 +75,20 @@
                 <td>
                     @item.ImageName
                 </td>
-                <td>
-                    @item.NodeName
-                </td>
-                @if (Model.GetContainerStatus(item) == Models.OrcanodeOnlineStatus.Absent)
+                @if (Model.GetPodStatus(item) == Models.OrcanodeOnlineStatus.Absent)
                 {
-                    <td style="background-color: @Model.GetContainerUptimeBackgroundColor(item); color: @Model.GetContainerUptimeTextColor(item)">
+                    <td style="background-color: @Model.GetPodUptimeBackgroundColor(item); color: @Model.GetPodUptimeTextColor(item)">
                         @nameof(Models.OrcanodeOnlineStatus.Absent)
                     </td>
                 }
                 else
                 {
-                    <td style="background-color: @Model.GetContainerUptimeBackgroundColor(item)">
-                        @Model.GetContainerUptime(item)
+                    <td style="background-color: @Model.GetPodUptimeBackgroundColor(item)">
+                        @Model.GetPodUptime(item)
                     </td>
                 }
-                <td style="background-color: @Model.GetContainerRestartsBackgroundColor(item)">
-                    @item.RestartCount @Model.ContainerLastTerminationReason(item)
+                <td style="background-color: @Model.GetPodRestartsBackgroundColor(item)">
+                    @item.RestartCount @Model.GetPodLastTerminationReason(item)
                 </td>
             </tr>
         }
