@@ -502,25 +502,33 @@ namespace OrcanodeMonitor.Core
                 return string.Empty;
             }
 
-            Stream? logs = await client.ReadNamespacedPodLogAsync(
-                name: podName,
-                namespaceParameter: namespaceName,
-                tailLines: 300);
-            if (logs == null)
+            try
             {
+                Stream? logs = await client.ReadNamespacedPodLogAsync(
+                    name: podName,
+                    namespaceParameter: namespaceName,
+                    tailLines: 300);
+                if (logs == null)
+                {
+                    return string.Empty;
+                }
+                using var reader = new StreamReader(logs);
+                string text = reader.ReadToEnd();
+
+                // Split into lines, filter, and rejoin
+                var filtered = string.Join(
+                    Environment.NewLine,
+                    Regex.Split(text, "\r?\n")
+                        .Where(line => !line.StartsWith("INSTRUMENTATION KEY:", StringComparison.OrdinalIgnoreCase))
+                );
+
+                return filtered;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Exception in GetOrcaHelloLogAsync: {ex.Message}");
                 return string.Empty;
             }
-            using var reader = new StreamReader(logs);
-            string text = reader.ReadToEnd();
-
-            // Split into lines, filter, and rejoin
-            var filtered = string.Join(
-                Environment.NewLine,
-                Regex.Split(text, "\r?\n")
-                    .Where(line => !line.StartsWith("INSTRUMENTATION KEY:", StringComparison.OrdinalIgnoreCase))
-            );
-
-            return filtered;
         }
 
         /// <summary>
@@ -660,7 +668,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception in UpdateOrcaHelloDataAsync");
+                logger.LogError(ex, $"Exception in UpdateOrcaHelloDataAsync: {ex.Message}");
             }
         }
 
@@ -695,7 +703,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception in GetDataplicityDataAsync");
+                logger.LogError(ex, $"Exception in GetDataplicityDataAsync: {ex.Message}");
                 return string.Empty;
             }
         }
@@ -935,7 +943,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception in UpdateDataplicityDataAsync");
+                logger.LogError(ex, $"Exception in UpdateDataplicityDataAsync: {ex.Message}");
             }
         }
 
@@ -1015,7 +1023,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception in GetOrcasoundDataAsync");
+                logger.LogError(ex, $"Exception in GetOrcasoundDataAsync: {ex.Message}");
                 return null;
             }
         }
@@ -1208,7 +1216,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception in UpdateOrcasoundDataAsync");
+                logger.LogError(ex, $"Exception in UpdateOrcasoundDataAsync: {ex.Message}");
             }
         }
 
@@ -1230,7 +1238,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception in UpdateS3DataAsync");
+                logger.LogError(ex, $"Exception in UpdateS3DataAsync: {ex.Message}");
             }
         }
 
@@ -1567,7 +1575,7 @@ namespace OrcanodeMonitor.Core
             {
                 // We couldn't fetch the stream audio so could not update the
                 // audio standard deviation. Just ignore this for now.
-                logger.LogError(ex, "Exception in UpdateManifestTimestampAsync");
+                logger.LogError(ex, $"Exception in UpdateManifestTimestampAsync: {ex.Message}");
             }
             return null;
         }
