@@ -574,42 +574,39 @@ namespace OrcanodeMonitor.Core
                             continue;
                         }
 
-                        if (!(bestContainerStatus?.Ready ?? false))
+                        if (bestContainerStatus?.Ready ?? false)
                         {
-                            continue;
-                        }
-                        Stream? logs = await client.ReadNamespacedPodLogAsync(
-                            name: podName,
-                            namespaceParameter: slug,
-                            tailLines: 300);
-                        if (logs == null)
-                        {
-                            continue;
-                        }
-
-                        int lastLiveIndex = -1;
-                        using var reader = new StreamReader(logs);
-                        string line;
-                        while ((line = await reader.ReadLineAsync()) != null)
-                        {
-                            Match m = Regex.Match(line, @"(?<=live)\d+(?=\.ts)");
-                            if (m.Success)
+                            Stream? logs = await client.ReadNamespacedPodLogAsync(
+                                name: podName,
+                                namespaceParameter: slug,
+                                tailLines: 300);
+                            if (logs != null)
                             {
-                                lastLiveIndex = int.Parse(m.Value);
-                            }
-                        }
+                                int lastLiveIndex = -1;
+                                using var reader = new StreamReader(logs);
+                                string line;
+                                while ((line = await reader.ReadLineAsync()) != null)
+                                {
+                                    Match m = Regex.Match(line, @"(?<=live)\d+(?=\.ts)");
+                                    if (m.Success)
+                                    {
+                                        lastLiveIndex = int.Parse(m.Value);
+                                    }
+                                }
 
-                        if (lastLiveIndex >= 0)
-                        {
-                            // TODO: below is the second call to GetLatestS3TimestampAsync.
-                            // We should cache result from before instead of calling it a second time.
-                            TimestampResult? result = await GetLatestS3TimestampAsync(node, true, logger);
-                            if (result?.Offset != null)
-                            {
-                                DateTimeOffset offset = result.Offset.Value;
-                                DateTimeOffset clipEndTime = offset.AddSeconds((lastLiveIndex * 10) + 12);
-                                DateTimeOffset now = DateTimeOffset.UtcNow;
-                                node.OrcaHelloInferencePodLag = now - clipEndTime;
+                                if (lastLiveIndex >= 0)
+                                {
+                                    // TODO: below is the second call to GetLatestS3TimestampAsync.
+                                    // We should cache result from before instead of calling it a second time.
+                                    TimestampResult? result = await GetLatestS3TimestampAsync(node, true, logger);
+                                    if (result?.Offset != null)
+                                    {
+                                        DateTimeOffset offset = result.Offset.Value;
+                                        DateTimeOffset clipEndTime = offset.AddSeconds((lastLiveIndex * 10) + 12);
+                                        DateTimeOffset now = DateTimeOffset.UtcNow;
+                                        node.OrcaHelloInferencePodLag = now - clipEndTime;
+                                    }
+                                }
                             }
                         }
                     }
