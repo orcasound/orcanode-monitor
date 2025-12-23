@@ -1771,10 +1771,10 @@ namespace OrcanodeMonitor.Core
 
                     string lscpuOutput = string.Empty;
                     var allPodsOnNode = v1Pods.Items.Where(c => c.Spec.NodeName == node.Metadata.Name);
-                    if (allPodsOnNode.Any())
+                    GetBestPodStatus(allPodsOnNode, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+                    if (bestPod != null && bestPod.Metadata != null)
                     {
-                        V1Pod pod = allPodsOnNode.First();
-                        lscpuOutput = await GetPodLscpuOutputAsync(pod.Metadata.Name, pod.Metadata.NamespaceProperty);
+                        lscpuOutput = await GetPodLscpuOutputAsync(bestPod.Metadata.Name, bestPod.Metadata.NamespaceProperty);
                     }
 
                     var orcaHelloNode = new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput, v1Pods.Items, podMetrics.Items);
