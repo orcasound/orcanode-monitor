@@ -369,9 +369,10 @@ namespace OrcanodeMonitor.Core
                     cancellationToken: CancellationToken.None
                 );
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Optionally log the exception here if logging is available
+                Console.Error.WriteLine($"[GetPodCommandOutput] Error retrieving node info for '{namespaceName}': {ex.Message}");
                 return string.Empty;
             }
 
@@ -429,12 +430,11 @@ namespace OrcanodeMonitor.Core
                 List<V1Pod> allPodsOnNode = v1Pods.Items
                     .Where(p => p.Spec.NodeName == nodeName)
                     .ToList();
-                V1Pod? podOnNode = allPodsOnNode
-                    .Where(p => p.Metadata.Name.StartsWith("inference-system-"))
-                    .FirstOrDefault();
-                if (podOnNode != null && podOnNode.Metadata != null)
+
+                GetBestPodStatus(allPodsOnNode, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+                if (bestPod != null && bestPod.Metadata != null)
                 {
-                    lscpuOutput = await GetPodLscpuOutputAsync(podOnNode.Metadata.Name, podOnNode.Metadata.NamespaceProperty);
+                    lscpuOutput = await GetPodLscpuOutputAsync(bestPod.Metadata.Name, bestPod.Metadata.NamespaceProperty);
                 }
 
                 PodMetricsList podMetrics = await client.GetKubernetesPodsMetricsAsync();
