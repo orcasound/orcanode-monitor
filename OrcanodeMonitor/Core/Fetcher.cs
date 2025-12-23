@@ -138,7 +138,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 // See if we can match a node name derived from dataplicity.
-                if ((node.OrcasoundName.IsNullOrEmpty()) && orcasoundName.Contains(node.DisplayName))
+                if (node.OrcasoundName.IsNullOrEmpty() && orcasoundName.Contains(node.DisplayName))
                 {
                     node.OrcasoundName = orcasoundName;
                     return node;
@@ -156,40 +156,79 @@ namespace OrcanodeMonitor.Core
         /// <returns>True if new is better, false if old is better</returns>
         private static bool IsBetterContainerStatus(V1ContainerStatus? oldStatus, V1ContainerStatus newStatus)
         {
-            if (oldStatus == null) return true;
+            if (oldStatus == null)
+            {
+                return true;
+            }
 
             var oldState = oldStatus.State;
             var newState = newStatus.State;
 
             bool oldRunning = oldState?.Running != null;
             bool newRunning = newState?.Running != null;
-            if (newRunning && !oldRunning) return true;
-            if (!newRunning && oldRunning) return false;
+            if (newRunning && !oldRunning)
+            {
+                return true;
+            }
+
+            if (!newRunning && oldRunning)
+            {
+                return false;
+            }
 
             bool oldTerminated = oldState?.Terminated != null;
             bool newTerminated = newState?.Terminated != null;
-            // Prefer non‑terminated over terminated when neither is running
-            if (!newTerminated && oldTerminated) return true;
-            if (newTerminated && !oldTerminated) return false;
+            // Prefer non-terminated over terminated when neither is running.
+            if (!newTerminated && oldTerminated)
+            {
+                return true;
+            }
+
+            if (newTerminated && !oldTerminated)
+            {
+                return false;
+            }
 
             // If both running, prefer the most recent start
             if (newRunning && oldRunning)
             {
                 DateTime? nStart = newState!.Running!.StartedAt;
                 DateTime? oStart = oldState!.Running!.StartedAt;
-                if (nStart.HasValue && oStart.HasValue) return nStart > oStart;
-                if (nStart.HasValue) return true;
-                if (oStart.HasValue) return false;
+                if (nStart.HasValue && oStart.HasValue)
+                {
+                    return nStart > oStart;
+                }
+
+                if (nStart.HasValue)
+                {
+                    return true;
+                }
+
+                if (oStart.HasValue)
+                {
+                    return false;
+                }
             }
 
-            // If both terminated, prefer the most recent finish (use State.Terminated)
+            // If both terminated, prefer the most recent finish (use State.Terminated).
             if (newTerminated && oldTerminated)
             {
                 DateTime? nFinish = newState!.Terminated!.FinishedAt;
                 DateTime? oFinish = oldState!.Terminated!.FinishedAt;
-                if (nFinish.HasValue && oFinish.HasValue) return nFinish > oFinish;
-                if (nFinish.HasValue) return true;
-                if (oFinish.HasValue) return false;
+                if (nFinish.HasValue && oFinish.HasValue)
+                {
+                    return nFinish > oFinish;
+                }
+
+                if (nFinish.HasValue)
+                {
+                    return true;
+                }
+
+                if (oFinish.HasValue)
+                {
+                    return false;
+                }
             }
 
             return false;
@@ -463,32 +502,40 @@ namespace OrcanodeMonitor.Core
                 return string.Empty;
             }
 
-            Stream? logs = await client.ReadNamespacedPodLogAsync(
-                name: podName,
-                namespaceParameter: namespaceName,
-                tailLines: 300);
-            if (logs == null)
+            try
             {
+                Stream? logs = await client.ReadNamespacedPodLogAsync(
+                    name: podName,
+                    namespaceParameter: namespaceName,
+                    tailLines: 300);
+                if (logs == null)
+                {
+                    return string.Empty;
+                }
+                using var reader = new StreamReader(logs);
+                string text = reader.ReadToEnd();
+
+                // Split into lines, filter, and rejoin
+                var filtered = string.Join(
+                    Environment.NewLine,
+                    Regex.Split(text, "\r?\n")
+                        .Where(line => !line.StartsWith("INSTRUMENTATION KEY:", StringComparison.OrdinalIgnoreCase))
+                );
+
+                return filtered;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Exception in GetOrcaHelloLogAsync: {ex.Message}");
                 return string.Empty;
             }
-            using var reader = new StreamReader(logs);
-            string text = reader.ReadToEnd();
-
-            // Split into lines, filter, and rejoin
-            var filtered = string.Join(
-                Environment.NewLine,
-                Regex.Split(text, "\r?\n")
-                    .Where(line => !line.StartsWith("INSTRUMENTATION KEY:", StringComparison.OrdinalIgnoreCase))
-            );
-
-            return filtered;
         }
 
         /// <summary>
         /// Update the list of Orcanodes using data about InferenceSystem containers in Azure.
         /// </summary>
         /// <param name="context">Database context to update</param>
-        /// <param name="logger"></param>
+        /// <param name="logger">Logger</param>
         /// <returns></returns>
         public async static Task UpdateOrcaHelloDataAsync(OrcanodeMonitorContext context, ILogger logger)
         {
@@ -535,39 +582,45 @@ namespace OrcanodeMonitor.Core
                             continue;
                         }
 
-                        Stream? logs = await client.ReadNamespacedPodLogAsync(
-                            name: podName,
-                            namespaceParameter: slug,
-                            tailLines: 300);
-                        if (logs == null)
+                        if (bestContainerStatus?.Ready ?? false)
                         {
-                            continue;
-                        }
-
-                        int lastLiveIndex = -1;
-                        using var reader = new StreamReader(logs);
-                        string line;
-                        while ((line = await reader.ReadLineAsync()) != null)
-                        {
-                            Match m = Regex.Match(line, @"(?<=live)\d+(?=\.ts)");
-                            if (m.Success)
+                            Stream? logs = await client.ReadNamespacedPodLogAsync(
+                                name: podName,
+                                namespaceParameter: slug,
+                                tailLines: 300);
+                            if (logs != null)
                             {
-                                lastLiveIndex = int.Parse(m.Value);
+                                int lastLiveIndex = -1;
+                                using var reader = new StreamReader(logs);
+                                string line;
+                                while ((line = await reader.ReadLineAsync()) != null)
+                                {
+                                    Match m = Regex.Match(line, @"(?<=live)\d+(?=\.ts)");
+                                    if (m.Success)
+                                    {
+                                        lastLiveIndex = int.Parse(m.Value);
+                                    }
+                                }
+
+                                if (lastLiveIndex >= 0)
+                                {
+                                    // TODO: below is the second call to GetLatestS3TimestampAsync.
+                                    // We should cache result from before instead of calling it a second time.
+                                    TimestampResult? result = await GetLatestS3TimestampAsync(node, true, logger);
+                                    if (result?.Offset != null)
+                                    {
+                                        DateTimeOffset offset = result.Offset.Value;
+                                        DateTimeOffset clipEndTime = offset.AddSeconds((lastLiveIndex * 10) + 12);
+                                        DateTimeOffset now = DateTimeOffset.UtcNow;
+                                        node.OrcaHelloInferencePodLag = now - clipEndTime;
+                                    }
+                                }
                             }
                         }
-
-                        if (lastLiveIndex >= 0)
+                        else
                         {
-                            // TODO: below is the second call to GetLatestS3TimestampAsync.
-                            // We should cache result from before instead of calling it a second time.
-                            TimestampResult? result = await GetLatestS3TimestampAsync(node, true, logger);
-                            if (result?.Offset != null)
-                            {
-                                DateTimeOffset offset = result.Offset.Value;
-                                DateTimeOffset clipEndTime = offset.AddSeconds((lastLiveIndex * 10) + 12);
-                                DateTimeOffset now = DateTimeOffset.UtcNow;
-                                node.OrcaHelloInferencePodLag = (now - clipEndTime);
-                            }
+                            // Pod is not ready; clear any stale lag value.
+                            node.OrcaHelloInferencePodLag = null;
                         }
                     }
                     else
@@ -585,7 +638,7 @@ namespace OrcanodeMonitor.Core
                         {
                             node.OrcaHelloInferencePodRunningSince = runningSince;
                         }
-                        if (runningSince == null || (DateTime.UtcNow - runningSince < TimeSpan.FromHours(RestartStabilityHours)))
+                        if ((runningSince == null) || (DateTime.UtcNow - runningSince < TimeSpan.FromHours(RestartStabilityHours)))
                         {
                             node.OrcaHelloInferenceRestartCount = bestContainerStatus.RestartCount;
                         }
@@ -620,7 +673,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception in UpdateOrcaHelloDataAsync");
+                logger.LogError(ex, $"Exception in UpdateOrcaHelloDataAsync: {ex.Message}");
             }
         }
 
@@ -655,7 +708,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception in GetDataplicityDataAsync");
+                logger.LogError(ex, $"Exception in GetDataplicityDataAsync: {ex.Message}");
                 return string.Empty;
             }
         }
@@ -766,7 +819,7 @@ namespace OrcanodeMonitor.Core
                     return;
                 }
 
-                var originalList = await context.Orcanodes.ToListAsync();
+                List<Orcanode> originalList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = originalList.ToList();
@@ -886,7 +939,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception in UpdateDataplicityDataAsync");
+                logger.LogError(ex, $"Exception in UpdateDataplicityDataAsync: {ex.Message}");
             }
         }
 
@@ -966,7 +1019,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception in GetOrcasoundDataAsync");
+                logger.LogError(ex, $"Exception in GetOrcasoundDataAsync: {ex.Message}");
                 return null;
             }
         }
@@ -1159,7 +1212,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception in UpdateOrcasoundDataAsync");
+                logger.LogError(ex, $"Exception in UpdateOrcasoundDataAsync: {ex.Message}");
             }
         }
 
@@ -1181,7 +1234,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception in UpdateS3DataAsync");
+                logger.LogError(ex, $"Exception in UpdateS3DataAsync: {ex.Message}");
             }
         }
 
@@ -1518,7 +1571,7 @@ namespace OrcanodeMonitor.Core
             {
                 // We couldn't fetch the stream audio so could not update the
                 // audio standard deviation. Just ignore this for now.
-                logger.LogError(ex, "Exception in UpdateManifestTimestampAsync");
+                logger.LogError(ex, $"Exception in UpdateManifestTimestampAsync: {ex.Message}");
             }
             return null;
         }
