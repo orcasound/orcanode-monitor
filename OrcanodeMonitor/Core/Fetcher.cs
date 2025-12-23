@@ -138,7 +138,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 // See if we can match a node name derived from dataplicity.
-                if ((node.OrcasoundName.IsNullOrEmpty()) && orcasoundName.Contains(node.DisplayName))
+                if (node.OrcasoundName.IsNullOrEmpty() && orcasoundName.Contains(node.DisplayName))
                 {
                     node.OrcasoundName = orcasoundName;
                     return node;
@@ -156,40 +156,79 @@ namespace OrcanodeMonitor.Core
         /// <returns>True if new is better, false if old is better</returns>
         private static bool IsBetterContainerStatus(V1ContainerStatus? oldStatus, V1ContainerStatus newStatus)
         {
-            if (oldStatus == null) return true;
+            if (oldStatus == null)
+            {
+                return true;
+            }
 
             var oldState = oldStatus.State;
             var newState = newStatus.State;
 
             bool oldRunning = oldState?.Running != null;
             bool newRunning = newState?.Running != null;
-            if (newRunning && !oldRunning) return true;
-            if (!newRunning && oldRunning) return false;
+            if (newRunning && !oldRunning)
+            {
+                return true;
+            }
+
+            if (!newRunning && oldRunning)
+            {
+                return false;
+            }
 
             bool oldTerminated = oldState?.Terminated != null;
             bool newTerminated = newState?.Terminated != null;
-            // Prefer non‑terminated over terminated when neither is running
-            if (!newTerminated && oldTerminated) return true;
-            if (newTerminated && !oldTerminated) return false;
+            // Prefer non-terminated over terminated when neither is running.
+            if (!newTerminated && oldTerminated)
+            {
+                return true;
+            }
+
+            if (newTerminated && !oldTerminated)
+            {
+                return false;
+            }
 
             // If both running, prefer the most recent start
             if (newRunning && oldRunning)
             {
                 DateTime? nStart = newState!.Running!.StartedAt;
                 DateTime? oStart = oldState!.Running!.StartedAt;
-                if (nStart.HasValue && oStart.HasValue) return nStart > oStart;
-                if (nStart.HasValue) return true;
-                if (oStart.HasValue) return false;
+                if (nStart.HasValue && oStart.HasValue)
+                {
+                    return nStart > oStart;
+                }
+
+                if (nStart.HasValue)
+                {
+                    return true;
+                }
+
+                if (oStart.HasValue)
+                {
+                    return false;
+                }
             }
 
-            // If both terminated, prefer the most recent finish (use State.Terminated)
+            // If both terminated, prefer the most recent finish (use State.Terminated).
             if (newTerminated && oldTerminated)
             {
                 DateTime? nFinish = newState!.Terminated!.FinishedAt;
                 DateTime? oFinish = oldState!.Terminated!.FinishedAt;
-                if (nFinish.HasValue && oFinish.HasValue) return nFinish > oFinish;
-                if (nFinish.HasValue) return true;
-                if (oFinish.HasValue) return false;
+                if (nFinish.HasValue && oFinish.HasValue)
+                {
+                    return nFinish > oFinish;
+                }
+
+                if (nFinish.HasValue)
+                {
+                    return true;
+                }
+
+                if (oFinish.HasValue)
+                {
+                    return false;
+                }
             }
 
             return false;
@@ -488,7 +527,7 @@ namespace OrcanodeMonitor.Core
         /// Update the list of Orcanodes using data about InferenceSystem containers in Azure.
         /// </summary>
         /// <param name="context">Database context to update</param>
-        /// <param name="logger"></param>
+        /// <param name="logger">Logger</param>
         /// <returns></returns>
         public async static Task UpdateOrcaHelloDataAsync(OrcanodeMonitorContext context, ILogger logger)
         {
@@ -535,6 +574,10 @@ namespace OrcanodeMonitor.Core
                             continue;
                         }
 
+                        if (!(bestContainerStatus?.Ready ?? false))
+                        {
+                            continue;
+                        }
                         Stream? logs = await client.ReadNamespacedPodLogAsync(
                             name: podName,
                             namespaceParameter: slug,
@@ -566,7 +609,7 @@ namespace OrcanodeMonitor.Core
                                 DateTimeOffset offset = result.Offset.Value;
                                 DateTimeOffset clipEndTime = offset.AddSeconds((lastLiveIndex * 10) + 12);
                                 DateTimeOffset now = DateTimeOffset.UtcNow;
-                                node.OrcaHelloInferencePodLag = (now - clipEndTime);
+                                node.OrcaHelloInferencePodLag = now - clipEndTime;
                             }
                         }
                     }
@@ -585,7 +628,7 @@ namespace OrcanodeMonitor.Core
                         {
                             node.OrcaHelloInferencePodRunningSince = runningSince;
                         }
-                        if (runningSince == null || (DateTime.UtcNow - runningSince < TimeSpan.FromHours(RestartStabilityHours)))
+                        if ((runningSince == null) || (DateTime.UtcNow - runningSince < TimeSpan.FromHours(RestartStabilityHours)))
                         {
                             node.OrcaHelloInferenceRestartCount = bestContainerStatus.RestartCount;
                         }
@@ -766,7 +809,16 @@ namespace OrcanodeMonitor.Core
                     return;
                 }
 
-                var originalList = await context.Orcanodes.ToListAsync();
+                List<Orcanode> originalList;
+                try
+                {
+                    originalList = await context.Orcanodes.ToListAsync();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, $"Exception in UpdateDataplicityDataAsync: {ex.Message}");
+                    return;
+                }
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = originalList.ToList();
