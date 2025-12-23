@@ -617,6 +617,11 @@ namespace OrcanodeMonitor.Core
                                 }
                             }
                         }
+                        else
+                        {
+                            // Pod is not ready; clear any stale lag value.
+                            node.OrcaHelloInferencePodLag = null;
+                        }
                     }
                     else
                     {
