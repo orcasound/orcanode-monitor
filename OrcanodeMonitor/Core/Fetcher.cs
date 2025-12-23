@@ -806,16 +806,7 @@ namespace OrcanodeMonitor.Core
                     return;
                 }
 
-                List<Orcanode> originalList;
-                try
-                {
-                    originalList = await context.Orcanodes.ToListAsync();
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, $"Exception in UpdateDataplicityDataAsync: {ex.Message}");
-                    return;
-                }
+                List<Orcanode> originalList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = originalList.ToList();
