@@ -139,6 +139,8 @@ namespace OrcanodeMonitor.Pages
             return GetNodeOrcaHelloDetectionsBackgroundColor(node, detectionCount);
         }
 
+        public string NodeOrcaHelloDetectionsTextColor(Orcanode node) => GetTextColor(NodeOrcaHelloDetectionsBackgroundColor(node));
+
         public string NodeOrcaHelloTextColor(Orcanode node) => GetTextColor(NodeOrcaHelloStatusBackgroundColor(node));
 
         public string NodeOrcaHelloStatusBackgroundColor(Orcanode node) => GetBackgroundColor(node.OrcaHelloStatus, node.OrcasoundStatus);

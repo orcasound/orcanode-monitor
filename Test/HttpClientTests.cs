@@ -55,8 +55,10 @@ namespace Test
         public async Task TestRedirectBehaviorFetcher()
         {
             // Test that HttpClient doesn't follow redirects by making a request to a redirect URL.
-            var httpClientField = typeof(Fetcher).GetField("_httpClient", BindingFlags.NonPublic | BindingFlags.Static);
-            var httpClient = httpClientField.GetValue(null) as HttpClient;
+            FieldInfo? httpClientField = typeof(Fetcher).GetField("_httpClient", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(httpClientField, "HttpClient field should exist");
+            HttpClient? httpClient = httpClientField.GetValue(null) as HttpClient;
+            Assert.IsNotNull(httpClient, "HttpClient should not be null");
 
             try
             {
@@ -86,8 +88,10 @@ namespace Test
         public async Task TestRedirectBehaviorMezmoFetcher()
         {
             // Test that HttpClient doesn't follow redirects by making a request to a redirect URL.
-            var httpClientField = typeof(MezmoFetcher).GetField("_httpClient", BindingFlags.NonPublic | BindingFlags.Static);
-            var httpClient = httpClientField.GetValue(null) as HttpClient;
+            FieldInfo? httpClientField = typeof(MezmoFetcher).GetField("_httpClient", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(httpClientField, "HttpClient field should exist");
+            HttpClient? httpClient = httpClientField.GetValue(null) as HttpClient;
+            Assert.IsNotNull(httpClient, "HttpClient should not be null");
 
             try
             {

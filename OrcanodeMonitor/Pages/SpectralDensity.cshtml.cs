@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: MIT
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.CodeAnalysis;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.Json;
 using static OrcanodeMonitor.Core.Fetcher;
 
@@ -143,6 +145,10 @@ namespace OrcanodeMonitor.Pages
 
         public string GetStatus(int channel) => Orcanode.GetStatusString(_frequencyInfo?.StatusForChannel[channel] ?? OrcanodeOnlineStatus.Absent);
 
+        /// <summary>
+        /// Update the node frequency info using the latest audio.
+        /// </summary>
+        /// <returns></returns>
         private async Task UpdateNodeFrequencyDataAsync()
         {
             if (_node == null)
@@ -159,6 +165,55 @@ namespace OrcanodeMonitor.Pages
 
                     // Use local time.
                     LastModifiedLocal = Fetcher.UtcToLocalDateTime(DateTime.UtcNow)?.ToString() ?? "Unknown";
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to fetch audio sample for node {NodeId}", _node.ID);
+                }
+            }
+        }
+
+        private DateTime? TryParseDateTime(string timestamp)
+        {
+            if (!DateTime.TryParseExact(
+                timestamp,
+                "yyyy-MM-ddTHH-mm-ss",
+                CultureInfo.InvariantCulture,
+                DateTimeStyles.AssumeLocal,
+                out DateTime dt))
+            {
+                return null;
+            }
+            return dt;
+        }
+
+        /// <summary>
+        /// Update the node frequency info using audio from a given timestamp.
+        /// </summary>
+        /// <returns></returns>
+        private async Task UpdateNodeFrequencyDataAsync(string timestamp)
+        {
+            if (_node == null)
+            {
+                return;
+            }
+
+            DateTime? dateTime = TryParseDateTime(timestamp);
+            if (!dateTime.HasValue)
+            {
+                return;
+            }
+
+            TimestampResult? result = await S3Fetcher.GetS3TimestampAsync(_node, dateTime.Value, _logger);
+            if (result != null)
+            {
+                try
+                {
+                    _frequencyInfo = await S3Fetcher.GetAudioSampleAsync(_node, result.UnixTimestampString, dateTime.Value, _logger);
+                    UpdateFrequencyInfo();
+
+                    // Use local time.
+                    LastModifiedLocal = dateTime.ToString() ?? "Unknown";
                 }
                 catch (Exception ex)
                 {
@@ -194,7 +249,13 @@ namespace OrcanodeMonitor.Pages
             }
         }
 
-        public async Task OnGetAsync(string id)
+        /// <summary>
+        /// View the spectral density for an event or the latest on a node.
+        /// </summary>
+        /// <param name="id">node ID or event ID</param>
+        /// <param name="id">timestamp in the format "yyyy-MM-ddTHH-mm-ss", or "now"</param>
+        /// <returns></returns>
+        public async Task OnGetAsync(string id, string timestamp)
         {
             _id = id;
 
@@ -202,7 +263,14 @@ namespace OrcanodeMonitor.Pages
             _node = _databaseContext.Orcanodes.Where(n => n.ID == _id).FirstOrDefault();
             if (_node != null)
             {
-                await UpdateNodeFrequencyDataAsync();
+                if (timestamp == "now")
+                {
+                    await UpdateNodeFrequencyDataAsync();
+                }
+                else
+                {
+                    await UpdateNodeFrequencyDataAsync(timestamp);
+                }
                 return;
             }
 

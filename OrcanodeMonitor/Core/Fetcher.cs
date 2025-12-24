@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 using k8s;
 using k8s.Models;
+using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Mono.TextTemplating;
@@ -21,6 +22,7 @@ namespace OrcanodeMonitor.Core
     {
         private static TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
         private static HttpClient _httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+        public static HttpClient HttpClient => _httpClient;
         private static string _orcasoundProdSite = "live.orcasound.net";
         private static string _orcasoundFeedsUrlPath = "/api/json/feeds";
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
@@ -1351,7 +1353,7 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="context">Database context</param>
         /// <param name="node">Orcanode to update</param>
-        /// <param name="logger"></param>
+        /// <param name="logger">Logger</param>
         /// <returns></returns>
         public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
@@ -1400,9 +1402,9 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Get recent events.
         /// </summary>
-        /// <param name="context"></param>
+        /// <param name="context">Database context</param>
         /// <param name="since">Time to get events since</param>
-        /// <param name="logger"></param>
+        /// <param name="logger">Logger</param>
         /// <returns>null on error, or list of events on success</returns>
         public static async Task<List<OrcanodeEvent>?> GetRecentEventsAsync(OrcanodeMonitorContext context, DateTime since, ILogger logger)
         {
@@ -1432,12 +1434,12 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get recent events for a node
+        /// Get recent events for a node.
         /// </summary>
-        /// <param name="context"></param>
+        /// <param name="context">database context</param>
         /// <param name="id">ID of node to get events for</param>
-        /// <param name="since">Time to get events since</param>
-        /// <param name="logger"></param>
+        /// <param name="since">UTC time to get events since</param>
+        /// <param name="logger">Logger</param>
         /// <returns>null on error, or list of events on success</returns>
         public static async Task<List<OrcanodeEvent>?> GetRecentEventsForNodeAsync(OrcanodeMonitorContext context, string id, DateTime since, ILogger logger)
         {
@@ -1456,6 +1458,51 @@ namespace OrcanodeMonitor.Core
             catch (Exception ex)
             {
                 logger.LogError(ex, $"Failed to fetch events for node {id}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Get recent detections for a node.
+        /// </summary>
+        /// <param name="context">database context</param>
+        /// <param name="feedId">Orcasound feed ID of node to get detections for</param>
+        /// <param name="logger">Logger</param>
+        /// <returns>null on error, or list of detections on success</returns>
+        public static async Task<List<Detection>?> GetRecentDetectionsForNodeAsync(OrcanodeMonitorContext context, string feedId, ILogger logger)
+        {
+            string site = _orcasoundProdSite;
+            string url = $"https://{site}/api/json/detections?page%5Blimit%5D=500&page%5Boffset%5D=0&fields%5Bdetection%5D=id%2Cplaylist_timestamp%2Cplayer_offset%2Ctimestamp%2Cdescription%2Csource%2Ccategory%2Cfeed_id&filter[feed_id]={feedId}";
+
+            try
+            {
+                string jsonString = await _httpClient.GetStringAsync(url);
+                if (jsonString.IsNullOrEmpty())
+                {
+                    // Error.
+                    return null;
+                }
+
+                var response = JsonSerializer.Deserialize<DetectionResponse>(
+                    jsonString,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                List<Detection> detections =
+                    response.Data.Select(d => new Detection
+                    {
+                        ID = d.Id,
+                        NodeID = d.Attributes.Feed_Id,
+                        Timestamp = d.Attributes.Timestamp,
+                        Source = d.Attributes.Source,
+                        Description = d.Attributes.Description ?? ""
+                    }).ToList();
+
+                return detections;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Exception in GetOrcasoundDataAsync: {ex.Message}");
                 return null;
             }
         }

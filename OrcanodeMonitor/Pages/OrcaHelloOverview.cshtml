@@ -61,7 +61,9 @@
                     </a>
                 </td>
                 <td style="background-color: @Model.GetPodDetectionsBackgroundColor(item)">
-                    @item.DetectionCount
+                    <a asp-page="/NodeDetections" asp-route-slug="@item.NamespaceName">
+                        @item.DetectionCount
+                    </a>
                 </td>
                 <td style="background-color: @Model.GetPodLagBackgroundColor(item)">
                     @Model.GetLag(item)
