@@ -54,9 +54,15 @@ jobs:
         with:
           name: webapp
           path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+
+      - name: Create deployment package
+        run: |
+          Compress-Archive -Path "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}\*" -DestinationPath "deployment.zip" -Force
+        shell: pwsh
+
       - name: Deploy to Azure WebApp
         uses: azure/webapps-deploy@657f0700ea5214d56a0400d8ac5e8023c963d25d  # v3.0.6
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.OrcanodeMonitorStagingPublishProfile }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          package: deployment.zip
