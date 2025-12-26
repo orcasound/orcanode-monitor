@@ -56,14 +56,6 @@ namespace OrcanodeMonitor.Pages
             return classes;
         }
 
-        public string GetSpectralDensityId(DateTime dateTime)
-        {
-            string timestamp = dateTime.ToString("yyyy-MM-ddTHH-mm-ss");
-            return $"{_node?.ID}/{timestamp}";
-        }
-
-        public string GetSpectralDensityId(Detection item) => GetSpectralDensityId(item.Timestamp);
-
         public async Task OnGetAsync(string slug)
         {
             _node = await _databaseContext.Orcanodes.Where(n => n.OrcasoundSlug == slug).FirstOrDefaultAsync();

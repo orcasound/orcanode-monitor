@@ -171,13 +171,13 @@ namespace OrcanodeMonitor.Pages
             }
         }
 
-        private DateTime? TryParseDateTime(string timestamp)
+        private DateTime? TryParseDateTimeUTC(string timestamp)
         {
             if (!DateTime.TryParseExact(
                 timestamp,
                 "yyyy-MM-ddTHH-mm-ss",
                 CultureInfo.InvariantCulture,
-                DateTimeStyles.AssumeLocal,
+                DateTimeStyles.AssumeUniversal,
                 out DateTime dt))
             {
                 return null;
@@ -186,8 +186,9 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Update the node frequency info using audio from a given timestamp.
+        /// Update the node frequency info using audio from a given UTC timestamp.
         /// </summary>
+        /// <param name="timestamp">Timestamp in UTC</param>
         /// <returns></returns>
         private async Task UpdateNodeFrequencyDataAsync(string timestamp)
         {
@@ -196,7 +197,7 @@ namespace OrcanodeMonitor.Pages
                 return;
             }
 
-            DateTime? dateTime = TryParseDateTime(timestamp);
+            DateTime? dateTime = TryParseDateTimeUTC(timestamp);
             if (!dateTime.HasValue)
             {
                 return;
@@ -210,8 +211,8 @@ namespace OrcanodeMonitor.Pages
                     _frequencyInfo = await S3Fetcher.GetAudioSampleAsync(_node, result.UnixTimestampString, dateTime.Value, _logger);
                     UpdateFrequencyInfo();
 
-                    // Use local time.
-                    LastModifiedLocal = dateTime.ToString() ?? "Unknown";
+                    // Use Pacific local time.
+                    LastModifiedLocal = UtcToLocalDateTime(dateTime)?.ToString() ?? "Unknown";
                 }
                 catch (Exception ex)
                 {
@@ -251,11 +252,16 @@ namespace OrcanodeMonitor.Pages
         /// View the spectral density for an event or the latest on a node.
         /// </summary>
         /// <param name="id">node ID or event ID</param>
-        /// <param name="timestamp">timestamp in the format "yyyy-MM-ddTHH-mm-ss", or "now"</param>
+        /// <param name="timestamp">timestamp in the format "yyyy-MM-ddTHH-mm-ss", or null or "now"</param>
         /// <returns></returns>
-        public async Task OnGetAsync(string id, string timestamp)
+        public async Task OnGetAsync(string id, string? timestamp)
         {
             _id = id;
+
+            if (string.IsNullOrWhiteSpace(timestamp))
+            {
+                timestamp = "now";
+            }
 
             // First see if we have a node ID.
             _node = _databaseContext.Orcanodes.Where(n => n.ID == _id).FirstOrDefault();

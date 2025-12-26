@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: MIT
 using k8s;
 using k8s.Models;
-using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Mono.TextTemplating;

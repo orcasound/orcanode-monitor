@@ -3,7 +3,7 @@
 @{
     ViewData["Title"] = "Node Detections";
     var now = DateTime.Now;
-    var formatted = now.ToString("yyyy-MM-ddTHH:mm");
+    var formattedNow = now.ToString("yyyy-MM-ddTHH:mm");
 }
 
 <div class="text-center">
@@ -18,7 +18,7 @@
 
     <div style="margin-top: 20px;">
         <label for="sdTime">View Audio at:</label>
-        <input id="sdTime" type="datetime-local" value="@formatted">
+        <input id="sdTime" type="datetime-local" value="@formattedNow">
 
         <button class="btn btn-primary" onclick="goToSpectralDensity()">
             View Spectral Density
@@ -52,13 +52,14 @@
                 <th>Source</th>
                 <th align="left">Detection</th>
                 <th></th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
             @if (!Model.RecentDetections.Any())
             {
                 <tr>
-                    <td colspan="4" class="text-center">No detections found for this time period.</td>
+                    <td colspan="5" class="text-center">No detections found for this time period.</td>
                 </tr>
             }
             @foreach (Models.Detection item in Model.RecentDetections)
@@ -70,8 +71,19 @@
                         <span>@item.Description</span>
                     </td>
                     <td>
-                        <a href="@Url.Page("/SpectralDensity", new { id = Model.GetSpectralDensityId(item), timestamp = item.Timestamp.ToUniversalTime().ToString("yyyy-MM-ddTHH-mm-ss") })" class="btn selected" style="display: inline-block;" target="_blank" rel="noopener">
+                        <a href="@Url.Page("/SpectralDensity", new { id = Model.Id, timestamp = item.Timestamp.ToUniversalTime().ToString("yyyy-MM-ddTHH-mm-ss") })" class="btn selected" style="display: inline-block;" target="_blank" rel="noopener">
                             View Spectral Density
+                            <span class="visually-hidden">(opens in new tab)</span>
+                        </a>
+                    </td>
+                    <td>
+                        @{
+                            var formatted = item.Timestamp.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+                            var nodeId = Model.OrcasoundSlug;
+                            var url = "https://live.orcasound.net/bouts/new/" + Uri.EscapeDataString(nodeId) + "?time=" + Uri.EscapeDataString(formatted);
+                        }
+                        <a href="@url" class="btn selected" style="display: inline-block;" target="_blank" rel="noopener">
+                            View On Orcasite
                             <span class="visually-hidden">(opens in new tab)</span>
                         </a>
                     </td>
@@ -155,7 +167,7 @@
             // Inject the node ID from Razor.
             var nodeId = "@Model.OrcasoundSlug";
 
-            // Navigate to the Razor page route.
+            // Navigate to the page.
             var url = "https://live.orcasound.net/bouts/new/" + encodeURIComponent(nodeId) + "?time=" + encodeURIComponent(formatted);
 
             window.open(url, "_blank");
@@ -174,12 +186,12 @@
 
             // Format to match C# "yyyy-MM-ddTHH-mm-ss".
             var formatted =
-                dt.getFullYear() + "-" +
-                String(dt.getMonth() + 1).padStart(2, '0') + "-" +
-                String(dt.getDate()).padStart(2, '0') + "T" +
-                String(dt.getHours()).padStart(2, '0') + "-" +
-                String(dt.getMinutes()).padStart(2, '0') + "-" +
-                String(dt.getSeconds()).padStart(2, '0');
+                dt.getUTCFullYear() + "-" +
+                String(dt.getUTCMonth() + 1).padStart(2, '0') + "-" +
+                String(dt.getUTCDate()).padStart(2, '0') + "T" +
+                String(dt.getUTCHours()).padStart(2, '0') + "-" +
+                String(dt.getUTCMinutes()).padStart(2, '0') + "-" +
+                String(dt.getUTCSeconds()).padStart(2, '0');
 
             // Inject the node ID from Razor.
             var nodeId = "@Model.Id";

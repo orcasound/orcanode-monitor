@@ -35,7 +35,7 @@ namespace OrcanodeMonitor.Core
 
             using var client = new AmazonS3Client(new Amazon.Runtime.AnonymousAWSCredentials(), config);
             var allFolders = new List<string>();
-            string continuationToken = null;
+            string? continuationToken = null;
 
             do
             {
