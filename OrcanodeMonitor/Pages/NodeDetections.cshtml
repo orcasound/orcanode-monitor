@@ -1,0 +1,205 @@
+﻿@page "{slug}"
+@model OrcanodeMonitor.Pages.NodeDetectionsModel
+@{
+    ViewData["Title"] = "Node Detections";
+    var now = DateTime.Now;
+    var formattedNow = now.ToString("yyyy-MM-ddTHH:mm");
+}
+
+<div class="text-center">
+    <h1 class="display-4">@Model.NodeName</h1>
+
+    <!-- Navigation Buttons -->
+    <a href="@Url.Page("/NodeEvents", new { id = Model.Id })" class="btn btn-primary" target="_blank" rel="noopener">
+        View Events
+        <span class="visually-hidden">(opens in new tab)</span>
+    </a>
+    <p></p>
+
+    <div style="margin-top: 20px;">
+        <label for="sdTime">View Audio at:</label>
+        <input id="sdTime" type="datetime-local" value="@formattedNow">
+
+        <button class="btn btn-primary" onclick="goToSpectralDensity()">
+            View Spectral Density
+        </button>
+        <button class="btn btn-primary" onclick="goToOrcasite()">
+            View on Orcasite
+        </button>
+    </div>
+
+    <!-- Filter Buttons for Time Range -->
+    <div>
+        Filter by Time Range:
+        <button id="btn-timeRange-pastWeek" class="btn selected" onclick="updateFilter('timeRange', 'pastWeek')">Past Week</button>
+        <button id="btn-timeRange-pastMonth" class="btn unselected" onclick="updateFilter('timeRange', 'pastMonth')">Past Month</button>
+        <p></p>
+    </div>
+
+    <!-- Filter Buttons for Source -->
+    <div>
+        Filter by Source:
+        <button id="btn-source-all" class="btn selected" onclick="updateFilter('source', 'all')">All</button>
+        <button id="btn-source-human" class="btn unselected" onclick="updateFilter('source', 'human')">Human</button>
+        <button id="btn-source-machine" class="btn unselected" onclick="updateFilter('source', 'machine')">Machine</button>
+        <p></p>
+    </div>
+
+    <table id="detectionsTable" class="table">
+        <thead>
+            <tr>
+                <th>Timestamp (Pacific)</th>
+                <th>Source</th>
+                <th align="left">Detection</th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (!Model.RecentDetections.Any())
+            {
+                <tr>
+                    <td colspan="5" class="text-center">No detections found for this time period.</td>
+                </tr>
+            }
+            @foreach (Models.Detection item in Model.RecentDetections)
+            {
+                <tr class="@Model.GetDetectionClasses(item)">
+                    <td>@item.Timestamp.ToLocalTime().ToString("g")</td>
+                    <td>@item.Source</td>
+                    <td align="left">
+                        <span>@item.Description</span>
+                    </td>
+                    <td>
+                        <a href="@Url.Page("/SpectralDensity", new { id = Model.Id, timestamp = item.Timestamp.ToUniversalTime().ToString("yyyy-MM-ddTHH-mm-ss") })" class="btn selected" style="display: inline-block;" target="_blank" rel="noopener">
+                            View Spectral Density
+                            <span class="visually-hidden">(opens in new tab)</span>
+                        </a>
+                    </td>
+                    <td>
+                        @{
+                            var formatted = item.Timestamp.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+                            var nodeId = Model.OrcasoundSlug;
+                            var url = "https://live.orcasound.net/bouts/new/" + Uri.EscapeDataString(nodeId) + "?time=" + Uri.EscapeDataString(formatted);
+                        }
+                        <a href="@url" class="btn selected" style="display: inline-block;" target="_blank" rel="noopener">
+                            View On Orcasite
+                            <span class="visually-hidden">(opens in new tab)</span>
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <script>
+        var currentFilters = {
+            timeRange: 'pastWeek',
+            source: 'all' };
+
+        updateFilter('default', 'default');
+
+        function updateFilter(filterType, filterValue) {
+            // Update time range filter.
+            if (filterType == 'timeRange') {
+                var oldTimeRangeButtonId = 'btn-timeRange-' + currentFilters.timeRange;
+                var oldTimeRangeButton = document.getElementById(oldTimeRangeButtonId);
+                oldTimeRangeButton.classList.remove('selected');
+                oldTimeRangeButton.classList.add('unselected');
+
+                currentFilters.timeRange = filterValue;
+
+                var newTimeRangeButtonId = 'btn-timeRange-' + currentFilters.timeRange;
+                var newTimeRangeButton = document.getElementById(newTimeRangeButtonId);
+                newTimeRangeButton.classList.remove('unselected');
+                newTimeRangeButton.classList.add('selected');
+            }
+
+            // Update source filter.
+            if (filterType == 'source') {
+                var oldSourceButtonId = 'btn-source-' + currentFilters.source;
+                var oldSourceButton = document.getElementById(oldSourceButtonId);
+                oldSourceButton.classList.remove('selected');
+                oldSourceButton.classList.add('unselected');
+
+                currentFilters.source = filterValue;
+
+                var newSourceButtonId = 'btn-source-' + currentFilters.source;
+                var newSourceButton = document.getElementById(newSourceButtonId);
+                newSourceButton.classList.remove('unselected');
+                newSourceButton.classList.add('selected');
+            }
+
+            filterTable();
+        }
+
+        function filterTable() {
+            // Get all rows from the table.
+            var rows = document.querySelectorAll('#detectionsTable tbody tr');
+
+            // Loop through each row.
+            rows.forEach(function(row) {
+                // Check if the row matches the selected time range and source.
+                var matchesTimeRange = (currentFilters.timeRange === 'all' || row.classList.contains(currentFilters.timeRange));
+                var matchesSource = (currentFilters.source === 'all' || row.classList.contains(currentFilters.source));
+
+                if (matchesTimeRange && matchesSource) {
+                    row.style.display = ''; // Show matching rows.
+                } else {
+                    row.style.display = 'none'; // Hide non-matching rows.
+                }
+            });
+        }
+
+        function goToOrcasite() {
+            var input = document.getElementById('sdTime').value;
+            if (!input) {
+                alert("Please select a date and time first.");
+                return;
+            }
+
+            // Convert to Date.
+            var dt = new Date(input);
+
+            // Format to match C# "yyyy-MM-ddTHH:mm:ssZ".
+            var formatted = dt.toISOString();
+
+            // Inject the node ID from Razor.
+            var nodeId = "@Model.OrcasoundSlug";
+
+            // Navigate to the page.
+            var url = "https://live.orcasound.net/bouts/new/" + encodeURIComponent(nodeId) + "?time=" + encodeURIComponent(formatted);
+
+            window.open(url, "_blank");
+        }
+
+        function goToSpectralDensity() {
+            var input = document.getElementById('sdTime').value;
+
+            if (!input) {
+                alert("Please select a date and time first.");
+                return;
+            }
+
+            // Convert to Date.
+            var dt = new Date(input);
+
+            // Format to match C# "yyyy-MM-ddTHH-mm-ss".
+            var formatted =
+                dt.getUTCFullYear() + "-" +
+                String(dt.getUTCMonth() + 1).padStart(2, '0') + "-" +
+                String(dt.getUTCDate()).padStart(2, '0') + "T" +
+                String(dt.getUTCHours()).padStart(2, '0') + "-" +
+                String(dt.getUTCMinutes()).padStart(2, '0') + "-" +
+                String(dt.getUTCSeconds()).padStart(2, '0');
+
+            // Inject the node ID from Razor.
+            var nodeId = "@Model.Id";
+
+            // Navigate to the Razor page route.
+            var url = "/SpectralDensity/" + encodeURIComponent(nodeId) + "/" + encodeURIComponent(formatted);
+
+            window.open(url, "_blank");
+        }
+    </script>
+</div>

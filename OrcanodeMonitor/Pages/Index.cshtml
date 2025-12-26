@@ -89,7 +89,9 @@
                 </td>
             }
             <td style="background-color: @Model.NodeOrcaHelloDetectionsBackgroundColor(item)">
-                @Model.GetOrcaHelloDetectionCount(item)
+                <a asp-page="/NodeDetections" asp-route-slug="@item.OrcasoundSlug" style="color: @Model.NodeOrcaHelloDetectionsTextColor(item)">
+                    @Model.GetOrcaHelloDetectionCount(item)
+                </a>
             </td>
             @if (item.MezmoStatus == Models.OrcanodeOnlineStatus.Absent)
             {

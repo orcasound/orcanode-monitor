@@ -28,6 +28,7 @@ namespace OrcanodeMonitor.Pages
         public List<int> HydrophoneStreamStatus => _hydrophoneStreamStatus;
 
         public string Id => _node?.ID ?? string.Empty;
+        public string OrcasoundSlug => _node?.OrcasoundSlug ?? string.Empty;
         public string NodeName => _node?.DisplayName ?? "Unknown";
 
         private List<OrcanodeEvent> _events;
