@@ -70,7 +70,7 @@
                         <span>@item.Description</span>
                     </td>
                     <td>
-                        <a href="@Url.Page("/SpectralDensity", new { id = Model.GetSpectralDensityId(item), timestamp = item.Timestamp.ToString("yyyy-MM-ddTHH-mm-ss") })" class="btn selected" style="display: inline-block;" target="_blank" rel="noopener">
+                        <a href="@Url.Page("/SpectralDensity", new { id = Model.GetSpectralDensityId(item), timestamp = item.Timestamp.ToUniversalTime().ToString("yyyy-MM-ddTHH-mm-ss") })" class="btn selected" style="display: inline-block;" target="_blank" rel="noopener">
                             View Spectral Density
                             <span class="visually-hidden">(opens in new tab)</span>
                         </a>
