@@ -12,8 +12,6 @@ namespace OrcanodeMonitor.Core
 {
     public class S3Fetcher
     {
-        private static readonly ConcurrentDictionary<string, List<string>> _s3FoldersCache = new ConcurrentDictionary<string, List<string>>();
-
         /// <summary>
         /// Get the list of folders (representing .ts segment start times) for
         /// a given location ID from the public S3 bucket.
@@ -22,12 +20,6 @@ namespace OrcanodeMonitor.Core
         /// <returns>List of folder names representing HLS start times</returns>
         public static async Task<List<string>> GetPublicS3FoldersAsync(string locationIdString)
         {
-            // First try using a cached value.
-            if (_s3FoldersCache.TryGetValue(locationIdString, out var cachedFolders))
-            {
-                return cachedFolders;
-            }
-
             var config = new AmazonS3Config
             {
                 RegionEndpoint = RegionEndpoint.USWest2
@@ -60,7 +52,6 @@ namespace OrcanodeMonitor.Core
                     : null;
             } while (continuationToken != null);
 
-            _s3FoldersCache[locationIdString] = allFolders;
             return allFolders;
         }
 

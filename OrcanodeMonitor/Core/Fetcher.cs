@@ -21,7 +21,6 @@ namespace OrcanodeMonitor.Core
     {
         private static TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
         private static HttpClient _httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
-        public static HttpClient HttpClient => _httpClient;
         private static string _orcasoundProdSite = "live.orcasound.net";
         private static string _orcasoundFeedsUrlPath = "/api/json/feeds";
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
@@ -1494,10 +1493,10 @@ namespace OrcanodeMonitor.Core
                     response.Data.Select(d => new Detection
                     {
                         ID = d.Id,
-                        NodeID = d.Attributes.Feed_Id,
-                        Timestamp = d.Attributes.Timestamp,
-                        Source = d.Attributes.Source,
-                        Description = d.Attributes.Description ?? ""
+                        NodeID = d.Attributes?.FeedId ?? string.Empty,
+                        Timestamp = d.Attributes?.Timestamp ?? default,
+                        Source = d.Attributes?.Source ?? string.Empty,
+                        Description = d.Attributes?.Description ?? string.Empty
                     }).ToList();
 
                 return detections;
