@@ -171,6 +171,11 @@ namespace OrcanodeMonitor.Pages
             }
         }
 
+        /// <summary>
+        /// Try parsing a timestamp string in UTC.
+        /// </summary>
+        /// <param name="timestamp">String to parse</param>
+        /// <returns>DateTime, or null on error</returns>
         private DateTime? TryParseDateTimeUTC(string timestamp)
         {
             if (!DateTime.TryParseExact(

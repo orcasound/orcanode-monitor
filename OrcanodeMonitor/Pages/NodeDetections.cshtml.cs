@@ -26,6 +26,11 @@ namespace OrcanodeMonitor.Pages
             _detections = new List<Detection>();
         }
 
+        /// <summary>
+        /// Get source CSS class for a detection.
+        /// </summary>
+        /// <param name="item">Detection</param>
+        /// <returns>CSS class</returns>
         public static string GetSourceClass(Detection item) => item.Source switch
         {
             DetectionSource.Machine => "machine",
@@ -33,6 +38,11 @@ namespace OrcanodeMonitor.Pages
             _ => string.Empty
         };
 
+        /// <summary>
+        /// Get time range CSS classes for a detection.
+        /// </summary>
+        /// <param name="item">Detection</param>
+        /// <returns>String containing CSS classes</returns>
         public static string GetTimeRangeClass(Detection item)
         {
             DateTime oneWeekAgo = DateTime.UtcNow.AddDays(-7);
@@ -50,6 +60,11 @@ namespace OrcanodeMonitor.Pages
             return string.Empty;
         }
 
+        /// <summary>
+        /// Get detection CSS classes based on source and time range.
+        /// </summary>
+        /// <param name="item">Detection</param>
+        /// <returns>String containing CSS classes</returns>
         public string GetDetectionClasses(Detection item)
         {
             string classes = GetSourceClass(item) + " " + GetTimeRangeClass(item);
