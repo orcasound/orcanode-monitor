@@ -20,11 +20,11 @@
         <label for="sdTime">View Audio at:</label>
         <input id="sdTime" type="datetime-local" value="@formattedNow">
 
-        <button class="btn btn-primary" onclick="goToSpectralDensity()">
-            View Spectral Density
-        </button>
         <button class="btn btn-primary" onclick="goToOrcasite()">
             View on Orcasite
+        </button>
+        <button class="btn btn-primary" onclick="goToSpectralDensity()">
+            View Spectral Density
         </button>
     </div>
 </div>
@@ -80,7 +80,11 @@
             @foreach (Models.Detection item in Model.RecentDetections)
             {
                 <tr class="@Model.GetDetectionClasses(item)">
-                    <td>@item.Timestamp.ToLocalTime().ToString("g")</td>
+                    @{
+                        var pacific = TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+                        var pacificTime = TimeZoneInfo.ConvertTimeFromUtc(item.Timestamp, pacific);
+                    }
+                    <td>@pacificTime.ToString("g")</td>
                     <td>@item.Category</td>
                     <td>@item.Source</td>
                     <td align="left">
