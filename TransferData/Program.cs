@@ -73,7 +73,7 @@ namespace OrcanodeMonitor
         private static bool IsCovered(OrcanodeEvent item, List<OrcanodeEvent> items)
         {
             var all = items.Where(i => i.NodeName == item.NodeName && i.Type == item.Type);
-            OrcanodeEvent before = all.Where(i => i.DateTimeUtc <= item.DateTimeUtc).OrderByDescending(i => i.DateTimeUtc).FirstOrDefault();
+            OrcanodeEvent? before = all.Where(i => i.DateTimeUtc <= item.DateTimeUtc).OrderByDescending(i => i.DateTimeUtc).FirstOrDefault();
             if (before == null)
             {
                 return false;
