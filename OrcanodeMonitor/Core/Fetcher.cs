@@ -1465,11 +1465,10 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Get recent detections for a node.
         /// </summary>
-        /// <param name="context">Database context</param>
         /// <param name="feedId">Orcasound feed ID of node to get detections for</param>
         /// <param name="logger">Logger</param>
         /// <returns>null on error, or list of detections on success</returns>
-        public static async Task<List<Detection>?> GetRecentDetectionsForNodeAsync(OrcanodeMonitorContext context, string feedId, ILogger logger)
+        public static async Task<List<Detection>?> GetRecentDetectionsForNodeAsync(string feedId, ILogger logger)
         {
             string site = _orcasoundProdSite;
             string url = $"https://{site}/api/json/detections?page%5Blimit%5D=500&page%5Boffset%5D=0&fields%5Bdetection%5D=id%2Cplaylist_timestamp%2Cplayer_offset%2Ctimestamp%2Cdescription%2Csource%2Ccategory%2Cfeed_id&filter[feed_id]={feedId}";

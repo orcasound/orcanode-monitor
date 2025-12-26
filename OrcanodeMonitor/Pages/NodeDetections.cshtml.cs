@@ -75,7 +75,7 @@ namespace OrcanodeMonitor.Pages
             }
 
             string feedId = _node?.OrcasoundFeedId ?? string.Empty;
-            List<Detection>? detections = await Fetcher.GetRecentDetectionsForNodeAsync(_databaseContext, feedId, _logger);
+            List<Detection>? detections = await Fetcher.GetRecentDetectionsForNodeAsync(feedId, _logger);
             if (detections != null)
             {
                 _detections = detections;
