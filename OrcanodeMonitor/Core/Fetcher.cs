@@ -1496,7 +1496,8 @@ namespace OrcanodeMonitor.Core
                         NodeID = d.Attributes?.FeedId ?? string.Empty,
                         Timestamp = d.Attributes?.Timestamp ?? default,
                         Source = d.Attributes?.Source ?? string.Empty,
-                        Description = d.Attributes?.Description ?? string.Empty
+                        Description = d.Attributes?.Description ?? string.Empty,
+                        Category = d.Attributes?.Category ?? string.Empty
                     }).ToList();
 
                 return detections;
