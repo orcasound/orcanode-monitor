@@ -39,6 +39,19 @@ namespace OrcanodeMonitor.Pages
         };
 
         /// <summary>
+        /// Get category CSS class for a detection.
+        /// </summary>
+        /// <param name="item">Detection</param>
+        /// <returns>CSS class</returns>
+        public static string GetCategoryClass(Detection item) => item.Category switch
+        {
+            DetectionCategory.Whale => "whale",
+            DetectionCategory.Vessel => "vessel",
+            DetectionCategory.Other => "other",
+            _ => string.Empty
+        };
+
+        /// <summary>
         /// Get time range CSS classes for a detection.
         /// </summary>
         /// <param name="item">Detection</param>
@@ -61,13 +74,13 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Get detection CSS classes based on source and time range.
+        /// Get detection CSS classes based on source, category, and time range.
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>String containing CSS classes</returns>
         public string GetDetectionClasses(Detection item)
         {
-            string classes = GetSourceClass(item) + " " + GetTimeRangeClass(item);
+            string classes = GetSourceClass(item) + " " + GetCategoryClass(item) + " " + GetTimeRangeClass(item);
             return classes;
         }
 

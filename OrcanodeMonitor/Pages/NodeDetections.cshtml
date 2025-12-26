@@ -36,6 +36,16 @@
         <p></p>
     </div>
 
+    <!-- Filter Buttons for Category -->
+    <div>
+        Filter by Category:
+        <button id="btn-category-all" class="btn selected" onclick="updateFilter('category', 'all')">All</button>
+        <button id="btn-category-whale" class="btn unselected" onclick="updateFilter('category', 'whale')">Whale</button>
+        <button id="btn-category-vessel" class="btn unselected" onclick="updateFilter('category', 'vessel')">Vessel</button>
+        <button id="btn-category-other" class="btn unselected" onclick="updateFilter('category', 'other')">Other</button>
+        <p></p>
+    </div>
+
     <!-- Filter Buttons for Source -->
     <div>
         Filter by Source:
@@ -49,8 +59,9 @@
         <thead>
             <tr>
                 <th>Timestamp (Pacific)</th>
+                <th>Category</th>
                 <th>Source</th>
-                <th align="left">Detection</th>
+                <th align="left">Description</th>
                 <th></th>
                 <th></th>
             </tr>
@@ -59,22 +70,17 @@
             @if (!Model.RecentDetections.Any())
             {
                 <tr>
-                    <td colspan="5" class="text-center">No detections found for this time period.</td>
+                    <td colspan="6" class="text-center">No detections found for this time period.</td>
                 </tr>
             }
             @foreach (Models.Detection item in Model.RecentDetections)
             {
                 <tr class="@Model.GetDetectionClasses(item)">
                     <td>@item.Timestamp.ToLocalTime().ToString("g")</td>
+                    <td>@item.Category</td>
                     <td>@item.Source</td>
                     <td align="left">
                         <span>@item.Description</span>
-                    </td>
-                    <td>
-                        <a href="@Url.Page("/SpectralDensity", new { id = Model.Id, timestamp = item.Timestamp.ToUniversalTime().ToString("yyyy-MM-ddTHH-mm-ss") })" class="btn selected" style="display: inline-block;" target="_blank" rel="noopener">
-                            View Spectral Density
-                            <span class="visually-hidden">(opens in new tab)</span>
-                        </a>
                     </td>
                     <td>
                         @{
@@ -87,6 +93,12 @@
                             <span class="visually-hidden">(opens in new tab)</span>
                         </a>
                     </td>
+                    <td>
+                        <a href="@Url.Page("/SpectralDensity", new { id = Model.Id, timestamp = item.Timestamp.ToUniversalTime().ToString("yyyy-MM-ddTHH-mm-ss") })" class="btn selected" style="display: inline-block;" target="_blank" rel="noopener">
+                            View Spectral Density
+                            <span class="visually-hidden">(opens in new tab)</span>
+                        </a>
+                    </td>
                 </tr>
             }
         </tbody>
@@ -95,6 +107,7 @@
     <script>
         var currentFilters = {
             timeRange: 'pastWeek',
+            category: 'all',
             source: 'all' };
 
         updateFilter('default', 'default');
@@ -113,6 +126,21 @@
                 var newTimeRangeButton = document.getElementById(newTimeRangeButtonId);
                 newTimeRangeButton.classList.remove('unselected');
                 newTimeRangeButton.classList.add('selected');
+            }
+
+            // Update category filter.
+            if (filterType == 'category') {
+                var oldCategoryButtonId = 'btn-category-' + currentFilters.category;
+                var oldCategoryButton = document.getElementById(oldCategoryButtonId);
+                oldCategoryButton.classList.remove('selected');
+                oldCategoryButton.classList.add('unselected');
+
+                currentFilters.category = filterValue;
+
+                var newCategoryButtonId = 'btn-category-' + currentFilters.category;
+                var newCategoryButton = document.getElementById(newCategoryButtonId);
+                newCategoryButton.classList.remove('unselected');
+                newCategoryButton.classList.add('selected');
             }
 
             // Update source filter.
@@ -139,11 +167,12 @@
 
             // Loop through each row.
             rows.forEach(function(row) {
-                // Check if the row matches the selected time range and source.
+                // Check if the row matches the selected time range, category, and source.
                 var matchesTimeRange = (currentFilters.timeRange === 'all' || row.classList.contains(currentFilters.timeRange));
+                var matchesCategory = (currentFilters.category === 'all' || row.classList.contains(currentFilters.category));
                 var matchesSource = (currentFilters.source === 'all' || row.classList.contains(currentFilters.source));
 
-                if (matchesTimeRange && matchesSource) {
+                if (matchesTimeRange && matchesCategory && matchesSource) {
                     row.style.display = ''; // Show matching rows.
                 } else {
                     row.style.display = 'none'; // Hide non-matching rows.

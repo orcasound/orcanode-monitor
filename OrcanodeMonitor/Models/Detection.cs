@@ -31,8 +31,17 @@ namespace OrcanodeMonitor.Models
         public string ID { get; set; } = string.Empty;
         public string NodeID { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }
+        public string Category { get; set; } = string.Empty;
         public string Source { get; set; } = DetectionSource.Machine;
         public string Description { get; set; } = string.Empty;
+    }
+
+    public static class DetectionCategory
+    {
+        public const string All = "all";
+        public const string Whale = "whale";
+        public const string Vessel = "vessel";
+        public const string Other = "other";
     }
 
     public static class DetectionSource
