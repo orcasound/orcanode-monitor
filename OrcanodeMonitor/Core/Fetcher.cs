@@ -1486,6 +1486,10 @@ namespace OrcanodeMonitor.Core
                     jsonString,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                 );
+                if (response?.Data == null)
+                {
+                    return null;
+                }
 
                 List<Detection> detections =
                     response.Data.Select(d => new Detection

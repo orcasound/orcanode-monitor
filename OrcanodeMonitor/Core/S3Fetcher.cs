@@ -5,13 +5,14 @@ using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using OrcanodeMonitor.Models;
+using System.Collections.Concurrent;
 using static OrcanodeMonitor.Core.Fetcher;
 
 namespace OrcanodeMonitor.Core
 {
     public class S3Fetcher
     {
-        private static readonly Dictionary<string, List<string>> _s3FoldersCache = new Dictionary<string, List<string>>();
+        private static readonly ConcurrentDictionary<string, List<string>> _s3FoldersCache = new ConcurrentDictionary<string, List<string>>();
 
         /// <summary>
         /// Get the list of folders (representing .ts segment start times) for
