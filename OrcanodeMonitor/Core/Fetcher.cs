@@ -1465,7 +1465,7 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Get recent detections for a node.
         /// </summary>
-        /// <param name="context">database context</param>
+        /// <param name="context">Database context</param>
         /// <param name="feedId">Orcasound feed ID of node to get detections for</param>
         /// <param name="logger">Logger</param>
         /// <returns>null on error, or list of detections on success</returns>
@@ -1502,7 +1502,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Exception in GetOrcasoundDataAsync: {ex.Message}");
+                logger.LogError(ex, $"Exception in GetRecentDetectionsForNodeAsync: {ex.Message}");
                 return null;
             }
         }

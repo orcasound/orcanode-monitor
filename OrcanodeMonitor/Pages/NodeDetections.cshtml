@@ -39,8 +39,8 @@
     <!-- Filter Buttons for Source -->
     <div>
         Filter by Source:
-        <button id="btn-source-all" class="btn unselected" onclick="updateFilter('source', 'all')">All</button>
-        <button id="btn-source-human" class="btn selected" onclick="updateFilter('source', 'human')">Human</button>
+        <button id="btn-source-all" class="btn selected" onclick="updateFilter('source', 'all')">All</button>
+        <button id="btn-source-human" class="btn unselected" onclick="updateFilter('source', 'human')">Human</button>
         <button id="btn-source-machine" class="btn unselected" onclick="updateFilter('source', 'machine')">Machine</button>
         <p></p>
     </div>
@@ -58,7 +58,7 @@
             @if (!Model.RecentDetections.Any())
             {
                 <tr>
-                    <td colspan="2" class="text-center">No detections found for this time period.</td>
+                    <td colspan="4" class="text-center">No detections found for this time period.</td>
                 </tr>
             }
             @foreach (Models.Detection item in Model.RecentDetections)
@@ -70,7 +70,7 @@
                         <span>@item.Description</span>
                     </td>
                     <td>
-                        <a href="@Url.Page("/SpectralDensity", new { id = Model.GetSpectralDensityId(item), timestamp = item.Timestamp.ToFileTimeUtc().ToString("yyyy-MM-ddTHH-mm-ss") })" class="btn selected" style="display: inline-block;" target="_blank" rel="noopener">
+                        <a href="@Url.Page("/SpectralDensity", new { id = Model.GetSpectralDensityId(item), timestamp = item.Timestamp.ToString("yyyy-MM-ddTHH-mm-ss") })" class="btn selected" style="display: inline-block;" target="_blank" rel="noopener">
                             View Spectral Density
                             <span class="visually-hidden">(opens in new tab)</span>
                         </a>

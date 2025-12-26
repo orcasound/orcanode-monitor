@@ -11,7 +11,7 @@ namespace OrcanodeMonitor.Pages
     public class NodeDetectionsModel : PageModel
     {
         private readonly OrcanodeMonitorContext _databaseContext;
-        private readonly ILogger<NodeEventsModel> _logger;
+        private readonly ILogger<NodeDetectionsModel> _logger;
         private Orcanode? _node = null;
         public string NodeName => _node?.DisplayName ?? "Unknown";
         public string Id => _node?.ID ?? string.Empty;
@@ -19,7 +19,7 @@ namespace OrcanodeMonitor.Pages
         private List<Detection> _detections;
         public List<Detection> RecentDetections => _detections;
 
-        public NodeDetectionsModel(OrcanodeMonitorContext context, ILogger<NodeEventsModel> logger)
+        public NodeDetectionsModel(OrcanodeMonitorContext context, ILogger<NodeDetectionsModel> logger)
         {
             _databaseContext = context;
             _logger = logger;
@@ -35,14 +35,14 @@ namespace OrcanodeMonitor.Pages
 
         public static string GetTimeRangeClass(Detection item)
         {
-            DateTime OneWeekAgo = DateTime.UtcNow.AddDays(-7);
-            if (item.Timestamp.ToUniversalTime() > OneWeekAgo)
+            DateTime oneWeekAgo = DateTime.UtcNow.AddDays(-7);
+            if (item.Timestamp.ToUniversalTime() > oneWeekAgo)
             {
                 return "pastWeek pastMonth";
             }
 
-            DateTime OneMonthAgo = DateTime.UtcNow.AddMonths(-1);
-            if (item.Timestamp.ToUniversalTime() > OneMonthAgo)
+            DateTime oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
+            if (item.Timestamp.ToUniversalTime() > oneMonthAgo)
             {
                 return "pastMonth";
             }
@@ -66,7 +66,13 @@ namespace OrcanodeMonitor.Pages
 
         public async Task OnGetAsync(string slug)
         {
-            _node = await _databaseContext.Orcanodes.Where(n => n.OrcasoundSlug == slug).FirstAsync();
+            _node = await _databaseContext.Orcanodes.Where(n => n.OrcasoundSlug == slug).FirstOrDefaultAsync();
+            if (_node == null)
+            {
+                _logger.LogWarning("No orcanode found for slug {Slug}", slug);
+                Response.StatusCode = 404;
+                return;
+            }
 
             string feedId = _node?.OrcasoundFeedId ?? string.Empty;
             List<Detection>? detections = await Fetcher.GetRecentDetectionsForNodeAsync(_databaseContext, feedId, _logger);

@@ -2,11 +2,9 @@
 // SPDX-License-Identifier: MIT
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.CodeAnalysis;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json;
 using static OrcanodeMonitor.Core.Fetcher;
@@ -253,7 +251,7 @@ namespace OrcanodeMonitor.Pages
         /// View the spectral density for an event or the latest on a node.
         /// </summary>
         /// <param name="id">node ID or event ID</param>
-        /// <param name="id">timestamp in the format "yyyy-MM-ddTHH-mm-ss", or "now"</param>
+        /// <param name="timestamp">timestamp in the format "yyyy-MM-ddTHH-mm-ss", or "now"</param>
         /// <returns></returns>
         public async Task OnGetAsync(string id, string timestamp)
         {

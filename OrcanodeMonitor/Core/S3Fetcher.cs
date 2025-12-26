@@ -5,14 +5,13 @@ using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using OrcanodeMonitor.Models;
-using System.Net.Http;
 using static OrcanodeMonitor.Core.Fetcher;
 
 namespace OrcanodeMonitor.Core
 {
     public class S3Fetcher
     {
-        private static Dictionary<string, List<string>> _s3FoldersCache = new Dictionary<string, List<string>>();
+        private static readonly Dictionary<string, List<string>> _s3FoldersCache = new Dictionary<string, List<string>>();
 
         /// <summary>
         /// Get the list of folders (representing .ts segment start times) for
@@ -33,7 +32,7 @@ namespace OrcanodeMonitor.Core
                 RegionEndpoint = RegionEndpoint.USWest2
             };
 
-            var client = new AmazonS3Client(new Amazon.Runtime.AnonymousAWSCredentials(), config);
+            using var client = new AmazonS3Client(new Amazon.Runtime.AnonymousAWSCredentials(), config);
             var allFolders = new List<string>();
             string continuationToken = null;
 
