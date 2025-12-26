@@ -254,10 +254,13 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// View the spectral density for an event or the latest on a node.
+        /// View the spectral density for an event or for a node, either at the latest time or at a specified timestamp.
         /// </summary>
         /// <param name="id">node ID or event ID</param>
-        /// <param name="timestamp">timestamp in the format "yyyy-MM-ddTHH-mm-ss", or null or "now"</param>
+        /// <param name="timestamp">
+        /// Timestamp in UTC in the format "yyyy-MM-ddTHH-mm-ss" to view spectral density at a specific time,
+        /// or null/"now" to view the latest available spectral density.
+        /// </param>
         /// <returns></returns>
         public async Task OnGetAsync(string id, string? timestamp)
         {
