@@ -99,6 +99,12 @@ The following state will be stored per orcanode:
 
 ### Configured parameters
 
+For testing locally, OrcanodeMonitor supports using the .NET
+[Secret Manager tool](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-10.0&utm_source=copilot.com&tabs=windows)
+for storing environment variable secrets.  Non-secret parameters can be configured
+in `OrcanodeMonitor/Properties/launchSettings.json`.  When running in github or Azure,
+use the appropriate environment variable configuration settings there.
+
 **AZURE_AKS_URL**: The URL to go to when clicking on the OrcaHello column.  Typically the AKS workloads page.
 
 **AZURE_COSMOS_CONNECTIONSTRING**: The connection string for the Cosmos database to use.
