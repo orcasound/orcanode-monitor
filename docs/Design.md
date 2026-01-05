@@ -101,7 +101,7 @@ The following state will be stored per orcanode:
 
 For testing locally, OrcanodeMonitor supports using the .NET
 [Secret Manager tool](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-10.0&utm_source=copilot.com&tabs=windows)
-for storing environment variable secrets.  Non-secret parameters can be configured
+for storing configuration secrets (as an alternative to environment variables).  Non-secret parameters can be configured
 in `OrcanodeMonitor/Properties/launchSettings.json`.  When running in GitHub or Azure,
 use the appropriate environment variable configuration settings there.
 
