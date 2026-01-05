@@ -10,7 +10,10 @@ using System;
 using Microsoft.Azure.Cosmos;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Configuration.AddUserSecrets<Program>();
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddUserSecrets<Program>();
+}
 
 // First see if an environment variable specifies a connection string.
 var connection = Environment.GetEnvironmentVariable("AZURE_COSMOS_CONNECTIONSTRING");
