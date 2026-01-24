@@ -25,17 +25,18 @@ namespace OrcanodeMonitor.Core
         private static string _orcasoundFeedsUrlPath = "/api/json/feeds";
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-        private static string _iftttServiceKey = _config?["IFTTT_SERVICE_KEY"] ?? "<unknown>";
+        private static string _iftttServiceKey = string.Empty;
         public static bool IsReadOnly = false;
         private static string _defaultProdS3Bucket = "audio-orcasound-net";
         private static string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
         public static string IftttServiceKey => _iftttServiceKey;
         private static Kubernetes? _k8sClient = null;
-        private static IConfiguration? _config;
+        private static IConfiguration? _config = null;
         public static void Initialize(IConfiguration config)
         {
             _config = config;
             _k8sClient = GetK8sClient();
+            _iftttServiceKey = _config?["IFTTT_SERVICE_KEY"] ?? "<unknown>";
         }
         public static IConfiguration? Configuration => _config;
 
@@ -315,12 +316,12 @@ namespace OrcanodeMonitor.Core
             using (var caCert = new X509Certificate2(caCertBytes))
             {
                 string? host = _config?["KUBERNETES_SERVICE_HOST"];
-                if (host == null)
+                if (string.IsNullOrEmpty(host))
                 {
                     return null;
                 }
                 string? accessToken = _config?["KUBERNETES_TOKEN"];
-                if (accessToken == null)
+                if (string.IsNullOrEmpty(accessToken))
                 {
                     return null;
                 }
