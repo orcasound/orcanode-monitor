@@ -31,6 +31,8 @@ namespace OrcanodeMonitor.Core
         private static string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
         public static string IftttServiceKey => _iftttServiceKey;
         private static readonly Kubernetes? _k8sClient = GetK8sClient();
+        private static IConfiguration? _config;
+        public static void Initialize(IConfiguration config) { _config = config; }
 
         /// <summary>
         /// Test for a match between a human-readable name at Orcasound, and
@@ -299,7 +301,7 @@ namespace OrcanodeMonitor.Core
 
         private static Kubernetes? GetK8sClient()
         {
-            string? k8sCACert = Environment.GetEnvironmentVariable("KUBERNETES_CA_CERT");
+            string? k8sCACert = _config?["KUBERNETES_CA_CERT"];
             if (k8sCACert == null)
             {
                 return null;
@@ -307,12 +309,12 @@ namespace OrcanodeMonitor.Core
             byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
             using (var caCert = new X509Certificate2(caCertBytes))
             {
-                string? host = Environment.GetEnvironmentVariable("KUBERNETES_SERVICE_HOST");
+                string? host = _config?["KUBERNETES_SERVICE_HOST"];
                 if (host == null)
                 {
                     return null;
                 }
-                string? accessToken = Environment.GetEnvironmentVariable("KUBERNETES_TOKEN");
+                string? accessToken = _config?["KUBERNETES_TOKEN"];
                 if (accessToken == null)
                 {
                     return null;

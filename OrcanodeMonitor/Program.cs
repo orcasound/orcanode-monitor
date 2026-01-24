@@ -14,6 +14,7 @@ if (builder.Environment.IsDevelopment())
 {
     builder.Configuration.AddUserSecrets<Program>();
 }
+Fetcher.Initialize(builder.Configuration);
 
 // First see if an environment variable specifies a connection string.
 var connection = Environment.GetEnvironmentVariable("AZURE_COSMOS_CONNECTIONSTRING");
