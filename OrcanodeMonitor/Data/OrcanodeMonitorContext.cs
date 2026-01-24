@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 using Microsoft.EntityFrameworkCore;
+using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Models;
 
 namespace OrcanodeMonitor.Data
@@ -19,7 +20,7 @@ namespace OrcanodeMonitor.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? string.Empty;
+            string environment = Fetcher.Configuration?["ASPNETCORE_ENVIRONMENT"] ?? string.Empty;
             if (environment == "Production")
             {
                 environment = string.Empty;

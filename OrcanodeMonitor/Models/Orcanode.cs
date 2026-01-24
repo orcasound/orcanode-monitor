@@ -326,7 +326,7 @@ namespace OrcanodeMonitor.Models
         {
             get
             {
-                string? maxUploadDelayMinutesString = Environment.GetEnvironmentVariable("ORCASOUND_MAX_UPLOAD_DELAY_MINUTES");
+                string? maxUploadDelayMinutesString = Fetcher.Configuration?["ORCASOUND_MAX_UPLOAD_DELAY_MINUTES"];
                 int maxUploadDelayMinutes = int.TryParse(maxUploadDelayMinutesString, out var minutes) ? minutes : _defaultMaxUploadDelayMinutes;
                 return TimeSpan.FromMinutes(maxUploadDelayMinutes);
             }
@@ -535,7 +535,7 @@ namespace OrcanodeMonitor.Models
                 DateTime utcNow = DateTime.UtcNow;
 
                 // Get the configured hour offset for reboot timing.
-                string? hourOffsetString = Environment.GetEnvironmentVariable("ORCASOUND_REBOOT_HOUR_OFFSET_MINUTES");
+                string? hourOffsetString = Fetcher.Configuration?["ORCASOUND_REBOOT_HOUR_OFFSET_MINUTES"];
                 int hourOffsetMinutes = int.TryParse(hourOffsetString, out var offset) ? offset : 0;
 
                 // Calculate time since the configured offset within the hour.

@@ -25,14 +25,19 @@ namespace OrcanodeMonitor.Core
         private static string _orcasoundFeedsUrlPath = "/api/json/feeds";
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-        private static string _iftttServiceKey = Environment.GetEnvironmentVariable("IFTTT_SERVICE_KEY") ?? "<unknown>";
+        private static string _iftttServiceKey = _config?["IFTTT_SERVICE_KEY"] ?? "<unknown>";
         public static bool IsReadOnly = false;
         private static string _defaultProdS3Bucket = "audio-orcasound-net";
         private static string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
         public static string IftttServiceKey => _iftttServiceKey;
-        private static readonly Kubernetes? _k8sClient = GetK8sClient();
+        private static Kubernetes? _k8sClient = null;
         private static IConfiguration? _config;
-        public static void Initialize(IConfiguration config) { _config = config; }
+        public static void Initialize(IConfiguration config)
+        {
+            _config = config;
+            _k8sClient = GetK8sClient();
+        }
+        public static IConfiguration? Configuration => _config;
 
         /// <summary>
         /// Test for a match between a human-readable name at Orcasound, and
@@ -683,7 +688,7 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                string? orcasound_dataplicity_token = Environment.GetEnvironmentVariable("ORCASOUND_DATAPLICITY_TOKEN");
+                string? orcasound_dataplicity_token = _config?["ORCASOUND_DATAPLICITY_TOKEN"];
                 if (orcasound_dataplicity_token == null)
                 {
                     logger.LogError("ORCASOUND_DATAPLICITY_TOKEN not found");
@@ -778,7 +783,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 // Get the dataplicity auth token.
-                string? orcasound_dataplicity_token = Environment.GetEnvironmentVariable("ORCASOUND_DATAPLICITY_TOKEN");
+                string? orcasound_dataplicity_token = _config?["ORCASOUND_DATAPLICITY_TOKEN"];
                 if (orcasound_dataplicity_token == null)
                 {
                     logger.LogError("ORCASOUND_DATAPLICITY_TOKEN not found");

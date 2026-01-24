@@ -16,7 +16,7 @@ namespace OrcanodeMonitor.Pages
         public List<Orcanode> Orcanodes { get; private set; }
         public List<OrcaHelloNode> Nodes { get; private set; }
         public List<OrcaHelloPod> Pods { get; private set; }
-        public string AksUrl => Environment.GetEnvironmentVariable("AZURE_AKS_URL") ?? "";
+        public string AksUrl => Fetcher.Configuration?["AZURE_AKS_URL"] ?? "";
         public string GetNodeMemoryUsage(OrcaHelloNode node)
         {
             long nodeMemoryUsageInKi = node.MemoryUsageInKi;
