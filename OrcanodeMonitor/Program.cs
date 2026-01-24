@@ -16,7 +16,8 @@ if (builder.Environment.IsDevelopment())
 }
 Fetcher.Initialize(builder.Configuration);
 
-// First see if an environment variable specifies a connection string.
+// First try to get the connection string from configuration using the AZURE_COSMOS_CONNECTIONSTRING key
+// (e.g., from environment variables, user secrets, or JSON configuration).
 var connection = builder.Configuration["AZURE_COSMOS_CONNECTIONSTRING"];
 if (connection.IsNullOrEmpty())
 {
