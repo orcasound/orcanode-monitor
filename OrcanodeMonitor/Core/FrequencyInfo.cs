@@ -318,7 +318,7 @@ namespace OrcanodeMonitor.Core
         {
             get
             {
-                string? maxSilenceDecibelsString = Environment.GetEnvironmentVariable("ORCASOUND_MAX_SILENCE_DECIBELS");
+                string? maxSilenceDecibelsString = Fetcher.Configuration?["ORCASOUND_MAX_SILENCE_DECIBELS"];
                 double maxSilenceDecibels = double.TryParse(maxSilenceDecibelsString, out var decibels) ? decibels : _defaultMaxSilenceDecibels;
                 return maxSilenceDecibels;
             }
@@ -334,7 +334,7 @@ namespace OrcanodeMonitor.Core
         {
             get
             {
-                string? minNoiseDecibelsString = Environment.GetEnvironmentVariable("ORCASOUND_MIN_NOISE_DECIBELS");
+                string? minNoiseDecibelsString = Fetcher.Configuration?["ORCASOUND_MIN_NOISE_DECIBELS"];
                 double minNoiseDecibels = double.TryParse(minNoiseDecibelsString, out var decibels) ? decibels : _defaultMinNoiseDecibels;
                 return minNoiseDecibels;
             }
@@ -349,7 +349,7 @@ namespace OrcanodeMonitor.Core
         {
             get
             {
-                string? minSignalPercentString = Environment.GetEnvironmentVariable("ORCASOUND_MIN_INTELLIGIBLE_SIGNAL_PERCENT");
+                string? minSignalPercentString = Fetcher.Configuration?["ORCASOUND_MIN_INTELLIGIBLE_SIGNAL_PERCENT"];
                 double minSignalPercent = double.TryParse(minSignalPercentString, out var percent) ? percent : _defaultMinSignalPercent;
                 return minSignalPercent / 100.0;
             }

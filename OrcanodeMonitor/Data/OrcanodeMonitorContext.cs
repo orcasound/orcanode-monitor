@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: MIT
 
 using Microsoft.EntityFrameworkCore;
+using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Models;
 
 namespace OrcanodeMonitor.Data
@@ -19,6 +20,8 @@ namespace OrcanodeMonitor.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // Since ASPNETCORE_ENVIRONMENT is not a secret, it is safe to use it directly here.
+            // We cannot use IConfiguration here because this method is called by design time tools as well.
             string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? string.Empty;
             if (environment == "Production")
             {

@@ -14,21 +14,23 @@ if (builder.Environment.IsDevelopment())
 {
     builder.Configuration.AddUserSecrets<Program>();
 }
+Fetcher.Initialize(builder.Configuration);
 
-// First see if an environment variable specifies a connection string.
-var connection = Environment.GetEnvironmentVariable("AZURE_COSMOS_CONNECTIONSTRING");
+// First try to get the connection string from configuration using the AZURE_COSMOS_CONNECTIONSTRING key
+// (e.g., from environment variables, user secrets, or JSON configuration).
+var connection = builder.Configuration["AZURE_COSMOS_CONNECTIONSTRING"];
 if (connection.IsNullOrEmpty())
 {
     connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
 }
 
-string isReadOnly = Environment.GetEnvironmentVariable("ORCANODE_MONITOR_READONLY") ?? "false";
+string isReadOnly = builder.Configuration["ORCANODE_MONITOR_READONLY"] ?? "false";
 if (isReadOnly == "true")
 {
     Fetcher.IsReadOnly = true;
 }
 
-string databaseName = Environment.GetEnvironmentVariable("AZURE_COSMOS_DATABASENAME") ?? "orcasound-cosmosdb";
+string databaseName = builder.Configuration["AZURE_COSMOS_DATABASENAME"] ?? "orcasound-cosmosdb";
 
 // Add services to the container.
 builder.Services.AddRazorPages();

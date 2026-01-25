@@ -19,7 +19,7 @@ namespace OrcanodeMonitor.Core
         {
             get
             {
-                string? frequencyToPollInMinutesString = Environment.GetEnvironmentVariable("ORCASOUND_POLL_FREQUENCY_IN_MINUTES");
+                string? frequencyToPollInMinutesString = Fetcher.Configuration?["ORCASOUND_POLL_FREQUENCY_IN_MINUTES"];
                 int frequencyToPollInMinutes = (int.TryParse(frequencyToPollInMinutesString, out var minutes)) ? minutes : _defaultFrequencyToPollInMinutes;
                 return TimeSpan.FromMinutes(frequencyToPollInMinutes);
             }

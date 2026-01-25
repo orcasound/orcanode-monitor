@@ -17,14 +17,14 @@ namespace OrcanodeMonitor.Core
         private static string _mezmoLogUrl = "https://api.mezmo.com/v1/export";
 
         const int DEFAULT_MEZMO_LOG_SECONDS = 300;
-        private static string _mezmoLogSeconds = Environment.GetEnvironmentVariable("MEZMO_LOG_SECONDS") ?? string.Empty;
 
         private static int MezmoLogSeconds
         {
             get
             {
+                string mezmoLogSeconds = Fetcher.Configuration?["MEZMO_LOG_SECONDS"] ?? string.Empty;
                 int seconds;
-                bool success = int.TryParse(_mezmoLogSeconds, out seconds);
+                bool success = int.TryParse(mezmoLogSeconds, out seconds);
                 return (success && seconds > 0) ? seconds : DEFAULT_MEZMO_LOG_SECONDS;
             }
         }
@@ -39,7 +39,7 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                string? service_key = Environment.GetEnvironmentVariable("MEZMO_SERVICE_KEY");
+                string? service_key = Fetcher.Configuration?["MEZMO_SERVICE_KEY"];
                 if (string.IsNullOrEmpty(service_key))
                 {
                     logger.LogError($"MEZMO_SERVICE_KEY not configured");

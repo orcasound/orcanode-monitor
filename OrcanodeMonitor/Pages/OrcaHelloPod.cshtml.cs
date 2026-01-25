@@ -11,7 +11,7 @@ namespace OrcanodeMonitor.Pages
 {
     public class OrcaHelloPodModel : PageModel
     {
-        public string AksUrl => Environment.GetEnvironmentVariable("AZURE_AKS_URL") ?? "";
+        public string AksUrl => Fetcher.Configuration?["AZURE_AKS_URL"] ?? "";
 
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<OrcaHelloPodModel> _logger;

@@ -25,12 +25,20 @@ namespace OrcanodeMonitor.Core
         private static string _orcasoundFeedsUrlPath = "/api/json/feeds";
         private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-        private static string _iftttServiceKey = Environment.GetEnvironmentVariable("IFTTT_SERVICE_KEY") ?? "<unknown>";
+        private static string _iftttServiceKey = string.Empty;
         public static bool IsReadOnly = false;
         private static string _defaultProdS3Bucket = "audio-orcasound-net";
         private static string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
         public static string IftttServiceKey => _iftttServiceKey;
-        private static readonly Kubernetes? _k8sClient = GetK8sClient();
+        private static Kubernetes? _k8sClient = null;
+        private static IConfiguration? _config = null;
+        public static void Initialize(IConfiguration config)
+        {
+            _config = config;
+            _k8sClient = GetK8sClient();
+            _iftttServiceKey = _config?["IFTTT_SERVICE_KEY"] ?? "<unknown>";
+        }
+        public static IConfiguration? Configuration => _config;
 
         /// <summary>
         /// Test for a match between a human-readable name at Orcasound, and
@@ -299,7 +307,7 @@ namespace OrcanodeMonitor.Core
 
         private static Kubernetes? GetK8sClient()
         {
-            string? k8sCACert = Environment.GetEnvironmentVariable("KUBERNETES_CA_CERT");
+            string? k8sCACert = _config?["KUBERNETES_CA_CERT"];
             if (k8sCACert == null)
             {
                 return null;
@@ -307,13 +315,13 @@ namespace OrcanodeMonitor.Core
             byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
             using (var caCert = new X509Certificate2(caCertBytes))
             {
-                string? host = Environment.GetEnvironmentVariable("KUBERNETES_SERVICE_HOST");
-                if (host == null)
+                string? host = _config?["KUBERNETES_SERVICE_HOST"];
+                if (string.IsNullOrEmpty(host))
                 {
                     return null;
                 }
-                string? accessToken = Environment.GetEnvironmentVariable("KUBERNETES_TOKEN");
-                if (accessToken == null)
+                string? accessToken = _config?["KUBERNETES_TOKEN"];
+                if (string.IsNullOrEmpty(accessToken))
                 {
                     return null;
                 }
@@ -681,7 +689,7 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                string? orcasound_dataplicity_token = Environment.GetEnvironmentVariable("ORCASOUND_DATAPLICITY_TOKEN");
+                string? orcasound_dataplicity_token = _config?["ORCASOUND_DATAPLICITY_TOKEN"];
                 if (orcasound_dataplicity_token == null)
                 {
                     logger.LogError("ORCASOUND_DATAPLICITY_TOKEN not found");
@@ -776,7 +784,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 // Get the dataplicity auth token.
-                string? orcasound_dataplicity_token = Environment.GetEnvironmentVariable("ORCASOUND_DATAPLICITY_TOKEN");
+                string? orcasound_dataplicity_token = _config?["ORCASOUND_DATAPLICITY_TOKEN"];
                 if (orcasound_dataplicity_token == null)
                 {
                     logger.LogError("ORCASOUND_DATAPLICITY_TOKEN not found");
