@@ -20,7 +20,9 @@ namespace OrcanodeMonitor.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            string environment = Fetcher.Configuration?["ASPNETCORE_ENVIRONMENT"] ?? string.Empty;
+            // Since ASPNETCORE_ENVIRONMENT is not a secret, it is safe to use it directly here.
+            // We cannot use IConfiguration here because this method is called by design time tools as well.
+            string environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? string.Empty;
             if (environment == "Production")
             {
                 environment = string.Empty;
