@@ -18,6 +18,7 @@ namespace OrcanodeMonitor.Pages
         public bool HasAvx2 => _orcaHelloNode?.HasAvx2 ?? false;
         public bool HasAvx512 => _orcaHelloNode?.HasAvx512 ?? false;
         public double CpuPercent => _orcaHelloNode?.CpuPercent ?? 0;
+        public string Problems => _orcaHelloNode?.Problems ?? "-";
         public double CpuCapacityCores => _orcaHelloNode?.CpuCapacityCores ?? 0;
         public double CpuUsageCores => _orcaHelloNode?.CpuUsageCores ?? 0;
         private long _memoryUsageInKi => _orcaHelloNode?.MemoryUsageInKi ?? 0;

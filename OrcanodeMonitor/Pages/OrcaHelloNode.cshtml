@@ -41,6 +41,10 @@
             <td style="text-align: right; font-weight: bold; padding: 4px;">Memory:</td>
             <td style="text-align: left; padding: 4px;">@(Math.Round(Model.MemoryPercent))% (@Model.MemoryUsage / @Model.MemoryCapacity)</td>
         </tr>
+        <tr>
+            <td style="text-align: right; font-weight: bold; padding: 4px;">Problems:</td>
+            <td style="text-align: left; padding: 4px;">@Model.Problems</td>
+        </tr>
     </table>
 
     <!-- List of all pods on this node. -->

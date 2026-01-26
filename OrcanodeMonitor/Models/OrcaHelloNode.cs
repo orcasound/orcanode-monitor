@@ -24,6 +24,32 @@ namespace OrcanodeMonitor.Models
         public long MemoryCapacityInKi { get; private set; }
         public double MemoryPercent => MemoryCapacityInKi > 0 ? (100.0 * MemoryUsageInKi / MemoryCapacityInKi) : 0;
         public string CpuModel { get; private set; }
+        public string Problems {
+            get
+            {
+                List<string> problems = new List<string>();
+                if (_node.Status?.Conditions != null)
+                {
+                    foreach (var condition in _node.Status.Conditions)
+                    {
+                        if (condition.Type == "Ready")
+                        {
+                            // For the Ready condition, any status other than "True" is a problem.
+                            if (!string.Equals(condition.Status, "True", StringComparison.OrdinalIgnoreCase))
+                            {
+                                problems.Add("NotReady");
+                            }
+                        }
+                        else if (string.Equals(condition.Status, "True", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // For other conditions, Status == "True" indicates a problem.
+                            problems.Add(condition.Type);
+                        }
+                    }
+                }
+                return problems.Count > 0 ? string.Join(", ", problems) : "-";
+            }
+        }
         public bool HasAvx2 { get; private set; }
         public bool HasAvx512 { get; private set; }
         public DateTime? CreationTimestamp => _node.Metadata?.CreationTimestamp;
