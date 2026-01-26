@@ -124,6 +124,24 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeInstanceType => _orcaHelloNode?.InstanceType ?? "Unknown";
 
+        /// <summary>
+        /// Get the confidence threshold display string.
+        /// Format: "{globalThreshold} @ {localThreshold}%" (e.g., "3 @ 70%")
+        /// </summary>
+        public string ConfidenceThreshold
+        {
+            get
+            {
+                if (_pod?.ModelGlobalThreshold.HasValue == true && _pod?.ModelLocalThreshold.HasValue == true)
+                {
+                    int globalThreshold = _pod.ModelGlobalThreshold.Value;
+                    int localThresholdPercent = (int)Math.Round(_pod.ModelLocalThreshold.Value * 100);
+                    return $"{globalThreshold} @ {localThresholdPercent}%";
+                }
+                return "Unknown";
+            }
+        }
+
         public async Task<IActionResult> OnGetAsync(string podNamespace)
         {
             _orcanode = _databaseContext.Orcanodes.Where(n => n.OrcasoundSlug == podNamespace).FirstOrDefault();
