@@ -28,11 +28,23 @@ namespace OrcanodeMonitor.Models
             get
             {
                 List<string> problems = new List<string>();
-                foreach (var condition in _node.Status.Conditions)
+                if (_node.Status?.Conditions != null)
                 {
-                    if (condition.Type != "Ready" && condition.Status == "True")
+                    foreach (var condition in _node.Status.Conditions)
                     {
-                        problems.Add(condition.Type);
+                        if (condition.Type == "Ready")
+                        {
+                            // For the Ready condition, any status other than "True" is a problem.
+                            if (!string.Equals(condition.Status, "True", StringComparison.OrdinalIgnoreCase))
+                            {
+                                problems.Add("NotReady");
+                            }
+                        }
+                        else if (string.Equals(condition.Status, "True", StringComparison.OrdinalIgnoreCase))
+                        {
+                            // For other conditions, Status == "True" indicates a problem.
+                            problems.Add(condition.Type);
+                        }
                     }
                 }
                 return problems.Count > 0 ? string.Join(", ", problems) : "-";
