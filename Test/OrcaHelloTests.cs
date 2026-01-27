@@ -125,8 +125,8 @@ namespace Test
             int globalThreshold = thresholds.GlobalThreshold;
             int localThresholdPercent = (int)Math.Round(thresholds.LocalThreshold * 100);
             string expected = $"{globalThreshold} @ {localThresholdPercent}%";
-            
-            Assert.AreEqual("3 @ 70%", expected, 
+
+            Assert.AreEqual("3 @ 70%", expected,
                 "Confidence threshold should be formatted as 'global @ local%'");
         }
 
@@ -137,8 +137,8 @@ namespace Test
             var thresholds = new { LocalThreshold = 0.749, GlobalThreshold = 5 };
 
             int localThresholdPercent = (int)Math.Round(thresholds.LocalThreshold * 100);
-            
-            Assert.AreEqual(75, localThresholdPercent, 
+
+            Assert.AreEqual(75, localThresholdPercent,
                 "Local threshold should round 0.749 to 75%");
         }
     }
