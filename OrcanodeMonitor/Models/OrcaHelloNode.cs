@@ -24,7 +24,8 @@ namespace OrcanodeMonitor.Models
         public long MemoryCapacityInKi { get; private set; }
         public double MemoryPercent => MemoryCapacityInKi > 0 ? (100.0 * MemoryUsageInKi / MemoryCapacityInKi) : 0;
         public string CpuModel { get; private set; }
-        public string Problems {
+        public string Problems
+        {
             get
             {
                 List<string> problems = new List<string>();

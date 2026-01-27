@@ -28,6 +28,16 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         public long DetectionCount { get; private set; }
 
+        /// <summary>
+        /// Model local threshold from ConfigMap (0.0 to 1.0).
+        /// </summary>
+        public double? ModelLocalThreshold { get; private set; }
+
+        /// <summary>
+        /// Model global threshold from ConfigMap (integer).
+        /// </summary>
+        public int? ModelGlobalThreshold { get; private set; }
+
         public double MemoryPercent => MemoryCapacityInKi > 0 ? (100.0 * MemoryUsageInKi / MemoryCapacityInKi) : 0;
         public string MemoryUsage => $"{(MemoryUsageInKi / 1024f / 1024f):F1} GiB";
         public string MemoryCapacity => $"{(MemoryCapacityInKi / 1024f / 1024f):F1} GiB";
@@ -45,11 +55,13 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        public OrcaHelloPod(V1Pod pod, string cpuUsage, string memoryUsage, string modelTimestamp, long detectionCount)
+        public OrcaHelloPod(V1Pod pod, string cpuUsage, string memoryUsage, string modelTimestamp, long detectionCount, double? modelLocalThreshold = null, int? modelGlobalThreshold = null)
         {
             _pod = pod;
             ModelTimestamp = modelTimestamp;
             DetectionCount = detectionCount;
+            ModelLocalThreshold = modelLocalThreshold;
+            ModelGlobalThreshold = modelGlobalThreshold;
 
             long nanocores = long.Parse(cpuUsage.Replace("n", ""));
             CpuUsageCores = nanocores / 1_000_000_000.0;

@@ -14,6 +14,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace OrcanodeMonitor.Core
 {
@@ -456,6 +458,71 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
+        /// Get model thresholds from the hydrophone-configs ConfigMap.
+        /// </summary>
+        /// <param name="namespaceName">Namespace name</param>
+        /// <returns>Tuple of (localThreshold, globalThreshold) or (null, null) if not found</returns>
+        private static async Task<(double? localThreshold, int? globalThreshold)> GetModelThresholdsAsync(string namespaceName)
+        {
+            Kubernetes? client = _k8sClient;
+            if (client == null)
+            {
+                return (null, null);
+            }
+
+            try
+            {
+                V1ConfigMap configMap = await client.ReadNamespacedConfigMapAsync(
+                    name: "hydrophone-configs",
+                    namespaceParameter: namespaceName);
+
+                if (configMap.Data != null && configMap.Data.TryGetValue("config.yml", out string? yamlContent))
+                {
+                    var deserializer = new DeserializerBuilder()
+                        .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                        .Build();
+
+                    var config = deserializer.Deserialize<Dictionary<string, object>>(yamlContent);
+
+                    double? localThreshold = null;
+                    int? globalThreshold = null;
+
+                    if (config.TryGetValue("model_local_threshold", out object? localValue))
+                    {
+                        if (localValue is double d)
+                        {
+                            localThreshold = d;
+                        }
+                        else if (double.TryParse(localValue?.ToString(), out double parsed))
+                        {
+                            localThreshold = parsed;
+                        }
+                    }
+
+                    if (config.TryGetValue("model_global_threshold", out object? globalValue))
+                    {
+                        if (globalValue is int i)
+                        {
+                            globalThreshold = i;
+                        }
+                        else if (int.TryParse(globalValue?.ToString(), out int parsed))
+                        {
+                            globalThreshold = parsed;
+                        }
+                    }
+
+                    return (localThreshold, globalThreshold);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[GetModelThresholdsAsync] Error retrieving ConfigMap for namespace '{namespaceName}': {ex.Message}");
+            }
+
+            return (null, null);
+        }
+
+        /// <summary>
         /// Get an object representing an OrcaHello inference pod.
         /// </summary>
         /// <param name="orcanode">Orcanode object associated with the pod</param>
@@ -486,7 +553,9 @@ namespace OrcanodeMonitor.Core
 
             long detectionCount = await GetDetectionCountAsync(orcanode);
 
-            return new OrcaHelloPod(bestPod, cpuUsage, memoryUsage, modelTimestamp, detectionCount);
+            (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(namespaceName);
+
+            return new OrcaHelloPod(bestPod, cpuUsage, memoryUsage, modelTimestamp, detectionCount, localThreshold, globalThreshold);
         }
 
         /// <summary>

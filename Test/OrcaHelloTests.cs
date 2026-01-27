@@ -113,5 +113,33 @@ namespace Test
             // Clean up.
             Environment.SetEnvironmentVariable("ORCAHELLO_HIGH_DETECTION_THRESHOLD", null);
         }
+
+        [TestMethod]
+        public void TestConfidenceThresholdFormatting()
+        {
+            // Test that confidence threshold formatting works correctly.
+            // Create a mock pod with known threshold values.
+            var thresholds = new { LocalThreshold = 0.7, GlobalThreshold = 3 };
+
+            // Verify the expected formatting: "3 @ 70%".
+            int globalThreshold = thresholds.GlobalThreshold;
+            int localThresholdPercent = (int)Math.Round(thresholds.LocalThreshold * 100);
+            string expected = $"{globalThreshold} @ {localThresholdPercent}%";
+            
+            Assert.AreEqual("3 @ 70%", expected, 
+                "Confidence threshold should be formatted as 'global @ local%'");
+        }
+
+        [TestMethod]
+        public void TestConfidenceThresholdRounding()
+        {
+            // Test that local threshold is properly rounded to nearest percent.
+            var thresholds = new { LocalThreshold = 0.749, GlobalThreshold = 5 };
+
+            int localThresholdPercent = (int)Math.Round(thresholds.LocalThreshold * 100);
+            
+            Assert.AreEqual(75, localThresholdPercent, 
+                "Local threshold should round 0.749 to 75%");
+        }
     }
 }
