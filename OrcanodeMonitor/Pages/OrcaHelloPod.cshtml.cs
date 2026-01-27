@@ -124,6 +124,8 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeInstanceType => _orcaHelloNode?.InstanceType ?? "Unknown";
 
+        public string NodeProblems => _orcaHelloNode?.Problems ?? "-";
+
         /// <summary>
         /// Get the confidence threshold display string.
         /// Format: "{globalThreshold} @ {localThreshold}%" (e.g., "3 @ 70%")
