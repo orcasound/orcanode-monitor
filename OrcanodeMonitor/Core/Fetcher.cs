@@ -1858,7 +1858,9 @@ namespace OrcanodeMonitor.Core
                     Orcanode? orcanode = orcanodes.Find(a => a.OrcasoundSlug == pod.Metadata.NamespaceProperty);
                     long detectionCount = (orcanode != null) ? await GetDetectionCountAsync(orcanode) : 0;
 
-                    var orcaHelloPod = new OrcaHelloPod(pod, cpuUsage, memoryUsage, modelTimestamp: string.Empty, detectionCount);
+                    (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty);
+
+                    var orcaHelloPod = new OrcaHelloPod(pod, cpuUsage, memoryUsage, modelTimestamp: string.Empty, detectionCount, localThreshold, globalThreshold);
                     resultList.Add(orcaHelloPod);
                 }
             }
