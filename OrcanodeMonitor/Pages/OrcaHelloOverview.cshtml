@@ -15,6 +15,8 @@
             <th>Memory</th>
             <th>AVX-512</th>
             <th>Locations</th>
+            <th>Problems</th>
+            <th>Uptime</th>
         </tr>
         @foreach (Models.OrcaHelloNode item in Model.Nodes)
         {
@@ -36,6 +38,12 @@
                 <td>
                     @Model.GetLocations(item)
                 </td>
+                <td>
+                    @Model.GetNodeProblems(item)
+                </td>
+                <td>
+                    @Model.GetNodeUptime(item)
+                </td>
             </tr>
         }
     </table>
@@ -49,6 +57,7 @@
             <th>CPU</th>
             <th>Memory</th>
             <th>Image</th>
+            <th>Confidence Threshold</th>
             <th>Uptime</th>
             <th>Restarts</th>
         </tr>
@@ -76,6 +85,9 @@
                 </td>
                 <td>
                     @item.ImageName
+                </td>
+                <td>
+                    @Model.GetPodConfidenceThreshold(item)
                 </td>
                 @if (Model.GetPodStatus(item) == Models.OrcanodeOnlineStatus.Absent)
                 {

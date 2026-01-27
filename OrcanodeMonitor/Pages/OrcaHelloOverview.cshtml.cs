@@ -54,6 +54,43 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
+        /// Get the problems reported for a node.
+        /// </summary>
+        /// <param name="node">Node to check</param>
+        /// <returns>Problems string</returns>
+        public string GetNodeProblems(OrcaHelloNode node)
+        {
+            return node.Problems;
+        }
+
+        /// <summary>
+        /// Get the uptime for a node as a formatted string.
+        /// </summary>
+        /// <param name="node">Node to check</param>
+        /// <returns>Uptime string</returns>
+        public string GetNodeUptime(OrcaHelloNode node)
+        {
+            return Orcanode.FormatTimeSpan(node.Uptime);
+        }
+
+        /// <summary>
+        /// Get the confidence threshold display string for a pod.
+        /// Format: "{globalThreshold} @ {localThreshold}%" (e.g., "3 @ 70%")
+        /// </summary>
+        /// <param name="pod">Pod to check</param>
+        /// <returns>Confidence threshold string</returns>
+        public string GetPodConfidenceThreshold(OrcaHelloPod pod)
+        {
+            if (pod.ModelGlobalThreshold.HasValue && pod.ModelLocalThreshold.HasValue)
+            {
+                int globalThreshold = pod.ModelGlobalThreshold.Value;
+                int localThresholdPercent = (int)Math.Round(pod.ModelLocalThreshold.Value * 100);
+                return $"{globalThreshold} @ {localThresholdPercent}%";
+            }
+            return "Unknown";
+        }
+
+        /// <summary>
         /// Get the reason the pod last terminated, if any.
         /// </summary>
         /// <param name="pod">Pod to check</param>
