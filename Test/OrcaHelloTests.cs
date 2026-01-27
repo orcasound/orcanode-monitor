@@ -118,10 +118,10 @@ namespace Test
         public void TestConfidenceThresholdFormatting()
         {
             // Test that confidence threshold formatting works correctly.
-            // Create a mock pod with known threshold values
+            // Create a mock pod with known threshold values.
             var thresholds = new { LocalThreshold = 0.7, GlobalThreshold = 3 };
 
-            // Verify the expected formatting: "3 @ 70%"
+            // Verify the expected formatting: "3 @ 70%".
             int globalThreshold = thresholds.GlobalThreshold;
             int localThresholdPercent = (int)Math.Round(thresholds.LocalThreshold * 100);
             string expected = $"{globalThreshold} @ {localThresholdPercent}%";
