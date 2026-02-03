@@ -23,11 +23,13 @@ namespace OrcanodeMonitor.Core
         private string _orcasiteHostname = string.Empty;
         private string _orcasiteApiKey = string.Empty;
         private JsonElement? _orcasiteFeedsArray;
-        private readonly ILogger<OrcasiteHelper> _logger;
+        private readonly ILogger _logger;
         private DateTime? _currentEpochStart;
         private bool _initialized = false;
+        public HttpClient HttpClient => _httpClient;
+        public ILogger Logger => _logger;
 
-        public OrcasiteHelper(ILogger<OrcasiteHelper> log, HttpClient httpClient)
+        public OrcasiteHelper(ILogger log, HttpClient httpClient)
         {
             _logger = log;
             _httpClient = httpClient;

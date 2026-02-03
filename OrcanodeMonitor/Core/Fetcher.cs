@@ -754,8 +754,13 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public async static Task<string> GetDataplicityDataAsync(string serial, ILogger logger)
+        public async static Task<string> GetDataplicityDataAsync(string serial, ILogger logger, HttpClient? httpClient = null)
         {
+            if (httpClient == null)
+            {
+                httpClient = _httpClient;
+            }
+
             try
             {
                 string? orcasound_dataplicity_token = _config?["ORCASOUND_DATAPLICITY_TOKEN"];
@@ -778,7 +783,7 @@ namespace OrcanodeMonitor.Core
                 })
                 {
                     request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_dataplicity_token);
-                    using HttpResponseMessage response = await _httpClient.SendAsync(request);
+                    using HttpResponseMessage response = await httpClient.SendAsync(request);
                     response.EnsureSuccessStatusCode();
                     return await response.Content.ReadAsStringAsync();
                 }
@@ -884,12 +889,13 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="context">Database context to update</param>
         /// <param name="logger"></param>
+        /// <param name="httpClient">HTTP client or null</param>
         /// <returns></returns>
-        public async static Task UpdateDataplicityDataAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task UpdateDataplicityDataAsync(OrcanodeMonitorContext context, ILogger logger, HttpClient? httpClient)
         {
             try
             {
-                string jsonArray = await GetDataplicityDataAsync(string.Empty, logger);
+                string jsonArray = await GetDataplicityDataAsync(string.Empty, logger, httpClient);
                 if (jsonArray.IsNullOrEmpty())
                 {
                     // Indeterminate result, so don't update anything.
@@ -1024,7 +1030,7 @@ namespace OrcanodeMonitor.Core
         /// Check for any nodes that need a reboot to fix a container restart issue.
         /// </summary>
         /// <param name="context">Database context to update</param>
-        /// <param name="logger"></param>
+        /// <param name="logger">Logger</param>
         /// <returns></returns>
         public async static Task CheckForRebootsNeededAsync(OrcanodeMonitorContext context, ILogger logger)
         {
@@ -1063,9 +1069,9 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Get Orcasound data
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="site"></param>
-        /// <param name="logger"></param>
+        /// <param name="context">Database context</param>
+        /// <param name="site">Orcasound site to query</param>
+        /// <param name="logger">Logger</param>
         /// <returns>null on error, or JsonElement on success</returns>
         private async static Task<JsonElement?> GetOrcasoundDataAsync(OrcanodeMonitorContext context, string site, ILogger logger)
         {
@@ -1261,10 +1267,15 @@ namespace OrcanodeMonitor.Core
         /// Update the current list of Orcanodes using data from orcasound.net.
         /// </summary>
         /// <param name="context">Database context to update</param>
-        /// <param name="logger"></param>
+        /// <param name="logger">Logger</param>
+        /// <param name="httpClient">HTTP client or null for default</param>
         /// <returns></returns>
-        public async static Task UpdateOrcasoundDataAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task UpdateOrcasoundDataAsync(OrcanodeMonitorContext context, ILogger logger, HttpClient? httpClient = null)
         {
+            if (httpClient == null)
+            {
+                httpClient = _httpClient;
+            }
             try
             {
                 var foundList = await context.Orcanodes.ToListAsync();
@@ -1384,10 +1395,14 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public async static Task<TimestampResult?> GetLatestS3TimestampAsync(Orcanode node, bool updateNode, ILogger logger)
+        public async static Task<TimestampResult?> GetLatestS3TimestampAsync(Orcanode node, bool updateNode, ILogger logger, HttpClient? httpClient = null)
         {
+            if (httpClient == null)
+            {
+                httpClient = _httpClient;
+            }
             string url = "https://" + node.S3Bucket + ".s3.amazonaws.com/" + node.S3NodeName + "/latest.txt";
-            using HttpResponseMessage response = await _httpClient.GetAsync(url);
+            using HttpResponseMessage response = await httpClient.GetAsync(url);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
                 logger.LogError($"{node.S3NodeName} not found on S3");
