@@ -25,9 +25,6 @@ namespace Test
         [TestInitialize]
         public void FetcherTestsInitialize()
         {
-            var builder = WebApplication.CreateBuilder();
-            Fetcher.Initialize(builder.Configuration);
-
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
 
             var options = new DbContextOptionsBuilder<OrcanodeMonitorContext>()
@@ -42,32 +39,35 @@ namespace Test
             _container = OrcasiteTestHelper.GetMockOrcasiteHelperWithRequestVerification(_logger);
 
             _httpClient = _container.MockHttp.ToHttpClient();
+
+            var builder = WebApplication.CreateBuilder();
+            Fetcher.Initialize(builder.Configuration, _httpClient);
         }
 
         [TestMethod]
         public async Task TestGetDataplicityDataAsync()
         {
-            string result = await Fetcher.GetDataplicityDataAsync(string.Empty, _logger, _httpClient);
+            string result = await Fetcher.GetDataplicityDataAsync(string.Empty, _logger);
             Assert.IsNotNull(result, "GetDataplicityDataAsync failed");
         }
 
         [TestMethod]
         public async Task TestGetDataplicityDataWithSerialAsync()
         {
-            string result = await Fetcher.GetDataplicityDataAsync("MYSERIAL", _logger, _httpClient);
+            string result = await Fetcher.GetDataplicityDataAsync("MYSERIAL", _logger);
             Assert.IsNotNull(result, "GetDataplicityDataAsync failed");
         }
 
         [TestMethod]
         public async Task TestUpdateDataplicityDataAsync()
         {
-            await Fetcher.UpdateDataplicityDataAsync(_context, _logger, _httpClient);
+            await Fetcher.UpdateDataplicityDataAsync(_context, _logger);
         }
 
         [TestMethod]
         public async Task TestUpdateOrcasoundDataAsync()
         {
-            await Fetcher.UpdateOrcasoundDataAsync(_context, _logger, _httpClient);
+            await Fetcher.UpdateOrcasoundDataAsync(_context, _logger);
         }
 
         [TestMethod]
@@ -75,7 +75,7 @@ namespace Test
         {
             var node = new OrcanodeMonitor.Models.Orcanode();
             node.S3Bucket = "rpi_test";
-            Fetcher.TimestampResult? result = await Fetcher.GetLatestS3TimestampAsync(node, false, _logger, _httpClient);
+            Fetcher.TimestampResult? result = await Fetcher.GetLatestS3TimestampAsync(node, false, _logger);
             Assert.IsNotNull(result);
             Assert.IsFalse(string.IsNullOrEmpty(result.UnixTimestampString));
         }

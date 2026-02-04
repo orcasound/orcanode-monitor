@@ -68,7 +68,7 @@ namespace OrcanodeMonitor.Core
             using var scope = _scopeFactory.CreateScope();
             OrcanodeMonitorContext context = scope.ServiceProvider.GetRequiredService<OrcanodeMonitorContext>();
 
-            await Fetcher.UpdateDataplicityDataAsync(context, _logger, null);
+            await Fetcher.UpdateDataplicityDataAsync(context, _logger);
 
             await Fetcher.UpdateOrcasoundDataAsync(context, _logger);
 
