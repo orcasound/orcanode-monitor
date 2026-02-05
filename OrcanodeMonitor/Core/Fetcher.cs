@@ -405,7 +405,6 @@ namespace OrcanodeMonitor.Core
             return await GetPodCommandOutput(podName, namespaceName, cmd);
         }
 
-
         /// <summary>
         /// Exec into a pod running to get model info.
         /// </summary>

@@ -5,6 +5,8 @@ using k8s.KubeConfigModels;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
 using OrcanodeMonitor.Core;
@@ -41,6 +43,10 @@ namespace Test
             _httpClient = _container.MockHttp.ToHttpClient();
 
             var builder = WebApplication.CreateBuilder();
+            if (builder.Environment.IsDevelopment())
+            {
+                builder.Configuration.AddUserSecrets<FetcherTests>();
+            }
             Fetcher.Initialize(builder.Configuration, _httpClient);
         }
 
@@ -84,6 +90,15 @@ namespace Test
         public async Task TestUpdateS3DataAsync()
         {
             await Fetcher.UpdateS3DataAsync(_context, _logger);
+        }
+
+        [TestMethod]
+        public async Task TestGetOrcaHelloPodAsync()
+        {
+            var node = new OrcanodeMonitor.Models.Orcanode();
+            string namespaceName = "andrews-bay";
+            var pod = await Fetcher.GetOrcaHelloPodAsync(node, namespaceName);
+            Assert.IsNotNull(pod);
         }
     }
 }

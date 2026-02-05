@@ -34,13 +34,21 @@ namespace OrcanodeMonitor.Pages
         {
             get
             {
-                MonitorState monitorState = MonitorState.GetFrom(_databaseContext);
-
-                if (monitorState.LastUpdatedTimestampUtc == null)
+                try
                 {
+                    MonitorState monitorState = MonitorState.GetFrom(_databaseContext);
+
+                    if (monitorState.LastUpdatedTimestampUtc == null)
+                    {
+                        return "";
+                    }
+                    return Fetcher.UtcToLocalDateTime(monitorState.LastUpdatedTimestampUtc)?.ToString() ?? "";
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Exception in LastChecked getter: {ex.Message}");
                     return "";
                 }
-                return Fetcher.UtcToLocalDateTime(monitorState.LastUpdatedTimestampUtc)?.ToString() ?? "";
             }
         }
 
@@ -237,6 +245,7 @@ namespace OrcanodeMonitor.Pages
 
             return ColorTranslator.ToHtml(Color.Yellow);
         }
+
         public string NodeUptimePercentageTextColor(Orcanode node) => GetTextColor(NodeUptimePercentageBackgroundColor(node));
 
         public string NodeDataplicityUpgradeColor(Orcanode node)
@@ -265,33 +274,40 @@ namespace OrcanodeMonitor.Pages
 
         public async Task OnGetAsync()
         {
-            // Fetch nodes for display.
-            var nodes = await _databaseContext.Orcanodes.ToListAsync();
-            _nodes = nodes.Where(n => ((n.DataplicityConnectionStatus != OrcanodeOnlineStatus.Absent) ||
-                                       (n.OrcasoundStatus != OrcanodeOnlineStatus.Absent) ||
-                                       (n.S3StreamStatus != OrcanodeOnlineStatus.Absent &&
-                                        n.S3StreamStatus != OrcanodeOnlineStatus.Unauthorized)) &&
-                                      (n.OrcasoundHost != "dev.orcasound.net"))
-                          .OrderBy(n => n.DisplayName)
-                          .ToList();
-
-            // Fetch events for uptime computation.
-            var events = await _databaseContext.OrcanodeEvents.ToListAsync();
-            _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
-
-            // Fetch AI detection counts in parallel.
-            var detectionTasks = _nodes.Select(async node => new
+            try
             {
-                Slug = node.OrcasoundSlug,
-                Count = await Fetcher.GetDetectionCountAsync(node)
-            });
-            var results = await Task.WhenAll(detectionTasks);
-            foreach (var result in results)
-            {
-                _orcaHelloDetectionCounts[result.Slug] = result.Count;
+                // Fetch nodes for display.
+                var nodes = await _databaseContext.Orcanodes.ToListAsync();
+                _nodes = nodes.Where(n => ((n.DataplicityConnectionStatus != OrcanodeOnlineStatus.Absent) ||
+                                           (n.OrcasoundStatus != OrcanodeOnlineStatus.Absent) ||
+                                           (n.S3StreamStatus != OrcanodeOnlineStatus.Absent &&
+                                            n.S3StreamStatus != OrcanodeOnlineStatus.Unauthorized)) &&
+                                          (n.OrcasoundHost != "dev.orcasound.net"))
+                              .OrderBy(n => n.DisplayName)
+                              .ToList();
+
+                // Fetch events for uptime computation.
+                var events = await _databaseContext.OrcanodeEvents.ToListAsync();
+                _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
+
+                // Fetch AI detection counts in parallel.
+                var detectionTasks = _nodes.Select(async node => new
+                {
+                    Slug = node.OrcasoundSlug,
+                    Count = await Fetcher.GetDetectionCountAsync(node)
+                });
+                var results = await Task.WhenAll(detectionTasks);
+                foreach (var result in results)
+                {
+                    _orcaHelloDetectionCounts[result.Slug] = result.Count;
+                }
+
+                _recentEvents = await Fetcher.GetRecentEventsAsync(_databaseContext, DateTime.UtcNow.AddDays(-7), _logger) ?? new List<OrcanodeEvent>();
             }
-
-            _recentEvents = await Fetcher.GetRecentEventsAsync(_databaseContext, DateTime.UtcNow.AddDays(-7), _logger) ?? new List<OrcanodeEvent>();
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Exception in GetOrcaHelloLogAsync: {ex.Message}");
+            }
         }
 
         public string GetEventClasses(OrcanodeEvent item)
