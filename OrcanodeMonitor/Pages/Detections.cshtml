@@ -1,0 +1,42 @@
+﻿@page
+@model OrcanodeMonitor.Pages.DetectionsModel
+@{
+    ViewData["Title"] = "Detections";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Detections</h1>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>Human Detections</th>
+            <th>Human Confidence</th>
+            <th>Machine Detections</th>
+            <th>Machine Confidence</th>
+            <th>Configured Threshold</th>
+        </tr>
+        @foreach (Models.Orcanode item in Model.Nodes)
+        {
+            <tr>
+                <td title="@Html.DisplayFor(modelItem => item.DataplicityDescription)">
+                    @Html.DisplayFor(modelItem => item.DisplayName)
+                </td>
+                <td>
+                    @Model.GetHumanDetectionCount(item)
+                </td>
+                <td>
+                    @Model.GetMachineDetectionCount(item)
+                </td>
+                <td>
+                    @Model.GetPositiveMachineThreshold(item)
+                </td>
+                <td>
+                    @Model.GetNegativeMachineThreshold(item)
+                </td>
+                <td>
+                    @Model.GetConfiguredConfidenceThreshold(item)
+                </td>
+            </tr>
+    }
+    </table>
+</div>

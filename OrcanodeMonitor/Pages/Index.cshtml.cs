@@ -306,7 +306,7 @@ namespace OrcanodeMonitor.Pages
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Exception in GetOrcaHelloLogAsync: {ex.Message}");
+                _logger.LogError(ex, $"Exception in OnGetAsync: {ex.Message}");
             }
         }
 
