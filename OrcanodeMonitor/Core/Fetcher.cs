@@ -30,6 +30,7 @@ namespace OrcanodeMonitor.Core
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         private static string _iftttServiceKey = string.Empty;
         public static bool IsReadOnly = false;
+        public static bool IsOffline = false;
         public static string IftttServiceKey => _iftttServiceKey;
         private static Kubernetes? _k8sClient = null;
         private static IConfiguration? _config = null;

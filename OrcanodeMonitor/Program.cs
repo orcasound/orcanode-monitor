@@ -1,12 +1,10 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using Microsoft.Extensions.Hosting;
+
 using OrcanodeMonitor.Core;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using OrcanodeMonitor.Data;
 using Microsoft.IdentityModel.Tokens;
-using System;
 using Microsoft.Azure.Cosmos;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,14 +12,14 @@ if (builder.Environment.IsDevelopment())
 {
     builder.Configuration.AddUserSecrets<Program>();
 }
-Fetcher.Initialize(builder.Configuration);
 
-// First try to get the connection string from configuration using the AZURE_COSMOS_CONNECTIONSTRING key
-// (e.g., from environment variables, user secrets, or JSON configuration).
-var connection = builder.Configuration["AZURE_COSMOS_CONNECTIONSTRING"];
-if (connection.IsNullOrEmpty())
+HttpClient? httpClient = null;
+
+string isOffline = builder.Configuration["ORCANODE_MONITOR_OFFLINE"] ?? "false";
+if (isOffline == "true")
 {
-    connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
+    Fetcher.IsOffline = true;
+    httpClient = null; // TODO: use mock for offline testing.
 }
 
 string isReadOnly = builder.Configuration["ORCANODE_MONITOR_READONLY"] ?? "false";
@@ -30,16 +28,36 @@ if (isReadOnly == "true")
     Fetcher.IsReadOnly = true;
 }
 
-string databaseName = builder.Configuration["AZURE_COSMOS_DATABASENAME"] ?? "orcasound-cosmosdb";
+Fetcher.Initialize(builder.Configuration, httpClient);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
-    options.UseCosmos(
-        connection,
-        databaseName: databaseName,
-        options =>
-        { options.ConnectionMode(ConnectionMode.Gateway); }));
+if (Fetcher.IsOffline) // Use Test data.
+{
+    // TODO: what is the right way to do this?
+    // We have IOrcanodeMonitorContext but this creates an OrcanodeMonitorContext object.
+    builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
+        options.UseInternalServiceProvider(null)
+    );
+}
+else // Use Cosmos DB.
+{
+    // First try to get the connection string from configuration using the AZURE_COSMOS_CONNECTIONSTRING key
+    // (e.g., from environment variables, user secrets, or JSON configuration).
+    var connection = builder.Configuration["AZURE_COSMOS_CONNECTIONSTRING"];
+    if (connection.IsNullOrEmpty())
+    {
+        connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
+    }
+
+    string databaseName = builder.Configuration["AZURE_COSMOS_DATABASENAME"] ?? "orcasound-cosmosdb";
+    builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
+        options.UseCosmos(
+            connection,
+            databaseName: databaseName,
+            options =>
+            { options.ConnectionMode(ConnectionMode.Gateway); }));
+}
 builder.Services.AddHostedService<PeriodicTasks>(); // Register your background service
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
