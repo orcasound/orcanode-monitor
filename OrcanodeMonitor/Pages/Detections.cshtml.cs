@@ -3,6 +3,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 
@@ -10,12 +11,56 @@ namespace OrcanodeMonitor.Pages
 {
     public class DetectionData
     {
-        public long MachinePositiveDetections;
-        public long MachineNegativeDetections;
-        public long MachineTotalDetections => MachinePositiveDetections + MachineNegativeDetections;
-        public long HumanPositiveDetections;
-        public long HumanNegativeDetections;
-        public long HumanTotalDetections => HumanPositiveDetections + HumanNegativeDetections;
+        /// <summary>
+        /// Number of positive machine detections.
+        /// </summary>
+        public long PositiveMachineDetectionCount;
+
+        /// <summary>
+        /// Minimum global confidence of positive machine detections.
+        /// </summary>
+        public long MinimumPositiveMachineDetectionConfidence;
+
+        /// <summary>
+        /// Average global confidence of positive machine detections.
+        /// </summary>
+        public long AveragePositiveMachineDetectionConfidence;
+
+        /// <summary>
+        /// Number of negative machine detections.
+        /// </summary>
+        public long NegativeMachineDetectionCount;
+
+        /// <summary>
+        /// Average global confidence of negative machine detections.
+        /// </summary>
+        public long AverageNegativeMachineDetectionConfidence;
+
+        /// <summary>
+        /// Average global confidence of negative machine detections.
+        /// </summary>
+        public long MaximumNegativeMachineDetectionConfidence;
+
+        /// <summary>
+        /// Total number of machine detections.
+        /// </summary>
+        public long MachineDetectionCount => PositiveMachineDetectionCount + NegativeMachineDetectionCount;
+
+        /// <summary>
+        /// Number of positive human detections.
+        /// </summary>
+        public long PositiveHumanDetectionCount;
+
+        /// <summary>
+        /// Number of negative human detections.
+        /// </summary>
+        public long NegativeHumanDetectionCount;
+
+        /// <summary>
+        /// Total number of human detections.
+        /// </summary>
+        public long HumanDetectionCount => PositiveHumanDetectionCount + NegativeHumanDetectionCount;
+
         public string ConfidenceThreshold = string.Empty;
     }
 
@@ -33,13 +78,14 @@ namespace OrcanodeMonitor.Pages
             _nodes = new List<Orcanode>();
         }
 
+        private readonly Dictionary<string, long> _orcaHelloDetectionCounts = new Dictionary<string, long>();
+
         public async Task OnGetAsync()
         {
             try
             {
                 // Fetch nodes for display.
 #if false
-                // TODO
                 var nodes = await _databaseContext.Orcanodes.ToListAsync();
                 _nodes = nodes.Where(n => ((n.DataplicityConnectionStatus != OrcanodeOnlineStatus.Absent) ||
                                            (n.OrcasoundStatus != OrcanodeOnlineStatus.Absent) ||
@@ -49,18 +95,21 @@ namespace OrcanodeMonitor.Pages
                               .OrderBy(n => n.DisplayName)
                               .ToList();
 
+                // Fetch Orcasite detections.
+                // TODO
+
+                // Fetch OrcaHello detections.
+                await Fetcher.FetchOrcasiteDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts);
+
                 // Fetch AI detection counts in parallel.
                 var detectionTasks = _nodes.Select(async node => new
                 {
                     Slug = node.OrcasoundSlug,
-                    Count = await Fetcher.GetDetectionCountAsync(node),
                     (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(node.OrcasoundSlug);
                 });
                 var results = await Task.WhenAll(detectionTasks);
                 foreach (var result in results)
                 {
-                    _orcaHelloDetectionCounts[result.Slug] = result.Count;
-
                     if (pod.ModelGlobalThreshold.HasValue && pod.ModelLocalThreshold.HasValue)
                     {
                         int globalThreshold = pod.ModelGlobalThreshold.Value;
@@ -76,10 +125,14 @@ namespace OrcanodeMonitor.Pages
                 _nodes.Add(node);
                 var data = new DetectionData
                 {
-                    HumanNegativeDetections = 1,
-                    HumanPositiveDetections = 2,
-                    MachineNegativeDetections = 4,
-                    MachinePositiveDetections = 3,
+                    NegativeHumanDetectionCount = 1,
+                    PositiveHumanDetectionCount = 2,
+                    NegativeMachineDetectionCount = 4,
+                    PositiveMachineDetectionCount = 3,
+                    AverageNegativeMachineDetectionConfidence = 70,
+                    AveragePositiveMachineDetectionConfidence = 80,
+                    MaximumNegativeMachineDetectionConfidence = 75,
+                    MinimumPositiveMachineDetectionConfidence = 76,
                     ConfidenceThreshold = "3 @ 75%"
                 };
                 _detectionCounts[node.OrcasoundSlug] = data;
@@ -90,10 +143,14 @@ namespace OrcanodeMonitor.Pages
                 _nodes.Add(node);
                 data = new DetectionData
                 {
-                    HumanPositiveDetections = 3,
-                    HumanNegativeDetections = 1,
-                    MachinePositiveDetections = 2,
-                    MachineNegativeDetections = 4,
+                    PositiveHumanDetectionCount = 3,
+                    NegativeHumanDetectionCount = 1,
+                    PositiveMachineDetectionCount = 2,
+                    NegativeMachineDetectionCount = 4,
+                    AverageNegativeMachineDetectionConfidence = 70,
+                    AveragePositiveMachineDetectionConfidence = 80,
+                    MaximumNegativeMachineDetectionConfidence = 75,
+                    MinimumPositiveMachineDetectionConfidence = 76,
                     ConfidenceThreshold = "3 @ 50%"
                 };
                 _detectionCounts[node.OrcasoundSlug] = data;
@@ -113,12 +170,12 @@ namespace OrcanodeMonitor.Pages
             {
                 return "Unknown";
             }
-            if (data.HumanTotalDetections == 0)
+            if (data.HumanDetectionCount == 0)
             {
                 return "None";
             }
-            int percent = (int)Math.Round(data.HumanPositiveDetections * 100.0 / data.HumanTotalDetections);
-            return $"{data.HumanPositiveDetections} / {data.HumanTotalDetections} ({percent}%)";
+            int percent = (int)Math.Round(data.PositiveHumanDetectionCount * 100.0 / data.HumanDetectionCount);
+            return $"{data.PositiveHumanDetectionCount} / {data.HumanDetectionCount} ({percent}%)";
         }
 
         public string GetMachineDetectionCount(Orcanode node)
@@ -127,34 +184,40 @@ namespace OrcanodeMonitor.Pages
             {
                 return "Unknown";
             }
-            if (data.MachineTotalDetections == 0)
+            if (data.MachineDetectionCount == 0)
             {
                 return "None";
             }
-            int percent = (int)Math.Round(data.MachinePositiveDetections * 100.0 / data.MachineTotalDetections);
-            return $"{data.MachinePositiveDetections} / {data.MachineTotalDetections} ({percent}%)";
+            int percent = (int)Math.Round(data.PositiveMachineDetectionCount * 100.0 / data.MachineDetectionCount);
+            return $"{data.PositiveMachineDetectionCount} / {data.MachineDetectionCount} ({percent}%)";
         }
 
         /// <summary>
         /// Get the average global confidence for positive machine detections.
         /// </summary>
         /// <param name="node"></param>
-        /// <returns></returns>
-        public string GetPositiveMachineThreshold(Orcanode node)
+        /// <returns>Threshold percentage</returns>
+        public string GetAveragePositiveMachineConfidence(Orcanode node)
         {
-            int threshold = 0; // TODO
-            return $"{threshold}%";
+            if (!_detectionCounts.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
+            {
+                return "Unknown";
+            }
+            return $"{data.MinimumPositiveMachineDetectionConfidence}% min, {data.AveragePositiveMachineDetectionConfidence}% avg";
         }
 
         /// <summary>
         /// Get the average global confidence for negative machine detections.
         /// </summary>
         /// <param name="node"></param>
-        /// <returns></returns>
-        public string GetNegativeMachineThreshold(Orcanode node)
+        /// <returns>Threshold percentage</returns>
+        public string GetAverageNegativeMachineConfidence(Orcanode node)
         {
-            int threshold = 0; // TODO
-            return $"{threshold}%";
+            if (!_detectionCounts.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
+            {
+                return "Unknown";
+            }
+            return $"{data.AverageNegativeMachineDetectionConfidence}% avg, {data.MaximumNegativeMachineDetectionConfidence}% max";
         }
 
         /// <summary>

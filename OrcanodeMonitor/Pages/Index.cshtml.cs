@@ -290,17 +290,7 @@ namespace OrcanodeMonitor.Pages
                 var events = await _databaseContext.OrcanodeEvents.ToListAsync();
                 _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
 
-                // Fetch AI detection counts in parallel.
-                var detectionTasks = _nodes.Select(async node => new
-                {
-                    Slug = node.OrcasoundSlug,
-                    Count = await Fetcher.GetDetectionCountAsync(node)
-                });
-                var results = await Task.WhenAll(detectionTasks);
-                foreach (var result in results)
-                {
-                    _orcaHelloDetectionCounts[result.Slug] = result.Count;
-                }
+                await Fetcher.FetchOrcasiteDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts);
 
                 _recentEvents = await Fetcher.GetRecentEventsAsync(_databaseContext, DateTime.UtcNow.AddDays(-7), _logger) ?? new List<OrcanodeEvent>();
             }

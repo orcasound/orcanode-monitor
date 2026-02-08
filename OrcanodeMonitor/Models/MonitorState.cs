@@ -36,7 +36,7 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         /// <param name="context">Database context</param>
         /// <returns>Monitor state</returns>
-        public static MonitorState GetFrom(OrcanodeMonitorContext context)
+        public static MonitorState GetFrom(IOrcanodeMonitorContext context)
         {
             MonitorState? state = context.MonitorState.Find(_singletonKey);
             if (state != null)

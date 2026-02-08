@@ -14,6 +14,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -554,7 +555,7 @@ namespace OrcanodeMonitor.Core
 
             string modelTimestamp = await GetPodModelTimestampAsync(bestPod);
 
-            long detectionCount = await GetDetectionCountAsync(orcanode);
+            long detectionCount = await GetOrcaHelloDetectionCountAsync(orcanode);
 
             (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(namespaceName);
 
@@ -617,7 +618,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="context">Database context to update</param>
         /// <param name="logger">Logger</param>
         /// <returns></returns>
-        public async static Task UpdateOrcaHelloDataAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task UpdateOrcaHelloDataAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
             try
             {
@@ -888,7 +889,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="context">Database context to update</param>
         /// <param name="logger"></param>
         /// <returns></returns>
-        public async static Task UpdateDataplicityDataAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task UpdateDataplicityDataAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
             try
             {
@@ -1029,7 +1030,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="context">Database context to update</param>
         /// <param name="logger">Logger</param>
         /// <returns></returns>
-        public async static Task CheckForRebootsNeededAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task CheckForRebootsNeededAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
             var originalList = await context.Orcanodes.ToListAsync();
             foreach (Orcanode? node in originalList)
@@ -1070,7 +1071,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="site">Orcasound site to query</param>
         /// <param name="logger">Logger</param>
         /// <returns>null on error, or JsonElement on success</returns>
-        private async static Task<JsonElement?> GetOrcasoundDataAsync(OrcanodeMonitorContext context, string site, ILogger logger)
+        private async static Task<JsonElement?> GetOrcasoundDataAsync(IOrcanodeMonitorContext context, string site, ILogger logger)
         {
             string url = "https://" + site + _orcasoundFeedsUrlPath;
             try
@@ -1104,7 +1105,7 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        private static void UpdateOrcasoundNode(JsonElement feed, List<Orcanode> foundList, List<Orcanode> unfoundList, OrcanodeMonitorContext context, string site, ILogger logger)
+        private static void UpdateOrcasoundNode(JsonElement feed, List<Orcanode> foundList, List<Orcanode> unfoundList, IOrcanodeMonitorContext context, string site, ILogger logger)
         {
             if (!feed.TryGetProperty("id", out var feedId))
             {
@@ -1235,7 +1236,27 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        private async static Task UpdateOrcasoundSiteDataAsync(OrcanodeMonitorContext context, string site, List<Orcanode> foundList, List<Orcanode> unfoundList, ILogger logger)
+        /// <summary>
+        /// Fetch AI detection counts in parallel.
+        /// </summary>
+        /// <param name="nodes">List of Orcanodes</param>
+        /// <param name="counts">Dictionary of counts</param>
+        /// <returns></returns>
+        public async static Task FetchOrcasiteDetectionCountsAsync(List<Orcanode> nodes, Dictionary<string, long> counts)
+        {
+            var detectionTasks = nodes.Select(async node => new
+            {
+                Slug = node.OrcasoundSlug,
+                Count = await Fetcher.GetOrcaHelloDetectionCountAsync(node)
+            });
+            var results = await Task.WhenAll(detectionTasks);
+            foreach (var result in results)
+            {
+                counts[result.Slug] = result.Count;
+            }
+        }
+
+        private async static Task UpdateOrcasoundSiteDataAsync(IOrcanodeMonitorContext context, string site, List<Orcanode> foundList, List<Orcanode> unfoundList, ILogger logger)
         {
             JsonElement? dataArray = await GetOrcasoundDataAsync(context, site, logger);
             if (dataArray.HasValue)
@@ -1252,7 +1273,7 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="context">The database context to save changes for.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        private static async Task SaveChangesAsync(OrcanodeMonitorContext context)
+        private static async Task SaveChangesAsync(IOrcanodeMonitorContext context)
         {
             if (!IsReadOnly)
             {
@@ -1266,7 +1287,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="context">Database context to update</param>
         /// <param name="logger">Logger</param>
         /// <returns></returns>
-        public async static Task UpdateOrcasoundDataAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task UpdateOrcasoundDataAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
             try
             {
@@ -1296,7 +1317,7 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task UpdateS3DataAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
             try
             {
@@ -1433,7 +1454,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="node">Orcanode to update</param>
         /// <param name="logger">Logger</param>
         /// <returns></returns>
-        public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
+        public async static Task UpdateS3DataAsync(IOrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
             OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
             TimestampResult? result = await GetLatestS3TimestampAsync(node, true, logger);
@@ -1471,7 +1492,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="context">Database context</param>
         /// <param name="limit">Maximum number of events to return</param>
         /// <returns>List of events</returns>
-        public static async Task<List<OrcanodeEvent>> GetEventsAsync(OrcanodeMonitorContext context, int limit)
+        public static async Task<List<OrcanodeEvent>> GetEventsAsync(IOrcanodeMonitorContext context, int limit)
         {
             List<OrcanodeEvent> orcanodeEvents = await context.OrcanodeEvents.OrderByDescending(e => e.DateTimeUtc).Take(limit).ToListAsync();
             return orcanodeEvents;
@@ -1484,7 +1505,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="since">Time to get events since</param>
         /// <param name="logger">Logger</param>
         /// <returns>null on error, or list of events on success</returns>
-        public static async Task<List<OrcanodeEvent>?> GetRecentEventsAsync(OrcanodeMonitorContext context, DateTime since, ILogger logger)
+        public static async Task<List<OrcanodeEvent>?> GetRecentEventsAsync(IOrcanodeMonitorContext context, DateTime since, ILogger logger)
         {
             try
             {
@@ -1519,7 +1540,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="since">UTC time to get events since</param>
         /// <param name="logger">Logger</param>
         /// <returns>null on error, or list of events on success</returns>
-        public static async Task<List<OrcanodeEvent>?> GetRecentEventsForNodeAsync(OrcanodeMonitorContext context, string id, DateTime since, ILogger logger)
+        public static async Task<List<OrcanodeEvent>?> GetRecentEventsForNodeAsync(IOrcanodeMonitorContext context, string id, DateTime since, ILogger logger)
         {
             try
             {
@@ -1589,32 +1610,32 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public static void AddOrcanodeEvent(OrcanodeMonitorContext context, ILogger logger, Orcanode node, string type, string value, string? url = null)
+        public static void AddOrcanodeEvent(IOrcanodeMonitorContext context, ILogger logger, Orcanode node, string type, string value, string? url = null)
         {
             logger.LogInformation($"Orcanode event: {node.DisplayName} {type} {value}");
             var orcanodeEvent = new OrcanodeEvent(node, type, value, DateTime.UtcNow, url);
             context.OrcanodeEvents.Add(orcanodeEvent);
         }
 
-        private static void AddDataplicityConnectionStatusEvent(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
+        private static void AddDataplicityConnectionStatusEvent(IOrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
             string value = node.DataplicityConnectionStatus.ToString();
             AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.DataplicityConnection, value);
         }
 
-        private static void AddDataplicityAgentUpgradeStatusChangeEvent(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
+        private static void AddDataplicityAgentUpgradeStatusChangeEvent(IOrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
             string value = node.DataplicityUpgradeStatus.ToString();
             AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.AgentUpgradeStatus, value);
         }
 
-        private static void AddDiskCapacityChangeEvent(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
+        private static void AddDiskCapacityChangeEvent(IOrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
             string value = string.Format("{0}G", node.DiskCapacityInGigs);
             AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.SDCardSize, value);
         }
 
-        private static void AddHydrophoneStreamStatusEvent(OrcanodeMonitorContext context, ILogger logger, Orcanode node, string? url)
+        private static void AddHydrophoneStreamStatusEvent(IOrcanodeMonitorContext context, ILogger logger, Orcanode node, string? url)
         {
             string value = node.OrcasoundOnlineStatusString;
             AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.HydrophoneStream, value, url);
@@ -1713,7 +1734,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="unixTimestampString">Value in the latest.txt file</param>
         /// <param name="logger">Logger</param>
         /// <returns></returns>
-        public async static Task UpdateManifestTimestampAsync(OrcanodeMonitorContext context, Orcanode node, string unixTimestampString, ILogger logger)
+        public async static Task UpdateManifestTimestampAsync(IOrcanodeMonitorContext context, Orcanode node, string unixTimestampString, ILogger logger)
         {
             OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
 
@@ -1785,11 +1806,11 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get the AI detection count for a given location.
+        /// Get the number of OrcaHello detections for a given location in the past week.
         /// </summary>
         /// <param name="orcanode">Node to check</param>
-        /// <returns>Count of AI detections</returns>
-        public static async Task<long> GetDetectionCountAsync(Orcanode orcanode)
+        /// <returns>Count of AI detections in the past week</returns>
+        public static async Task<long> GetOrcaHelloDetectionCountAsync(Orcanode orcanode)
         {
             try
             {
@@ -1799,7 +1820,7 @@ namespace OrcanodeMonitor.Core
                 using var request = new HttpRequestMessage(HttpMethod.Get, uri);
                 using var response = await _httpClient.SendAsync(request);
 
-                // Try to get the custom header
+                // Try to get the custom header.
                 if (!response.Headers.TryGetValues("totalnumberrecords", out var values))
                 {
                     return 0;
@@ -1859,7 +1880,7 @@ namespace OrcanodeMonitor.Core
                     string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
                     Orcanode? orcanode = orcanodes.Find(a => a.OrcasoundSlug == pod.Metadata.NamespaceProperty);
-                    long detectionCount = (orcanode != null) ? await GetDetectionCountAsync(orcanode) : 0;
+                    long detectionCount = (orcanode != null) ? await GetOrcaHelloDetectionCountAsync(orcanode) : 0;
 
                     (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty);
 

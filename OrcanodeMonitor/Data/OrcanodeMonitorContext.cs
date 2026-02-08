@@ -2,12 +2,22 @@
 // SPDX-License-Identifier: MIT
 
 using Microsoft.EntityFrameworkCore;
-using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Models;
 
 namespace OrcanodeMonitor.Data
 {
-    public class OrcanodeMonitorContext : DbContext
+    /// <summary>
+    /// Mockable interface.
+    /// </summary>
+    public interface IOrcanodeMonitorContext
+    {
+        public DbSet<Orcanode> Orcanodes { get; set; }
+        public DbSet<OrcanodeEvent> OrcanodeEvents { get; set; }
+        public DbSet<MonitorState> MonitorState { get; set; }
+        public abstract Task<int> SaveChangesAsync(CancellationToken cancellationToken = default(CancellationToken));
+    }
+
+    public class OrcanodeMonitorContext : DbContext, IOrcanodeMonitorContext
     {
         public OrcanodeMonitorContext(DbContextOptions<OrcanodeMonitorContext> options)
             : base(options)

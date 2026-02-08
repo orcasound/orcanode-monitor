@@ -10,10 +10,10 @@
         <tr>
             <th>Name</th>
             <th>Human Detections</th>
-            <th>Human Confidence</th>
             <th>Machine Detections</th>
-            <th>Machine Confidence</th>
+            <th>Negative Confidence</th>
             <th>Configured Threshold</th>
+            <th>Positive Confidence</th>
         </tr>
         @foreach (Models.Orcanode item in Model.Nodes)
         {
@@ -28,13 +28,13 @@
                     @Model.GetMachineDetectionCount(item)
                 </td>
                 <td>
-                    @Model.GetPositiveMachineThreshold(item)
-                </td>
-                <td>
-                    @Model.GetNegativeMachineThreshold(item)
+                    @Model.GetAverageNegativeMachineConfidence(item)
                 </td>
                 <td>
                     @Model.GetConfiguredConfidenceThreshold(item)
+                </td>
+                <td>
+                    @Model.GetAveragePositiveMachineConfidence(item)
                 </td>
             </tr>
     }
