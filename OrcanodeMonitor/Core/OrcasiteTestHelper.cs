@@ -6,12 +6,11 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using OrcanodeMonitor.Core;
 using RichardSzalay.MockHttp;
 using System.Net;
 using System.Text.Json;
 
-namespace Test
+namespace OrcanodeMonitor.Core
 {
     public class OrcasiteTestHelper
     {
@@ -79,6 +78,10 @@ namespace Test
             container.AddJsonResponse(
                 "https://apps.dataplicity.com/devices/MYSERIAL/",
                 "DataplicityGetRequestWithSerial.json");
+
+            container.AddJsonResponse(
+                "https://api.mezmo.com/v1/config/view",
+                "MezmoData.json");
 
 #if false
             // Mock the POST request to create a detection.

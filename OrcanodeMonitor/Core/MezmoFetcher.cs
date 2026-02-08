@@ -18,6 +18,14 @@ namespace OrcanodeMonitor.Core
 
         const int DEFAULT_MEZMO_LOG_SECONDS = 300;
 
+        public static void Initialize(HttpClient? httpClient = null)
+        {
+            if (httpClient != null)
+            {
+                _httpClient = httpClient;
+            }
+        }
+
         private static int MezmoLogSeconds
         {
             get

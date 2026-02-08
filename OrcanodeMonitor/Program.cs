@@ -1,11 +1,11 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
-using OrcanodeMonitor.Core;
-using Microsoft.EntityFrameworkCore;
-using OrcanodeMonitor.Data;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.Azure.Cosmos;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using OrcanodeMonitor.Core;
+using OrcanodeMonitor.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 if (builder.Environment.IsDevelopment())
@@ -16,10 +16,13 @@ if (builder.Environment.IsDevelopment())
 HttpClient? httpClient = null;
 
 string isOffline = builder.Configuration["ORCANODE_MONITOR_OFFLINE"] ?? "false";
+OrcasiteTestHelper.MockOrcasiteHelperContainer? container = null;
 if (isOffline == "true")
 {
     Fetcher.IsOffline = true;
-    httpClient = null; // TODO: use mock for offline testing.
+    ILogger logger = null; // TODO
+    container = OrcasiteTestHelper.GetMockOrcasiteHelperWithRequestVerification(logger);
+    httpClient = container.MockHttp.ToHttpClient();
 }
 
 string isReadOnly = builder.Configuration["ORCANODE_MONITOR_READONLY"] ?? "false";
@@ -36,6 +39,11 @@ if (Fetcher.IsOffline) // Use Test data.
 {
     // TODO: what is the right way to do this?
     // We have IOrcanodeMonitorContext but this creates an OrcanodeMonitorContext object.
+    // Ex: No database provider has been configured for this DbContext. A provider can
+    //     be configured by overriding the 'DbContext.OnConfiguring' method or by using
+    //     'AddDbContext' on the application service provider. If 'AddDbContext' is used,
+    //     then also ensure that your DbContext type accepts a DbContextOptions<TContext>
+    //     object in its constructor and passes it to the base constructor for DbContext.
     builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
         options.UseInternalServiceProvider(null)
     );
