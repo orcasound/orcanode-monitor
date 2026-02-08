@@ -68,7 +68,7 @@ namespace OrcanodeMonitor.Core
             using var scope = _scopeFactory.CreateScope();
             OrcanodeMonitorContext context = scope.ServiceProvider.GetRequiredService<OrcanodeMonitorContext>();
 
-            await Fetcher.UpdateDataplicityDataAsync(context, _logger);
+            await DataplicityFetcher.UpdateDataplicityDataAsync(context, _logger);
 
             await Fetcher.UpdateOrcasoundDataAsync(context, _logger);
 
@@ -78,7 +78,7 @@ namespace OrcanodeMonitor.Core
 
             await Fetcher.UpdateOrcaHelloDataAsync(context, _logger);
 
-            await Fetcher.CheckForRebootsNeededAsync(context, _logger);
+            await DataplicityFetcher.CheckForRebootsNeededAsync(context, _logger);
         }
     }
 }

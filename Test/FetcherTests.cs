@@ -53,21 +53,21 @@ namespace Test
         [TestMethod]
         public async Task TestGetDataplicityDataAsync()
         {
-            string result = await Fetcher.GetDataplicityDataAsync(string.Empty, _logger);
+            string result = await DataplicityFetcher.GetDataplicityDataAsync(string.Empty, _logger);
             Assert.IsNotNull(result, "GetDataplicityDataAsync failed");
         }
 
         [TestMethod]
         public async Task TestGetDataplicityDataWithSerialAsync()
         {
-            string result = await Fetcher.GetDataplicityDataAsync("MYSERIAL", _logger);
+            string result = await DataplicityFetcher.GetDataplicityDataAsync("MYSERIAL", _logger);
             Assert.IsNotNull(result, "GetDataplicityDataAsync failed");
         }
 
         [TestMethod]
         public async Task TestUpdateDataplicityDataAsync()
         {
-            await Fetcher.UpdateDataplicityDataAsync(_context, _logger);
+            await DataplicityFetcher.UpdateDataplicityDataAsync(_context, _logger);
         }
 
         [TestMethod]
