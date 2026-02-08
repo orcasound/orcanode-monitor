@@ -290,7 +290,7 @@ namespace OrcanodeMonitor.Pages
                 var events = await _databaseContext.OrcanodeEvents.ToListAsync();
                 _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
 
-                await Fetcher.FetchOrcasiteDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts);
+                await OrcaHelloFetcher.FetchOrcaHelloDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts);
 
                 _recentEvents = await Fetcher.GetRecentEventsAsync(_databaseContext, DateTime.UtcNow.AddDays(-7), _logger) ?? new List<OrcanodeEvent>();
             }

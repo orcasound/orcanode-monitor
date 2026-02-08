@@ -55,7 +55,7 @@ namespace OrcanodeMonitor.Pages
 
         public async Task<IActionResult> OnGetAsync(string nodeName)
         {
-            _orcaHelloNode = await Fetcher.GetOrcaHelloNodeAsync(nodeName);
+            _orcaHelloNode = await OrcaHelloFetcher.GetOrcaHelloNodeAsync(nodeName);
             if (_orcaHelloNode == null)
             {
                 return NotFound(); // Return a 404 error page

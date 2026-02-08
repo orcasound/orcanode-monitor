@@ -152,13 +152,13 @@ namespace OrcanodeMonitor.Pages
                 return NotFound(); // Return a 404 error page
             }
 
-            _pod = await Fetcher.GetOrcaHelloPodAsync(_orcanode, podNamespace);
+            _pod = await OrcaHelloFetcher.GetOrcaHelloPodAsync(_orcanode, podNamespace);
             if (_pod == null)
             {
                 return NotFound(); // Return a 404 error page
             }
 
-            _orcaHelloNode = await Fetcher.GetOrcaHelloNodeAsync(_pod.NodeName);
+            _orcaHelloNode = await OrcaHelloFetcher.GetOrcaHelloNodeAsync(_pod.NodeName);
             if (_orcaHelloNode == null)
             {
                 return NotFound(); // Return a 404 error page
@@ -166,7 +166,7 @@ namespace OrcanodeMonitor.Pages
 
             Namespace = podNamespace;
 
-            _logData = await Fetcher.GetOrcaHelloLogAsync(_pod, podNamespace, _logger);
+            _logData = await OrcaHelloFetcher.GetOrcaHelloLogAsync(_pod, podNamespace, _logger);
             if (_logData.IsNullOrEmpty())
             {
                 return NotFound(); // Return a 404 error page

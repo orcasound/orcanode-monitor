@@ -97,7 +97,7 @@ namespace Test
         {
             var node = new OrcanodeMonitor.Models.Orcanode();
             string namespaceName = "andrews-bay";
-            var pod = await Fetcher.GetOrcaHelloPodAsync(node, namespaceName);
+            var pod = await OrcaHelloFetcher.GetOrcaHelloPodAsync(node, namespaceName);
             Assert.IsNotNull(pod);
         }
     }

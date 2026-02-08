@@ -76,7 +76,7 @@ namespace OrcanodeMonitor.Core
 
             await Fetcher.UpdateS3DataAsync(context, _logger);
 
-            await Fetcher.UpdateOrcaHelloDataAsync(context, _logger);
+            await OrcaHelloFetcher.UpdateOrcaHelloDataAsync(context, _logger);
 
             await DataplicityFetcher.CheckForRebootsNeededAsync(context, _logger);
         }
