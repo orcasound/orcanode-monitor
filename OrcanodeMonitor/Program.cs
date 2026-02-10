@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
+using OrcanodeMonitor.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 if (builder.Environment.IsDevelopment())
@@ -20,7 +21,8 @@ OrcasiteTestHelper.MockOrcasiteHelperContainer? container = null;
 if (isOffline == "true")
 {
     Fetcher.IsOffline = true;
-    ILogger logger = null; // TODO
+    using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+    var logger = loggerFactory.CreateLogger<Program>();
     container = OrcasiteTestHelper.GetMockOrcasiteHelperWithRequestVerification(logger);
     httpClient = container.MockHttp.ToHttpClient();
 }
@@ -35,17 +37,10 @@ Fetcher.Initialize(builder.Configuration, httpClient);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-if (Fetcher.IsOffline) // Use Test data.
+if (Fetcher.IsOffline) // Use Test data with in-memory database.
 {
-    // TODO: what is the right way to do this?
-    // We have IOrcanodeMonitorContext but this creates an OrcanodeMonitorContext object.
-    // Ex: No database provider has been configured for this DbContext. A provider can
-    //     be configured by overriding the 'DbContext.OnConfiguring' method or by using
-    //     'AddDbContext' on the application service provider. If 'AddDbContext' is used,
-    //     then also ensure that your DbContext type accepts a DbContextOptions<TContext>
-    //     object in its constructor and passes it to the base constructor for DbContext.
     builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
-        options.UseInternalServiceProvider(null)
+        options.UseInMemoryDatabase("OrcanodeMonitorOffline")
     );
 }
 else // Use Cosmos DB.
@@ -92,6 +87,58 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
 
     var context = services.GetRequiredService<OrcanodeMonitorContext>();
+
+    // Seed sample data for offline mode
+    if (Fetcher.IsOffline)
+    {
+        context.Database.EnsureCreated();
+
+        if (!context.Orcanodes.Any())
+        {
+            var orcanodes = new List<Orcanode>
+            {
+                new Orcanode
+                {
+                    ID = "andrews-bay",
+                    PartitionValue = 1,
+                    OrcasoundName = "Andrews Bay",
+                    OrcasoundSlug = "andrews-bay",
+                    DataplicityOnline = true,
+                    OrcasoundVisible = true,
+                    LatestUploadedUtc = DateTime.UtcNow.AddMinutes(-1),
+                    AudioStreamStatus = OrcanodeOnlineStatus.Online,
+                    OrcasoundHost = "live.orcasound.net"
+                },
+                new Orcanode
+                {
+                    ID = "orcasound-lab",
+                    PartitionValue = 1,
+                    OrcasoundName = "Orcasound Lab",
+                    OrcasoundSlug = "orcasound-lab",
+                    DataplicityOnline = true,
+                    OrcasoundVisible = true,
+                    LatestUploadedUtc = DateTime.UtcNow.AddMinutes(-1),
+                    AudioStreamStatus = OrcanodeOnlineStatus.Online,
+                    OrcasoundHost = "live.orcasound.net"
+                },
+                new Orcanode
+                {
+                    ID = "port-townsend",
+                    PartitionValue = 1,
+                    OrcasoundName = "Port Townsend",
+                    OrcasoundSlug = "port-townsend",
+                    DataplicityOnline = true,
+                    OrcasoundVisible = true,
+                    LatestUploadedUtc = DateTime.UtcNow.AddMinutes(-1),
+                    AudioStreamStatus = OrcanodeOnlineStatus.Online,
+                    OrcasoundHost = "live.orcasound.net"
+                }
+            };
+
+            context.Orcanodes.AddRange(orcanodes);
+            context.SaveChanges();
+        }
+    }
 }
 
 app.UseHttpsRedirection();
