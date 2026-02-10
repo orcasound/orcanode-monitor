@@ -15,13 +15,14 @@ if (builder.Environment.IsDevelopment())
 }
 
 HttpClient? httpClient = null;
+ILoggerFactory? loggerFactory = null;
 
 string isOffline = builder.Configuration["ORCANODE_MONITOR_OFFLINE"] ?? "false";
 OrcasiteTestHelper.MockOrcasiteHelperContainer? container = null;
 if (isOffline == "true")
 {
     Fetcher.IsOffline = true;
-    using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+    loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
     var logger = loggerFactory.CreateLogger<Program>();
     container = OrcasiteTestHelper.GetMockOrcasiteHelperWithRequestVerification(logger);
     httpClient = container.MockHttp.ToHttpClient();
