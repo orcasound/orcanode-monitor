@@ -68,7 +68,7 @@ namespace OrcanodeMonitor.Pages
     {
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<DetectionsModel> _logger;
-        private readonly List<Orcanode> _nodes;
+        private List<Orcanode> _nodes;
         public List<Orcanode> Nodes => _nodes;
 
         public DetectionsModel(OrcanodeMonitorContext context, ILogger<DetectionsModel> logger)
