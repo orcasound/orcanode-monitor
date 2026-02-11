@@ -16,6 +16,7 @@ if (builder.Environment.IsDevelopment())
 
 HttpClient? httpClient = null;
 ILoggerFactory? loggerFactory = null;
+ILogger? logger = null;
 
 string isOffline = builder.Configuration["ORCANODE_MONITOR_OFFLINE"] ?? "false";
 OrcasiteTestHelper.MockOrcasiteHelperContainer? container = null;
@@ -23,7 +24,7 @@ if (isOffline == "true")
 {
     Fetcher.IsOffline = true;
     loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-    var logger = loggerFactory.CreateLogger<Program>();
+    logger = loggerFactory.CreateLogger<Program>();
     container = OrcasiteTestHelper.GetMockOrcasiteHelperWithRequestVerification(logger);
     httpClient = container.MockHttp.ToHttpClient();
 }
@@ -34,7 +35,7 @@ if (isReadOnly == "true")
     Fetcher.IsReadOnly = true;
 }
 
-Fetcher.Initialize(builder.Configuration, httpClient);
+Fetcher.Initialize(builder.Configuration, httpClient, logger);
 
 // Add services to the container.
 builder.Services.AddRazorPages();

@@ -20,9 +20,9 @@ namespace OrcanodeMonitor.Core
     {
         private static Kubernetes? _k8sClient = null;
 
-        public static void Initialize()
+        public static void Initialize(ILogger logger)
         {
-            _k8sClient = GetK8sClient();
+            _k8sClient = GetK8sClient(logger);
         }
 
         /// <summary>
@@ -218,11 +218,12 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         const int RestartStabilityHours = 6;
 
-        private static Kubernetes? GetK8sClient()
+        private static Kubernetes? GetK8sClient(ILogger logger)
         {
             string? k8sCACert = Fetcher.GetConfig("KUBERNETES_CA_CERT");
             if (k8sCACert == null)
             {
+                logger.LogError($"[GetK8sClient] No KUBERNETES_CA_CERT");
                 return null;
             }
             byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
@@ -231,11 +232,13 @@ namespace OrcanodeMonitor.Core
                 string? host = Fetcher.GetConfig("KUBERNETES_SERVICE_HOST");
                 if (string.IsNullOrEmpty(host))
                 {
+                    logger.LogError($"[GetK8sClient] No KUBERNETES_SERVICE_HOST");
                     return null;
                 }
                 string? accessToken = Fetcher.GetConfig("KUBERNETES_TOKEN");
                 if (string.IsNullOrEmpty(accessToken))
                 {
+                    logger.LogError($"[GetK8sClient] No KUBERNETES_TOKEN");
                     return null;
                 }
                 var config = new KubernetesClientConfiguration
