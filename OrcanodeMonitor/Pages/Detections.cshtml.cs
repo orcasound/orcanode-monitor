@@ -98,7 +98,9 @@ namespace OrcanodeMonitor.Pages
                 await OrcaHelloFetcher.FetchOrcaHelloDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts);
 
                 // TODO: Fetch additional detection details (human/machine detections, confidence levels, etc.)
-                // For now, populate with placeholder data structure
+                List<Detection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger);
+                // TODO populate _detectionCounts with aggregated data for each node based on the fetched detections.
+
                 foreach (var node in _nodes)
                 {
                     if (!_detectionCounts.ContainsKey(node.OrcasoundSlug))

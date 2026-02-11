@@ -79,7 +79,15 @@ namespace OrcanodeMonitor.Core
 
             container.AddJsonResponse(
                 "https://api.mezmo.com/v1/config/view",
-                "MezmoData.json");
+                "MezmoConfigView.json");
+
+            container.AddJsonResponse(
+                "https://api.mezmo.com/v1/usage/hosts",
+                "MezmoUsageHosts.json");
+
+            container.AddJsonResponse(
+                "https://api.mezmo.com/v1/export", // "?from=1770777412&to=1770777712&hosts=rpi_point_robinson"
+                "MezmoExportLog.json");
 
 #if false
             // Mock the POST request to create a detection.

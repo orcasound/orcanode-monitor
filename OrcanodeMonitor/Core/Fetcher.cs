@@ -645,6 +645,54 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
+        /// Get recent detections.
+        /// </summary>
+        /// <param name="logger">Logger</param>
+        /// <returns>null on error, or list of detections on success</returns>
+        public static async Task<List<Detection>?> GetRecentDetectionsAsync(ILogger logger)
+        {
+            string site = _orcasoundProdSite;
+            string url = $"https://{site}/api/json/detections?page%5Blimit%5D=500&page%5Boffset%5D=0&fields%5Bdetection%5D=id%2Cplaylist_timestamp%2Cplayer_offset%2Ctimestamp%2Cdescription%2Csource%2Ccategory%2Cfeed_id";
+
+            try
+            {
+                string jsonString = await _httpClient.GetStringAsync(url);
+                if (jsonString.IsNullOrEmpty())
+                {
+                    // Error.
+                    return null;
+                }
+
+                var response = JsonSerializer.Deserialize<DetectionResponse>(
+                    jsonString,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+                if (response?.Data == null)
+                {
+                    return null;
+                }
+
+                List<Detection> detections =
+                    response.Data.Select(d => new Detection
+                    {
+                        ID = d.Id,
+                        NodeID = d.Attributes?.FeedId ?? string.Empty,
+                        Timestamp = d.Attributes?.Timestamp ?? default,
+                        Source = d.Attributes?.Source ?? string.Empty,
+                        Description = d.Attributes?.Description ?? string.Empty,
+                        Category = d.Attributes?.Category ?? string.Empty
+                    }).ToList();
+
+                return detections;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Exception in GetRecentDetectionsForNodeAsync: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Get recent detections for a node.
         /// </summary>
         /// <param name="feedId">Orcasound feed ID of node to get detections for</param>
