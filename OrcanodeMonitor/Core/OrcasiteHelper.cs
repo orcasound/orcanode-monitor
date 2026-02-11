@@ -490,7 +490,7 @@ namespace OrcanodeMonitor.Core
             return true;
         }
 
-        Dictionary<string, List<string>> _s3FoldersCache = new Dictionary<string, List<string>>();
+        private readonly Dictionary<string, List<string>> _s3FoldersCache = new Dictionary<string, List<string>>();
 
         /// <summary>
         /// Get the list of folders (representing .ts segment start times) for
