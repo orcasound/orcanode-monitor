@@ -54,5 +54,8 @@ jobs:
         env:
           AZURE_COSMOS_CONNECTIONSTRING: ${{secrets.AZURE_COSMOS_CONNECTIONSTRING}}
           AZURE_COSMOS_DATABASENAME: ${{secrets.AZURE_COSMOS_DATABASENAME}}
+          KUBERNETES_CA_CERT: ${{ secrets.KUBERNETES_CA_CERT }}
+          KUBERNETES_SERVICE_HOST: ${{ secrets.KUBERNETES_SERVICE_HOST }}
+          KUBERNETES_TOKEN: ${{ secrets.KUBERNETES_TOKEN }}
         run: |
           dotnet test --no-build --verbosity normal --configuration ${{env.BUILD_CONFIGURATION}} --property:Platform="Any CPU"
