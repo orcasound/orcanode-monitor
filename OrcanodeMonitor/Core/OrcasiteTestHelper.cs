@@ -111,7 +111,7 @@ namespace OrcanodeMonitor.Core
         {
             public OrcasiteHelper Helper { get; }
             public MockHttpMessageHandler MockHttp { get; }
-            private List<MockedRequest> _mockedRequests = new List<MockedRequest>();
+            private readonly List<MockedRequest> _mockedRequests = new List<MockedRequest>();
 
             public MockOrcasiteHelperContainer(OrcasiteHelper helper, MockHttpMessageHandler mockHttp)
             {
