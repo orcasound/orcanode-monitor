@@ -1,70 +1,58 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-
-using Microsoft.Azure.Cosmos;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Hosting;
 using OrcanodeMonitor.Core;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using OrcanodeMonitor.Data;
+using Microsoft.IdentityModel.Tokens;
+using System;
+using Microsoft.Azure.Cosmos;
+using k8s;
 using OrcanodeMonitor.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-if (builder.Environment.IsDevelopment())
+
+// First see if an environment variable specifies a connection string.
+var connection = Environment.GetEnvironmentVariable("AZURE_COSMOS_CONNECTIONSTRING");
+if (connection.IsNullOrEmpty())
 {
-    builder.Configuration.AddUserSecrets<Program>();
+    connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
 }
 
-HttpClient? httpClient = null;
-ILoggerFactory? loggerFactory = null;
-ILogger? logger = null;
-
-string isOffline = builder.Configuration["ORCANODE_MONITOR_OFFLINE"] ?? "false";
-OrcasiteTestHelper.MockOrcasiteHelperContainer? container = null;
-if (isOffline == "true")
-{
-    Fetcher.IsOffline = true;
-    loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-    logger = loggerFactory.CreateLogger<Program>();
-    container = OrcasiteTestHelper.GetMockOrcasiteHelperWithRequestVerification(logger);
-    httpClient = container.MockHttp.ToHttpClient();
-}
-
-string isReadOnly = builder.Configuration["ORCANODE_MONITOR_READONLY"] ?? "false";
+string isReadOnly = Environment.GetEnvironmentVariable("ORCANODE_MONITOR_READONLY") ?? "false";
 if (isReadOnly == "true")
 {
     Fetcher.IsReadOnly = true;
 }
 
-Fetcher.Initialize(builder.Configuration, httpClient, logger);
+string isOffline = Environment.GetEnvironmentVariable("ORCANODE_MONITOR_OFFLINE") ?? "false";
+if (isOffline == "true")
+{
+    Fetcher.IsOffline = true;
+}
+
+string databaseName = Environment.GetEnvironmentVariable("AZURE_COSMOS_DATABASENAME") ?? "orcasound-cosmosdb";
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-if (Fetcher.IsOffline) // Use Test data with in-memory database.
-{
-    // Configure an in-memory database for offline/test mode so that OrcanodeMonitorContext
-    // has a valid EF Core provider without requiring Cosmos DB.
-    builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
-        options.UseInMemoryDatabase("OrcanodeMonitorOffline")
-    );
-}
-else // Use Cosmos DB.
-{
-    // First try to get the connection string from configuration using the AZURE_COSMOS_CONNECTIONSTRING key
-    // (e.g., from environment variables, user secrets, or JSON configuration).
-    var connection = builder.Configuration["AZURE_COSMOS_CONNECTIONSTRING"];
-    if (connection.IsNullOrEmpty())
-    {
-        connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
-    }
+builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
+    options.UseCosmos(
+        connection,
+        databaseName: databaseName,
+        options =>
+        { options.ConnectionMode(ConnectionMode.Gateway); }));
 
-    string databaseName = builder.Configuration["AZURE_COSMOS_DATABASENAME"] ?? "orcasound-cosmosdb";
-    builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
-        options.UseCosmos(
-            connection,
-            databaseName: databaseName,
-            options =>
-            { options.ConnectionMode(ConnectionMode.Gateway); }));
-}
+// Register Kubernetes client
+builder.Services.AddSingleton<IKubernetes>(sp =>
+{
+    var logger = sp.GetRequiredService<ILogger<Program>>();
+    return OrcaHelloFetcher.CreateK8sClient(logger);
+});
+
+// Register OrcaHelloFetcher
+builder.Services.AddSingleton<OrcaHelloFetcher>();
+
 builder.Services.AddHostedService<PeriodicTasks>(); // Register your background service
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -99,43 +87,52 @@ using (var scope = app.Services.CreateScope())
 
         if (!context.Orcanodes.Any())
         {
-            var orcanodes = new List<Orcanode>
+            var orcanodes = new Orcanode[]
             {
                 new Orcanode
                 {
-                    ID = "andrews-bay",
-                    PartitionValue = 1,
-                    OrcasoundName = "Andrews Bay",
-                    OrcasoundSlug = "andrews-bay",
-                    DataplicityOnline = true,
-                    OrcasoundVisible = true,
-                    LatestUploadedUtc = DateTime.UtcNow.AddMinutes(-1),
-                    AudioStreamStatus = OrcanodeOnlineStatus.Online,
-                    OrcasoundHost = "live.orcasound.net"
-                },
-                new Orcanode
-                {
-                    ID = "orcasound-lab",
+                    ID = Guid.NewGuid().ToString(),
                     PartitionValue = 1,
                     OrcasoundName = "Orcasound Lab",
+                    S3NodeName = "rpi_orcasound_lab",
+                    S3Bucket = "streaming-orcasound-net",
+                    OrcasoundHost = "live.orcasound.net",   
                     OrcasoundSlug = "orcasound-lab",
-                    DataplicityOnline = true,
                     OrcasoundVisible = true,
-                    LatestUploadedUtc = DateTime.UtcNow.AddMinutes(-1),
-                    AudioStreamStatus = OrcanodeOnlineStatus.Online,
-                    OrcasoundHost = "live.orcasound.net"
+                    DataplicityName = "rpi_orcasound_lab",
+                    DataplicityOnline = true,
+                    LatestRecordedUtc = DateTime.UtcNow.AddMinutes(-1),
+                    ManifestUpdatedUtc = DateTime.UtcNow.AddSeconds(-30)
                 },
                 new Orcanode
                 {
-                    ID = "port-townsend",
+                    ID = Guid.NewGuid().ToString(),
                     PartitionValue = 1,
                     OrcasoundName = "Port Townsend",
+                    S3NodeName = "rpi_port_townsend",
+                    S3Bucket = "streaming-orcasound-net",
+                    OrcasoundHost = "live.orcasound.net",
                     OrcasoundSlug = "port-townsend",
-                    DataplicityOnline = true,
                     OrcasoundVisible = true,
-                    LatestUploadedUtc = DateTime.UtcNow.AddMinutes(-1),
-                    AudioStreamStatus = OrcanodeOnlineStatus.Online,
-                    OrcasoundHost = "live.orcasound.net"
+                    DataplicityName = "rpi_port_townsend",
+                    DataplicityOnline = true,
+                    LatestRecordedUtc = DateTime.UtcNow.AddMinutes(-1),
+                    ManifestUpdatedUtc = DateTime.UtcNow.AddSeconds(-30)
+                },
+                new Orcanode
+                {
+                    ID = Guid.NewGuid().ToString(),
+                    PartitionValue = 1,
+                    OrcasoundName = "Bush Point",
+                    S3NodeName = "rpi_bush_point",
+                    S3Bucket = "streaming-orcasound-net",
+                    OrcasoundHost = "live.orcasound.net",
+                    OrcasoundSlug = "bush-point",
+                    OrcasoundVisible = true,
+                    DataplicityName = "rpi_bush_point",
+                    DataplicityOnline = true,
+                    LatestRecordedUtc = DateTime.UtcNow.AddMinutes(-1),
+                    ManifestUpdatedUtc = DateTime.UtcNow.AddSeconds(-30)
                 }
             };
 

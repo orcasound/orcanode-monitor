@@ -2,8 +2,10 @@
 // SPDX-License-Identifier: MIT
 
 using k8s;
+using k8s.Autorest;
 using k8s.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
@@ -18,11 +20,51 @@ namespace OrcanodeMonitor.Core
 {
     public class OrcaHelloFetcher
     {
-        private static Kubernetes? _k8sClient = null;
+        private readonly IKubernetes? _k8sClient;
 
-        public static void Initialize(ILogger logger)
+        public OrcaHelloFetcher(IKubernetes? k8sClient)
         {
-            _k8sClient = GetK8sClient(logger);
+            _k8sClient = k8sClient;
+        }
+
+        /// <summary>
+        /// Create a Kubernetes client from environment variables.
+        /// </summary>
+        /// <param name="logger">Logger</param>
+        /// <returns>Kubernetes client or null</returns>
+        public static IKubernetes? CreateK8sClient(ILogger logger)
+        {
+            string? k8sCACert = Fetcher.GetConfig("KUBERNETES_CA_CERT");
+            if (k8sCACert == null)
+            {
+                logger.LogError($"[CreateK8sClient] No KUBERNETES_CA_CERT");
+                return null;
+            }
+            byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
+            using (var caCert = new X509Certificate2(caCertBytes))
+            {
+                string? host = Fetcher.GetConfig("KUBERNETES_SERVICE_HOST");
+                if (string.IsNullOrEmpty(host))
+                {
+                    logger.LogError($"[CreateK8sClient] No KUBERNETES_SERVICE_HOST");
+                    return null;
+                }
+                string? accessToken = Fetcher.GetConfig("KUBERNETES_TOKEN");
+                if (string.IsNullOrEmpty(accessToken))
+                {
+                    logger.LogError($"[CreateK8sClient] No KUBERNETES_TOKEN");
+                    return null;
+                }
+                var config = new KubernetesClientConfiguration
+                {
+                    Host = host,
+                    AccessToken = accessToken,
+                    SslCaCerts = new X509Certificate2Collection(caCert)
+                };
+
+                var client = new Kubernetes(config);
+                return client;
+            }
         }
 
         /// <summary>
@@ -30,9 +72,9 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="nodeName">OrcaHello node name</param>
         /// <returns>OrcaHelloNode</returns>
-        public async static Task<OrcaHelloNode?> GetOrcaHelloNodeAsync(string nodeName)
+        public async Task<OrcaHelloNode?> GetOrcaHelloNodeAsync(string nodeName)
         {
-            Kubernetes? client = _k8sClient;
+            IKubernetes? client = _k8sClient;
             if (client == null)
             {
                 return null;
@@ -40,7 +82,7 @@ namespace OrcanodeMonitor.Core
 
             try
             {
-                V1Node node = await client.ReadNodeAsync(nodeName);
+                V1Node node = await client.CoreV1.ReadNodeAsync(nodeName);
 
                 NodeMetricsList nodeMetricsList = await client.GetKubernetesNodesMetricsAsync();
                 NodeMetrics? nodeMetrics = nodeMetricsList.Items.FirstOrDefault(n => n.Metadata.Name == nodeName);
@@ -48,7 +90,7 @@ namespace OrcanodeMonitor.Core
                 string memoryUsage = nodeMetrics?.Usage.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
                 string lscpuOutput = string.Empty;
-                V1PodList v1Pods = await client.ListPodForAllNamespacesAsync();
+                V1PodList v1Pods = await client.CoreV1.ListPodForAllNamespacesAsync();
                 List<V1Pod> allPodsOnNode = v1Pods.Items
                     .Where(p => p.Spec.NodeName == nodeName)
                     .ToList();
@@ -218,41 +260,6 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         const int RestartStabilityHours = 6;
 
-        private static Kubernetes? GetK8sClient(ILogger logger)
-        {
-            string? k8sCACert = Fetcher.GetConfig("KUBERNETES_CA_CERT");
-            if (k8sCACert == null)
-            {
-                logger.LogError($"[GetK8sClient] No KUBERNETES_CA_CERT");
-                return null;
-            }
-            byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
-            using (var caCert = new X509Certificate2(caCertBytes))
-            {
-                string? host = Fetcher.GetConfig("KUBERNETES_SERVICE_HOST");
-                if (string.IsNullOrEmpty(host))
-                {
-                    logger.LogError($"[GetK8sClient] No KUBERNETES_SERVICE_HOST");
-                    return null;
-                }
-                string? accessToken = Fetcher.GetConfig("KUBERNETES_TOKEN");
-                if (string.IsNullOrEmpty(accessToken))
-                {
-                    logger.LogError($"[GetK8sClient] No KUBERNETES_TOKEN");
-                    return null;
-                }
-                var config = new KubernetesClientConfiguration
-                {
-                    Host = host,
-                    AccessToken = accessToken,
-                    SslCaCerts = new X509Certificate2Collection(caCert)
-                };
-
-                var client = new Kubernetes(config);
-                return client;
-            }
-        }
-
         /// <summary>
         /// Exec into a pod running to get the output of a command.
         /// </summary>
@@ -260,9 +267,9 @@ namespace OrcanodeMonitor.Core
         /// <param name="namespaceName">pod namespace</param>
         /// <param name="cmd">The command to execute in the pod.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the specified command executed in the pod, as a string.</returns>
-        private async static Task<string> GetPodCommandOutput(string podName, string namespaceName, string[] cmd)
+        private async Task<string> GetPodCommandOutput(string podName, string namespaceName, string[] cmd)
         {
-            Kubernetes? client = _k8sClient;
+            IKubernetes? client = _k8sClient;
             if (client == null)
             {
                 return string.Empty;
@@ -309,7 +316,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="podName">name of pod to exec into</param>
         /// <param name="namespaceName">namespace of pod to exec into</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the <c>lscpu</c> command executed in the pod, as a string.</returns>
-        private async static Task<string> GetPodLscpuOutputAsync(string podName, string namespaceName)
+        private async Task<string> GetPodLscpuOutputAsync(string podName, string namespaceName)
         {
             string[] cmd = { "lscpu" };
             return await GetPodCommandOutput(podName, namespaceName, cmd);
@@ -320,7 +327,7 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="pod">pod to exec into</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the command executed in the pod, as a string.</returns>
-        private async static Task<string> GetPodModelTimestampAsync(V1Pod pod)
+        private async Task<string> GetPodModelTimestampAsync(V1Pod pod)
         {
             string[] command = { "stat", "-c", "%y", "/usr/src/app/model/model.pkl" };
             return await GetPodCommandOutput(pod.Metadata.Name, pod.Metadata.NamespaceProperty, command);
@@ -331,9 +338,9 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="namespaceName">Namespace name</param>
         /// <returns>Tuple of (localThreshold, globalThreshold) or (null, null) if not found</returns>
-        private static async Task<(double? localThreshold, int? globalThreshold)> GetModelThresholdsAsync(string namespaceName)
+        private async Task<(double? localThreshold, int? globalThreshold)> GetModelThresholdsAsync(string namespaceName)
         {
-            Kubernetes? client = _k8sClient;
+            IKubernetes? client = _k8sClient;
             if (client == null)
             {
                 return (null, null);
@@ -341,7 +348,7 @@ namespace OrcanodeMonitor.Core
 
             try
             {
-                V1ConfigMap configMap = await client.ReadNamespacedConfigMapAsync(
+                V1ConfigMap configMap = await client.CoreV1.ReadNamespacedConfigMapAsync(
                     name: "hydrophone-configs",
                     namespaceParameter: namespaceName);
 
@@ -397,16 +404,16 @@ namespace OrcanodeMonitor.Core
         /// <param name="orcanode">Orcanode object associated with the pod</param>
         /// <param name="namespaceName">Namespace name</param>
         /// <returns>OrcaHelloPod</returns>
-        public async static Task<OrcaHelloPod?> GetOrcaHelloPodAsync(Orcanode orcanode, string namespaceName)
+        public async Task<OrcaHelloPod?> GetOrcaHelloPodAsync(Orcanode orcanode, string namespaceName)
         {
-            Kubernetes? client = _k8sClient;
+            IKubernetes? client = _k8sClient;
             if (client == null)
             {
                 Console.Error.WriteLine($"[GetOrcaHelloPodAsync] Kubernetes client is null");
                 return null;
             }
 
-            V1PodList pods = await client.ListNamespacedPodAsync(namespaceName);
+            V1PodList pods = await client.CoreV1.ListNamespacedPodAsync(namespaceName);
             GetBestPodStatus(pods.Items, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
             if (bestPod == null)
             {
@@ -436,7 +443,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="namespaceName">Namespace</param>
         /// <param name="logger">Logger</param>
         /// <returns>Log</returns>
-        public async static Task<string> GetOrcaHelloLogAsync(OrcaHelloPod? container, string namespaceName, ILogger logger)
+        public async Task<string> GetOrcaHelloLogAsync(OrcaHelloPod? container, string namespaceName, ILogger logger)
         {
             if (container == null)
             {
@@ -444,7 +451,7 @@ namespace OrcanodeMonitor.Core
             }
             string podName = container.Name;
 
-            Kubernetes? client = _k8sClient;
+            IKubernetes? client = _k8sClient;
             if (client == null)
             {
                 return string.Empty;
@@ -452,7 +459,7 @@ namespace OrcanodeMonitor.Core
 
             try
             {
-                Stream? logs = await client.ReadNamespacedPodLogAsync(
+                Stream? logs = await client.CoreV1.ReadNamespacedPodLogAsync(
                     name: podName,
                     namespaceParameter: namespaceName,
                     tailLines: 300);
@@ -485,11 +492,11 @@ namespace OrcanodeMonitor.Core
         /// <param name="context">Database context to update</param>
         /// <param name="logger">Logger</param>
         /// <returns></returns>
-        public async static Task UpdateOrcaHelloDataAsync(IOrcanodeMonitorContext context, ILogger logger)
+        public async Task UpdateOrcaHelloDataAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
             try
             {
-                Kubernetes? client = _k8sClient;
+                IKubernetes? client = _k8sClient;
                 if (client == null)
                 {
                     return;
@@ -501,7 +508,7 @@ namespace OrcanodeMonitor.Core
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = foundList.ToList();
 
-                var pods = await client.ListPodForAllNamespacesAsync();
+                var pods = await client.CoreV1.ListPodForAllNamespacesAsync();
                 foreach (Orcanode node in foundList)
                 {
                     string slug = node.OrcasoundSlug;
@@ -532,7 +539,7 @@ namespace OrcanodeMonitor.Core
 
                         if (bestContainerStatus?.Ready ?? false)
                         {
-                            Stream? logs = await client.ReadNamespacedPodLogAsync(
+                            Stream? logs = await client.CoreV1.ReadNamespacedPodLogAsync(
                                 name: podName,
                                 namespaceParameter: slug,
                                 tailLines: 300);
@@ -540,7 +547,7 @@ namespace OrcanodeMonitor.Core
                             {
                                 int lastLiveIndex = -1;
                                 using var reader = new StreamReader(logs);
-                                string line;
+                                string? line;
                                 while ((line = await reader.ReadLineAsync()) != null)
                                 {
                                     Match m = Regex.Match(line, @"(?<=live)\d+(?=\.ts)");
@@ -631,7 +638,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="nodes">List of Orcanodes</param>
         /// <param name="counts">Dictionary of counts</param>
         /// <returns></returns>
-        public async static Task FetchOrcaHelloDetectionCountsAsync(List<Orcanode> nodes, Dictionary<string, long> counts)
+        public async Task FetchOrcaHelloDetectionCountsAsync(List<Orcanode> nodes, Dictionary<string, long> counts)
         {
             var detectionTasks = nodes.Select(async node => new
             {
@@ -650,10 +657,10 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="orcanodes">List of orcanodes</param>
         /// <returns>List of OrcaHelloPod objects</returns>
-        public static async Task<List<OrcaHelloPod>> FetchPodMetricsAsync(List<Orcanode> orcanodes)
+        public async Task<List<OrcaHelloPod>> FetchPodMetricsAsync(List<Orcanode> orcanodes)
         {
             var resultList = new List<OrcaHelloPod>();
-            Kubernetes? client = _k8sClient;
+            IKubernetes? client = _k8sClient;
             if (client == null)
             {
                 return resultList;
@@ -661,7 +668,7 @@ namespace OrcanodeMonitor.Core
 
             try
             {
-                V1PodList allPods = await client.ListPodForAllNamespacesAsync();
+                V1PodList allPods = await client.CoreV1.ListPodForAllNamespacesAsync();
                 PodMetricsList? metricsList = await client.GetKubernetesPodsMetricsAsync();
                 foreach (V1Pod pod in allPods)
                 {
@@ -695,7 +702,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FetchContainerMetricsAsync] Error retrieving container metrics: {ex}");
+                Console.Error.WriteLine($"[FetchPodMetricsAsync] Error retrieving container metrics: {ex}");
             }
 
             return resultList;
@@ -705,10 +712,10 @@ namespace OrcanodeMonitor.Core
         /// Get a list of OrcaHelloNode objects.
         /// </summary>
         /// <returns>List of OrcaHelloNode objects</returns>
-        public static async Task<List<OrcaHelloNode>> FetchNodeMetricsAsync()
+        public async Task<List<OrcaHelloNode>> FetchNodeMetricsAsync()
         {
             var resultList = new List<OrcaHelloNode>();
-            Kubernetes? client = _k8sClient;
+            IKubernetes? client = _k8sClient;
             if (client == null)
             {
                 return resultList;
@@ -716,9 +723,9 @@ namespace OrcanodeMonitor.Core
 
             try
             {
-                V1NodeList allNodes = await client.ListNodeAsync();
+                V1NodeList allNodes = await client.CoreV1.ListNodeAsync();
                 NodeMetricsList metricsList = await client.GetKubernetesNodesMetricsAsync();
-                V1PodList v1Pods = await client.ListPodForAllNamespacesAsync();
+                V1PodList v1Pods = await client.CoreV1.ListPodForAllNamespacesAsync();
                 PodMetricsList podMetrics = await client.GetKubernetesPodsMetricsAsync();
                 foreach (V1Node node in allNodes)
                 {

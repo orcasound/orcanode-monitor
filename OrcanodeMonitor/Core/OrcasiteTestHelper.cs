@@ -69,8 +69,12 @@ namespace OrcanodeMonitor.Core
 
             // Mock the GET request to fetch feeds.
             container.AddJsonResponse(
-                "https://*.orcasound.net/api/json/feeds?fields%5Bfeed%5D=id%2Cname%2Cnode_name%2Cslug%2Clocation_point%2Cintro_html%2Cimage_url%2Cvisible%2Cbucket%2Cbucket_region%2Ccloudfront_url%2Cdataplicity_id%2Corcahello_id",
+                "https://*.orcasound.net/api/json/feeds", // "?fields%5Bfeed%5D=id%2Cname%2Cnode_name%2Cslug%2Clocation_point%2Cintro_html%2Cimage_url%2Cvisible%2Cbucket%2Cbucket_region%2Ccloudfront_url%2Cdataplicity_id%2Corcahello_id",
                 "OrcasiteFeeds.json");
+
+            container.AddJsonResponse(
+                "https://*.orcasound.net/api/json/detections", // "?page%5Blimit%5D=500&page%5Boffset%5D=0&fields%5Bdetection%5D=id%2Cplaylist_timestamp%2Cplayer_offset%2Ctimestamp%2Cdescription%2Csource%2Ccategory%2Cfeed_id",
+                "OrcasiteDetections.json");
 
             // Mock the GET request to dataplicity.
             container.AddJsonResponse(

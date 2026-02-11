@@ -13,6 +13,7 @@ namespace OrcanodeMonitor.Pages
     {
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<OrcaHelloOverviewModel> _logger;
+        private readonly OrcaHelloFetcher _orcaHelloFetcher;
         public List<Orcanode> Orcanodes { get; private set; }
         public List<OrcaHelloNode> Nodes { get; private set; }
         public List<OrcaHelloPod> Pods { get; private set; }
@@ -23,10 +24,11 @@ namespace OrcanodeMonitor.Pages
             return $"{(nodeMemoryUsageInKi / 1024f / 1024f):F1} GiB";
         }
 
-        public OrcaHelloOverviewModel(OrcanodeMonitorContext context, ILogger<OrcaHelloOverviewModel> logger)
+        public OrcaHelloOverviewModel(OrcanodeMonitorContext context, ILogger<OrcaHelloOverviewModel> logger, OrcaHelloFetcher orcaHelloFetcher)
         {
             _databaseContext = context;
             _logger = logger;
+            _orcaHelloFetcher = orcaHelloFetcher;
             Nodes = new List<OrcaHelloNode>();
             Pods = new List<OrcaHelloPod>();
             Orcanodes = new List<Orcanode>();
@@ -268,10 +270,10 @@ namespace OrcanodeMonitor.Pages
                           .ToList();
 
             // Fetch pods and nodes for display.
-            List<OrcaHelloPod> pods = await OrcaHelloFetcher.FetchPodMetricsAsync(Orcanodes);
+            List<OrcaHelloPod> pods = await _orcaHelloFetcher.FetchPodMetricsAsync(Orcanodes);
             Pods = pods.OrderBy(n => n.NamespaceName).ToList();
 
-            List<OrcaHelloNode> nodes = await OrcaHelloFetcher.FetchNodeMetricsAsync();
+            List<OrcaHelloNode> nodes = await _orcaHelloFetcher.FetchNodeMetricsAsync();
             Nodes = nodes.OrderBy(n => n.Name).ToList();
         }
     }

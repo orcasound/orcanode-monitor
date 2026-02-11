@@ -467,7 +467,7 @@ namespace OrcanodeMonitor.Core
 
             // Try posting it.
             string newDetectionString = newDetection.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
-            HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, OrcasitePostDetectionUri)
+            using HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, OrcasitePostDetectionUri)
             {
                 Content = new StringContent(newDetectionString)
             };

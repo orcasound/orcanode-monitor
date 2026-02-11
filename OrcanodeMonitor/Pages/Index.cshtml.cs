@@ -13,6 +13,7 @@ namespace OrcanodeMonitor.Pages
     {
         private OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<IndexModel> _logger;
+        private readonly OrcaHelloFetcher _orcaHelloFetcher;
         private List<OrcanodeEvent> _events;
         private List<Orcanode> _nodes;
         public List<Orcanode> Nodes => _nodes;
@@ -21,10 +22,11 @@ namespace OrcanodeMonitor.Pages
 
         public string AksUrl => Fetcher.Configuration?["AZURE_AKS_URL"] ?? "";
 
-        public IndexModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger)
+        public IndexModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger, OrcaHelloFetcher orcaHelloFetcher)
         {
             _databaseContext = context;
             _logger = logger;
+            _orcaHelloFetcher = orcaHelloFetcher;
             _events = new List<OrcanodeEvent>();
             _nodes = new List<Orcanode>();
             _recentEvents = new List<OrcanodeEvent>();
@@ -290,7 +292,7 @@ namespace OrcanodeMonitor.Pages
                 var events = await _databaseContext.OrcanodeEvents.ToListAsync();
                 _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
 
-                await OrcaHelloFetcher.FetchOrcaHelloDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts);
+                await _orcaHelloFetcher.FetchOrcaHelloDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts);
 
                 _recentEvents = await Fetcher.GetRecentEventsAsync(_databaseContext, DateTime.UtcNow.AddDays(-7), _logger) ?? new List<OrcanodeEvent>();
             }

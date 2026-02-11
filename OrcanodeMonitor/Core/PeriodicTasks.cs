@@ -7,19 +7,19 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace OrcanodeMonitor.Core
 {
     public class PeriodicTasks : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly OrcaHelloFetcher _orcaHelloFetcher;
         const int _defaultFrequencyToPollInMinutes = 5;
         public static TimeSpan FrequencyToPoll
         {
             get
             {
-                string? frequencyToPollInMinutesString = Fetcher.Configuration?["ORCASOUND_POLL_FREQUENCY_IN_MINUTES"];
+                string? frequencyToPollInMinutesString = Environment.GetEnvironmentVariable("ORCASOUND_POLL_FREQUENCY_IN_MINUTES");
                 int frequencyToPollInMinutes = (int.TryParse(frequencyToPollInMinutesString, out var minutes)) ? minutes : _defaultFrequencyToPollInMinutes;
                 return TimeSpan.FromMinutes(frequencyToPollInMinutes);
             }
@@ -36,10 +36,11 @@ namespace OrcanodeMonitor.Core
 
         private readonly ILogger<PeriodicTasks> _logger;
 
-        public PeriodicTasks(IServiceScopeFactory scopeFactory, ILogger<PeriodicTasks> logger)
+        public PeriodicTasks(IServiceScopeFactory scopeFactory, ILogger<PeriodicTasks> logger, OrcaHelloFetcher orcaHelloFetcher)
         {
             _logger = logger;
             _scopeFactory = scopeFactory;
+            _orcaHelloFetcher = orcaHelloFetcher;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -76,11 +77,9 @@ namespace OrcanodeMonitor.Core
 
             await Fetcher.UpdateS3DataAsync(context, _logger);
 
-            await OrcaHelloFetcher.UpdateOrcaHelloDataAsync(context, _logger);
+            await _orcaHelloFetcher.UpdateOrcaHelloDataAsync(context, _logger);
 
             await DataplicityFetcher.CheckForRebootsNeededAsync(context, _logger);
         }
     }
 }
-
-//

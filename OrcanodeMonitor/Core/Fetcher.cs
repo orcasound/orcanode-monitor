@@ -30,7 +30,6 @@ namespace OrcanodeMonitor.Core
         public static void Initialize(IConfiguration config, HttpClient? httpClient, ILogger logger)
         {
             _config = config;
-            OrcaHelloFetcher.Initialize(logger);
             MezmoFetcher.Initialize(httpClient);
             _iftttServiceKey = _config?["IFTTT_SERVICE_KEY"] ?? "<unknown>";
             if (httpClient != null)

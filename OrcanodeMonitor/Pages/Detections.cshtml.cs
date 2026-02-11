@@ -68,13 +68,15 @@ namespace OrcanodeMonitor.Pages
     {
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<DetectionsModel> _logger;
+        private readonly OrcaHelloFetcher _orcaHelloFetcher;
         private List<Orcanode> _nodes;
         public List<Orcanode> Nodes => _nodes;
 
-        public DetectionsModel(OrcanodeMonitorContext context, ILogger<DetectionsModel> logger)
+        public DetectionsModel(OrcanodeMonitorContext context, ILogger<DetectionsModel> logger, OrcaHelloFetcher orcaHelloFetcher)
         {
             _databaseContext = context;
             _logger = logger;
+            _orcaHelloFetcher = orcaHelloFetcher;
             _nodes = new List<Orcanode>();
         }
 
@@ -95,7 +97,7 @@ namespace OrcanodeMonitor.Pages
                               .ToList();
 
                 // Fetch OrcaHello detection counts for each node.
-                await OrcaHelloFetcher.FetchOrcaHelloDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts);
+                await _orcaHelloFetcher.FetchOrcaHelloDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts);
 
                 // TODO: Fetch additional detection details (human/machine detections, confidence levels, etc.)
                 List<Detection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger);
