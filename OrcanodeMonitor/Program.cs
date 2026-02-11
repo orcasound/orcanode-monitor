@@ -40,6 +40,8 @@ Fetcher.Initialize(builder.Configuration, httpClient);
 builder.Services.AddRazorPages();
 if (Fetcher.IsOffline) // Use Test data with in-memory database.
 {
+    // Configure an in-memory database for offline/test mode so that OrcanodeMonitorContext
+    // has a valid EF Core provider without requiring Cosmos DB.
     builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
         options.UseInMemoryDatabase("OrcanodeMonitorOffline")
     );

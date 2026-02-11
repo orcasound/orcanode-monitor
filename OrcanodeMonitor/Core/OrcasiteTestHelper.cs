@@ -1,11 +1,8 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
-using Microsoft.Azure.Documents;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using RichardSzalay.MockHttp;
 using System.Net;
 using System.Text.Json;
@@ -111,7 +108,7 @@ namespace OrcanodeMonitor.Core
         {
             public OrcasiteHelper Helper { get; }
             public MockHttpMessageHandler MockHttp { get; }
-            private List<MockedRequest> _mockedRequests = new List<MockedRequest>();
+            private readonly List<MockedRequest> _mockedRequests = new List<MockedRequest>();
 
             public MockOrcasiteHelperContainer(OrcasiteHelper helper, MockHttpMessageHandler mockHttp)
             {
