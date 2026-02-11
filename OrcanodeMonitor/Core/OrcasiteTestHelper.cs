@@ -1,11 +1,8 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
-using Microsoft.Azure.Documents;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using RichardSzalay.MockHttp;
 using System.Net;
 using System.Text.Json;
