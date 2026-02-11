@@ -68,7 +68,7 @@ namespace OrcanodeMonitor.Pages
     {
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<DetectionsModel> _logger;
-        private readonly List<Orcanode> _nodes;
+        private List<Orcanode> _nodes;
         public List<Orcanode> Nodes => _nodes;
 
         public DetectionsModel(OrcanodeMonitorContext context, ILogger<DetectionsModel> logger)
@@ -85,7 +85,6 @@ namespace OrcanodeMonitor.Pages
             try
             {
                 // Fetch nodes for display.
-#if false
                 var nodes = await _databaseContext.Orcanodes.ToListAsync();
                 _nodes = nodes.Where(n => ((n.DataplicityConnectionStatus != OrcanodeOnlineStatus.Absent) ||
                                            (n.OrcasoundStatus != OrcanodeOnlineStatus.Absent) ||
@@ -95,66 +94,21 @@ namespace OrcanodeMonitor.Pages
                               .OrderBy(n => n.DisplayName)
                               .ToList();
 
-                // Fetch Orcasite detections.
-                // TODO
+                // Fetch OrcaHello detection counts for each node.
+                await OrcaHelloFetcher.FetchOrcaHelloDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts);
 
-                // Fetch OrcaHello detections.
-                await Fetcher.FetchOrcasiteDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts);
-
-                // Fetch AI detection counts in parallel.
-                var detectionTasks = _nodes.Select(async node => new
+                // TODO: Fetch additional detection details (human/machine detections, confidence levels, etc.)
+                // For now, populate with placeholder data structure
+                foreach (var node in _nodes)
                 {
-                    Slug = node.OrcasoundSlug,
-                    (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(node.OrcasoundSlug);
-                });
-                var results = await Task.WhenAll(detectionTasks);
-                foreach (var result in results)
-                {
-                    if (pod.ModelGlobalThreshold.HasValue && pod.ModelLocalThreshold.HasValue)
+                    if (!_detectionCounts.ContainsKey(node.OrcasoundSlug))
                     {
-                        int globalThreshold = pod.ModelGlobalThreshold.Value;
-                        int localThresholdPercent = (int)Math.Round(pod.ModelLocalThreshold.Value * 100);
-                        return $"{globalThreshold} @ {localThresholdPercent}%";
+                        _detectionCounts[node.OrcasoundSlug] = new DetectionData
+                        {
+                            ConfidenceThreshold = "Unknown"
+                        };
                     }
-                    //return "Unknown";
                 }
-#else
-                var node = new Orcanode();
-                node.OrcasoundName = "Andrews Bay";
-                node.OrcasoundSlug = "andrews-bay";
-                _nodes.Add(node);
-                var data = new DetectionData
-                {
-                    NegativeHumanDetectionCount = 1,
-                    PositiveHumanDetectionCount = 2,
-                    NegativeMachineDetectionCount = 4,
-                    PositiveMachineDetectionCount = 3,
-                    AverageNegativeMachineDetectionConfidence = 70,
-                    AveragePositiveMachineDetectionConfidence = 80,
-                    MaximumNegativeMachineDetectionConfidence = 75,
-                    MinimumPositiveMachineDetectionConfidence = 76,
-                    ConfidenceThreshold = "3 @ 75%"
-                };
-                _detectionCounts[node.OrcasoundSlug] = data;
-
-                node = new Orcanode();
-                node.OrcasoundName = "Orcasound Lab";
-                node.OrcasoundSlug = "orcasound-lab";
-                _nodes.Add(node);
-                data = new DetectionData
-                {
-                    PositiveHumanDetectionCount = 3,
-                    NegativeHumanDetectionCount = 1,
-                    PositiveMachineDetectionCount = 2,
-                    NegativeMachineDetectionCount = 4,
-                    AverageNegativeMachineDetectionConfidence = 70,
-                    AveragePositiveMachineDetectionConfidence = 80,
-                    MaximumNegativeMachineDetectionConfidence = 75,
-                    MinimumPositiveMachineDetectionConfidence = 76,
-                    ConfidenceThreshold = "3 @ 50%"
-                };
-                _detectionCounts[node.OrcasoundSlug] = data;
-#endif
             }
             catch (Exception ex)
             {

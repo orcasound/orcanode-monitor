@@ -216,9 +216,9 @@ namespace OrcanodeMonitor.Core
                     continue;
                 }
                 string feedName = name.GetString();
-                
+
                 // Match location name (case-insensitive)
-                if (string.Equals(feedName, locationName, StringComparison.OrdinalIgnoreCase) || 
+                if (string.Equals(feedName, locationName, StringComparison.OrdinalIgnoreCase) ||
                     feedName.Contains(locationName, StringComparison.OrdinalIgnoreCase))
                 {
                     if (attributes.TryGetProperty("slug", out var slug) && slug.ValueKind == JsonValueKind.String)
@@ -227,7 +227,7 @@ namespace OrcanodeMonitor.Core
                     }
                 }
             }
-            
+
             _logger.LogWarning($"Could not find slug for location: {locationName}");
             return null;
         }
