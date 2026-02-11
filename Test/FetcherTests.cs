@@ -50,6 +50,12 @@ namespace Test
             Fetcher.Initialize(builder.Configuration, _httpClient);
         }
 
+        [TestCleanup]
+        public void FetcherTestsCleanup()
+        {
+            Fetcher.Uninitialize();
+        }
+
         [TestMethod]
         public async Task TestGetDataplicityDataAsync()
         {
@@ -60,7 +66,7 @@ namespace Test
         [TestMethod]
         public async Task TestGetDataplicityDataWithSerialAsync()
         {
-            string result = await DataplicityFetcher.GetDataplicityDataAsync("MYSERIAL", _logger);
+            string result = await DataplicityFetcher.GetDataplicityDataAsync(OrcasiteTestHelper.TestDeviceSerial, _logger);
             Assert.IsNotNull(result, "GetDataplicityDataAsync failed");
         }
 

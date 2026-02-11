@@ -399,6 +399,7 @@ namespace OrcanodeMonitor.Core
             Kubernetes? client = _k8sClient;
             if (client == null)
             {
+                Console.Error.WriteLine($"[GetOrcaHelloPodAsync] Kubernetes client is null");
                 return null;
             }
 
@@ -406,6 +407,7 @@ namespace OrcanodeMonitor.Core
             GetBestPodStatus(pods.Items, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
             if (bestPod == null)
             {
+                Console.Error.WriteLine($"[GetOrcaHelloPodAsync] Best pod is null");
                 return null;
             }
 

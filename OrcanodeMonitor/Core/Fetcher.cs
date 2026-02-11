@@ -15,7 +15,8 @@ namespace OrcanodeMonitor.Core
     public class Fetcher
     {
         private static TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
-        private static HttpClient _httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+        private static HttpClient _realHttpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+        private static HttpClient _httpClient;
         public static HttpClient HttpClient => _httpClient;
         private static string _orcasoundProdSite = "live.orcasound.net";
         private static string _orcasoundFeedsUrlPath = "/api/json/feeds";
@@ -36,6 +37,16 @@ namespace OrcanodeMonitor.Core
             {
                 _httpClient = httpClient;
             }
+            else
+            {
+                _httpClient = _realHttpClient;
+            }
+        }
+
+        public static void Uninitialize()
+        {
+            _httpClient = _realHttpClient;
+            MezmoFetcher.Uninitialize();
         }
 
         public static IConfiguration? Configuration => _config;

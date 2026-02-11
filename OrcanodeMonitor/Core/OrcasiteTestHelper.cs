@@ -11,6 +11,7 @@ namespace OrcanodeMonitor.Core
 {
     public class OrcasiteTestHelper
     {
+        public static readonly string TestDeviceSerial = "7dcdf551-6283-4867-a0d4-13dc587e4233";
         private static string _solutionDirectory;
 
         /// <summary>
@@ -73,7 +74,7 @@ namespace OrcanodeMonitor.Core
 
             // Mock the GET request to dataplicity.
             container.AddJsonResponse(
-                "https://apps.dataplicity.com/devices/MYSERIAL/",
+                $"https://apps.dataplicity.com/devices/{TestDeviceSerial}/",
                 "DataplicityGetRequestWithSerial.json");
 
             container.AddJsonResponse(
