@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using Moq;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
@@ -65,14 +66,14 @@ namespace Test
         public async Task TestGetDataplicityDataAsync()
         {
             string result = await DataplicityFetcher.GetDataplicityDataAsync(string.Empty, _logger);
-            Assert.IsNotNull(result, "GetDataplicityDataAsync failed");
+            Assert.IsFalse(result.IsNullOrEmpty(), "GetDataplicityDataAsync failed");
         }
 
         [TestMethod]
         public async Task TestGetDataplicityDataWithSerialAsync()
         {
             string result = await DataplicityFetcher.GetDataplicityDataAsync(OrcasiteTestHelper.TestDeviceSerial, _logger);
-            Assert.IsNotNull(result, "GetDataplicityDataAsync failed");
+            Assert.IsFalse(result.IsNullOrEmpty(), "GetDataplicityDataAsync failed");
         }
 
         [TestMethod]

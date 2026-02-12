@@ -162,7 +162,7 @@ namespace OrcanodeMonitor.Core
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = originalList.ToList();
 
-                dynamic deviceArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
+                var deviceArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
                 if (deviceArray.ValueKind != JsonValueKind.Array)
                 {
                     logger.LogError($"Invalid deviceArray kind in UpdateDataplicityDataAsync: {deviceArray.ValueKind}");

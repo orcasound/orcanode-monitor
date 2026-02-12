@@ -2,10 +2,8 @@
 // SPDX-License-Identifier: MIT
 
 using k8s;
-using k8s.Autorest;
 using k8s.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
@@ -14,7 +12,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using static OrcanodeMonitor.Core.Fetcher;
 
 namespace OrcanodeMonitor.Core
 {
@@ -41,30 +38,28 @@ namespace OrcanodeMonitor.Core
                 return null;
             }
             byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
-            using (var caCert = new X509Certificate2(caCertBytes))
+            var caCert = new X509Certificate2(caCertBytes);
+            string? host = Fetcher.GetConfig("KUBERNETES_SERVICE_HOST");
+            if (string.IsNullOrEmpty(host))
             {
-                string? host = Fetcher.GetConfig("KUBERNETES_SERVICE_HOST");
-                if (string.IsNullOrEmpty(host))
-                {
-                    logger.LogError($"[CreateK8sClient] No KUBERNETES_SERVICE_HOST");
-                    return null;
-                }
-                string? accessToken = Fetcher.GetConfig("KUBERNETES_TOKEN");
-                if (string.IsNullOrEmpty(accessToken))
-                {
-                    logger.LogError($"[CreateK8sClient] No KUBERNETES_TOKEN");
-                    return null;
-                }
-                var config = new KubernetesClientConfiguration
-                {
-                    Host = host,
-                    AccessToken = accessToken,
-                    SslCaCerts = new X509Certificate2Collection(caCert)
-                };
-
-                var client = new Kubernetes(config);
-                return client;
+                logger.LogError($"[CreateK8sClient] No KUBERNETES_SERVICE_HOST");
+                return null;
             }
+            string? accessToken = Fetcher.GetConfig("KUBERNETES_TOKEN");
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                logger.LogError($"[CreateK8sClient] No KUBERNETES_TOKEN");
+                return null;
+            }
+            var config = new KubernetesClientConfiguration
+            {
+                Host = host,
+                AccessToken = accessToken,
+                SslCaCerts = new X509Certificate2Collection(caCert)
+            };
+
+            var client = new Kubernetes(config);
+            return client;
         }
 
         /// <summary>
@@ -200,7 +195,7 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Get the best status of any inference container in the pod.
         /// </summary>
-        /// <param name="pod">pod to look in</param>
+        /// <param name="pod">Pod to look in</param>
         /// <returns>Container status</returns>
         private static V1ContainerStatus? GetBestContainerStatus(V1Pod pod)
         {
@@ -263,8 +258,8 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Exec into a pod running to get the output of a command.
         /// </summary>
-        /// <param name="podName">name of pod to exec into</param>
-        /// <param name="namespaceName">pod namespace</param>
+        /// <param name="podName">Name of pod to exec into</param>
+        /// <param name="namespaceName">Pod namespace</param>
         /// <param name="cmd">The command to execute in the pod.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the specified command executed in the pod, as a string.</returns>
         private async Task<string> GetPodCommandOutput(string podName, string namespaceName, string[] cmd)
@@ -313,8 +308,8 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Exec into a pod running to get CPU info.
         /// </summary>
-        /// <param name="podName">name of pod to exec into</param>
-        /// <param name="namespaceName">namespace of pod to exec into</param>
+        /// <param name="podName">Name of pod to exec into</param>
+        /// <param name="namespaceName">Namespace of pod to exec into</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the <c>lscpu</c> command executed in the pod, as a string.</returns>
         private async Task<string> GetPodLscpuOutputAsync(string podName, string namespaceName)
         {
@@ -325,7 +320,7 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Exec into a pod running to get model info.
         /// </summary>
-        /// <param name="pod">pod to exec into</param>
+        /// <param name="pod">Pod to exec into</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the command executed in the pod, as a string.</returns>
         private async Task<string> GetPodModelTimestampAsync(V1Pod pod)
         {
@@ -429,7 +424,7 @@ namespace OrcanodeMonitor.Core
 
             string modelTimestamp = await GetPodModelTimestampAsync(bestPod);
 
-            long detectionCount = await GetOrcaHelloDetectionCountAsync(orcanode);
+            long detectionCount = await Fetcher.GetOrcaHelloDetectionCountAsync(orcanode);
 
             (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(namespaceName);
 
@@ -561,7 +556,7 @@ namespace OrcanodeMonitor.Core
                                 {
                                     // TODO: below is the second call to GetLatestS3TimestampAsync.
                                     // We should cache result from before instead of calling it a second time.
-                                    TimestampResult? result = await GetLatestS3TimestampAsync(node, true, logger);
+                                    Fetcher.TimestampResult? result = await Fetcher.GetLatestS3TimestampAsync(node, true, logger);
                                     if (result?.Offset != null)
                                     {
                                         DateTimeOffset offset = result.Offset.Value;
@@ -611,11 +606,11 @@ namespace OrcanodeMonitor.Core
                     Orcanode? oldNode = null;
                     if (!unfoundNode.OrcasoundFeedId.IsNullOrEmpty())
                     {
-                        oldNode = FindOrcanodeByOrcasoundFeedId(foundList, unfoundNode.OrcasoundFeedId);
+                        oldNode = Fetcher.FindOrcanodeByOrcasoundFeedId(foundList, unfoundNode.OrcasoundFeedId);
                     }
                     else if (!unfoundNode.DataplicitySerial.IsNullOrEmpty())
                     {
-                        oldNode = FindOrcanodeByDataplicitySerial(foundList, unfoundNode.DataplicitySerial, out OrcanodeOnlineStatus connectionStatus);
+                        oldNode = Fetcher.FindOrcanodeByDataplicitySerial(foundList, unfoundNode.DataplicitySerial, out OrcanodeOnlineStatus connectionStatus);
                     }
                     if (oldNode != null)
                     {
@@ -624,7 +619,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
-                await SaveChangesAsync(context);
+                await Fetcher.SaveChangesAsync(context);
             }
             catch (Exception ex)
             {
@@ -692,7 +687,7 @@ namespace OrcanodeMonitor.Core
                     string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
                     Orcanode? orcanode = orcanodes.Find(a => a.OrcasoundSlug == pod.Metadata.NamespaceProperty);
-                    long detectionCount = (orcanode != null) ? await GetOrcaHelloDetectionCountAsync(orcanode) : 0;
+                    long detectionCount = (orcanode != null) ? await Fetcher.GetOrcaHelloDetectionCountAsync(orcanode) : 0;
 
                     (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty);
 

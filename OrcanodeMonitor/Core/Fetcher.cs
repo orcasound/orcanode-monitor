@@ -32,14 +32,7 @@ namespace OrcanodeMonitor.Core
             _config = config;
             MezmoFetcher.Initialize(httpClient);
             _iftttServiceKey = _config?["IFTTT_SERVICE_KEY"] ?? "<unknown>";
-            if (httpClient != null)
-            {
-                _httpClient = httpClient;
-            }
-            else
-            {
-                _httpClient = _realHttpClient;
-            }
+            _httpClient = (httpClient != null) ? httpClient : _realHttpClient;
         }
 
         public static void Uninitialize()
@@ -686,7 +679,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Exception in GetRecentDetectionsForNodeAsync: {ex.Message}");
+                logger.LogError(ex, $"Exception in GetRecentDetectionsAsync: {ex.Message}");
                 return null;
             }
         }

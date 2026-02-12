@@ -6,6 +6,7 @@ using Amazon.S3;
 using Amazon.S3.Model;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Identity.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -138,7 +139,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="nodeNameToFind">Node name to find</param>
         /// <param name="feedsArray">Feeds array to look in</param>
         /// <returns>Feed ID, or null if not found</returns>
-        private string GetFeedId(string nodeNameToFind, JsonElement feedsArray)
+        private string? GetFeedId(string nodeNameToFind, JsonElement feedsArray)
         {
             foreach (JsonElement feed in feedsArray.EnumerateArray())
             {
@@ -189,7 +190,7 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="locationName">Location name to find (e.g., "Bush Point", "North San Juan Channel")</param>
         /// <returns>Slug string (e.g., "bush-point", "north-sjc"), or null if not found or feeds not initialized</returns>
-        public virtual string GetSlugByLocationName(string locationName)
+        public virtual string? GetSlugByLocationName(string locationName)
         {
             if (_orcasiteFeedsArray == null)
             {
@@ -361,10 +362,10 @@ namespace OrcanodeMonitor.Core
         /// <returns>true on success, false on failure</returns>
         private bool ParseOrcaHelloDetection(string json, out string idString, out string timestampString, out string feedId, out string commentsString)
         {
-            idString = null;
-            timestampString = null;
-            feedId = null;
-            commentsString = null;
+            idString = string.Empty;
+            timestampString = string.Empty;
+            feedId = string.Empty;
+            commentsString = string.Empty;
 
             JsonElement orcaHelloDetection = JsonDocument.Parse(json).RootElement;
             if (!orcaHelloDetection.TryGetProperty("id", out var id))
@@ -377,12 +378,13 @@ namespace OrcanodeMonitor.Core
                 _logger.LogError($"Invalid id kind in ExecuteTask: {id.ValueKind}");
                 return false;
             }
-            idString = id.GetString();
-            if (idString == null)
+            string? idStringOrNull = id.GetString();
+            if (idStringOrNull == null)
             {
                 _logger.LogError($"Couldn't get ID as a string");
                 return false;
             }
+            idString = idStringOrNull;
 
             string locationIdString = TryGetLocationIdString(orcaHelloDetection);
             if (locationIdString == null)
@@ -391,12 +393,13 @@ namespace OrcanodeMonitor.Core
             }
 
             // Get feed ID from location ID.
-            feedId = GetFeedId(locationIdString, _orcasiteFeedsArray.Value);
-            if (feedId == null)
+            string? feedIdOrNull = GetFeedId(locationIdString, _orcasiteFeedsArray.Value);
+            if (feedIdOrNull == null)
             {
                 _logger.LogError($"Couldn't find feed id for: {locationIdString}");
                 return false;
             }
+            feedId = feedIdOrNull;
 
             // Get timestamp according to OrcaHello.
             DateTime? dateTime = TryGetTimestamp(orcaHelloDetection);
