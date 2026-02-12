@@ -422,7 +422,7 @@ namespace OrcanodeMonitor.Core
             // if the detection was already moderated within OrcaHello.
             if (orcaHelloDetection.TryGetProperty("comments", out var comments))
             {
-                commentsString = comments.ValueKind == JsonValueKind.String ? comments.GetString() : null;
+                commentsString = (comments.ValueKind == JsonValueKind.String ? comments.GetString() : null) ?? string.Empty;
             }
             return true;
         }
@@ -514,7 +514,7 @@ namespace OrcanodeMonitor.Core
                 RegionEndpoint = RegionEndpoint.USWest2
             };
 
-            var client = new AmazonS3Client(new Amazon.Runtime.AnonymousAWSCredentials(), config);
+            using var client = new AmazonS3Client(new Amazon.Runtime.AnonymousAWSCredentials(), config);
             var allFolders = new List<string>();
             string continuationToken = null;
 

@@ -27,12 +27,12 @@ namespace OrcanodeMonitor.Core
         public static string IftttServiceKey => _iftttServiceKey;
         private static IConfiguration? _config = null;
         public static string? GetConfig(string key) => _config?[key] ?? null;
-        public static void Initialize(IConfiguration config, HttpClient? httpClient, ILogger logger)
+        public static void Initialize(IConfiguration config, HttpClient? httpClient)
         {
             _config = config;
-            MezmoFetcher.Initialize(httpClient);
             _iftttServiceKey = _config?["IFTTT_SERVICE_KEY"] ?? "<unknown>";
             _httpClient = (httpClient != null) ? httpClient : _realHttpClient;
+            MezmoFetcher.Initialize(_httpClient);
         }
 
         public static void Uninitialize()

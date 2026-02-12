@@ -12,8 +12,8 @@ namespace OrcanodeMonitor.Core
     public class DataplicityFetcher
     {
         private static readonly string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
-        private static string _defaultProdS3Bucket = "audio-orcasound-net";
-        private static string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
+        private static readonly string _defaultProdS3Bucket = "audio-orcasound-net";
+        private static readonly string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
 
         public async static Task<string> GetDataplicityDataAsync(string serial, ILogger logger)
         {

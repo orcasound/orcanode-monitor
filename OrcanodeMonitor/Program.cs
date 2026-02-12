@@ -1,56 +1,79 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using Microsoft.Extensions.Hosting;
-using OrcanodeMonitor.Core;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using OrcanodeMonitor.Data;
-using Microsoft.IdentityModel.Tokens;
-using System;
-using Microsoft.Azure.Cosmos;
 using k8s;
+using Microsoft.Azure.Cosmos;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using OrcanodeMonitor.Core;
+using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// First see if an environment variable specifies a connection string.
-var connection = Environment.GetEnvironmentVariable("AZURE_COSMOS_CONNECTIONSTRING");
-if (connection.IsNullOrEmpty())
+if (builder.Environment.IsDevelopment())
 {
-    connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
+    builder.Configuration.AddUserSecrets<Program>();
 }
 
-string isReadOnly = Environment.GetEnvironmentVariable("ORCANODE_MONITOR_READONLY") ?? "false";
+// Fetcher.GetConfig is only available after Fetcher.Initialize is called,
+// which we have to call after determining HttpClient which requires reading
+// the offline config first.
+HttpClient? httpClient = null;
+ILoggerFactory? loggerFactory = null;
+OrcasiteTestHelper.MockOrcasiteHelperContainer? container = null;
+string isOffline = builder.Configuration?["ORCANODE_MONITOR_OFFLINE"] ?? "false";
+if (isOffline == "true")
+{
+    Fetcher.IsOffline = true;
+    loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+    var logger = loggerFactory.CreateLogger<Program>();
+    container = OrcasiteTestHelper.GetMockOrcasiteHelperWithRequestVerification(logger);
+    httpClient = container.MockHttp.ToHttpClient();
+}
+
+Fetcher.Initialize(builder.Configuration, httpClient);
+
+string isReadOnly = Fetcher.GetConfig("ORCANODE_MONITOR_READONLY") ?? "false";
 if (isReadOnly == "true")
 {
     Fetcher.IsReadOnly = true;
 }
 
-string isOffline = Environment.GetEnvironmentVariable("ORCANODE_MONITOR_OFFLINE") ?? "false";
-if (isOffline == "true")
-{
-    Fetcher.IsOffline = true;
-}
-
-string databaseName = Environment.GetEnvironmentVariable("AZURE_COSMOS_DATABASENAME") ?? "orcasound-cosmosdb";
-
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
+if (Fetcher.IsOffline) // Use Test data with in-memory database.
+{
+    // Configure an in-memory database for offline/test mode so that OrcanodeMonitorContext
+    // has a valid EF Core provider without requiring Cosmos DB.
+    builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
+        options.UseInMemoryDatabase("OrcanodeMonitorOffline"));
+}
+else // Use Cosmos DB.
+{
+    // First see if an environment variable specifies a connection string.
+    var connection = Fetcher.GetConfig("AZURE_COSMOS_CONNECTIONSTRING");
+    if (connection.IsNullOrEmpty())
+    {
+        connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
+    }
+
+    string databaseName = Fetcher.GetConfig("AZURE_COSMOS_DATABASENAME") ?? "orcasound-cosmosdb";
+
+    builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
     options.UseCosmos(
         connection,
         databaseName: databaseName,
         options =>
         { options.ConnectionMode(ConnectionMode.Gateway); }));
+}
 
-// Register Kubernetes client
+// Register Kubernetes client.
 builder.Services.AddSingleton<IKubernetes>(sp =>
 {
     var logger = sp.GetRequiredService<ILogger<Program>>();
     return OrcaHelloFetcher.CreateK8sClient(logger);
 });
 
-// Register OrcaHelloFetcher
+// Register OrcaHelloFetcher.
 builder.Services.AddSingleton<OrcaHelloFetcher>();
 
 builder.Services.AddHostedService<PeriodicTasks>(); // Register your background service
