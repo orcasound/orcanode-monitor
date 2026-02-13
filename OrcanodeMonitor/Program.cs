@@ -107,61 +107,6 @@ using (var scope = app.Services.CreateScope())
     if (Fetcher.IsOffline)
     {
         context.Database.EnsureCreated();
-
-        if (!context.Orcanodes.Any())
-        {
-            var orcanodes = new Orcanode[]
-            {
-                new Orcanode
-                {
-                    ID = Guid.NewGuid().ToString(),
-                    PartitionValue = 1,
-                    OrcasoundName = "Orcasound Lab",
-                    S3NodeName = "rpi_orcasound_lab",
-                    S3Bucket = "streaming-orcasound-net",
-                    OrcasoundHost = "live.orcasound.net",   
-                    OrcasoundSlug = "orcasound-lab",
-                    OrcasoundVisible = true,
-                    DataplicityName = "rpi_orcasound_lab",
-                    DataplicityOnline = true,
-                    LatestRecordedUtc = DateTime.UtcNow.AddMinutes(-1),
-                    ManifestUpdatedUtc = DateTime.UtcNow.AddSeconds(-30)
-                },
-                new Orcanode
-                {
-                    ID = Guid.NewGuid().ToString(),
-                    PartitionValue = 1,
-                    OrcasoundName = "Port Townsend",
-                    S3NodeName = "rpi_port_townsend",
-                    S3Bucket = "streaming-orcasound-net",
-                    OrcasoundHost = "live.orcasound.net",
-                    OrcasoundSlug = "port-townsend",
-                    OrcasoundVisible = true,
-                    DataplicityName = "rpi_port_townsend",
-                    DataplicityOnline = true,
-                    LatestRecordedUtc = DateTime.UtcNow.AddMinutes(-1),
-                    ManifestUpdatedUtc = DateTime.UtcNow.AddSeconds(-30)
-                },
-                new Orcanode
-                {
-                    ID = Guid.NewGuid().ToString(),
-                    PartitionValue = 1,
-                    OrcasoundName = "Bush Point",
-                    S3NodeName = "rpi_bush_point",
-                    S3Bucket = "streaming-orcasound-net",
-                    OrcasoundHost = "live.orcasound.net",
-                    OrcasoundSlug = "bush-point",
-                    OrcasoundVisible = true,
-                    DataplicityName = "rpi_bush_point",
-                    DataplicityOnline = true,
-                    LatestRecordedUtc = DateTime.UtcNow.AddMinutes(-1),
-                    ManifestUpdatedUtc = DateTime.UtcNow.AddSeconds(-30)
-                }
-            };
-
-            context.Orcanodes.AddRange(orcanodes);
-            context.SaveChanges();
-        }
     }
 }
 

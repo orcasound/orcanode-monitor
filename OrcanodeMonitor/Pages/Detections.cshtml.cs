@@ -19,12 +19,27 @@ namespace OrcanodeMonitor.Pages
         /// <summary>
         /// Minimum global confidence of positive machine detections.
         /// </summary>
-        public long MinimumPositiveMachineDetectionConfidence;
+        public double MinimumPositiveMachineDetectionConfidence;
+
+        /// <summary>
+        /// Cumulative global confidence of positive machine detections.
+        /// </summary>
+        public double CumulativePositiveMachineDetectionConfidence;
 
         /// <summary>
         /// Average global confidence of positive machine detections.
         /// </summary>
-        public long AveragePositiveMachineDetectionConfidence;
+        public long AveragePositiveMachineDetectionConfidence
+        {
+            get
+            {
+                if (PositiveMachineDetectionCount == 0)
+                {
+                    return 0;
+                }
+                return (long)Math.Round(CumulativePositiveMachineDetectionConfidence * 1.0 / PositiveMachineDetectionCount);
+            }
+        }
 
         /// <summary>
         /// Number of negative machine detections.
@@ -32,14 +47,26 @@ namespace OrcanodeMonitor.Pages
         public long NegativeMachineDetectionCount;
 
         /// <summary>
-        /// Average global confidence of negative machine detections.
+        /// Cumulative global confidence of negative machine detections.
         /// </summary>
-        public long AverageNegativeMachineDetectionConfidence;
+        public double CumulativeNegativeMachineDetectionConfidence;
+
+        public long AverageNegativeMachineDetectionConfidence
+        {
+            get
+            {
+                if (NegativeMachineDetectionCount == 0)
+                {
+                    return 0;
+                }
+                return (long)Math.Round(CumulativeNegativeMachineDetectionConfidence * 1.0 / NegativeMachineDetectionCount);
+            }
+        }
 
         /// <summary>
         /// Average global confidence of negative machine detections.
         /// </summary>
-        public long MaximumNegativeMachineDetectionConfidence;
+        public double MaximumNegativeMachineDetectionConfidence;
 
         /// <summary>
         /// Total number of machine detections.
@@ -99,9 +126,61 @@ namespace OrcanodeMonitor.Pages
                 // Fetch OrcaHello detection counts for each node.
                 await _orcaHelloFetcher.FetchOrcaHelloDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts);
 
-                // TODO: Fetch additional detection details (human/machine detections, confidence levels, etc.)
+                // Fetch additional detection details (human/machine detections, confidence levels, etc.)
                 List<Detection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger);
-                // TODO populate _detectionCounts with aggregated data for each node based on the fetched detections.
+                if (detections != null)
+                {
+                    foreach (var detection in detections)
+                    {
+                        Orcanode? node = _nodes.Where(n => n.OrcasoundFeedId == detection.NodeID).FirstOrDefault();
+                        if (node == null)
+                        {
+                            continue;
+                        }
+                        if (!_detectionCounts.ContainsKey(node.OrcasoundSlug))
+                        {
+                            _detectionCounts[node.OrcasoundSlug] = new DetectionData
+                            {
+                                MinimumPositiveMachineDetectionConfidence = long.MaxValue
+                            };
+                        }
+                        DetectionData data = _detectionCounts[node.OrcasoundSlug];
+                        if (detection.Source == "human")
+                        {
+                            if (detection.Category == "whale")
+                            {
+                                data.PositiveHumanDetectionCount++;
+                            }
+                            else
+                            {
+                                data.NegativeHumanDetectionCount++;
+                            }
+                        }
+                        else
+                        {
+                            if (detection.Category == "whale")
+                            {
+                                data.PositiveMachineDetectionCount++;
+                                double globalConfidence = 0; // XXX TODO
+                                data.CumulativePositiveMachineDetectionConfidence += globalConfidence;
+                                if (globalConfidence < data.MinimumPositiveMachineDetectionConfidence)
+                                {
+                                    data.MinimumPositiveMachineDetectionConfidence = globalConfidence;
+                                }
+                            }
+                            else
+                            {
+                                data.NegativeMachineDetectionCount++;
+                                double globalConfidence = 0; // XXX TODO
+                                data.CumulativeNegativeMachineDetectionConfidence = globalConfidence;
+                                if (globalConfidence > data.MaximumNegativeMachineDetectionConfidence)
+                                {
+                                    data.MaximumNegativeMachineDetectionConfidence = globalConfidence;
+                                }
+                            }
+                        }
+                    }
+                }
 
                 foreach (var node in _nodes)
                 {
@@ -109,6 +188,12 @@ namespace OrcanodeMonitor.Pages
                     {
                         _detectionCounts[node.OrcasoundSlug] = new DetectionData
                         {
+                            CumulativeNegativeMachineDetectionConfidence = 0,
+                            CumulativePositiveMachineDetectionConfidence = 0,
+                            MinimumPositiveMachineDetectionConfidence = long.MaxValue,
+                            MaximumNegativeMachineDetectionConfidence = 0,
+                            PositiveHumanDetectionCount = 0,
+                            NegativeHumanDetectionCount = 0,
                             ConfidenceThreshold = "Unknown"
                         };
                     }
@@ -161,6 +246,10 @@ namespace OrcanodeMonitor.Pages
             {
                 return "Unknown";
             }
+            if (data.MachineDetectionCount == 0)
+            {
+                return "-";
+            }
             return $"{data.MinimumPositiveMachineDetectionConfidence}% min, {data.AveragePositiveMachineDetectionConfidence}% avg";
         }
 
@@ -174,6 +263,10 @@ namespace OrcanodeMonitor.Pages
             if (!_detectionCounts.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
+            }
+            if (data.MachineDetectionCount == 0)
+            {
+                return "-";
             }
             return $"{data.AverageNegativeMachineDetectionConfidence}% avg, {data.MaximumNegativeMachineDetectionConfidence}% max";
         }

@@ -53,7 +53,7 @@ namespace Test
             {
                 builder.Configuration.AddUserSecrets<FetcherTests>();
             }
-            Fetcher.Initialize(builder.Configuration, _httpClient, _mockLogger.Object);
+            Fetcher.Initialize(builder.Configuration, _httpClient);
         }
 
         [TestCleanup]

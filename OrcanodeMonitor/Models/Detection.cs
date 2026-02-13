@@ -21,9 +21,9 @@ namespace OrcanodeMonitor.Models
         public string? Description { get; set; }
         public string? Source { get; set; }
         public string? Category { get; set; }
-        public long PlaylistTimestamp { get; set; }
-        public string? FeedId { get; set; }
-        public string? PlayerOffset { get; set; }
+        public long Playlist_Timestamp { get; set; }
+        public string? Feed_Id { get; set; }
+        public string? Player_Offset { get; set; }
     }
 
     public class Detection
