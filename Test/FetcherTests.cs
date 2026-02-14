@@ -116,7 +116,7 @@ namespace Test
             mockK8s.Setup(k => k.CustomObjects).Returns(mockCustomObjects.Object);
 
             var node = new Orcanode { OrcasoundSlug = "andrews-bay" };
-            string namespaceName = "andrews-bay";
+            string namespaceName = node.OrcasoundSlug;
 
             // Create a mock pod to return.
             var mockPod = new V1Pod
@@ -272,7 +272,7 @@ namespace Test
             var fetcher = new OrcaHelloFetcher(mockK8s.Object);
 
             // Act
-            var pod = await fetcher.GetOrcaHelloPodAsync(node, namespaceName);
+            var pod = await fetcher.GetOrcaHelloPodAsync(node);
 
             // Assert
             Assert.IsNotNull(pod, "Pod should not be null");

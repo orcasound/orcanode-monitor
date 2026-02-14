@@ -89,5 +89,22 @@ namespace OrcanodeMonitor.Models
             LastTerminationReason = latest?.Status.LastState?.Terminated?.Reason ?? string.Empty;
             RestartCount = latest?.Status.RestartCount ?? 0;
         }
+
+        /// <summary>
+        /// Get the confidence threshold display string for a pod.
+        /// Format: "{globalThreshold} @ {localThreshold}%" (e.g., "3 @ 70%")
+        /// </summary>
+        /// <param name="pod">Pod to check</param>
+        /// <returns>Confidence threshold string</returns>
+        public string GetConfidenceThreshold()
+        {
+            if (ModelGlobalThreshold.HasValue && ModelLocalThreshold.HasValue)
+            {
+                int globalThreshold = ModelGlobalThreshold.Value;
+                int localThresholdPercent = (int)Math.Round(ModelLocalThreshold.Value * 100);
+                return $"{globalThreshold} @ {localThresholdPercent}%";
+            }
+            return "Unknown";
+        }
     }
 }

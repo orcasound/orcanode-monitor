@@ -76,23 +76,6 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Get the confidence threshold display string for a pod.
-        /// Format: "{globalThreshold} @ {localThreshold}%" (e.g., "3 @ 70%")
-        /// </summary>
-        /// <param name="pod">Pod to check</param>
-        /// <returns>Confidence threshold string</returns>
-        public string GetPodConfidenceThreshold(OrcaHelloPod pod)
-        {
-            if (pod.ModelGlobalThreshold.HasValue && pod.ModelLocalThreshold.HasValue)
-            {
-                int globalThreshold = pod.ModelGlobalThreshold.Value;
-                int localThresholdPercent = (int)Math.Round(pod.ModelLocalThreshold.Value * 100);
-                return $"{globalThreshold} @ {localThresholdPercent}%";
-            }
-            return "Unknown";
-        }
-
-        /// <summary>
         /// Get the reason the pod last terminated, if any.
         /// </summary>
         /// <param name="pod">Pod to check</param>

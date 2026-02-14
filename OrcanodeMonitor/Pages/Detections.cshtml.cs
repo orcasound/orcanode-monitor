@@ -139,9 +139,12 @@ namespace OrcanodeMonitor.Pages
                         }
                         if (!_detectionCounts.ContainsKey(node.OrcasoundSlug))
                         {
+                            OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node);
+
                             _detectionCounts[node.OrcasoundSlug] = new DetectionData
                             {
-                                MinimumPositiveMachineDetectionConfidence = long.MaxValue
+                                MinimumPositiveMachineDetectionConfidence = long.MaxValue,
+                                ConfidenceThreshold = pod?.GetConfidenceThreshold() ?? "Unknown"
                             };
                         }
                         DetectionData data = _detectionCounts[node.OrcasoundSlug];

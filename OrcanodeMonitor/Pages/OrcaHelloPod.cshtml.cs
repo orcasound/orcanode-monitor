@@ -154,7 +154,7 @@ namespace OrcanodeMonitor.Pages
                 return NotFound(); // Return a 404 error page
             }
 
-            _pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(_orcanode, podNamespace);
+            _pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(_orcanode);
             if (_pod == null)
             {
                 return NotFound(); // Return a 404 error page

@@ -397,9 +397,8 @@ namespace OrcanodeMonitor.Core
         /// Get an object representing an OrcaHello inference pod.
         /// </summary>
         /// <param name="orcanode">Orcanode object associated with the pod</param>
-        /// <param name="namespaceName">Namespace name</param>
         /// <returns>OrcaHelloPod</returns>
-        public async Task<OrcaHelloPod?> GetOrcaHelloPodAsync(Orcanode orcanode, string namespaceName)
+        public async Task<OrcaHelloPod?> GetOrcaHelloPodAsync(Orcanode orcanode)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
@@ -408,6 +407,7 @@ namespace OrcanodeMonitor.Core
                 return null;
             }
 
+            string namespaceName = orcanode.OrcasoundSlug;
             V1PodList pods = await client.CoreV1.ListNamespacedPodAsync(namespaceName);
             GetBestPodStatus(pods.Items, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
             if (bestPod == null)

@@ -28,7 +28,7 @@ namespace Test
             var orcanode = new Orcanode { OrcasoundSlug = "test-slug" };
 
             // Act
-            var result = await fetcher.GetOrcaHelloPodAsync(orcanode, "test-namespace");
+            var result = await fetcher.GetOrcaHelloPodAsync(orcanode);
 
             // Assert
             Assert.IsNull(result);
