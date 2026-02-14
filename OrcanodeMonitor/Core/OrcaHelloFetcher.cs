@@ -18,6 +18,7 @@ namespace OrcanodeMonitor.Core
     public class OrcaHelloFetcher
     {
         private readonly IKubernetes? _k8sClient;
+        public IKubernetes? K8sClient => _k8sClient;
 
         public OrcaHelloFetcher(IKubernetes? k8sClient)
         {
@@ -31,6 +32,10 @@ namespace OrcanodeMonitor.Core
         /// <returns>Kubernetes client or null</returns>
         public static IKubernetes? CreateK8sClient(ILogger logger)
         {
+            if (Fetcher.IsOffline)
+            {
+                return null;
+            }
             string? k8sCACert = Fetcher.GetConfig("KUBERNETES_CA_CERT");
             if (k8sCACert == null)
             {

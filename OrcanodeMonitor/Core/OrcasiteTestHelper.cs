@@ -1,8 +1,12 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
+using k8s;
+using k8s.Autorest;
+using k8s.Models;
 using Microsoft.Extensions.Logging;
 using Moq;
+using OrcanodeMonitor.Models;
 using RichardSzalay.MockHttp;
 using System.Net;
 using System.Text.Json;
@@ -135,12 +139,23 @@ namespace OrcanodeMonitor.Core
                 MockHttp = container.MockHttp;
             }
 
+            /// <summary>
+            /// Add a mock response for a given URL with JSON content from a file.
+            /// </summary>
+            /// <param name="url">URL when queried to return the content</param>
+            /// <param name="filename">File containing the JSON content to return</param>
             public void AddJsonResponse(string url, string filename)
             {
                 string content = GetStringFromFile(filename);
                 AddStringResponse(url, content, "application/json");
             }
 
+            /// <summary>
+            /// Add a mock response for a given URL with content to return.
+            /// </summary>
+            /// <param name="url">URL when queried to return the content</param>
+            /// <param name="content">Content to return</param>
+            /// <param name="mediaType">Media type of content to return</param>
             public void AddStringResponse(string url, string content, string mediaType = "text/plain")
             {
                 var request = MockHttp.When(HttpMethod.Get, url).Respond(mediaType, content);
@@ -153,6 +168,177 @@ namespace OrcanodeMonitor.Core
             JsonElement testDocument = JsonDocument.Parse(sampleOrcaHelloDetection).RootElement;
             var documents = new List<JsonElement> { testDocument };
             return documents;
+        }
+
+        /// <summary>
+        /// Get a mock OrcaHelloFetcher for a given node.  Currently this only
+        /// supports one node, but it could be a list of nodes in the future.
+        /// </summary>
+        /// <param name="node">Orcanode</param>
+        /// <returns>OrcaHelloFetcher</returns>
+        public static OrcaHelloFetcher GetMockOrcaHelloFetcher(Orcanode node)
+        {
+            var mockCoreV1 = new Mock<ICoreV1Operations>();
+            var mockCustomObjects = new Mock<ICustomObjectsOperations>();
+            var mockK8s = new Mock<IKubernetes>();
+
+            mockK8s.Setup(k => k.CoreV1).Returns(mockCoreV1.Object);
+            mockK8s.Setup(k => k.CustomObjects).Returns(mockCustomObjects.Object);
+
+            string namespaceName = node.OrcasoundSlug;
+
+            // Create a mock pod to return.
+            var mockPod = new V1Pod
+            {
+                Metadata = new V1ObjectMeta
+                {
+                    Name = "inference-system-andrews-bay",
+                    NamespaceProperty = namespaceName
+                },
+                Spec = new V1PodSpec
+                {
+                    NodeName = "test-node",
+                    Containers = new List<V1Container>
+                    {
+                        new V1Container
+                        {
+                            Name = "inference-system",
+                            Image = "orcaconservancy.io/inference-system:latest",
+                            Resources = new V1ResourceRequirements
+                            {
+                                Limits = new Dictionary<string, ResourceQuantity>
+                                {
+                                    { "cpu", new ResourceQuantity("2") },
+                                    { "memory", new ResourceQuantity("4Gi") }
+                                }
+                            }
+                        }
+                    }
+                },
+                Status = new V1PodStatus
+                {
+                    Phase = "Running",
+                    ContainerStatuses = new List<V1ContainerStatus>
+                    {
+                        new V1ContainerStatus
+                        {
+                            Name = "inference-system",
+                            Ready = true,
+                            RestartCount = 0,
+                            State = new V1ContainerState
+                            {
+                                Running = new V1ContainerStateRunning
+                                {
+                                    StartedAt = DateTime.UtcNow.AddHours(-1)
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            var podList = new V1PodList
+            {
+                Items = new List<V1Pod> { mockPod }
+            };
+
+            // Set up the CoreV1 operations mock to return the pod list.
+            mockCoreV1.Setup(c => c.ListNamespacedPodWithHttpMessagesAsync(
+                namespaceName,
+                It.IsAny<bool?>(),           // allowWatchBookmarks
+                It.IsAny<string>(),          // continueParameter
+                It.IsAny<string>(),          // fieldSelector
+                It.IsAny<string>(),          // labelSelector
+                It.IsAny<int?>(),            // limit
+                It.IsAny<string>(),          // resourceVersion
+                It.IsAny<string>(),          // resourceVersionMatch
+                It.IsAny<bool?>(),           // sendInitialEvents
+                It.IsAny<int?>(),            // timeoutSeconds
+                It.IsAny<bool?>(),           // watch
+                It.IsAny<bool?>(),           // pretty
+                It.IsAny<IReadOnlyDictionary<string, IReadOnlyList<string>>>(), // customHeaders
+                It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new HttpOperationResponse<V1PodList>
+                {
+                    Body = podList
+                });
+
+            // Mock the pod metrics response (GetKubernetesPodsMetricsByNamespaceAsync).
+            var podMetricsJson = JsonSerializer.Serialize(new
+            {
+                kind = "PodMetricsList",
+                apiVersion = "metrics.k8s.io/v1beta1",
+                metadata = new { },
+                items = new[]
+                {
+                    new
+                    {
+                        metadata = new
+                        {
+                            name = "inference-system-andrews-bay",
+                            @namespace = namespaceName
+                        },
+                        timestamp = DateTime.UtcNow,
+                        window = "30s",
+                        containers = new[]
+                        {
+                            new
+                            {
+                                name = "inference-system",
+                                usage = new
+                                {
+                                    cpu = "100", // 100m
+                                    memory = "256" // 256Mi
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            var podMetricsElement = JsonSerializer.Deserialize<JsonElement>(podMetricsJson);
+
+            mockCustomObjects.Setup(c => c.GetNamespacedCustomObjectWithHttpMessagesAsync(
+                "metrics.k8s.io",
+                "v1beta1",
+                namespaceName,
+                "pods",
+                string.Empty,
+                It.IsAny<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+                It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new HttpOperationResponse<object>
+                {
+                    Body = podMetricsElement
+                });
+
+            // Mock the ConfigMap for hydrophone-configs
+            var configMap = new V1ConfigMap
+            {
+                Metadata = new V1ObjectMeta
+                {
+                    Name = "hydrophone-configs",
+                    NamespaceProperty = namespaceName
+                },
+                Data = new Dictionary<string, string>
+                {
+                    { "model_timestamp", DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-ddTHH:mm:ssZ") },
+                    { "local_threshold", "0.7" },
+                    { "global_threshold", "3" }
+                }
+            };
+
+            mockCoreV1.Setup(c => c.ReadNamespacedConfigMapWithHttpMessagesAsync(
+                "hydrophone-configs",
+                namespaceName,
+                It.IsAny<bool?>(),
+                It.IsAny<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+                It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new HttpOperationResponse<V1ConfigMap>
+                {
+                    Body = configMap
+                });
+
+            return new OrcaHelloFetcher(mockK8s.Object);
         }
     }
 }

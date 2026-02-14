@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
+using OrcanodeMonitor.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 if (builder.Environment.IsDevelopment())
@@ -45,6 +46,20 @@ if (Fetcher.IsOffline) // Use Test data with in-memory database.
     // has a valid EF Core provider without requiring Cosmos DB.
     builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
         options.UseInMemoryDatabase("OrcanodeMonitorOffline"));
+
+    // TODO: get nodes from file.
+    var node = new Orcanode { OrcasoundSlug = "andrews-bay" };
+
+    OrcaHelloFetcher orcaHelloFetcher = OrcasiteTestHelper.GetMockOrcaHelloFetcher(node);
+
+    // Register Kubernetes client.
+    builder.Services.AddSingleton<IKubernetes>(sp =>
+    {
+        return orcaHelloFetcher.K8sClient;
+    });
+
+    // Register OrcaHelloFetcher.
+    builder.Services.AddSingleton<OrcaHelloFetcher>(orcaHelloFetcher);
 }
 else // Use Cosmos DB.
 {
@@ -63,17 +78,17 @@ else // Use Cosmos DB.
         databaseName: databaseName,
         options =>
         { options.ConnectionMode(ConnectionMode.Gateway); }));
+
+    // Register Kubernetes client.
+    builder.Services.AddSingleton<IKubernetes>(sp =>
+    {
+        var logger = sp.GetRequiredService<ILogger<Program>>();
+        return OrcaHelloFetcher.CreateK8sClient(logger);
+    });
+
+    // Register OrcaHelloFetcher.
+    builder.Services.AddSingleton<OrcaHelloFetcher>();
 }
-
-// Register Kubernetes client.
-builder.Services.AddSingleton<IKubernetes>(sp =>
-{
-    var logger = sp.GetRequiredService<ILogger<Program>>();
-    return OrcaHelloFetcher.CreateK8sClient(logger);
-});
-
-// Register OrcaHelloFetcher.
-builder.Services.AddSingleton<OrcaHelloFetcher>();
 
 builder.Services.AddHostedService<PeriodicTasks>(); // Register your background service
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
