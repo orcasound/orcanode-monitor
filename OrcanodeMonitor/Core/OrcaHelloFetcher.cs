@@ -423,7 +423,7 @@ namespace OrcanodeMonitor.Core
 
             PodMetricsList? metricsList = await client.GetKubernetesPodsMetricsByNamespaceAsync(namespaceName);
             PodMetrics? podMetric = metricsList?.Items?.FirstOrDefault(n => n.Metadata?.Name?.StartsWith("inference-system-") == true);
-            var container = podMetric?.Containers.FirstOrDefault(c => c.Name == "inference-system");
+            var container = podMetric?.Containers?.FirstOrDefault(c => c.Name == "inference-system");
             string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
             string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
@@ -468,7 +468,7 @@ namespace OrcanodeMonitor.Core
                     return string.Empty;
                 }
                 using var reader = new StreamReader(logs);
-                string text = reader.ReadToEnd();
+                string text = await reader.ReadToEndAsync();
 
                 // Split into lines, filter, and rejoin
                 var filtered = string.Join(
@@ -687,7 +687,7 @@ namespace OrcanodeMonitor.Core
                         continue;
                     }
                     PodMetrics? podMetrics = metricsList?.Items?.FirstOrDefault(n => n.Metadata.Name == pod.Metadata.Name);
-                    var container = podMetrics?.Containers.FirstOrDefault(c => c.Name == "inference-system");
+                    var container = podMetrics?.Containers?.FirstOrDefault(c => c.Name == "inference-system");
                     string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
                     string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 

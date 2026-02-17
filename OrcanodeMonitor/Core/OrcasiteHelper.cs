@@ -385,6 +385,12 @@ namespace OrcanodeMonitor.Core
                 return false;
             }
 
+            if (_orcasiteFeedsArray == null)
+            {
+                _logger.LogError("Feeds array not initialized");
+                return false;
+            }
+
             // Get feed ID from location ID.
             string? feedIdOrNull = GetFeedId(locationIdString, _orcasiteFeedsArray.Value);
             if (feedIdOrNull == null)

@@ -20,7 +20,7 @@ namespace OrcanodeMonitor.Core
             try
             {
                 string? orcasound_dataplicity_token = Fetcher.GetConfig("ORCASOUND_DATAPLICITY_TOKEN");
-                if (orcasound_dataplicity_token == null)
+                if (!Fetcher.IsOffline && (orcasound_dataplicity_token == null))
                 {
                     logger.LogError("ORCASOUND_DATAPLICITY_TOKEN not found");
                     return string.Empty;
