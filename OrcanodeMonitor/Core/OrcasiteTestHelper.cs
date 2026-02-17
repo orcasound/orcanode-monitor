@@ -95,14 +95,6 @@ namespace OrcanodeMonitor.Core
                 "https://api.mezmo.com/v1/export", // "?from=1770777412&to=1770777712&hosts=rpi_point_robinson"
                 "MezmoExportLog.json");
 
-#if false
-            // Mock the POST request to create a detection.
-            string sampleOrcasitePostDetectionResponse = GetStringFromFile("OrcasitePostDetectionResponse.json");
-            var postDetectionRequest = mockHttp.When(HttpMethod.Post, "https://*.orcasound.net/api/json/detections?fields%5Bdetection%5D=id%2Csource_ip%2Cplaylist_timestamp%2Cplayer_offset%2Clistener_count%2Ctimestamp%2Cdescription%2Cvisible%2Csource%2Ccategory%2Ccandidate_id%2Cfeed_id")
-                    //.WithContent("{\"key\":\"value\"}") // Optional: match request body
-                    .Respond(HttpStatusCode.Created, "application/json", sampleOrcasitePostDetectionResponse);
-#endif
-
             container.AddJsonResponse(
                 "https://apps.dataplicity.com/devices/",
                 "DataplicityGetRequest.json");
@@ -163,7 +155,10 @@ namespace OrcanodeMonitor.Core
         public static List<JsonElement> GetSampleOrcaHelloDetections()
         {
             string sampleOrcaHelloDetection = GetStringFromFile("OrcaHelloDetection.json");
-            JsonElement testDocument = JsonDocument.Parse(sampleOrcaHelloDetection).RootElement;
+
+            using JsonDocument doc = JsonDocument.Parse(sampleOrcaHelloDetection);
+            JsonElement testDocument = doc.RootElement.Clone();
+
             var documents = new List<JsonElement> { testDocument };
             return documents;
         }

@@ -1,6 +1,8 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
+using System.Text.Json.Serialization;
+
 namespace OrcanodeMonitor.Models
 {
     public class DetectionResponse
@@ -21,9 +23,15 @@ namespace OrcanodeMonitor.Models
         public string? Description { get; set; }
         public string? Source { get; set; }
         public string? Category { get; set; }
-        public long Playlist_Timestamp { get; set; }
-        public string? Feed_Id { get; set; }
-        public string? Player_Offset { get; set; }
+
+        [JsonPropertyName("playlist_timestamp")]
+        public long PlaylistTimestamp { get; set; }
+
+        [JsonPropertyName("feed_id")]
+        public string? FeedId { get; set; }
+
+        [JsonPropertyName("player_offset")]
+        public string? PlayerOffset { get; set; }
     }
 
     public class Detection

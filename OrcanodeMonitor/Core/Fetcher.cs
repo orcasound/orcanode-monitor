@@ -668,7 +668,7 @@ namespace OrcanodeMonitor.Core
                     response.Data.Select(d => new Detection
                     {
                         ID = d.Id,
-                        NodeID = d.Attributes?.Feed_Id ?? string.Empty,
+                        NodeID = d.Attributes?.FeedId ?? string.Empty,
                         Timestamp = d.Attributes?.Timestamp ?? default,
                         Source = d.Attributes?.Source ?? string.Empty,
                         Description = d.Attributes?.Description ?? string.Empty,
@@ -717,7 +717,7 @@ namespace OrcanodeMonitor.Core
                     response.Data.Select(d => new Detection
                     {
                         ID = d.Id,
-                        NodeID = d.Attributes?.Feed_Id ?? string.Empty,
+                        NodeID = d.Attributes?.FeedId ?? string.Empty,
                         Timestamp = d.Attributes?.Timestamp ?? default,
                         Source = d.Attributes?.Source ?? string.Empty,
                         Description = d.Attributes?.Description ?? string.Empty,

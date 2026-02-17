@@ -686,7 +686,7 @@ namespace OrcanodeMonitor.Core
                     {
                         continue;
                     }
-                    PodMetrics? podMetrics = metricsList?.Items.FirstOrDefault(n => n.Metadata.Name == pod.Metadata.Name);
+                    PodMetrics? podMetrics = metricsList?.Items?.FirstOrDefault(n => n.Metadata.Name == pod.Metadata.Name);
                     var container = podMetrics?.Containers.FirstOrDefault(c => c.Name == "inference-system");
                     string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
                     string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";

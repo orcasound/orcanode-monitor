@@ -359,7 +359,8 @@ namespace OrcanodeMonitor.Core
             feedId = string.Empty;
             commentsString = string.Empty;
 
-            JsonElement orcaHelloDetection = JsonDocument.Parse(json).RootElement;
+            using JsonDocument document = JsonDocument.Parse(json);
+            JsonElement orcaHelloDetection = document.RootElement;
             if (!orcaHelloDetection.TryGetProperty("id", out var id))
             {
                 _logger.LogError($"Missing id in ExecuteTask result");
@@ -468,12 +469,12 @@ namespace OrcanodeMonitor.Core
             };
             request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/vnd.api+json");
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.api+json"));
-            if (_orcasiteApiKey != null)
+            if (!string.IsNullOrEmpty(_orcasiteApiKey))
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _orcasiteApiKey);
             }
 
-            HttpResponseMessage response = await _httpClient.SendAsync(request);
+            using HttpResponseMessage response = await _httpClient.SendAsync(request);
             if (!response.IsSuccessStatusCode)
             {
                 string message = await response.Content.ReadAsStringAsync();

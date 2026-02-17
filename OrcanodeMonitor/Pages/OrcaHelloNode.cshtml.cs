@@ -49,7 +49,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         public string NowLocal { get; private set; }
 
-        public OrcaHelloNodeModel(OrcanodeMonitorContext context, ILogger<OrcaHelloNodeModel> logger, OrcaHelloFetcher orcaHelloFetcher)
+        public OrcaHelloNodeModel(OrcaHelloFetcher orcaHelloFetcher)
         {
             _orcaHelloFetcher = orcaHelloFetcher;
             NowLocal = Fetcher.UtcToLocalDateTime(DateTime.UtcNow)?.ToString() ?? "Unknown";

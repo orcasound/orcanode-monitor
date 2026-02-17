@@ -134,7 +134,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="context">Database context to update</param>
         /// <param name="logger"></param>
         /// <returns></returns>
-        public async static Task UpdateMezmoHostsAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task UpdateMezmoHostsAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
             try
             {
@@ -244,7 +244,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="context">Database context to update</param>
         /// <param name="logger"></param>
         /// <returns></returns>
-        public async static Task UpdateMezmoViewsAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task UpdateMezmoViewsAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
             try
             {
@@ -347,13 +347,13 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public async static Task UpdateMezmoDataAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task UpdateMezmoDataAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
             await UpdateMezmoHostsAsync(context, logger);
             await UpdateMezmoViewsAsync(context, logger);
         }
 
-        private static void AddMezmoStatusEvent(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
+        private static void AddMezmoStatusEvent(IOrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
             string value = node.MezmoStatus.ToString();
             Fetcher.AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.MezmoLogging, value, string.Empty);
