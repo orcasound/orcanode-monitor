@@ -105,7 +105,7 @@ namespace OrcanodeMonitor.Core
             }
             if (_orcasiteFeedsArray == null)
             {
-                _orcasiteApiKey = configuration["ORCASITE_APIKEY"];
+                _orcasiteApiKey = configuration["ORCASITE_APIKEY"] ?? string.Empty;
                 _orcasiteHostname = configuration["ORCASITE_HOSTNAME"] ?? "beta.orcasound.net";
                 _orcasiteFeedsArray = await GetDataArrayAsync(OrcasiteGetFeedsUri);
                 if (_orcasiteFeedsArray == null)
@@ -168,7 +168,7 @@ namespace OrcanodeMonitor.Core
                 }
                 if (feedId.ValueKind != JsonValueKind.String)
                 {
-                    _logger.LogError($"Invalid id kind in ExecuteTask: {nodeName.ValueKind}");
+                    _logger.LogError($"Invalid id kind in ExecuteTask: {feedId.ValueKind}");
                     continue;
                 }
 

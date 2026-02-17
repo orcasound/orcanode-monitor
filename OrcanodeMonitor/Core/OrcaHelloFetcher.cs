@@ -329,6 +329,11 @@ namespace OrcanodeMonitor.Core
         /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the command executed in the pod, as a string.</returns>
         private async Task<string> GetPodModelTimestampAsync(V1Pod pod)
         {
+            if (pod.Metadata == null)
+            {
+                return string.Empty;
+            }
+
             string[] command = { "stat", "-c", "%y", "/usr/src/app/model/model.pkl" };
             return await GetPodCommandOutput(pod.Metadata.Name, pod.Metadata.NamespaceProperty, command);
         }

@@ -38,7 +38,10 @@ namespace OrcanodeMonitor.Core
                     Method = HttpMethod.Get,
                 })
                 {
-                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_dataplicity_token);
+                    if (!string.IsNullOrEmpty(orcasound_dataplicity_token))
+                    {
+                        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_dataplicity_token);
+                    }
                     using HttpResponseMessage response = await Fetcher.HttpClient.SendAsync(request);
                     response.EnsureSuccessStatusCode();
                     return await response.Content.ReadAsStringAsync();
@@ -289,35 +292,42 @@ namespace OrcanodeMonitor.Core
         /// <returns></returns>
         public async static Task CheckForRebootsNeededAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
-            var originalList = await context.Orcanodes.ToListAsync();
-            foreach (Orcanode? node in originalList)
+            try
             {
-                if (!node.NeedsRebootForContainerRestart)
+                var originalList = await context.Orcanodes.ToListAsync();
+                foreach (Orcanode? node in originalList)
                 {
-                    continue;
-                }
-                if (Fetcher.IsReadOnly)
-                {
-                    logger.LogInformation($"Node {node.DisplayName} needs a reboot, but we are in read-only mode.");
-                    continue;
-                }
-                if (node.DataplicitySerial.IsNullOrEmpty())
-                {
-                    logger.LogWarning($"Node {node.DisplayName} needs a reboot, but has no Dataplicity serial.");
-                    continue;
-                }
-                bool success = await RebootDataplicityDeviceAsync(node, logger);
-                if (success)
-                {
-                    logger.LogInformation($"Node {node.DisplayName} rebooted successfully.");
-                }
-                else
-                {
-                    logger.LogWarning($"Node {node.DisplayName} needs a reboot, but the reboot request failed.");
-                }
+                    if (!node.NeedsRebootForContainerRestart)
+                    {
+                        continue;
+                    }
+                    if (Fetcher.IsReadOnly)
+                    {
+                        logger.LogInformation($"Node {node.DisplayName} needs a reboot, but we are in read-only mode.");
+                        continue;
+                    }
+                    if (node.DataplicitySerial.IsNullOrEmpty())
+                    {
+                        logger.LogWarning($"Node {node.DisplayName} needs a reboot, but has no Dataplicity serial.");
+                        continue;
+                    }
+                    bool success = await RebootDataplicityDeviceAsync(node, logger);
+                    if (success)
+                    {
+                        logger.LogInformation($"Node {node.DisplayName} rebooted successfully.");
+                    }
+                    else
+                    {
+                        logger.LogWarning($"Node {node.DisplayName} needs a reboot, but the reboot request failed.");
+                    }
 
-                // Wait a bit to avoid hammering the Dataplicity API.
-                await Task.Delay(2000);
+                    // Wait a bit to avoid hammering the Dataplicity API.
+                    await Task.Delay(2000);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Exception in CheckForRebootsNeededAsync: {ex.Message}");
             }
         }
 
