@@ -4,11 +4,9 @@
 using k8s;
 using k8s.Autorest;
 using k8s.Models;
-using Microsoft.Extensions.Logging;
 using Moq;
 using OrcanodeMonitor.Models;
 using RichardSzalay.MockHttp;
-using System.Net;
 using System.Text.Json;
 
 namespace OrcanodeMonitor.Core

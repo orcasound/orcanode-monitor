@@ -94,7 +94,6 @@ namespace OrcanodeMonitor.Models
         /// Get the confidence threshold display string for a pod.
         /// Format: "{globalThreshold} @ {localThreshold}%" (e.g., "3 @ 70%")
         /// </summary>
-        /// <param name="pod">Pod to check</param>
         /// <returns>Confidence threshold string</returns>
         public string GetConfidenceThreshold()
         {

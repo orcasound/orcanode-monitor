@@ -175,7 +175,7 @@ namespace OrcanodeMonitor.Pages
                             {
                                 data.NegativeMachineDetectionCount++;
                                 double globalConfidence = 0; // XXX TODO
-                                data.CumulativeNegativeMachineDetectionConfidence = globalConfidence;
+                                data.CumulativeNegativeMachineDetectionConfidence += globalConfidence;
                                 if (globalConfidence > data.MaximumNegativeMachineDetectionConfidence)
                                 {
                                     data.MaximumNegativeMachineDetectionConfidence = globalConfidence;
@@ -249,7 +249,7 @@ namespace OrcanodeMonitor.Pages
             {
                 return "Unknown";
             }
-            if (data.MachineDetectionCount == 0)
+            if (data.PositiveMachineDetectionCount == 0)
             {
                 return "-";
             }
@@ -267,7 +267,7 @@ namespace OrcanodeMonitor.Pages
             {
                 return "Unknown";
             }
-            if (data.MachineDetectionCount == 0)
+            if (data.NegativeMachineDetectionCount == 0)
             {
                 return "-";
             }

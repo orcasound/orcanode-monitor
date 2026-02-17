@@ -24,7 +24,7 @@ string isOffline = builder.Configuration?["ORCANODE_MONITOR_OFFLINE"] ?? "false"
 if (isOffline == "true")
 {
     Fetcher.IsOffline = true;
-    loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+    loggerFactory = LoggerFactory.Create(b => b.AddConsole());
     var logger = loggerFactory.CreateLogger<Program>();
     container = OrcasiteTestHelper.GetMockOrcasiteHelperWithRequestVerification(logger);
     httpClient = container.MockHttp.ToHttpClient();

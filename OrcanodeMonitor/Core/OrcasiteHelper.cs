@@ -4,17 +4,9 @@
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Identity.Client;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 
 namespace OrcanodeMonitor.Core
 {
@@ -263,8 +255,8 @@ namespace OrcanodeMonitor.Core
         /// Given a detection, extract the location id (e.g., "rpi_orcasound_lab") from it.
         /// </summary>
         /// <param name="orcaHelloDetection">Detection to look in</param>
-        /// <returns>Location ID as used by S3 and Orcasite</returns>
-        string TryGetLocationIdString(JsonElement orcaHelloDetection)
+        /// <returns>Location ID as used by S3 and Orcasite, or null on error</returns>
+        string? TryGetLocationIdString(JsonElement orcaHelloDetection)
         {
             if (!orcaHelloDetection.TryGetProperty("location", out var location))
             {
@@ -386,7 +378,7 @@ namespace OrcanodeMonitor.Core
             }
             idString = idStringOrNull;
 
-            string locationIdString = TryGetLocationIdString(orcaHelloDetection);
+            string? locationIdString = TryGetLocationIdString(orcaHelloDetection);
             if (locationIdString == null)
             {
                 return false;
@@ -586,7 +578,7 @@ namespace OrcanodeMonitor.Core
                 // afterwards.  We can correct these once we know the
                 // .ts folder date to start calculating the drift based on.
 
-                string locationIdString = TryGetLocationIdString(originalDetection);
+                string? locationIdString = TryGetLocationIdString(originalDetection);
                 if (string.IsNullOrEmpty(locationIdString))
                 {
                     continue;

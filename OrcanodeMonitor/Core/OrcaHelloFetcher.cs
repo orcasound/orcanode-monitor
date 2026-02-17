@@ -152,7 +152,7 @@ namespace OrcanodeMonitor.Core
                 return false;
             }
 
-            // If both running, prefer the most recent start
+            // If both running, prefer the most recent start.
             if (newRunning && oldRunning)
             {
                 DateTime? nStart = newState!.Running!.StartedAt;

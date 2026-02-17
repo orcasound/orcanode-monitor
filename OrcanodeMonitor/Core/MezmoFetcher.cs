@@ -11,7 +11,7 @@ namespace OrcanodeMonitor.Core
 {
     public class MezmoFetcher
     {
-        private static HttpClient _realHttpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+        private static readonly HttpClient _realHttpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
         private static HttpClient _httpClient;
         private static string _mezmoViewsUrl = "https://api.mezmo.com/v1/config/view";
         private static string _mezmoHostsUrl = "https://api.mezmo.com/v1/usage/hosts";
@@ -21,14 +21,7 @@ namespace OrcanodeMonitor.Core
 
         public static void Initialize(HttpClient? httpClient = null)
         {
-            if (httpClient != null)
-            {
-                _httpClient = httpClient;
-            }
-            else
-            {
-                _httpClient = _realHttpClient;
-            }
+            _httpClient = (httpClient != null) ? httpClient : _realHttpClient;
         }
 
         public static void Uninitialize()

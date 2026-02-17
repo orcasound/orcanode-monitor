@@ -14,8 +14,8 @@ namespace OrcanodeMonitor.Core
 {
     public class Fetcher
     {
-        private static TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
-        private static HttpClient _realHttpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+        private readonly static TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+        private readonly static HttpClient _realHttpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
         private static HttpClient _httpClient = _realHttpClient;
         public static HttpClient HttpClient => _httpClient;
         private static string _orcasoundProdSite = "live.orcasound.net";

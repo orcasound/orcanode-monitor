@@ -1,10 +1,6 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
-using k8s;
-using k8s.Autorest;
-using k8s.KubeConfigModels;
-using k8s.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
@@ -16,8 +12,6 @@ using Moq;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
-using System.ComponentModel;
-using System.Text.Json;
 
 namespace Test
 {
@@ -36,10 +30,8 @@ namespace Test
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
 
             var options = new DbContextOptionsBuilder<OrcanodeMonitorContext>()
-                            .UseCosmos(
-                                "CONNECTION",
-                                databaseName: "DATABASENAME",
-                                options => { options.ConnectionMode(ConnectionMode.Gateway); }).Options;
+                            .UseInMemoryDatabase(databaseName: "FetcherTestsDatabase")
+                            .Options;
             _context = new OrcanodeMonitorContext(options);
 
             _mockLogger = new Mock<ILogger>();
