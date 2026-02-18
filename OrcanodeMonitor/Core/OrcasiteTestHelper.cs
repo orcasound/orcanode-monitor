@@ -304,6 +304,11 @@ namespace OrcanodeMonitor.Core
                 });
 
             // Mock the ConfigMap for hydrophone-configs
+            // Create YAML content with model thresholds
+            string yamlContent = $@"model_local_threshold: 0.7
+model_global_threshold: 3
+model_timestamp: {DateTime.UtcNow.AddDays(-1):yyyy-MM-ddTHH:mm:ssZ}";
+
             var configMap = new V1ConfigMap
             {
                 Metadata = new V1ObjectMeta
@@ -313,9 +318,7 @@ namespace OrcanodeMonitor.Core
                 },
                 Data = new Dictionary<string, string>
                 {
-                    { "model_timestamp", DateTime.UtcNow.AddDays(-1).ToString("yyyy-MM-ddTHH:mm:ssZ") },
-                    { "local_threshold", "0.7" },
-                    { "global_threshold", "3" }
+                    { "config.yml", yamlContent }
                 }
             };
 
