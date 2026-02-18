@@ -38,6 +38,7 @@ namespace OrcanodeMonitor.Core
                     Method = HttpMethod.Get,
                 })
                 {
+                    // Set the token if we have one (in offline mode, we won't have one).
                     if (!string.IsNullOrEmpty(orcasound_dataplicity_token))
                     {
                         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_dataplicity_token);
