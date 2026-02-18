@@ -121,6 +121,20 @@ using (var scope = app.Services.CreateScope())
     if (Fetcher.IsOffline)
     {
         context.Database.EnsureCreated();
+
+        // Add the sample Orcanode entity to the context if it doesn't exist
+        if (!context.Orcanodes.Any())
+        {
+            var node = new Orcanode
+            {
+                ID = "andrews-bay",
+                OrcasoundSlug = "andrews-bay",
+                OrcasoundName = "Andrew's Bay",
+                PartitionValue = 1
+            };
+            context.Orcanodes.Add(node);
+            context.SaveChanges();
+        }
     }
 }
 
