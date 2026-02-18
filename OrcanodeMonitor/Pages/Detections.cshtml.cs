@@ -1,6 +1,5 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcanodeMonitor.Core;
@@ -107,8 +106,6 @@ namespace OrcanodeMonitor.Pages
             _nodes = new List<Orcanode>();
         }
 
-        private readonly Dictionary<string, long> _orcaHelloDetectionCounts = new Dictionary<string, long>();
-
         public async Task OnGetAsync()
         {
             try
@@ -123,20 +120,22 @@ namespace OrcanodeMonitor.Pages
                               .OrderBy(n => n.DisplayName)
                               .ToList();
 
-                // Fetch OrcaHello detection counts for each node.
-                await _orcaHelloFetcher.FetchOrcaHelloDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts);
-
                 // Fetch additional detection details (human/machine detections, confidence levels, etc.)
                 List<Detection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger);
+
+                // Fetch OrcaHello detection details.
+                var orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(_logger);
+
                 if (detections != null)
                 {
-                    foreach (var detection in detections)
+                    foreach (Detection detection in detections)
                     {
                         Orcanode? node = _nodes.Where(n => n.OrcasoundFeedId == detection.NodeID).FirstOrDefault();
                         if (node == null)
                         {
                             continue;
                         }
+
                         if (!_detectionCounts.ContainsKey(node.OrcasoundSlug))
                         {
                             OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node);
@@ -150,6 +149,7 @@ namespace OrcanodeMonitor.Pages
                         DetectionData data = _detectionCounts[node.OrcasoundSlug];
                         if (detection.Source == "human")
                         {
+                            // TODO: only count reviewed detections.
                             if (detection.Category == "whale")
                             {
                                 data.PositiveHumanDetectionCount++;
@@ -159,12 +159,27 @@ namespace OrcanodeMonitor.Pages
                                 data.NegativeHumanDetectionCount++;
                             }
                         }
-                        else
+                        else // detection.Source == "machine"
                         {
-                            if (detection.Category == "whale")
+                            // Find the matching OrcaHelloDetection.
+                            OrcaHelloDetection? orcaHelloDetection = orcaHelloDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
+                            if (orcaHelloDetection == null)
+                            {
+                                _logger.LogError($"Failed to find matching orcaHelloDetection for {detection.ID}");
+                                continue;
+                            }
+
+                            // Only count reviewed detections.
+                            if (!orcaHelloDetection.Reviewed)
+                            {
+                                continue;
+                            }
+
+                            double globalConfidence = orcaHelloDetection.Confidence;
+
+                            if (orcaHelloDetection.IsPositive(detection))
                             {
                                 data.PositiveMachineDetectionCount++;
-                                double globalConfidence = 0; // XXX TODO
                                 data.CumulativePositiveMachineDetectionConfidence += globalConfidence;
                                 if (globalConfidence < data.MinimumPositiveMachineDetectionConfidence)
                                 {
@@ -174,7 +189,6 @@ namespace OrcanodeMonitor.Pages
                             else
                             {
                                 data.NegativeMachineDetectionCount++;
-                                double globalConfidence = 0; // XXX TODO
                                 data.CumulativeNegativeMachineDetectionConfidence += globalConfidence;
                                 if (globalConfidence > data.MaximumNegativeMachineDetectionConfidence)
                                 {
@@ -220,8 +234,7 @@ namespace OrcanodeMonitor.Pages
             {
                 return "None";
             }
-            int percent = (int)Math.Round(data.PositiveHumanDetectionCount * 100.0 / data.HumanDetectionCount);
-            return $"{data.PositiveHumanDetectionCount} / {data.HumanDetectionCount} ({percent}%)";
+            return $"{data.PositiveHumanDetectionCount} / {data.HumanDetectionCount} ({(data.PositiveHumanDetectionCount / (double)data.HumanDetectionCount):P0})";
         }
 
         public string GetMachineDetectionCount(Orcanode node)
@@ -234,8 +247,7 @@ namespace OrcanodeMonitor.Pages
             {
                 return "None";
             }
-            int percent = (int)Math.Round(data.PositiveMachineDetectionCount * 100.0 / data.MachineDetectionCount);
-            return $"{data.PositiveMachineDetectionCount} / {data.MachineDetectionCount} ({percent}%)";
+            return $"{data.PositiveMachineDetectionCount} / {data.MachineDetectionCount} ({(data.PositiveMachineDetectionCount / (double)data.MachineDetectionCount):P0})";
         }
 
         /// <summary>
@@ -253,7 +265,7 @@ namespace OrcanodeMonitor.Pages
             {
                 return "-";
             }
-            return $"{data.MinimumPositiveMachineDetectionConfidence}% min, {data.AveragePositiveMachineDetectionConfidence}% avg";
+            return $"{data.MinimumPositiveMachineDetectionConfidence:F2}% min, {data.AveragePositiveMachineDetectionConfidence:F2}% avg";
         }
 
         /// <summary>
@@ -271,7 +283,7 @@ namespace OrcanodeMonitor.Pages
             {
                 return "-";
             }
-            return $"{data.AverageNegativeMachineDetectionConfidence}% avg, {data.MaximumNegativeMachineDetectionConfidence}% max";
+            return $"{data.AverageNegativeMachineDetectionConfidence:F2}% avg, {data.MaximumNegativeMachineDetectionConfidence:F2}% max";
         }
 
         /// <summary>

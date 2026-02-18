@@ -14,28 +14,23 @@ namespace OrcanodeMonitor.Core
     public class OrcasiteTestHelper
     {
         public static readonly string TestDeviceSerial = "7dcdf551-6283-4867-a0d4-13dc587e4233";
-        private static string _solutionDirectory;
+        private static readonly string? _solutionDirectory = InitializeSolutionDirectory();
 
         /// <summary>
-        /// Find the solution directory.
+        /// Initialize the solution directory once for the lifetime of the process.
+        /// Walks up from the application base directory to find OrcanodeMonitor.sln.
         /// </summary>
         /// <returns>Directory, or null if not found</returns>
-        public static string? FindSolutionDirectory()
+        private static string? InitializeSolutionDirectory()
         {
-            if (_solutionDirectory != null)
-            {
-                return _solutionDirectory;
-            }
             string? currentDirectory = AppDomain.CurrentDomain.BaseDirectory;
             while (currentDirectory != null)
             {
                 string path = Path.Combine(currentDirectory, "OrcanodeMonitor.sln");
                 if (File.Exists(path))
                 {
-                    _solutionDirectory = currentDirectory;
                     return currentDirectory;
                 }
-
                 currentDirectory = Directory.GetParent(currentDirectory)?.FullName;
             }
             return null;
@@ -48,7 +43,7 @@ namespace OrcanodeMonitor.Core
         /// <returns>String contents</returns>
         private static string GetStringFromFile(string filename)
         {
-            string solutionDirectory = FindSolutionDirectory() ?? throw new Exception("Could not find solution directory");
+            string solutionDirectory = _solutionDirectory ?? throw new Exception("Could not find solution directory");
             string fullPath = Path.Combine(solutionDirectory, "TestData", filename);
             if (!Path.Exists(fullPath))
             {
@@ -98,6 +93,10 @@ namespace OrcanodeMonitor.Core
             container.AddJsonResponse(
                 "https://apps.dataplicity.com/devices/",
                 "DataplicityGetRequest.json");
+
+            container.AddJsonResponse(
+                "https://aifororcasdetections.azurewebsites.net/api/detections",
+                "OrcaHelloDetections.json");
 
             DateTime recent = DateTime.Now.AddMinutes(-1);
             long unixTimestamp = Fetcher.DateTimeToUnixTimeStamp(recent);

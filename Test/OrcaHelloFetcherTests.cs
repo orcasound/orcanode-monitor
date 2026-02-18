@@ -1,19 +1,11 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
-using k8s;
-using k8s.Models;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
-using System;
-using System.Collections.Generic;
-using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Test
 {

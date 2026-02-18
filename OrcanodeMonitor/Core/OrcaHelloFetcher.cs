@@ -9,12 +9,57 @@ using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
 namespace OrcanodeMonitor.Core
 {
+    public class OrcaHelloDetectionLocation
+    {
+        public string Name { get; set; } = string.Empty;
+        public double Longitude { get; set; }
+        public double Latitude { get; set; }
+    }
+
+    public class OrcaHelloDetectionAnnotation
+    {
+        public int Id { get; set; }
+        public double StartTime { get; set; }
+        public double EndTime { get; set; }
+        public double Confidence { get; set; }
+    }
+
+    public class OrcaHelloDetection
+    {
+        public string Id { get; set; } = string.Empty;
+        public string AudioUri { get; set; } = string.Empty;
+        public string SpectrogramUri { get; set; } = string.Empty;
+        public OrcaHelloDetectionLocation Location { get; set; } = new();
+        public string Timestamp { get; set; } = string.Empty;
+        public List<OrcaHelloDetectionAnnotation> Annotations { get; set; } = new();
+        public bool Reviewed { get; set; }
+        public string? Found { get; set; }
+        public string? Comments { get; set; }
+        public double Confidence { get; set; }
+        public string? Moderator { get; set; }
+        public string Moderated { get; set; } = string.Empty;
+        public string? Tags { get; set; }
+        public override string ToString()
+        {
+            return $"{Location.Name}@{Timestamp}";
+        }
+        public bool IsPositive(Detection orcasiteDetection)
+        {
+            if (Found.ToLower() == "yes")
+            {
+                return true; // SRKW
+            }
+            return false;
+        }
+    }
+
     public class OrcaHelloFetcher
     {
         private readonly IKubernetes? _k8sClient;
@@ -434,7 +479,7 @@ namespace OrcanodeMonitor.Core
 
             string modelTimestamp = await GetPodModelTimestampAsync(bestPod);
 
-            long detectionCount = await Fetcher.GetOrcaHelloDetectionCountAsync(orcanode);
+            long detectionCount = await GetOrcaHelloDetectionCountAsync(orcanode);
 
             (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(namespaceName);
 
@@ -638,6 +683,106 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
+        /// Get all OrcaHello detections in the past week.
+        /// </summary>
+        /// <param name="logger">Logger</param>
+        /// <returns>List of AI detections in the past week</returns>
+        public async Task<List<OrcaHelloDetection>> GetRecentDetectionsAsync(ILogger logger)
+        {
+            long pageCount = 1;
+            var allDetections = new List<OrcaHelloDetection>();
+
+            try
+            {
+                for (long page = 1; page <= pageCount; page++)
+                {
+                    // The API is paginated, so we need to loop through pages until we've retrieved them all.
+                    var uri = new Uri($"https://aifororcasdetections.azurewebsites.net/api/detections?Timeframe=1w&Location=all&RecordsPerPage=50&Page={page}");
+
+                    using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+                    using var response = await Fetcher.HttpClient.SendAsync(request);
+
+                    // Get the total number of pages from the custom header. If the header is missing or invalid,
+                    // we'll just return the first page of results.
+                    if (response.Headers.TryGetValues("totalamountpages", out var values))
+                    {
+                        string headerValue = values?.FirstOrDefault() ?? string.Empty;
+                        if (long.TryParse(headerValue, out long totalAmountPages))
+                        {
+                            pageCount = totalAmountPages;
+                        }
+                    }
+
+                    string jsonString = await response.Content.ReadAsStringAsync();
+                    var detections = JsonSerializer.Deserialize<List<OrcaHelloDetection>>(
+                        jsonString,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    );
+
+                    if (detections != null)
+                    {
+                        allDetections.AddRange(detections);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"[GetOrcaHelloDetectionsAsync] Error retrieving detections: {ex}");
+            }
+
+            return allDetections;
+        }
+
+        /// <summary>
+        /// Get the number of OrcaHello detections for a given location in the past week.
+        /// </summary>
+        /// <param name="orcanode">Node to check</param>
+        /// <returns>Count of AI detections in the past week</returns>
+        public async Task<long> GetOrcaHelloDetectionCountAsync(Orcanode orcanode)
+        {
+            try
+            {
+                string location = Uri.EscapeDataString(orcanode.OrcaHelloDisplayName);
+
+                // Ask for a record of 1 page just to get the total count in a header.
+                // This should be more efficient than querying GetOrcaHelloDetectionsAsync
+                // to enumerate all of them just to get the count.
+                var uri = new Uri($"https://aifororcasdetections.azurewebsites.net/api/detections?Timeframe=1w&Location={location}&RecordsPerPage=1");
+
+                using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+                using var response = await Fetcher.HttpClient.SendAsync(request);
+                if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+                {
+                    return 0;
+                }
+                string jsonString = await response.Content.ReadAsStringAsync();
+                var detections = JsonSerializer.Deserialize<List<OrcaHelloDetection>>(
+                    jsonString,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                // Try to get the custom header.
+                if (!response.Headers.TryGetValues("totalnumberrecords", out var values))
+                {
+                    return 0;
+                }
+
+                string headerValue = values?.FirstOrDefault() ?? string.Empty;
+                if (!long.TryParse(headerValue, out long totalRecords))
+                {
+                    return 0;
+                }
+
+                return totalRecords;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[GetOrcaHelloDetectionCountAsync] Error retrieving detections: {ex}");
+                return 0;
+            }
+        }
+
+        /// <summary>
         /// Fetch OrcaHello detection counts in parallel.
         /// </summary>
         /// <param name="nodes">List of Orcanodes</param>
@@ -648,7 +793,7 @@ namespace OrcanodeMonitor.Core
             var detectionTasks = nodes.Select(async node => new
             {
                 Slug = node.OrcasoundSlug,
-                Count = await Fetcher.GetOrcaHelloDetectionCountAsync(node)
+                Count = await GetOrcaHelloDetectionCountAsync(node)
             });
             var results = await Task.WhenAll(detectionTasks);
             foreach (var result in results)
@@ -697,7 +842,7 @@ namespace OrcanodeMonitor.Core
                     string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
                     Orcanode? orcanode = orcanodes.Find(a => a.OrcasoundSlug == pod.Metadata.NamespaceProperty);
-                    long detectionCount = (orcanode != null) ? await Fetcher.GetOrcaHelloDetectionCountAsync(orcanode) : 0;
+                    long detectionCount = (orcanode != null) ? await GetOrcaHelloDetectionCountAsync(orcanode) : 0;
 
                     (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty);
 

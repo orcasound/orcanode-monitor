@@ -100,8 +100,7 @@ namespace OrcanodeMonitor.Models
             if (ModelGlobalThreshold.HasValue && ModelLocalThreshold.HasValue)
             {
                 int globalThreshold = ModelGlobalThreshold.Value;
-                int localThresholdPercent = (int)Math.Round(ModelLocalThreshold.Value * 100);
-                return $"{globalThreshold} @ {localThresholdPercent}%";
+                return $"{globalThreshold} @ {ModelLocalThreshold.Value:P0}";
             }
             return "Unknown";
         }

@@ -1,6 +1,5 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using k8s.Models;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using OrcanodeMonitor.Core;

@@ -644,7 +644,7 @@ namespace OrcanodeMonitor.Core
         public static async Task<List<Detection>?> GetRecentDetectionsAsync(ILogger logger)
         {
             string site = _orcasoundProdSite;
-            string url = $"https://{site}/api/json/detections?page%5Blimit%5D=500&page%5Boffset%5D=0&fields%5Bdetection%5D=id%2Cplaylist_timestamp%2Cplayer_offset%2Ctimestamp%2Cdescription%2Csource%2Ccategory%2Cfeed_id";
+            string url = $"https://{site}/api/json/detections?page%5Blimit%5D=500&page%5Boffset%5D=0&fields%5Bdetection%5D=id%2Cplaylist_timestamp%2Cplayer_offset%2Ctimestamp%2Cdescription%2Csource%2Ccategory%2Cfeed_id%2Cidempotency_key";
 
             try
             {
@@ -672,7 +672,8 @@ namespace OrcanodeMonitor.Core
                         Timestamp = d.Attributes?.Timestamp ?? default,
                         Source = d.Attributes?.Source ?? string.Empty,
                         Description = d.Attributes?.Description ?? string.Empty,
-                        Category = d.Attributes?.Category ?? string.Empty
+                        Category = d.Attributes?.Category ?? string.Empty,
+                        IdempotencyKey = d.Attributes?.IdempotencyKey ?? string.Empty,
                     }).ToList();
 
                 return detections;
@@ -721,7 +722,8 @@ namespace OrcanodeMonitor.Core
                         Timestamp = d.Attributes?.Timestamp ?? default,
                         Source = d.Attributes?.Source ?? string.Empty,
                         Description = d.Attributes?.Description ?? string.Empty,
-                        Category = d.Attributes?.Category ?? string.Empty
+                        Category = d.Attributes?.Category ?? string.Empty,
+                        IdempotencyKey = d.Attributes?.IdempotencyKey ?? string.Empty,
                     }).ToList();
 
                 return detections;
@@ -908,41 +910,6 @@ namespace OrcanodeMonitor.Core
                 }
             };
             return errorResponse;
-        }
-
-        /// <summary>
-        /// Get the number of OrcaHello detections for a given location in the past week.
-        /// </summary>
-        /// <param name="orcanode">Node to check</param>
-        /// <returns>Count of AI detections in the past week</returns>
-        public static async Task<long> GetOrcaHelloDetectionCountAsync(Orcanode orcanode)
-        {
-            try
-            {
-                string location = Uri.EscapeDataString(orcanode.OrcaHelloDisplayName);
-                var uri = new Uri($"https://aifororcasdetections.azurewebsites.net/api/detections?Timeframe=1w&Location={location}&RecordsPerPage=1");
-
-                using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-                using var response = await _httpClient.SendAsync(request);
-
-                // Try to get the custom header.
-                if (!response.Headers.TryGetValues("totalnumberrecords", out var values))
-                {
-                    return 0;
-                }
-
-                string headerValue = values?.FirstOrDefault() ?? string.Empty;
-                if (!long.TryParse(headerValue, out long totalRecords))
-                {
-                    return 0;
-                }
-
-                return totalRecords;
-            }
-            catch (Exception)
-            {
-                return 0;
-            }
         }
     }
 }
