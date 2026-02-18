@@ -31,7 +31,12 @@ namespace OrcanodeMonitor.Models
         #endregion persisted
 
         #region methods
-        public static MonitorState GetFrom(OrcanodeMonitorContext context)
+        /// <summary>
+        /// Do a synchronous (blocking) call to get MonitorState.
+        /// </summary>
+        /// <param name="context">Database context</param>
+        /// <returns>Monitor state</returns>
+        public static MonitorState GetFrom(IOrcanodeMonitorContext context)
         {
             MonitorState? state = context.MonitorState.Find(_singletonKey);
             if (state != null)

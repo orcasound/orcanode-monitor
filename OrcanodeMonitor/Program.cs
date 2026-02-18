@@ -1,45 +1,95 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using Microsoft.Extensions.Hosting;
-using OrcanodeMonitor.Core;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using OrcanodeMonitor.Data;
-using Microsoft.IdentityModel.Tokens;
-using System;
+using k8s;
 using Microsoft.Azure.Cosmos;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using OrcanodeMonitor.Core;
+using OrcanodeMonitor.Data;
+using OrcanodeMonitor.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 if (builder.Environment.IsDevelopment())
 {
     builder.Configuration.AddUserSecrets<Program>();
 }
-Fetcher.Initialize(builder.Configuration);
 
-// First try to get the connection string from configuration using the AZURE_COSMOS_CONNECTIONSTRING key
-// (e.g., from environment variables, user secrets, or JSON configuration).
-var connection = builder.Configuration["AZURE_COSMOS_CONNECTIONSTRING"];
-if (connection.IsNullOrEmpty())
+// Fetcher.GetConfig is only available after Fetcher.Initialize is called,
+// which we have to call after determining HttpClient which requires reading
+// the offline config first.
+HttpClient? httpClient = null;
+ILoggerFactory? loggerFactory = null;
+OrcasiteTestHelper.MockOrcasiteHelperContainer? container = null;
+string isOffline = builder.Configuration?["ORCANODE_MONITOR_OFFLINE"] ?? "false";
+if (isOffline == "true")
 {
-    connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
+    Fetcher.IsOffline = true;
+    loggerFactory = LoggerFactory.Create(b => b.AddConsole());
+    var logger = loggerFactory.CreateLogger<Program>();
+    container = OrcasiteTestHelper.GetMockOrcasiteHelperWithRequestVerification(logger);
+    httpClient = container.MockHttp.ToHttpClient();
 }
 
-string isReadOnly = builder.Configuration["ORCANODE_MONITOR_READONLY"] ?? "false";
+Fetcher.Initialize(builder.Configuration, httpClient);
+
+string isReadOnly = Fetcher.GetConfig("ORCANODE_MONITOR_READONLY") ?? "false";
 if (isReadOnly == "true")
 {
     Fetcher.IsReadOnly = true;
 }
 
-string databaseName = builder.Configuration["AZURE_COSMOS_DATABASENAME"] ?? "orcasound-cosmosdb";
-
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
+if (Fetcher.IsOffline) // Use Test data with in-memory database.
+{
+    // Configure an in-memory database for offline/test mode so that OrcanodeMonitorContext
+    // has a valid EF Core provider without requiring Cosmos DB.
+    builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
+        options.UseInMemoryDatabase("OrcanodeMonitorOffline"));
+
+    // TODO: get nodes from file.
+    var node = new Orcanode { OrcasoundSlug = "andrews-bay" };
+
+    OrcaHelloFetcher orcaHelloFetcher = OrcasiteTestHelper.GetMockOrcaHelloFetcher(node);
+
+    // Register Kubernetes client.
+    builder.Services.AddSingleton<IKubernetes>(sp =>
+    {
+        return orcaHelloFetcher.K8sClient;
+    });
+
+    // Register OrcaHelloFetcher.
+    builder.Services.AddSingleton<OrcaHelloFetcher>(orcaHelloFetcher);
+}
+else // Use Cosmos DB.
+{
+    // First see if an environment variable specifies a connection string.
+    var connection = Fetcher.GetConfig("AZURE_COSMOS_CONNECTIONSTRING");
+    if (connection.IsNullOrEmpty())
+    {
+        connection = builder.Configuration.GetConnectionString("OrcanodeMonitorContext") ?? throw new InvalidOperationException("Connection string 'OrcanodeMonitorContext' not found.");
+    }
+
+    string databaseName = Fetcher.GetConfig("AZURE_COSMOS_DATABASENAME") ?? "orcasound-cosmosdb";
+
+    builder.Services.AddDbContext<OrcanodeMonitorContext>(options =>
     options.UseCosmos(
         connection,
         databaseName: databaseName,
         options =>
         { options.ConnectionMode(ConnectionMode.Gateway); }));
+
+    // Register Kubernetes client.
+    builder.Services.AddSingleton<IKubernetes>(sp =>
+    {
+        var logger = sp.GetRequiredService<ILogger<Program>>();
+        return OrcaHelloFetcher.CreateK8sClient(logger);
+    });
+
+    // Register OrcaHelloFetcher.
+    builder.Services.AddSingleton<OrcaHelloFetcher>();
+}
+
 builder.Services.AddHostedService<PeriodicTasks>(); // Register your background service
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -66,6 +116,12 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
 
     var context = services.GetRequiredService<OrcanodeMonitorContext>();
+
+    // Seed sample data for offline mode
+    if (Fetcher.IsOffline)
+    {
+        context.Database.EnsureCreated();
+    }
 }
 
 app.UseHttpsRedirection();

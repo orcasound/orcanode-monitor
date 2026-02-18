@@ -1,0 +1,25 @@
+[
+  {
+    "id":"840b5e6d-ab20-4978-9add-4fc74c933c4f",
+    "audioUri":"https://livemlaudiospecstorage.blob.core.windows.net/audiowavs/rpi_sunset_bay_2026_02_16_22_43_10_PST.wav",
+    "spectrogramUri":"https://livemlaudiospecstorage.blob.core.windows.net/spectrogramspng/rpi_sunset_bay_2026_02_16_22_43_10_PST.png",
+    "location":{
+      "name":"Sunset Bay",
+      "longitude":-122.33393605795372,
+      "latitude":47.86497296593844
+    },
+    "timestamp":"2026-02-17T06:43:10Z",
+    "annotations":[
+       {"id":1,"startTime":0,"endTime":1.01694915254237,"confidence":0.515658259391785},
+       {"id":2,"startTime":16.271186440678,"endTime":17.28813559322037,"confidence":0.817008048295975},
+       {"id":3,"startTime":20.3389830508475,"endTime":21.35593220338987,"confidence":0.530202761292458}
+    ],
+    "reviewed":false,
+    "found":"No",
+    "comments":null,
+    "confidence":62.0956356326739,
+    "moderator":null,
+    "moderated":"0001-01-01T00:00:00",
+    "tags":null
+  }
+]

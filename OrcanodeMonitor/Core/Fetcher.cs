@@ -1,7 +1,5 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using k8s;
-using k8s.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Mono.TextTemplating;
@@ -10,36 +8,39 @@ using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Dynamic;
 using System.Net;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace OrcanodeMonitor.Core
 {
     public class Fetcher
     {
-        private static TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
-        private static HttpClient _httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+        private readonly static TimeZoneInfo _pacificTimeZone = TimeZoneInfo.FindSystemTimeZoneById("America/Los_Angeles");
+        private readonly static HttpClient _realHttpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+        private static HttpClient _httpClient = _realHttpClient;
+        public static HttpClient HttpClient => _httpClient;
         private static string _orcasoundProdSite = "live.orcasound.net";
         private static string _orcasoundFeedsUrlPath = "/api/json/feeds";
-        private static string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
         private static DateTime _unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
         private static string _iftttServiceKey = string.Empty;
         public static bool IsReadOnly = false;
-        private static string _defaultProdS3Bucket = "audio-orcasound-net";
-        private static string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
+        public static bool IsOffline = false;
         public static string IftttServiceKey => _iftttServiceKey;
-        private static Kubernetes? _k8sClient = null;
         private static IConfiguration? _config = null;
-        public static void Initialize(IConfiguration config)
+        public static string? GetConfig(string key) => _config?[key] ?? null;
+        public static void Initialize(IConfiguration config, HttpClient? httpClient)
         {
             _config = config;
-            _k8sClient = GetK8sClient();
             _iftttServiceKey = _config?["IFTTT_SERVICE_KEY"] ?? "<unknown>";
+            _httpClient = (httpClient != null) ? httpClient : _realHttpClient;
+            MezmoFetcher.Initialize(_httpClient);
         }
+
+        public static void Uninitialize()
+        {
+            _httpClient = _realHttpClient;
+            MezmoFetcher.Uninitialize();
+        }
+
         public static IConfiguration? Configuration => _config;
 
         /// <summary>
@@ -66,7 +67,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="serial">Dataplicity serial number to look for</param>
         /// <param name="connectionStatus">Dataplicity connection status</param>
         /// <returns></returns>
-        private static Orcanode? FindOrcanodeByDataplicitySerial(List<Orcanode> nodes, string serial, out OrcanodeOnlineStatus connectionStatus)
+        public static Orcanode? FindOrcanodeByDataplicitySerial(List<Orcanode> nodes, string serial, out OrcanodeOnlineStatus connectionStatus)
         {
             foreach (Orcanode node in nodes)
             {
@@ -105,7 +106,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="serial">Dataplicity serial number to look for</param>
         /// <param name="connectionStatus">Returns the dataplicity connection status</param>
         /// <returns></returns>
-        private static Orcanode FindOrCreateOrcanodeByDataplicitySerial(DbSet<Orcanode> nodeList, string serial, out OrcanodeOnlineStatus connectionStatus)
+        public static Orcanode FindOrCreateOrcanodeByDataplicitySerial(DbSet<Orcanode> nodeList, string serial, out OrcanodeOnlineStatus connectionStatus)
         {
             Orcanode? node = FindOrcanodeByDataplicitySerial(nodeList.ToList(), serial, out connectionStatus);
             if (node != null)
@@ -119,7 +120,7 @@ namespace OrcanodeMonitor.Core
             return newNode;
         }
 
-        private static Orcanode? FindOrcanodeByOrcasoundFeedId(List<Orcanode> nodes, string feedId)
+        public static Orcanode? FindOrcanodeByOrcasoundFeedId(List<Orcanode> nodes, string feedId)
         {
             foreach (Orcanode node in nodes)
             {
@@ -159,915 +160,13 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get whether the new container status is better than the old one.
-        /// </summary>
-        /// <param name="oldStatus">Old status</param>
-        /// <param name="newStatus">New status</param>
-        /// <returns>True if new is better, false if old is better</returns>
-        private static bool IsBetterContainerStatus(V1ContainerStatus? oldStatus, V1ContainerStatus newStatus)
-        {
-            if (oldStatus == null)
-            {
-                return true;
-            }
-
-            var oldState = oldStatus.State;
-            var newState = newStatus.State;
-
-            bool oldRunning = oldState?.Running != null;
-            bool newRunning = newState?.Running != null;
-            if (newRunning && !oldRunning)
-            {
-                return true;
-            }
-
-            if (!newRunning && oldRunning)
-            {
-                return false;
-            }
-
-            bool oldTerminated = oldState?.Terminated != null;
-            bool newTerminated = newState?.Terminated != null;
-            // Prefer non-terminated over terminated when neither is running.
-            if (!newTerminated && oldTerminated)
-            {
-                return true;
-            }
-
-            if (newTerminated && !oldTerminated)
-            {
-                return false;
-            }
-
-            // If both running, prefer the most recent start
-            if (newRunning && oldRunning)
-            {
-                DateTime? nStart = newState!.Running!.StartedAt;
-                DateTime? oStart = oldState!.Running!.StartedAt;
-                if (nStart.HasValue && oStart.HasValue)
-                {
-                    return nStart > oStart;
-                }
-
-                if (nStart.HasValue)
-                {
-                    return true;
-                }
-
-                if (oStart.HasValue)
-                {
-                    return false;
-                }
-            }
-
-            // If both terminated, prefer the most recent finish (use State.Terminated).
-            if (newTerminated && oldTerminated)
-            {
-                DateTime? nFinish = newState!.Terminated!.FinishedAt;
-                DateTime? oFinish = oldState!.Terminated!.FinishedAt;
-                if (nFinish.HasValue && oFinish.HasValue)
-                {
-                    return nFinish > oFinish;
-                }
-
-                if (nFinish.HasValue)
-                {
-                    return true;
-                }
-
-                if (oFinish.HasValue)
-                {
-                    return false;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Get the best status of any inference container in the pod.
-        /// </summary>
-        /// <param name="pod">pod to look in</param>
-        /// <returns>Container status</returns>
-        private static V1ContainerStatus? GetBestContainerStatus(V1Pod pod)
-        {
-            if (pod.Status?.ContainerStatuses == null)
-            {
-                return null;
-            }
-
-            V1ContainerStatus? bestPodStatus = null;
-            foreach (V1ContainerStatus podStatus in pod.Status.ContainerStatuses)
-            {
-                if (IsBetterContainerStatus(bestPodStatus, podStatus))
-                {
-                    bestPodStatus = podStatus;
-                }
-            }
-            return bestPodStatus;
-        }
-
-        /// <summary>
-        /// Get the best pod status.
-        /// </summary>
-        /// <param name="nodepods">List of pods</param>
-        /// <param name="bestPod">Returns the best pod</param>
-        /// <param name="bestPodStatus">Returns the best pod status</param>
-        private static void GetBestPodStatus(IEnumerable<V1Pod> nodepods, out V1Pod? bestPod, out V1ContainerStatus? bestPodStatus)
-        {
-            bestPod = null;
-            bestPodStatus = null;
-            foreach (var pod in nodepods)
-            {
-                if (pod.Status?.ContainerStatuses == null)
-                {
-                    continue;
-                }
-
-                // Only process inference-system pods, skipping any benchmark and other auxiliary pods.
-                var podName = pod.Metadata?.Name;
-                if (string.IsNullOrEmpty(podName) || !podName.StartsWith("inference-system"))
-                {
-                    continue;
-                }
-
-                foreach (V1ContainerStatus podStatus in pod.Status.ContainerStatuses)
-                {
-                    if (IsBetterContainerStatus(bestPodStatus, podStatus))
-                    {
-                        bestPod = pod;
-                        bestPodStatus = podStatus;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// A pod is considered stable if it has been running for at least this many hours.
-        /// </summary>
-        const int RestartStabilityHours = 6;
-
-        private static Kubernetes? GetK8sClient()
-        {
-            string? k8sCACert = _config?["KUBERNETES_CA_CERT"];
-            if (k8sCACert == null)
-            {
-                return null;
-            }
-            byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
-            using (var caCert = new X509Certificate2(caCertBytes))
-            {
-                string? host = _config?["KUBERNETES_SERVICE_HOST"];
-                if (string.IsNullOrEmpty(host))
-                {
-                    return null;
-                }
-                string? accessToken = _config?["KUBERNETES_TOKEN"];
-                if (string.IsNullOrEmpty(accessToken))
-                {
-                    return null;
-                }
-                var config = new KubernetesClientConfiguration
-                {
-                    Host = host,
-                    AccessToken = accessToken,
-                    SslCaCerts = new X509Certificate2Collection(caCert)
-                };
-
-                var client = new Kubernetes(config);
-                return client;
-            }
-        }
-
-        /// <summary>
-        /// Exec into a pod running to get the output of a command.
-        /// </summary>
-        /// <param name="podName">name of pod to exec into</param>
-        /// <param name="namespaceName">pod namespace</param>
-        /// <param name="cmd">The command to execute in the pod.</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the specified command executed in the pod, as a string.</returns>
-        private async static Task<string> GetPodCommandOutput(string podName, string namespaceName, string[] cmd)
-        {
-            Kubernetes? client = _k8sClient;
-            if (client == null)
-            {
-                return string.Empty;
-            }
-
-            var sb = new StringBuilder();
-            ExecAsyncCallback callback = async (stdIn, stdOut, stdErr) =>
-            {
-                using var readerOut = new StreamReader(stdOut);
-                using var readerErr = new StreamReader(stdErr);
-
-                string outText = await readerOut.ReadToEndAsync();
-                string errText = await readerErr.ReadToEndAsync();
-
-                sb.Append(outText);
-                sb.Append(errText);
-            };
-
-            try
-            {
-                await client.NamespacedPodExecAsync(
-                    name: podName,
-                    @namespace: namespaceName,
-                    container: null,
-                    command: cmd,
-                    tty: false,
-                    action: callback,
-                    cancellationToken: CancellationToken.None
-                );
-            }
-            catch (Exception ex)
-            {
-                // Optionally log the exception here if logging is available
-                Console.Error.WriteLine($"[GetPodCommandOutput] Error retrieving node info for '{namespaceName}': {ex.Message}");
-                return string.Empty;
-            }
-
-            return sb.ToString();
-        }
-
-        /// <summary>
-        /// Exec into a pod running to get CPU info.
-        /// </summary>
-        /// <param name="podName">name of pod to exec into</param>
-        /// <param name="namespaceName">namespace of pod to exec into</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the <c>lscpu</c> command executed in the pod, as a string.</returns>
-        private async static Task<string> GetPodLscpuOutputAsync(string podName, string namespaceName)
-        {
-            string[] cmd = { "lscpu" };
-            return await GetPodCommandOutput(podName, namespaceName, cmd);
-        }
-
-
-        /// <summary>
-        /// Exec into a pod running to get model info.
-        /// </summary>
-        /// <param name="pod">pod to exec into</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the command executed in the pod, as a string.</returns>
-        private async static Task<string> GetPodModelTimestampAsync(V1Pod pod)
-        {
-            string[] command = { "stat", "-c", "%y", "/usr/src/app/model/model.pkl" };
-            return await GetPodCommandOutput(pod.Metadata.Name, pod.Metadata.NamespaceProperty, command);
-        }
-
-        /// <summary>
-        /// Get an object representing a node hosting an OrcaHello inference pod.
-        /// </summary>
-        /// <param name="nodeName">OrcaHello node name</param>
-        /// <returns>OrcaHelloNode</returns>
-        public async static Task<OrcaHelloNode?> GetOrcaHelloNodeAsync(string nodeName)
-        {
-            Kubernetes? client = _k8sClient;
-            if (client == null)
-            {
-                return null;
-            }
-
-            try
-            {
-                V1Node node = await client.ReadNodeAsync(nodeName);
-
-                NodeMetricsList nodeMetricsList = await client.GetKubernetesNodesMetricsAsync();
-                NodeMetrics? nodeMetrics = nodeMetricsList.Items.FirstOrDefault(n => n.Metadata.Name == nodeName);
-                string cpuUsage = nodeMetrics?.Usage.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
-                string memoryUsage = nodeMetrics?.Usage.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
-
-                string lscpuOutput = string.Empty;
-                V1PodList v1Pods = await client.ListPodForAllNamespacesAsync();
-                List<V1Pod> allPodsOnNode = v1Pods.Items
-                    .Where(p => p.Spec.NodeName == nodeName)
-                    .ToList();
-
-                GetBestPodStatus(allPodsOnNode, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
-                if (bestPod != null && bestPod.Metadata != null)
-                {
-                    lscpuOutput = await GetPodLscpuOutputAsync(bestPod.Metadata.Name, bestPod.Metadata.NamespaceProperty);
-                }
-
-                PodMetricsList podMetrics = await client.GetKubernetesPodsMetricsAsync();
-                return new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput, v1Pods.Items, podMetrics.Items);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[GetOrcaHelloNodeAsync] Error retrieving node info for '{nodeName}': {ex}");
-                return null;
-            }
-        }
-
-        /// <summary>
-        /// Get model thresholds from the hydrophone-configs ConfigMap.
-        /// </summary>
-        /// <param name="namespaceName">Namespace name</param>
-        /// <returns>Tuple of (localThreshold, globalThreshold) or (null, null) if not found</returns>
-        private static async Task<(double? localThreshold, int? globalThreshold)> GetModelThresholdsAsync(string namespaceName)
-        {
-            Kubernetes? client = _k8sClient;
-            if (client == null)
-            {
-                return (null, null);
-            }
-
-            try
-            {
-                V1ConfigMap configMap = await client.ReadNamespacedConfigMapAsync(
-                    name: "hydrophone-configs",
-                    namespaceParameter: namespaceName);
-
-                if (configMap.Data != null && configMap.Data.TryGetValue("config.yml", out string? yamlContent))
-                {
-                    var deserializer = new DeserializerBuilder()
-                        .WithNamingConvention(UnderscoredNamingConvention.Instance)
-                        .Build();
-
-                    var config = deserializer.Deserialize<Dictionary<string, object>>(yamlContent);
-
-                    double? localThreshold = null;
-                    int? globalThreshold = null;
-
-                    if (config.TryGetValue("model_local_threshold", out object? localValue))
-                    {
-                        if (localValue is double d)
-                        {
-                            localThreshold = d;
-                        }
-                        else if (double.TryParse(localValue?.ToString(), out double parsed))
-                        {
-                            localThreshold = parsed;
-                        }
-                    }
-
-                    if (config.TryGetValue("model_global_threshold", out object? globalValue))
-                    {
-                        if (globalValue is int i)
-                        {
-                            globalThreshold = i;
-                        }
-                        else if (int.TryParse(globalValue?.ToString(), out int parsed))
-                        {
-                            globalThreshold = parsed;
-                        }
-                    }
-
-                    return (localThreshold, globalThreshold);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[GetModelThresholdsAsync] Error retrieving ConfigMap for namespace '{namespaceName}': {ex.Message}");
-            }
-
-            return (null, null);
-        }
-
-        /// <summary>
-        /// Get an object representing an OrcaHello inference pod.
-        /// </summary>
-        /// <param name="orcanode">Orcanode object associated with the pod</param>
-        /// <param name="namespaceName">Namespace name</param>
-        /// <returns>OrcaHelloPod</returns>
-        public async static Task<OrcaHelloPod?> GetOrcaHelloPodAsync(Orcanode orcanode, string namespaceName)
-        {
-            Kubernetes? client = _k8sClient;
-            if (client == null)
-            {
-                return null;
-            }
-
-            V1PodList pods = await client.ListNamespacedPodAsync(namespaceName);
-            GetBestPodStatus(pods.Items, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
-            if (bestPod == null)
-            {
-                return null;
-            }
-
-            PodMetricsList? metricsList = await client.GetKubernetesPodsMetricsByNamespaceAsync(namespaceName);
-            PodMetrics? podMetric = metricsList?.Items?.FirstOrDefault(n => n.Metadata?.Name?.StartsWith("inference-system-") == true);
-            var container = podMetric?.Containers.FirstOrDefault(c => c.Name == "inference-system");
-            string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
-            string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
-
-            string modelTimestamp = await GetPodModelTimestampAsync(bestPod);
-
-            long detectionCount = await GetDetectionCountAsync(orcanode);
-
-            (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(namespaceName);
-
-            return new OrcaHelloPod(bestPod, cpuUsage, memoryUsage, modelTimestamp, detectionCount, localThreshold, globalThreshold);
-        }
-
-        /// <summary>
-        /// Get pod logs
-        /// </summary>
-        /// <param name="container">Container</param>
-        /// <param name="namespaceName">Namespace</param>
-        /// <param name="logger">Logger</param>
-        /// <returns>Log</returns>
-        public async static Task<string> GetOrcaHelloLogAsync(OrcaHelloPod? container, string namespaceName, ILogger logger)
-        {
-            if (container == null)
-            {
-                return string.Empty;
-            }
-            string podName = container.Name;
-
-            Kubernetes? client = _k8sClient;
-            if (client == null)
-            {
-                return string.Empty;
-            }
-
-            try
-            {
-                Stream? logs = await client.ReadNamespacedPodLogAsync(
-                    name: podName,
-                    namespaceParameter: namespaceName,
-                    tailLines: 300);
-                if (logs == null)
-                {
-                    return string.Empty;
-                }
-                using var reader = new StreamReader(logs);
-                string text = reader.ReadToEnd();
-
-                // Split into lines, filter, and rejoin
-                var filtered = string.Join(
-                    Environment.NewLine,
-                    Regex.Split(text, "\r?\n")
-                        .Where(line => !line.StartsWith("INSTRUMENTATION KEY:", StringComparison.OrdinalIgnoreCase))
-                );
-
-                return filtered;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, $"Exception in GetOrcaHelloLogAsync: {ex.Message}");
-                return string.Empty;
-            }
-        }
-
-        /// <summary>
-        /// Update the list of Orcanodes using data about InferenceSystem containers in Azure.
-        /// </summary>
-        /// <param name="context">Database context to update</param>
-        /// <param name="logger">Logger</param>
-        /// <returns></returns>
-        public async static Task UpdateOrcaHelloDataAsync(OrcanodeMonitorContext context, ILogger logger)
-        {
-            try
-            {
-                Kubernetes? client = _k8sClient;
-                if (client == null)
-                {
-                    return;
-                }
-
-                // Get a snapshot to use during the loop to avoid multiple queries.
-                var foundList = await context.Orcanodes.ToListAsync();
-
-                // Create a list to track what nodes are no longer returned.
-                var unfoundList = foundList.ToList();
-
-                var pods = await client.ListPodForAllNamespacesAsync();
-                foreach (Orcanode node in foundList)
-                {
-                    string slug = node.OrcasoundSlug;
-                    if (slug.IsNullOrEmpty())
-                    {
-                        // No slug, so can't match.
-                        continue;
-                    }
-                    var nodepods = pods.Items.Where(p => p.Metadata?.NamespaceProperty == slug);
-                    GetBestPodStatus(nodepods, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
-                    node.OrcaHelloInferenceRestartCount = 0;
-                    if (bestPod != null)
-                    {
-                        node.OrcaHelloId = bestPod.Metadata?.Name ?? string.Empty;
-
-                        // Remove the returned node from the unfound list only when a pod matched.
-                        var nodeToRemove = unfoundList.Find(a => a.OrcasoundSlug == node.OrcasoundSlug);
-                        if (nodeToRemove != null)
-                        {
-                            unfoundList.Remove(nodeToRemove);
-                        }
-
-                        string podName = bestPod?.Metadata?.Name ?? string.Empty;
-                        if (string.IsNullOrEmpty(podName))
-                        {
-                            continue;
-                        }
-
-                        if (bestContainerStatus?.Ready ?? false)
-                        {
-                            Stream? logs = await client.ReadNamespacedPodLogAsync(
-                                name: podName,
-                                namespaceParameter: slug,
-                                tailLines: 300);
-                            if (logs != null)
-                            {
-                                int lastLiveIndex = -1;
-                                using var reader = new StreamReader(logs);
-                                string line;
-                                while ((line = await reader.ReadLineAsync()) != null)
-                                {
-                                    Match m = Regex.Match(line, @"(?<=live)\d+(?=\.ts)");
-                                    if (m.Success)
-                                    {
-                                        lastLiveIndex = int.Parse(m.Value);
-                                    }
-                                }
-
-                                if (lastLiveIndex >= 0)
-                                {
-                                    // TODO: below is the second call to GetLatestS3TimestampAsync.
-                                    // We should cache result from before instead of calling it a second time.
-                                    TimestampResult? result = await GetLatestS3TimestampAsync(node, true, logger);
-                                    if (result?.Offset != null)
-                                    {
-                                        DateTimeOffset offset = result.Offset.Value;
-                                        DateTimeOffset clipEndTime = offset.AddSeconds((lastLiveIndex * 10) + 12);
-                                        DateTimeOffset now = DateTimeOffset.UtcNow;
-                                        node.OrcaHelloInferencePodLag = now - clipEndTime;
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            // Pod is not ready; clear any stale lag value.
-                            node.OrcaHelloInferencePodLag = null;
-                        }
-                    }
-                    else
-                    {
-                        // No pod matched; clear any stale ID.
-                        node.OrcaHelloId = string.Empty;
-                    }
-
-                    if (bestContainerStatus != null)
-                    {
-                        node.OrcaHelloInferenceImage = bestContainerStatus.Image ?? string.Empty;
-                        node.OrcaHelloInferencePodReady = bestContainerStatus.Ready;
-                        DateTime? runningSince = bestContainerStatus.State?.Running?.StartedAt;
-                        if (runningSince != null)
-                        {
-                            node.OrcaHelloInferencePodRunningSince = runningSince;
-                        }
-                        if ((runningSince == null) || (DateTime.UtcNow - runningSince < TimeSpan.FromHours(RestartStabilityHours)))
-                        {
-                            node.OrcaHelloInferenceRestartCount = bestContainerStatus.RestartCount;
-                        }
-                    }
-                    else
-                    {
-                        node.OrcaHelloInferenceImage = string.Empty;
-                        node.OrcaHelloInferencePodReady = false;
-                    }
-                }
-
-                // Mark any remaining unfound nodes as absent.
-                foreach (Orcanode unfoundNode in unfoundList)
-                {
-                    Orcanode? oldNode = null;
-                    if (!unfoundNode.OrcasoundFeedId.IsNullOrEmpty())
-                    {
-                        oldNode = FindOrcanodeByOrcasoundFeedId(foundList, unfoundNode.OrcasoundFeedId);
-                    }
-                    else if (!unfoundNode.DataplicitySerial.IsNullOrEmpty())
-                    {
-                        oldNode = FindOrcanodeByDataplicitySerial(foundList, unfoundNode.DataplicitySerial, out OrcanodeOnlineStatus connectionStatus);
-                    }
-                    if (oldNode != null)
-                    {
-                        oldNode.OrcaHelloId = String.Empty;
-                    }
-                }
-
-                MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
-                await SaveChangesAsync(context);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, $"Exception in UpdateOrcaHelloDataAsync: {ex.Message}");
-            }
-        }
-
-        public async static Task<string> GetDataplicityDataAsync(string serial, ILogger logger)
-        {
-            try
-            {
-                string? orcasound_dataplicity_token = _config?["ORCASOUND_DATAPLICITY_TOKEN"];
-                if (orcasound_dataplicity_token == null)
-                {
-                    logger.LogError("ORCASOUND_DATAPLICITY_TOKEN not found");
-                    return string.Empty;
-                }
-
-                string url = _dataplicityDevicesUrl;
-                if (!serial.IsNullOrEmpty())
-                {
-                    url += serial + "/";
-                }
-
-                using (var request = new HttpRequestMessage
-                {
-                    RequestUri = new Uri(url),
-                    Method = HttpMethod.Get,
-                })
-                {
-                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_dataplicity_token);
-                    using HttpResponseMessage response = await _httpClient.SendAsync(request);
-                    response.EnsureSuccessStatusCode();
-                    return await response.Content.ReadAsStringAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, $"Exception in GetDataplicityDataAsync: {ex.Message}");
-                return string.Empty;
-            }
-        }
-
-        /// <summary>
-        /// Reboot a hydrophone node.
-        /// </summary>
-        /// <param name="node">Node to reboot</param>
-        /// <param name="logger">Logger object</param>
-        /// <returns>true on success, false on failure</returns>
-        public async static Task<bool> RebootDataplicityDeviceAsync(Orcanode node, ILogger logger)
-        {
-            try
-            {
-                string deviceJson = await GetDataplicityDataAsync(node.DataplicitySerial, logger);
-                if (deviceJson.IsNullOrEmpty())
-                {
-                    logger.LogWarning($"Node {node.DisplayName} needs a reboot, but couldn't get its Dataplicity data.");
-                    return false;
-                }
-
-                // Parse out the reboot URL from the device JSON.
-                var device = JsonSerializer.Deserialize<JsonElement>(deviceJson);
-                if (device.ValueKind != JsonValueKind.Object)
-                {
-                    logger.LogError($"Invalid device kind in RebootDataplicityDeviceAsync: {device.ValueKind}");
-                    return false;
-                }
-                if (!device.TryGetProperty("reboot_url", out JsonElement rebootUrl))
-                {
-                    logger.LogError($"Missing reboot_url in RebootDataplicityDeviceAsync result");
-                    return false;
-                }
-                if (rebootUrl.ValueKind != JsonValueKind.String)
-                {
-                    logger.LogError($"Invalid reboot_url kind in RebootDataplicityDeviceAsync: {rebootUrl.ValueKind}");
-                    return false;
-                }
-                string rebootUrlString = rebootUrl.ToString();
-                if (rebootUrlString.IsNullOrEmpty())
-                {
-                    logger.LogError($"Empty reboot_url in RebootDataplicityDeviceAsync result");
-                    return false;
-                }
-
-                // Validate URL to avoid Server-Side Request Forgery.
-                if (!Uri.TryCreate(rebootUrlString, UriKind.Absolute, out var rebootUri))
-                {
-                    logger.LogError("Invalid reboot_url format in RebootDataplicityDeviceAsync");
-                    return false;
-                }
-                var host = rebootUri.IdnHost;
-                bool hostAllowed =
-                    host.Equals("dataplicity.com", StringComparison.OrdinalIgnoreCase) ||
-                    host.EndsWith(".dataplicity.com", StringComparison.OrdinalIgnoreCase);
-                if (!rebootUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) || !hostAllowed)
-                {
-                    logger.LogError($"Blocked non-Dataplicity reboot_url: {rebootUri}");
-                    return false;
-                }
-                if (!rebootUri.IsDefaultPort && rebootUri.Port != 443)
-                {
-                    logger.LogError($"Blocked non-standard port in reboot_url: {rebootUri}");
-                    return false;
-                }
-
-                // Get the dataplicity auth token.
-                string? orcasound_dataplicity_token = _config?["ORCASOUND_DATAPLICITY_TOKEN"];
-                if (orcasound_dataplicity_token == null)
-                {
-                    logger.LogError("ORCASOUND_DATAPLICITY_TOKEN not found");
-                    return false;
-                }
-
-                using (var request = new HttpRequestMessage
-                {
-                    RequestUri = new Uri(rebootUrlString),
-                    Method = HttpMethod.Post,
-                })
-                {
-                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_dataplicity_token);
-                    using HttpResponseMessage response = await _httpClient.SendAsync(request);
-                    response.EnsureSuccessStatusCode();
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, $"Exception in RebootDataplicityDeviceAsync: {ex.Message}");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Update Orcanode state by querying dataplicity.com.
-        /// </summary>
-        /// <param name="context">Database context to update</param>
-        /// <param name="logger"></param>
-        /// <returns></returns>
-        public async static Task UpdateDataplicityDataAsync(OrcanodeMonitorContext context, ILogger logger)
-        {
-            try
-            {
-                string jsonArray = await GetDataplicityDataAsync(string.Empty, logger);
-                if (jsonArray.IsNullOrEmpty())
-                {
-                    // Indeterminate result, so don't update anything.
-                    return;
-                }
-
-                List<Orcanode> originalList = await context.Orcanodes.ToListAsync();
-
-                // Create a list to track what nodes are no longer returned.
-                var unfoundList = originalList.ToList();
-
-                dynamic deviceArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
-                if (deviceArray.ValueKind != JsonValueKind.Array)
-                {
-                    logger.LogError($"Invalid deviceArray kind in UpdateDataplicityDataAsync: {deviceArray.ValueKind}");
-                    return;
-                }
-                foreach (JsonElement device in deviceArray.EnumerateArray())
-                {
-                    if (!device.TryGetProperty("serial", out var serial))
-                    {
-                        logger.LogError($"Missing serial in UpdateDataplicityDataAsync result");
-                        continue;
-                    }
-                    if (serial.ToString().IsNullOrEmpty())
-                    {
-                        logger.LogError($"Empty serial in UpdateDataplicityDataAsync result");
-                        continue;
-                    }
-
-                    // Remove the found node from the unfound list.
-                    Orcanode? oldListNode = unfoundList.Find(a => a.DataplicitySerial == serial.ToString());
-                    if (oldListNode != null)
-                    {
-                        unfoundList.Remove(oldListNode);
-                    }
-
-                    Orcanode node = FindOrCreateOrcanodeByDataplicitySerial(context.Orcanodes, serial.ToString(), out OrcanodeOnlineStatus oldStatus);
-                    OrcanodeUpgradeStatus oldAgentUpgradeStatus = node.DataplicityUpgradeStatus;
-                    long oldDiskCapacityInGigs = node.DiskCapacityInGigs;
-
-                    if (device.TryGetProperty("name", out var name))
-                    {
-                        string dataplicityName = name.ToString();
-                        node.DataplicityName = dataplicityName;
-
-                        if (node.S3Bucket.IsNullOrEmpty() || (node.OrcasoundStatus == OrcanodeOnlineStatus.Absent))
-                        {
-                            node.S3Bucket = dataplicityName.ToLower().StartsWith("dev") ? _defaultDevS3Bucket : _defaultProdS3Bucket;
-                        }
-
-                        if (node.S3NodeName.IsNullOrEmpty() || (node.OrcasoundStatus == OrcanodeOnlineStatus.Absent))
-                        {
-                            // Fill in a non-authoritative default S3 node name.
-                            // Orcasound is authoritative here since our default is
-                            // just derived from the name, but there might be no
-                            // relation.  We use this to see if an S3 stream exists
-                            // even if Orcasound doesn't know about it.
-                            node.S3NodeName = Orcanode.DataplicityNameToS3Name(dataplicityName);
-                        }
-                    }
-                    if (device.TryGetProperty("online", out var online))
-                    {
-                        node.DataplicityOnline = online.GetBoolean();
-                    }
-                    if (device.TryGetProperty("description", out var description))
-                    {
-                        node.DataplicityDescription = description.ToString();
-                    }
-                    if (device.TryGetProperty("agent_version", out var agentVersion))
-                    {
-                        node.AgentVersion = agentVersion.ToString();
-                    }
-                    if (device.TryGetProperty("disk_capacity", out var diskCapacity))
-                    {
-                        node.DiskCapacity = diskCapacity.GetInt64();
-                    }
-                    if (device.TryGetProperty("disk_used", out var diskUsed))
-                    {
-                        node.DiskUsed = diskUsed.GetInt64();
-                    }
-                    if (device.TryGetProperty("upgrade_available", out var upgradeAvailable))
-                    {
-                        node.DataplicityUpgradeAvailable = upgradeAvailable.GetBoolean();
-                    }
-                    if (oldStatus == OrcanodeOnlineStatus.Absent)
-                    {
-                        // Save changes to make the node have an ID before we can
-                        // possibly generate any events.
-                        await SaveChangesAsync(context);
-                    }
-
-                    // Trigger any event changes.
-                    OrcanodeOnlineStatus newStatus = node.DataplicityConnectionStatus;
-                    if (newStatus != oldStatus)
-                    {
-                        AddDataplicityConnectionStatusEvent(context, node, logger);
-                    }
-                    if (oldStatus != OrcanodeOnlineStatus.Absent)
-                    {
-                        if (oldAgentUpgradeStatus != node.DataplicityUpgradeStatus)
-                        {
-                            AddDataplicityAgentUpgradeStatusChangeEvent(context, node, logger);
-                        }
-                        if (oldDiskCapacityInGigs != node.DiskCapacityInGigs)
-                        {
-                            AddDiskCapacityChangeEvent(context, node, logger);
-                        }
-                    }
-                }
-
-                // Mark any remaining unfound nodes as absent.
-                foreach (var unfoundNode in unfoundList)
-                {
-                    var oldNode = FindOrcanodeByDataplicitySerial(originalList, unfoundNode.DataplicitySerial, out OrcanodeOnlineStatus unfoundNodeStatus);
-                    if (oldNode != null)
-                    {
-                        oldNode.DataplicityOnline = null;
-                    }
-                }
-
-                MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
-                await SaveChangesAsync(context);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, $"Exception in UpdateDataplicityDataAsync: {ex.Message}");
-            }
-        }
-
-        /// <summary>
-        /// Check for any nodes that need a reboot to fix a container restart issue.
-        /// </summary>
-        /// <param name="context">Database context to update</param>
-        /// <param name="logger"></param>
-        /// <returns></returns>
-        public async static Task CheckForRebootsNeededAsync(OrcanodeMonitorContext context, ILogger logger)
-        {
-            var originalList = await context.Orcanodes.ToListAsync();
-            foreach (Orcanode? node in originalList)
-            {
-                if (!node.NeedsRebootForContainerRestart)
-                {
-                    continue;
-                }
-                if (IsReadOnly)
-                {
-                    logger.LogInformation($"Node {node.DisplayName} needs a reboot, but we are in read-only mode.");
-                    continue;
-                }
-                if (node.DataplicitySerial.IsNullOrEmpty())
-                {
-                    logger.LogWarning($"Node {node.DisplayName} needs a reboot, but has no Dataplicity serial.");
-                    continue;
-                }
-                bool success = await RebootDataplicityDeviceAsync(node, logger);
-                if (success)
-                {
-                    logger.LogInformation($"Node {node.DisplayName} rebooted successfully.");
-                }
-                else
-                {
-                    logger.LogWarning($"Node {node.DisplayName} needs a reboot, but the reboot request failed.");
-                }
-
-                // Wait a bit to avoid hammering the Dataplicity API.
-                await Task.Delay(2000);
-            }
-        }
-
-        /// <summary>
         /// Get Orcasound data
         /// </summary>
-        /// <param name="context"></param>
-        /// <param name="site"></param>
-        /// <param name="logger"></param>
+        /// <param name="context">Database context</param>
+        /// <param name="site">Orcasound site to query</param>
+        /// <param name="logger">Logger</param>
         /// <returns>null on error, or JsonElement on success</returns>
-        private async static Task<JsonElement?> GetOrcasoundDataAsync(OrcanodeMonitorContext context, string site, ILogger logger)
+        private async static Task<JsonElement?> GetOrcasoundDataAsync(IOrcanodeMonitorContext context, string site, ILogger logger)
         {
             string url = "https://" + site + _orcasoundFeedsUrlPath;
             try
@@ -1101,7 +200,7 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        private static void UpdateOrcasoundNode(JsonElement feed, List<Orcanode> foundList, List<Orcanode> unfoundList, OrcanodeMonitorContext context, string site, ILogger logger)
+        private static void UpdateOrcasoundNode(JsonElement feed, List<Orcanode> foundList, List<Orcanode> unfoundList, IOrcanodeMonitorContext context, string site, ILogger logger)
         {
             if (!feed.TryGetProperty("id", out var feedId))
             {
@@ -1232,7 +331,7 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        private async static Task UpdateOrcasoundSiteDataAsync(OrcanodeMonitorContext context, string site, List<Orcanode> foundList, List<Orcanode> unfoundList, ILogger logger)
+        private async static Task UpdateOrcasoundDataAsync(IOrcanodeMonitorContext context, string site, List<Orcanode> foundList, List<Orcanode> unfoundList, ILogger logger)
         {
             JsonElement? dataArray = await GetOrcasoundDataAsync(context, site, logger);
             if (dataArray.HasValue)
@@ -1249,7 +348,7 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="context">The database context to save changes for.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        private static async Task SaveChangesAsync(OrcanodeMonitorContext context)
+        public static async Task SaveChangesAsync(IOrcanodeMonitorContext context)
         {
             if (!IsReadOnly)
             {
@@ -1261,9 +360,9 @@ namespace OrcanodeMonitor.Core
         /// Update the current list of Orcanodes using data from orcasound.net.
         /// </summary>
         /// <param name="context">Database context to update</param>
-        /// <param name="logger"></param>
+        /// <param name="logger">Logger</param>
         /// <returns></returns>
-        public async static Task UpdateOrcasoundDataAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task UpdateOrcasoundDataAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
             try
             {
@@ -1272,7 +371,7 @@ namespace OrcanodeMonitor.Core
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = foundList.ToList();
 
-                await UpdateOrcasoundSiteDataAsync(context, _orcasoundProdSite, foundList, unfoundList, logger);
+                await UpdateOrcasoundDataAsync(context, _orcasoundProdSite, foundList, unfoundList, logger);
 
                 // Mark any remaining unfound nodes as absent.
                 foreach (var unfoundNode in unfoundList)
@@ -1293,7 +392,7 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task UpdateS3DataAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
             try
             {
@@ -1430,7 +529,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="node">Orcanode to update</param>
         /// <param name="logger">Logger</param>
         /// <returns></returns>
-        public async static Task UpdateS3DataAsync(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
+        public async static Task UpdateS3DataAsync(IOrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
             OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
             TimestampResult? result = await GetLatestS3TimestampAsync(node, true, logger);
@@ -1468,7 +567,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="context">Database context</param>
         /// <param name="limit">Maximum number of events to return</param>
         /// <returns>List of events</returns>
-        public static async Task<List<OrcanodeEvent>> GetEventsAsync(OrcanodeMonitorContext context, int limit)
+        public static async Task<List<OrcanodeEvent>> GetEventsAsync(IOrcanodeMonitorContext context, int limit)
         {
             List<OrcanodeEvent> orcanodeEvents = await context.OrcanodeEvents.OrderByDescending(e => e.DateTimeUtc).Take(limit).ToListAsync();
             return orcanodeEvents;
@@ -1481,7 +580,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="since">Time to get events since</param>
         /// <param name="logger">Logger</param>
         /// <returns>null on error, or list of events on success</returns>
-        public static async Task<List<OrcanodeEvent>?> GetRecentEventsAsync(OrcanodeMonitorContext context, DateTime since, ILogger logger)
+        public static async Task<List<OrcanodeEvent>?> GetRecentEventsAsync(IOrcanodeMonitorContext context, DateTime since, ILogger logger)
         {
             try
             {
@@ -1516,7 +615,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="since">UTC time to get events since</param>
         /// <param name="logger">Logger</param>
         /// <returns>null on error, or list of events on success</returns>
-        public static async Task<List<OrcanodeEvent>?> GetRecentEventsForNodeAsync(OrcanodeMonitorContext context, string id, DateTime since, ILogger logger)
+        public static async Task<List<OrcanodeEvent>?> GetRecentEventsForNodeAsync(IOrcanodeMonitorContext context, string id, DateTime since, ILogger logger)
         {
             try
             {
@@ -1533,6 +632,55 @@ namespace OrcanodeMonitor.Core
             catch (Exception ex)
             {
                 logger.LogError(ex, $"Failed to fetch events for node {id}");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Get recent detections.
+        /// </summary>
+        /// <param name="logger">Logger</param>
+        /// <returns>null on error, or list of detections on success</returns>
+        public static async Task<List<Detection>?> GetRecentDetectionsAsync(ILogger logger)
+        {
+            string site = _orcasoundProdSite;
+            string url = $"https://{site}/api/json/detections?page%5Blimit%5D=500&page%5Boffset%5D=0&fields%5Bdetection%5D=id%2Cplaylist_timestamp%2Cplayer_offset%2Ctimestamp%2Cdescription%2Csource%2Ccategory%2Cfeed_id%2Cidempotency_key";
+
+            try
+            {
+                string jsonString = await _httpClient.GetStringAsync(url);
+                if (jsonString.IsNullOrEmpty())
+                {
+                    // Error.
+                    return null;
+                }
+
+                var response = JsonSerializer.Deserialize<DetectionResponse>(
+                    jsonString,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+                if (response?.Data == null)
+                {
+                    return null;
+                }
+
+                List<Detection> detections =
+                    response.Data.Select(d => new Detection
+                    {
+                        ID = d.Id,
+                        NodeID = d.Attributes?.FeedId ?? string.Empty,
+                        Timestamp = d.Attributes?.Timestamp ?? default,
+                        Source = d.Attributes?.Source ?? string.Empty,
+                        Description = d.Attributes?.Description ?? string.Empty,
+                        Category = d.Attributes?.Category ?? string.Empty,
+                        IdempotencyKey = d.Attributes?.IdempotencyKey ?? string.Empty,
+                    }).ToList();
+
+                return detections;
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, $"Exception in GetRecentDetectionsAsync: {ex.Message}");
                 return null;
             }
         }
@@ -1574,7 +722,8 @@ namespace OrcanodeMonitor.Core
                         Timestamp = d.Attributes?.Timestamp ?? default,
                         Source = d.Attributes?.Source ?? string.Empty,
                         Description = d.Attributes?.Description ?? string.Empty,
-                        Category = d.Attributes?.Category ?? string.Empty
+                        Category = d.Attributes?.Category ?? string.Empty,
+                        IdempotencyKey = d.Attributes?.IdempotencyKey ?? string.Empty,
                     }).ToList();
 
                 return detections;
@@ -1586,32 +735,14 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public static void AddOrcanodeEvent(OrcanodeMonitorContext context, ILogger logger, Orcanode node, string type, string value, string? url = null)
+        public static void AddOrcanodeEvent(IOrcanodeMonitorContext context, ILogger logger, Orcanode node, string type, string value, string? url = null)
         {
             logger.LogInformation($"Orcanode event: {node.DisplayName} {type} {value}");
             var orcanodeEvent = new OrcanodeEvent(node, type, value, DateTime.UtcNow, url);
             context.OrcanodeEvents.Add(orcanodeEvent);
         }
 
-        private static void AddDataplicityConnectionStatusEvent(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
-        {
-            string value = node.DataplicityConnectionStatus.ToString();
-            AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.DataplicityConnection, value);
-        }
-
-        private static void AddDataplicityAgentUpgradeStatusChangeEvent(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
-        {
-            string value = node.DataplicityUpgradeStatus.ToString();
-            AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.AgentUpgradeStatus, value);
-        }
-
-        private static void AddDiskCapacityChangeEvent(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
-        {
-            string value = string.Format("{0}G", node.DiskCapacityInGigs);
-            AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.SDCardSize, value);
-        }
-
-        private static void AddHydrophoneStreamStatusEvent(OrcanodeMonitorContext context, ILogger logger, Orcanode node, string? url)
+        private static void AddHydrophoneStreamStatusEvent(IOrcanodeMonitorContext context, ILogger logger, Orcanode node, string? url)
         {
             string value = node.OrcasoundOnlineStatusString;
             AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.HydrophoneStream, value, url);
@@ -1710,7 +841,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="unixTimestampString">Value in the latest.txt file</param>
         /// <param name="logger">Logger</param>
         /// <returns></returns>
-        public async static Task UpdateManifestTimestampAsync(OrcanodeMonitorContext context, Orcanode node, string unixTimestampString, ILogger logger)
+        public async static Task UpdateManifestTimestampAsync(IOrcanodeMonitorContext context, Orcanode node, string unixTimestampString, ILogger logger)
         {
             OrcanodeOnlineStatus oldStatus = node.S3StreamStatus;
 
@@ -1762,7 +893,7 @@ namespace OrcanodeMonitor.Core
         public static ErrorResponse? CheckIftttServiceKey(HttpRequest request)
         {
             if (request.Headers.TryGetValue("IFTTT-Service-Key", out var values) &&
-    values.Any())
+                values.Any())
             {
                 string value = values.First() ?? String.Empty;
                 if (value == Fetcher.IftttServiceKey)
@@ -1779,142 +910,6 @@ namespace OrcanodeMonitor.Core
                 }
             };
             return errorResponse;
-        }
-
-        /// <summary>
-        /// Get the AI detection count for a given location.
-        /// </summary>
-        /// <param name="orcanode">Node to check</param>
-        /// <returns>Count of AI detections</returns>
-        public static async Task<long> GetDetectionCountAsync(Orcanode orcanode)
-        {
-            try
-            {
-                string location = Uri.EscapeDataString(orcanode.OrcaHelloDisplayName);
-                var uri = new Uri($"https://aifororcasdetections.azurewebsites.net/api/detections?Timeframe=1w&Location={location}&RecordsPerPage=1");
-
-                using var request = new HttpRequestMessage(HttpMethod.Get, uri);
-                using var response = await _httpClient.SendAsync(request);
-
-                // Try to get the custom header
-                if (!response.Headers.TryGetValues("totalnumberrecords", out var values))
-                {
-                    return 0;
-                }
-
-                string headerValue = values?.FirstOrDefault() ?? string.Empty;
-                if (!long.TryParse(headerValue, out long totalRecords))
-                {
-                    return 0;
-                }
-
-                return totalRecords;
-            }
-            catch (Exception)
-            {
-                return 0;
-            }
-        }
-
-        /// <summary>
-        /// Get a list of OrcaHelloPod objects.
-        /// </summary>
-        /// <param name="orcanodes">List of orcanodes</param>
-        /// <returns>List of OrcaHelloPod objects</returns>
-        public static async Task<List<OrcaHelloPod>> FetchPodMetricsAsync(List<Orcanode> orcanodes)
-        {
-            var resultList = new List<OrcaHelloPod>();
-            Kubernetes? client = _k8sClient;
-            if (client == null)
-            {
-                return resultList;
-            }
-
-            try
-            {
-                V1PodList allPods = await client.ListPodForAllNamespacesAsync();
-                PodMetricsList? metricsList = await client.GetKubernetesPodsMetricsAsync();
-                foreach (V1Pod pod in allPods)
-                {
-                    if (pod.Metadata == null || !pod.Metadata.Name.StartsWith("inference-system-"))
-                    {
-                        continue;
-                    }
-                    // Filter out non-Running pods (including Terminating, Pending, etc.)
-                    if (pod.Status?.Phase != "Running")
-                    {
-                        continue;
-                    }
-                    V1ContainerStatus? status = GetBestContainerStatus(pod);
-                    if (status?.Ready != true)
-                    {
-                        continue;
-                    }
-                    PodMetrics? podMetrics = metricsList?.Items.FirstOrDefault(n => n.Metadata.Name == pod.Metadata.Name);
-                    var container = podMetrics?.Containers.FirstOrDefault(c => c.Name == "inference-system");
-                    string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
-                    string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
-
-                    Orcanode? orcanode = orcanodes.Find(a => a.OrcasoundSlug == pod.Metadata.NamespaceProperty);
-                    long detectionCount = (orcanode != null) ? await GetDetectionCountAsync(orcanode) : 0;
-
-                    (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty);
-
-                    var orcaHelloPod = new OrcaHelloPod(pod, cpuUsage, memoryUsage, modelTimestamp: string.Empty, detectionCount, localThreshold, globalThreshold);
-                    resultList.Add(orcaHelloPod);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[FetchContainerMetricsAsync] Error retrieving container metrics: {ex}");
-            }
-
-            return resultList;
-        }
-
-        /// <summary>
-        /// Get a list of OrcaHelloNode objects.
-        /// </summary>
-        /// <returns>List of OrcaHelloNode objects</returns>
-        public static async Task<List<OrcaHelloNode>> FetchNodeMetricsAsync()
-        {
-            var resultList = new List<OrcaHelloNode>();
-            Kubernetes? client = _k8sClient;
-            if (client == null)
-            {
-                return resultList;
-            }
-
-            try
-            {
-                V1NodeList allNodes = await client.ListNodeAsync();
-                NodeMetricsList metricsList = await client.GetKubernetesNodesMetricsAsync();
-                V1PodList v1Pods = await client.ListPodForAllNamespacesAsync();
-                PodMetricsList podMetrics = await client.GetKubernetesPodsMetricsAsync();
-                foreach (V1Node node in allNodes)
-                {
-                    NodeMetrics? nodeMetrics = metricsList.Items.FirstOrDefault(n => n.Metadata.Name == node.Metadata.Name);
-                    string cpuUsage = nodeMetrics?.Usage.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
-                    string memoryUsage = nodeMetrics?.Usage.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
-
-                    string lscpuOutput = string.Empty;
-                    var allPodsOnNode = v1Pods.Items.Where(c => c.Spec.NodeName == node.Metadata.Name);
-                    GetBestPodStatus(allPodsOnNode, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
-                    if (bestPod != null && bestPod.Metadata != null)
-                    {
-                        lscpuOutput = await GetPodLscpuOutputAsync(bestPod.Metadata.Name, bestPod.Metadata.NamespaceProperty);
-                    }
-
-                    var orcaHelloNode = new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput, v1Pods.Items, podMetrics.Items);
-                    resultList.Add(orcaHelloNode);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"[FetchNodeMetricsAsync] Error retrieving node metrics: {ex}");
-            }
-
-            return resultList;
         }
     }
 }

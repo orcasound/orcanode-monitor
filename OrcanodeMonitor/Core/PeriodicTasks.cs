@@ -1,25 +1,19 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using OrcanodeMonitor.Data;
-using OrcanodeMonitor.Models;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace OrcanodeMonitor.Core
 {
     public class PeriodicTasks : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
+        private readonly OrcaHelloFetcher _orcaHelloFetcher;
         const int _defaultFrequencyToPollInMinutes = 5;
         public static TimeSpan FrequencyToPoll
         {
             get
             {
-                string? frequencyToPollInMinutesString = Fetcher.Configuration?["ORCASOUND_POLL_FREQUENCY_IN_MINUTES"];
+                string? frequencyToPollInMinutesString = Fetcher.GetConfig("ORCASOUND_POLL_FREQUENCY_IN_MINUTES");
                 int frequencyToPollInMinutes = (int.TryParse(frequencyToPollInMinutesString, out var minutes)) ? minutes : _defaultFrequencyToPollInMinutes;
                 return TimeSpan.FromMinutes(frequencyToPollInMinutes);
             }
@@ -36,10 +30,11 @@ namespace OrcanodeMonitor.Core
 
         private readonly ILogger<PeriodicTasks> _logger;
 
-        public PeriodicTasks(IServiceScopeFactory scopeFactory, ILogger<PeriodicTasks> logger)
+        public PeriodicTasks(IServiceScopeFactory scopeFactory, ILogger<PeriodicTasks> logger, OrcaHelloFetcher orcaHelloFetcher)
         {
             _logger = logger;
             _scopeFactory = scopeFactory;
+            _orcaHelloFetcher = orcaHelloFetcher;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -68,7 +63,7 @@ namespace OrcanodeMonitor.Core
             using var scope = _scopeFactory.CreateScope();
             OrcanodeMonitorContext context = scope.ServiceProvider.GetRequiredService<OrcanodeMonitorContext>();
 
-            await Fetcher.UpdateDataplicityDataAsync(context, _logger);
+            await DataplicityFetcher.UpdateDataplicityDataAsync(context, _logger);
 
             await Fetcher.UpdateOrcasoundDataAsync(context, _logger);
 
@@ -76,11 +71,9 @@ namespace OrcanodeMonitor.Core
 
             await Fetcher.UpdateS3DataAsync(context, _logger);
 
-            await Fetcher.UpdateOrcaHelloDataAsync(context, _logger);
+            await _orcaHelloFetcher.UpdateOrcaHelloDataAsync(context, _logger);
 
-            await Fetcher.CheckForRebootsNeededAsync(context, _logger);
+            await DataplicityFetcher.CheckForRebootsNeededAsync(context, _logger);
         }
     }
 }
-
-//

@@ -87,7 +87,7 @@
                     @item.ImageName
                 </td>
                 <td>
-                    @Model.GetPodConfidenceThreshold(item)
+                    @item.GetConfidenceThreshold()
                 </td>
                 @if (Model.GetPodStatus(item) == Models.OrcanodeOnlineStatus.Absent)
                 {
