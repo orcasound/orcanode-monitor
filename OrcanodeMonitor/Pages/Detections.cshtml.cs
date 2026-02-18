@@ -95,6 +95,7 @@ namespace OrcanodeMonitor.Pages
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<DetectionsModel> _logger;
         private readonly OrcaHelloFetcher _orcaHelloFetcher;
+        private readonly Dictionary<string, DetectionData> _detectionCounts = new Dictionary<string, DetectionData>();
         private List<Orcanode> _nodes;
         public List<Orcanode> Nodes => _nodes;
 
@@ -221,8 +222,6 @@ namespace OrcanodeMonitor.Pages
                 _logger.LogError(ex, $"Exception in OnGetAsync: {ex.Message}");
             }
         }
-
-        private readonly Dictionary<string, DetectionData> _detectionCounts = new Dictionary<string, DetectionData>();
 
         public string GetHumanDetectionCount(Orcanode node)
         {
