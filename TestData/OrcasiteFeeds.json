@@ -314,6 +314,132 @@
           "meta": {}
         }
       }
+    },
+    {
+      "attributes": {
+        "name": "Test Feed 1",
+        "visible": true,
+        "node_name": "test_feed_1",
+        "slug": "test-feed-1",
+        "bucket": "audio-orcasound-net",
+        "bucket_region": "us-west-2",
+        "location_point": {
+          "coordinates": [
+            -123.0,
+            48.5
+          ],
+          "crs": {
+            "properties": {
+              "name": "EPSG:4326"
+            },
+            "type": "name"
+          },
+          "type": "Point"
+        },
+        "dataplicity_id": null,
+        "orcahello_id": null,
+        "intro_html": "<p>Test feed for detection data.</p>",
+        "image_url": "https://s3-us-west-2.amazonaws.com/orcasite/test_feed_1/thumbnail.png",
+        "cloudfront_url": null,
+        "maintainer_emails": null,
+        "lat_lng": {
+          "lng": -123.0,
+          "lat": 48.5
+        }
+      },
+      "id": "feed_02u8r4EQZ3FH7tfyENAXIu",
+      "links": {},
+      "meta": {},
+      "type": "feed",
+      "relationships": {
+        "audio_images": {
+          "links": {},
+          "meta": {}
+        },
+        "feed_streams": {
+          "links": {},
+          "meta": {}
+        },
+        "feed_segments": {
+          "links": {},
+          "meta": {}
+        },
+        "bouts": {
+          "links": {},
+          "meta": {}
+        },
+        "listener_counts": {
+          "links": {},
+          "meta": {}
+        },
+        "latest_listener_count": {
+          "links": {},
+          "meta": {}
+        }
+      }
+    },
+    {
+      "attributes": {
+        "name": "Test Feed 2",
+        "visible": true,
+        "node_name": "test_feed_2",
+        "slug": "test-feed-2",
+        "bucket": "audio-orcasound-net",
+        "bucket_region": "us-west-2",
+        "location_point": {
+          "coordinates": [
+            -122.5,
+            48.0
+          ],
+          "crs": {
+            "properties": {
+              "name": "EPSG:4326"
+            },
+            "type": "name"
+          },
+          "type": "Point"
+        },
+        "dataplicity_id": null,
+        "orcahello_id": null,
+        "intro_html": "<p>Test feed for detection data.</p>",
+        "image_url": "https://s3-us-west-2.amazonaws.com/orcasite/test_feed_2/thumbnail.png",
+        "cloudfront_url": null,
+        "maintainer_emails": null,
+        "lat_lng": {
+          "lng": -122.5,
+          "lat": 48.0
+        }
+      },
+      "id": "feed_02y0cKla21bfTG7d8DQgPl",
+      "links": {},
+      "meta": {},
+      "type": "feed",
+      "relationships": {
+        "audio_images": {
+          "links": {},
+          "meta": {}
+        },
+        "feed_streams": {
+          "links": {},
+          "meta": {}
+        },
+        "feed_segments": {
+          "links": {},
+          "meta": {}
+        },
+        "bouts": {
+          "links": {},
+          "meta": {}
+        },
+        "listener_counts": {
+          "links": {},
+          "meta": {}
+        },
+        "latest_listener_count": {
+          "links": {},
+          "meta": {}
+        }
+      }
     }
   ],
   "links": {
