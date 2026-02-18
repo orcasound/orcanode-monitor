@@ -46,6 +46,9 @@ namespace Test
                 builder.Configuration.AddUserSecrets<FetcherTests>();
             }
             Fetcher.Initialize(builder.Configuration, _httpClient);
+
+            // Force using offline mode for all tests in this class, since we're using a mock HTTP client.
+            Fetcher.IsOffline = true;
         }
 
         [TestCleanup]
