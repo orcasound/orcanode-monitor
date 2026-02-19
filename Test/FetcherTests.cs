@@ -2,13 +2,11 @@
 // SPDX-License-Identifier: MIT
 
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using Moq;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
@@ -18,19 +16,20 @@ namespace Test
     [TestClass]
     public class FetcherTests
     {
-        OrcanodeMonitorContext _context;
-        ILogger _logger;
-        OrcasiteTestHelper.MockOrcasiteHelperContainer _container;
-        HttpClient _httpClient;
+        private OrcanodeMonitorContext _context;
+        private ILogger<FetcherTests> _logger;
+        private ILoggerFactory _loggerFactory;
+        private OrcasiteTestHelper.MockOrcasiteHelperContainer _container;
+        private HttpClient _httpClient;
 
-        private ILogger CreateConsoleLogger()
+        private ILogger<FetcherTests> CreateConsoleLogger()
         {
-            using var loggerFactory = LoggerFactory.Create(builder =>
+            _loggerFactory = LoggerFactory.Create(builder =>
             {
                 builder.AddConsole();
                 builder.SetMinimumLevel(LogLevel.Debug);
             });
-            return loggerFactory.CreateLogger<OrcaHelloFetcherTests>();
+            return _loggerFactory.CreateLogger<FetcherTests>();
         }
 
         [TestInitialize]

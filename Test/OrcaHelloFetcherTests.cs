@@ -1,30 +1,28 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
-using Microsoft.AspNetCore.Builder;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
-using System.Net.Http;
 
 namespace Test
 {
     [TestClass]
     public class OrcaHelloFetcherTests
     {
-        ILogger _logger;
+        private ILogger<OrcaHelloFetcherTests> _logger;
+        private ILoggerFactory _loggerFactory;
 
-        private ILogger CreateConsoleLogger()
+        private ILogger<OrcaHelloFetcherTests> CreateConsoleLogger()
         {
-            using var loggerFactory = LoggerFactory.Create(builder =>
+            _loggerFactory = LoggerFactory.Create(builder =>
             {
                 builder.AddConsole();
                 builder.SetMinimumLevel(LogLevel.Debug);
             });
-            return loggerFactory.CreateLogger<OrcaHelloFetcherTests>();
+            return _loggerFactory.CreateLogger<OrcaHelloFetcherTests>();
         }
 
         [TestInitialize]
