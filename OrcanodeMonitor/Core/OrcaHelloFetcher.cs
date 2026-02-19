@@ -716,11 +716,12 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get all OrcaHello detections in the past week.
+        /// Get all OrcaHello detections in the given timeframe.
         /// </summary>
         /// <param name="logger">Logger</param>
-        /// <returns>List of AI detections in the past week</returns>
-        public async Task<List<OrcaHelloDetection>> GetRecentDetectionsAsync(ILogger logger)
+        /// <param name="timeframe">Timeframe string for the API (e.g., "1w" for one week, "1m" for one month)</param>
+        /// <returns>List of AI detections in the given timeframe</returns>
+        public async Task<List<OrcaHelloDetection>> GetRecentDetectionsAsync(ILogger logger, string timeframe = "1w")
         {
             long pageCount = 1;
             var allDetections = new List<OrcaHelloDetection>();
@@ -730,7 +731,7 @@ namespace OrcanodeMonitor.Core
                 for (long page = 1; page <= pageCount; page++)
                 {
                     // The API is paginated, so we need to loop through pages until we've retrieved them all.
-                    var uri = new Uri($"https://aifororcasdetections.azurewebsites.net/api/detections?Timeframe=1w&Location=all&RecordsPerPage=50&Page={page}");
+                    var uri = new Uri($"https://aifororcasdetections.azurewebsites.net/api/detections?Timeframe={timeframe}&Location=all&RecordsPerPage=50&Page={page}");
 
                     using var request = new HttpRequestMessage(HttpMethod.Get, uri);
                     using var response = await Fetcher.HttpClient.SendAsync(request);

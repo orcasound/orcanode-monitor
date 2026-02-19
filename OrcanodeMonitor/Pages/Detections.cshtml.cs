@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
+using System.Drawing;
 
 namespace OrcanodeMonitor.Pages
 {
@@ -95,7 +96,8 @@ namespace OrcanodeMonitor.Pages
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<DetectionsModel> _logger;
         private readonly OrcaHelloFetcher _orcaHelloFetcher;
-        private readonly Dictionary<string, DetectionData> _detectionCounts = new Dictionary<string, DetectionData>();
+        private readonly Dictionary<string, DetectionData> _detectionCountsPastWeek = new Dictionary<string, DetectionData>();
+        private readonly Dictionary<string, DetectionData> _detectionCountsPastMonth = new Dictionary<string, DetectionData>();
         private List<Orcanode> _nodes;
         public List<Orcanode> Nodes => _nodes;
 
@@ -105,6 +107,51 @@ namespace OrcanodeMonitor.Pages
             _logger = logger;
             _orcaHelloFetcher = orcaHelloFetcher;
             _nodes = new List<Orcanode>();
+        }
+
+        public string LastChecked
+        {
+            get
+            {
+                try
+                {
+                    MonitorState monitorState = MonitorState.GetFrom(_databaseContext);
+
+                    if (monitorState.LastUpdatedTimestampUtc == null)
+                    {
+                        return "";
+                    }
+                    return Fetcher.UtcToLocalDateTime(monitorState.LastUpdatedTimestampUtc)?.ToString() ?? "";
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Exception in LastChecked getter: {ex.Message}");
+                    return "";
+                }
+            }
+        }
+
+        private Dictionary<string, DetectionData> GetDict(string timeRange) =>
+            timeRange == "pastWeek" ? _detectionCountsPastWeek : _detectionCountsPastMonth;
+
+        private void EnsureNodeEntries(Orcanode node, string confidenceThreshold)
+        {
+            if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
+            {
+                _detectionCountsPastMonth[node.OrcasoundSlug] = new DetectionData
+                {
+                    MinimumPositiveMachineDetectionConfidence = long.MaxValue,
+                    ConfidenceThreshold = confidenceThreshold
+                };
+            }
+            if (!_detectionCountsPastWeek.ContainsKey(node.OrcasoundSlug))
+            {
+                _detectionCountsPastWeek[node.OrcasoundSlug] = new DetectionData
+                {
+                    MinimumPositiveMachineDetectionConfidence = long.MaxValue,
+                    ConfidenceThreshold = confidenceThreshold
+                };
+            }
         }
 
         public async Task OnGetAsync()
@@ -124,8 +171,11 @@ namespace OrcanodeMonitor.Pages
                 // Fetch additional detection details (human/machine detections, confidence levels, etc.)
                 List<Detection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger);
 
-                // Fetch OrcaHello detection details.
-                var orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(_logger);
+                // Fetch OrcaHello detection details for the past month to support both time ranges.
+                var orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(_logger, "1m");
+
+                var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
+                var oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
 
                 if (detections != null)
                 {
@@ -137,27 +187,35 @@ namespace OrcanodeMonitor.Pages
                             continue;
                         }
 
-                        if (!_detectionCounts.ContainsKey(node.OrcasoundSlug))
+                        bool inPastMonth = detection.Timestamp >= oneMonthAgo;
+                        bool inPastWeek = detection.Timestamp >= oneWeekAgo;
+
+                        if (!inPastMonth)
+                        {
+                            continue;
+                        }
+
+                        if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                         {
                             OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node);
-
-                            _detectionCounts[node.OrcasoundSlug] = new DetectionData
-                            {
-                                MinimumPositiveMachineDetectionConfidence = long.MaxValue,
-                                ConfidenceThreshold = pod?.GetConfidenceThreshold() ?? "Unknown"
-                            };
+                            EnsureNodeEntries(node, pod?.GetConfidenceThreshold() ?? "Unknown");
                         }
-                        DetectionData data = _detectionCounts[node.OrcasoundSlug];
+
+                        DetectionData monthData = _detectionCountsPastMonth[node.OrcasoundSlug];
+                        DetectionData weekData = _detectionCountsPastWeek[node.OrcasoundSlug];
+
                         if (detection.Source == "human")
                         {
                             // TODO: only count reviewed detections.
                             if (detection.Category == "whale")
                             {
-                                data.PositiveHumanDetectionCount++;
+                                monthData.PositiveHumanDetectionCount++;
+                                if (inPastWeek) weekData.PositiveHumanDetectionCount++;
                             }
                             else
                             {
-                                data.NegativeHumanDetectionCount++;
+                                monthData.NegativeHumanDetectionCount++;
+                                if (inPastWeek) weekData.NegativeHumanDetectionCount++;
                             }
                         }
                         else // detection.Source == "machine"
@@ -180,20 +238,40 @@ namespace OrcanodeMonitor.Pages
 
                             if (orcaHelloDetection.IsPositive(detection))
                             {
-                                data.PositiveMachineDetectionCount++;
-                                data.CumulativePositiveMachineDetectionConfidence += globalConfidence;
-                                if (globalConfidence < data.MinimumPositiveMachineDetectionConfidence)
+                                monthData.PositiveMachineDetectionCount++;
+                                monthData.CumulativePositiveMachineDetectionConfidence += globalConfidence;
+                                if (globalConfidence < monthData.MinimumPositiveMachineDetectionConfidence)
                                 {
-                                    data.MinimumPositiveMachineDetectionConfidence = globalConfidence;
+                                    monthData.MinimumPositiveMachineDetectionConfidence = globalConfidence;
+                                }
+
+                                if (inPastWeek)
+                                {
+                                    weekData.PositiveMachineDetectionCount++;
+                                    weekData.CumulativePositiveMachineDetectionConfidence += globalConfidence;
+                                    if (globalConfidence < weekData.MinimumPositiveMachineDetectionConfidence)
+                                    {
+                                        weekData.MinimumPositiveMachineDetectionConfidence = globalConfidence;
+                                    }
                                 }
                             }
                             else
                             {
-                                data.NegativeMachineDetectionCount++;
-                                data.CumulativeNegativeMachineDetectionConfidence += globalConfidence;
-                                if (globalConfidence > data.MaximumNegativeMachineDetectionConfidence)
+                                monthData.NegativeMachineDetectionCount++;
+                                monthData.CumulativeNegativeMachineDetectionConfidence += globalConfidence;
+                                if (globalConfidence > monthData.MaximumNegativeMachineDetectionConfidence)
                                 {
-                                    data.MaximumNegativeMachineDetectionConfidence = globalConfidence;
+                                    monthData.MaximumNegativeMachineDetectionConfidence = globalConfidence;
+                                }
+
+                                if (inPastWeek)
+                                {
+                                    weekData.NegativeMachineDetectionCount++;
+                                    weekData.CumulativeNegativeMachineDetectionConfidence += globalConfidence;
+                                    if (globalConfidence > weekData.MaximumNegativeMachineDetectionConfidence)
+                                    {
+                                        weekData.MaximumNegativeMachineDetectionConfidence = globalConfidence;
+                                    }
                                 }
                             }
                         }
@@ -202,19 +280,10 @@ namespace OrcanodeMonitor.Pages
 
                 foreach (var node in _nodes)
                 {
-                    if (!_detectionCounts.ContainsKey(node.OrcasoundSlug))
+                    if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                     {
                         OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node);
-                        _detectionCounts[node.OrcasoundSlug] = new DetectionData
-                        {
-                            CumulativeNegativeMachineDetectionConfidence = 0,
-                            CumulativePositiveMachineDetectionConfidence = 0,
-                            MinimumPositiveMachineDetectionConfidence = long.MaxValue,
-                            MaximumNegativeMachineDetectionConfidence = 0,
-                            PositiveHumanDetectionCount = 0,
-                            NegativeHumanDetectionCount = 0,
-                            ConfidenceThreshold = pod?.GetConfidenceThreshold() ?? "Unknown"
-                        };
+                        EnsureNodeEntries(node, pod?.GetConfidenceThreshold() ?? "Unknown");
                     }
                 }
             }
@@ -224,9 +293,9 @@ namespace OrcanodeMonitor.Pages
             }
         }
 
-        public string GetHumanDetectionCount(Orcanode node)
+        public string GetHumanDetectionCount(Orcanode node, string timeRange)
         {
-            if (!_detectionCounts.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
+            if (!GetDict(timeRange).TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
             }
@@ -237,9 +306,9 @@ namespace OrcanodeMonitor.Pages
             return $"{data.PositiveHumanDetectionCount} / {data.HumanDetectionCount} ({(data.PositiveHumanDetectionCount / (double)data.HumanDetectionCount):P0})";
         }
 
-        public string GetMachineDetectionCount(Orcanode node)
+        public string GetMachineDetectionCount(Orcanode node, string timeRange)
         {
-            if (!_detectionCounts.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
+            if (!GetDict(timeRange).TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
             }
@@ -250,14 +319,33 @@ namespace OrcanodeMonitor.Pages
             return $"{data.PositiveMachineDetectionCount} / {data.MachineDetectionCount} ({(data.PositiveMachineDetectionCount / (double)data.MachineDetectionCount):P0})";
         }
 
+        public string GetMachineDetectionBackgroundColor(Orcanode node, string timeRange)
+        {
+            if (!GetDict(timeRange).TryGetValue(node.OrcasoundSlug, out DetectionData? data))
+            {
+                return ColorTranslator.ToHtml(Color.White);
+            }
+            if (data.MachineDetectionCount == 0)
+            {
+                return ColorTranslator.ToHtml(Color.White);
+            }
+            double percentage = data.PositiveMachineDetectionCount / (double)data.MachineDetectionCount;
+            if (percentage > 0.5)
+            {
+                return ColorTranslator.ToHtml(Color.LightGreen);
+            }
+            return ColorTranslator.ToHtml(Color.Yellow);
+        }
+
         /// <summary>
         /// Get the average global confidence for positive machine detections.
         /// </summary>
         /// <param name="node"></param>
+        /// <param name="timeRange">Time range: "pastWeek" or "pastMonth"</param>
         /// <returns>Threshold percentage</returns>
-        public string GetAveragePositiveMachineConfidence(Orcanode node)
+        public string GetAveragePositiveMachineConfidence(Orcanode node, string timeRange)
         {
-            if (!_detectionCounts.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
+            if (!GetDict(timeRange).TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
             }
@@ -272,10 +360,11 @@ namespace OrcanodeMonitor.Pages
         /// Get the average global confidence for negative machine detections.
         /// </summary>
         /// <param name="node"></param>
+        /// <param name="timeRange">Time range: "pastWeek" or "pastMonth"</param>
         /// <returns>Threshold percentage</returns>
-        public string GetAverageNegativeMachineConfidence(Orcanode node)
+        public string GetAverageNegativeMachineConfidence(Orcanode node, string timeRange)
         {
-            if (!_detectionCounts.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
+            if (!GetDict(timeRange).TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
             }
@@ -294,7 +383,7 @@ namespace OrcanodeMonitor.Pages
         /// <returns>Confidence threshold string</returns>
         public string GetConfiguredConfidenceThreshold(Orcanode node)
         {
-            if (!_detectionCounts.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
+            if (!_detectionCountsPastMonth.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
             }
