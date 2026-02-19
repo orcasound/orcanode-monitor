@@ -3,7 +3,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using OrcanodeMonitor.Core;
-using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 
 namespace OrcanodeMonitor.Pages
@@ -12,7 +11,7 @@ namespace OrcanodeMonitor.Pages
     {
         private readonly OrcaHelloFetcher _orcaHelloFetcher;
         private OrcaHelloNode? _orcaHelloNode = null;
-        private readonly ILogger _logger;
+        private readonly ILogger<OrcaHelloNodeModel> _logger;
         public List<OrcaHelloPod> Pods => _orcaHelloNode?.Pods ?? new List<OrcaHelloPod>();
         public string NodeName => _orcaHelloNode?.Name ?? "Unknown";
         public string InstanceType => _orcaHelloNode?.InstanceType ?? "Unknown";
@@ -50,7 +49,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         public string NowLocal { get; private set; }
 
-        public OrcaHelloNodeModel(OrcaHelloFetcher orcaHelloFetcher, ILogger logger)
+        public OrcaHelloNodeModel(OrcaHelloFetcher orcaHelloFetcher, ILogger<OrcaHelloNodeModel> logger)
         {
             _orcaHelloFetcher = orcaHelloFetcher;
             _logger = logger;
