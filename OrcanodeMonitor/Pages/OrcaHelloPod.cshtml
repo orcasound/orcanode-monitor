@@ -112,6 +112,30 @@
         </table>
     </div>
 
+    @if (Model.OtherPods.Any())
+    {
+        <h2>Other Pods</h2>
+        <table style="border: 1px solid #ccc; border-collapse: separate; text-align: left;">
+            <tr style="border-bottom: 1px solid #ccc;">
+                <th style="padding: 4px 8px;">Name</th>
+                <th style="padding: 4px 8px;">Ready</th>
+                <th style="padding: 4px 8px;">Status</th>
+                <th style="padding: 4px 8px;">Restarts</th>
+                <th style="padding: 4px 8px;">Age</th>
+            </tr>
+            @foreach (var pod in Model.OtherPods)
+            {
+                <tr>
+                    <td style="padding: 4px 8px;">@pod.Name</td>
+                    <td style="padding: 4px 8px;">@pod.Ready</td>
+                    <td style="padding: 4px 8px;">@pod.Status</td>
+                    <td style="padding: 4px 8px;">@pod.RestartCount</td>
+                    <td style="padding: 4px 8px;">@pod.Age</td>
+                </tr>
+            }
+        </table>
+    }
+
     <h2>Recent Log</h2>
     <div id="logBox"
          style="border: 1px solid #ccc; padding: 10px; text-align: left;

@@ -487,6 +487,39 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
+        /// Get the list of inference-system pods in the namespace that are not the currently
+        /// running (best) pod.  These are the Pending, Evicted, Failed, etc. instances that
+        /// should appear in the "Other Pods" table on the OrcaHelloPod page.
+        /// </summary>
+        /// <param name="orcanode">Orcanode whose namespace is to be queried</param>
+        /// <returns>List of non-best pods, or an empty list if none are found</returns>
+        public async Task<IList<OrcaHelloPodInstance>> GetOtherPodsAsync(Orcanode orcanode)
+        {
+            IKubernetes? client = _k8sClient;
+            if (client == null)
+            {
+                return new List<OrcaHelloPodInstance>();
+            }
+
+            string namespaceName = orcanode.OrcasoundSlug;
+            V1PodList pods = await client.CoreV1.ListNamespacedPodAsync(namespaceName);
+
+            GetBestPodStatus(pods.Items, out V1Pod? bestPod, out _);
+            string bestPodName = bestPod?.Metadata?.Name ?? string.Empty;
+
+            return pods.Items
+                .Where(p =>
+                {
+                    string? name = p.Metadata?.Name;
+                    return !string.IsNullOrEmpty(name)
+                        && name.StartsWith("inference-system")
+                        && name != bestPodName;
+                })
+                .Select(p => new OrcaHelloPodInstance(p))
+                .ToList();
+        }
+
+        /// <summary>
         /// Get pod logs
         /// </summary>
         /// <param name="container">Container</param>
