@@ -828,7 +828,7 @@ namespace OrcanodeMonitor.Core
             {
                 // We couldn't fetch the stream audio so could not update the
                 // audio standard deviation. Just ignore this for now.
-                logger.LogError(ex, "Exception in UpdateManifestTimestampAsync");
+                logger.LogError(ex, "Exception in GetExactAudioSampleAsync");
             }
             return null;
         }

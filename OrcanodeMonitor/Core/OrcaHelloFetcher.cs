@@ -314,11 +314,12 @@ namespace OrcanodeMonitor.Core
         /// <param name="cmd">The command to execute in the pod.</param>
         /// <param name="logger">Logger</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the specified command executed in the pod, as a string.</returns>
-        private async Task<string> GetPodCommandOutput(string podName, string namespaceName, string[] cmd, ILogger logger)
+        private async Task<string> GetPodCommandOutputAsync(string podName, string namespaceName, string[] cmd, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
+                logger.LogWarning("[GetPodCommandOutputAsync] Kubernetes client is null");
                 return string.Empty;
             }
 
@@ -366,7 +367,7 @@ namespace OrcanodeMonitor.Core
         private async Task<string> GetPodLscpuOutputAsync(string podName, string namespaceName, ILogger logger)
         {
             string[] cmd = { "lscpu" };
-            return await GetPodCommandOutput(podName, namespaceName, cmd, logger);
+            return await GetPodCommandOutputAsync(podName, namespaceName, cmd, logger);
         }
 
         /// <summary>
@@ -383,7 +384,7 @@ namespace OrcanodeMonitor.Core
             }
 
             string[] command = { "stat", "-c", "%y", "/usr/src/app/model/model.pkl" };
-            return await GetPodCommandOutput(pod.Metadata.Name, pod.Metadata.NamespaceProperty, command, logger);
+            return await GetPodCommandOutputAsync(pod.Metadata.Name, pod.Metadata.NamespaceProperty, command, logger);
         }
 
         /// <summary>
@@ -397,6 +398,7 @@ namespace OrcanodeMonitor.Core
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
+                logger.LogWarning("[GetModelThresholdsAsync] Kubernetes client is null");
                 return (null, null);
             }
 
@@ -463,7 +465,7 @@ namespace OrcanodeMonitor.Core
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
-                logger.LogError("[GetOrcaHelloPodAsync] Kubernetes client is null");
+                logger.LogWarning("[GetOrcaHelloPodAsync] Kubernetes client is null");
                 return null;
             }
 
@@ -497,12 +499,14 @@ namespace OrcanodeMonitor.Core
         /// should appear in the "Other Pods" table on the OrcaHelloPod page.
         /// </summary>
         /// <param name="orcanode">Orcanode whose namespace is to be queried</param>
+        /// <param name="logger">Logger</param>
         /// <returns>List of non-best pods, or an empty list if none are found</returns>
-        public async Task<IList<OrcaHelloPodInstance>> GetOtherPodsAsync(Orcanode orcanode)
+        public async Task<IList<OrcaHelloPodInstance>> GetOtherPodsAsync(Orcanode orcanode, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
+                logger.LogWarning("[GetOtherPodsAsync] Kubernetes client is null");
                 return new List<OrcaHelloPodInstance>();
             }
 
@@ -542,6 +546,7 @@ namespace OrcanodeMonitor.Core
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
+                logger.LogWarning("[GetOrcaHelloLogAsync] Kubernetes client is null");
                 return string.Empty;
             }
 
@@ -587,6 +592,7 @@ namespace OrcanodeMonitor.Core
                 IKubernetes? client = _k8sClient;
                 if (client == null)
                 {
+                    logger.LogWarning("[UpdateOrcaHelloDataAsync] Kubernetes client is null");
                     return;
                 }
 
@@ -855,6 +861,7 @@ namespace OrcanodeMonitor.Core
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
+                logger.LogWarning("[FetchPodMetricsAsync] Kubernetes client is null");
                 return resultList;
             }
 
@@ -911,6 +918,7 @@ namespace OrcanodeMonitor.Core
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
+                logger.LogWarning("[FetchNodeMetricsAsync] Kubernetes client is null");
                 return resultList;
             }
 
