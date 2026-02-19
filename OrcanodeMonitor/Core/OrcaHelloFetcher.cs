@@ -719,7 +719,7 @@ namespace OrcanodeMonitor.Core
         /// Get all OrcaHello detections in the given timeframe.
         /// </summary>
         /// <param name="logger">Logger</param>
-        /// <param name="timeframe">Timeframe string for the API (e.g. "1w" for one week, "1m" for one month)</param>
+        /// <param name="timeframe">Timeframe string for the API (e.g., "1w" for one week, "1m" for one month)</param>
         /// <returns>List of AI detections in the given timeframe</returns>
         public async Task<List<OrcaHelloDetection>> GetRecentDetectionsAsync(ILogger logger, string timeframe = "1w")
         {
