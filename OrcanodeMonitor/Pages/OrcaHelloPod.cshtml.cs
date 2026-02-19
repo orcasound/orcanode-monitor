@@ -20,6 +20,7 @@ namespace OrcanodeMonitor.Pages
         private OrcaHelloPod? _pod = null;
         private Orcanode? _orcanode = null;
         private OrcaHelloNode? _orcaHelloNode = null;
+        public IList<OrcaHelloPodInstance> OtherPods { get; private set; } = new List<OrcaHelloPodInstance>();
         public string Location => _orcanode?.DisplayName ?? "Unknown";
         public string Namespace { get; set; }
         public string Name => _pod?.Name ?? "Unknown";
@@ -167,6 +168,8 @@ namespace OrcanodeMonitor.Pages
             }
 
             Namespace = podNamespace;
+
+            OtherPods = await _orcaHelloFetcher.GetOtherPodsAsync(_orcanode);
 
             _logData = await _orcaHelloFetcher.GetOrcaHelloLogAsync(_pod, podNamespace, _logger);
             if (_logData.IsNullOrEmpty())
