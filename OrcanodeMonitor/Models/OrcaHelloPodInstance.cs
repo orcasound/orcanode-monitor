@@ -5,7 +5,7 @@ using k8s.Models;
 namespace OrcanodeMonitor.Models
 {
     /// <summary>
-    /// Lightweight summary of a Kubernetes pod (e.g. Pending, Evicted, Failed) used to
+    /// Lightweight summary of a Kubernetes pod (e.g., Pending, Evicted, Failed) used to
     /// populate the "Other Pods" table on the OrcaHelloPod page.
     /// </summary>
     public class OrcaHelloPodInstance
@@ -33,7 +33,7 @@ namespace OrcanodeMonitor.Models
         }
 
         /// <summary>
-        /// "ready/total" container count, e.g. "0/1".
+        /// "ready/total" container count, e.g., "0/1".
         /// </summary>
         public string Ready
         {

@@ -491,7 +491,7 @@ namespace OrcanodeMonitor.Core
         /// running (best) pod.  These are the Pending, Evicted, Failed, etc. instances that
         /// should appear in the "Other Pods" table on the OrcaHelloPod page.
         /// </summary>
-        /// <param name="orcanode">Orcanode whose namespace to query</param>
+        /// <param name="orcanode">Orcanode whose namespace is to be queried</param>
         /// <returns>List of non-best pods, or an empty list if none are found</returns>
         public async Task<IList<OrcaHelloPodInstance>> GetOtherPodsAsync(Orcanode orcanode)
         {
