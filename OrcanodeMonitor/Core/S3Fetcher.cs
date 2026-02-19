@@ -5,7 +5,6 @@ using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
 using OrcanodeMonitor.Models;
-using System.Collections.Concurrent;
 using static OrcanodeMonitor.Core.Fetcher;
 
 namespace OrcanodeMonitor.Core

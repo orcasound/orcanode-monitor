@@ -1,6 +1,9 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
+using System.Text.Json.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
+
 namespace OrcanodeMonitor.Models
 {
     public class DetectionResponse
@@ -21,9 +24,19 @@ namespace OrcanodeMonitor.Models
         public string? Description { get; set; }
         public string? Source { get; set; }
         public string? Category { get; set; }
+
+        // TODO: can we use this instead of JsonPropertyName?
+        // var deserializer = new DeserializerBuilder().WithNamingConvention(UnderscoredNamingConvention.Instance).Build();
+        [JsonPropertyName("playlist_timestamp")]
         public long PlaylistTimestamp { get; set; }
+
+        [JsonPropertyName("feed_id")]
         public string? FeedId { get; set; }
+
+        [JsonPropertyName("player_offset")]
         public string? PlayerOffset { get; set; }
+        [JsonPropertyName("idempotency_key")]
+        public string? IdempotencyKey { get; set; }
     }
 
     public class Detection
@@ -34,6 +47,7 @@ namespace OrcanodeMonitor.Models
         public string Category { get; set; } = string.Empty;
         public string Source { get; set; } = DetectionSource.Machine;
         public string Description { get; set; } = string.Empty;
+        public string IdempotencyKey { get; set; } = string.Empty;
     }
 
     public static class DetectionCategory

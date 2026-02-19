@@ -1,5 +1,5 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+// Copyright (c) Orcanode Monitor contributors
+// SPDX-License-Identifier: MIT
 using OrcanodeMonitor.Models;
 
 namespace Test

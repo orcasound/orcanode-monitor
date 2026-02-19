@@ -121,7 +121,9 @@ use the appropriate environment variable configuration settings there.
 
 **MEZMO_LOG_SECONDS**: The number of seconds of Mezmo logs to check for activity. Default: 60
 
-**ORCANODE_MONITOR_READONLY**: If set to "true", the Cosmos database is not updated by the Orcanode Monitor service. The service will continue to read data but will skip all database write operations.
+**ORCANODE_MONITOR_READONLY**: If set to "true", the Cosmos database is not updated by the Orcanode Monitor service. The service will continue to read data but will skip all database write operations. Default: false
+
+**ORCANODE_MONITOR_OFFLINE**: If set to "true", mock calls will be made using fake data. Default: false
 
 **ORCAHELLO_HIGH_DETECTION_THRESHOLD**: The minimum number of detections within the past week to be considered unusually high, which will display the OrcaHello Detections cell with a yellow background color. Default: 100
 

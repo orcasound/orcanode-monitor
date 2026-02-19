@@ -11,12 +11,23 @@ namespace OrcanodeMonitor.Core
 {
     public class MezmoFetcher
     {
-        private static HttpClient _httpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+        private static readonly HttpClient _realHttpClient = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
+        private static HttpClient _httpClient;
         private static string _mezmoViewsUrl = "https://api.mezmo.com/v1/config/view";
         private static string _mezmoHostsUrl = "https://api.mezmo.com/v1/usage/hosts";
         private static string _mezmoLogUrl = "https://api.mezmo.com/v1/export";
 
         const int DEFAULT_MEZMO_LOG_SECONDS = 300;
+
+        public static void Initialize(HttpClient? httpClient = null)
+        {
+            _httpClient = (httpClient != null) ? httpClient : _realHttpClient;
+        }
+
+        public static void Uninitialize()
+        {
+            _httpClient = _realHttpClient;
+        }
 
         private static int MezmoLogSeconds
         {
@@ -123,7 +134,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="context">Database context to update</param>
         /// <param name="logger"></param>
         /// <returns></returns>
-        public async static Task UpdateMezmoHostsAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task UpdateMezmoHostsAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
             try
             {
@@ -233,7 +244,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="context">Database context to update</param>
         /// <param name="logger"></param>
         /// <returns></returns>
-        public async static Task UpdateMezmoViewsAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task UpdateMezmoViewsAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
             try
             {
@@ -336,13 +347,13 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public async static Task UpdateMezmoDataAsync(OrcanodeMonitorContext context, ILogger logger)
+        public async static Task UpdateMezmoDataAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
             await UpdateMezmoHostsAsync(context, logger);
             await UpdateMezmoViewsAsync(context, logger);
         }
 
-        private static void AddMezmoStatusEvent(OrcanodeMonitorContext context, Orcanode node, ILogger logger)
+        private static void AddMezmoStatusEvent(IOrcanodeMonitorContext context, Orcanode node, ILogger logger)
         {
             string value = node.MezmoStatus.ToString();
             Fetcher.AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.MezmoLogging, value, string.Empty);

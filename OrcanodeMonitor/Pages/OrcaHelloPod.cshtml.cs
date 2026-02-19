@@ -15,6 +15,7 @@ namespace OrcanodeMonitor.Pages
 
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<OrcaHelloPodModel> _logger;
+        private readonly OrcaHelloFetcher _orcaHelloFetcher;
         private string _logData;
         private OrcaHelloPod? _pod = null;
         private Orcanode? _orcanode = null;
@@ -73,10 +74,11 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         public string NowLocal { get; private set; }
 
-        public OrcaHelloPodModel(OrcanodeMonitorContext context, ILogger<OrcaHelloPodModel> logger)
+        public OrcaHelloPodModel(OrcanodeMonitorContext context, ILogger<OrcaHelloPodModel> logger, OrcaHelloFetcher orcaHelloFetcher)
         {
             _databaseContext = context;
             _logger = logger;
+            _orcaHelloFetcher = orcaHelloFetcher;
             Namespace = string.Empty;
             _logData = string.Empty;
             NowLocal = Fetcher.UtcToLocalDateTime(DateTime.UtcNow)?.ToString() ?? "Unknown";
@@ -152,13 +154,13 @@ namespace OrcanodeMonitor.Pages
                 return NotFound(); // Return a 404 error page
             }
 
-            _pod = await Fetcher.GetOrcaHelloPodAsync(_orcanode, podNamespace);
+            _pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(_orcanode);
             if (_pod == null)
             {
                 return NotFound(); // Return a 404 error page
             }
 
-            _orcaHelloNode = await Fetcher.GetOrcaHelloNodeAsync(_pod.NodeName);
+            _orcaHelloNode = await _orcaHelloFetcher.GetOrcaHelloNodeAsync(_pod.NodeName);
             if (_orcaHelloNode == null)
             {
                 return NotFound(); // Return a 404 error page
@@ -166,7 +168,7 @@ namespace OrcanodeMonitor.Pages
 
             Namespace = podNamespace;
 
-            _logData = await Fetcher.GetOrcaHelloLogAsync(_pod, podNamespace, _logger);
+            _logData = await _orcaHelloFetcher.GetOrcaHelloLogAsync(_pod, podNamespace, _logger);
             if (_logData.IsNullOrEmpty())
             {
                 return NotFound(); // Return a 404 error page
