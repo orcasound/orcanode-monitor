@@ -60,14 +60,9 @@ namespace Test
         }
 
         [TestCleanup]
-        public void TestsCleanup()
-        {
-            _loggerFactory?.Dispose();
-        }
-
-        [TestCleanup]
         public void FetcherTestsCleanup()
         {
+            _loggerFactory?.Dispose();
             Fetcher.Uninitialize();
         }
 
