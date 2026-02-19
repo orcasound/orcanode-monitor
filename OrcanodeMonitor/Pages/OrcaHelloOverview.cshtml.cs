@@ -252,10 +252,10 @@ namespace OrcanodeMonitor.Pages
                           .ToList();
 
             // Fetch pods and nodes for display.
-            List<OrcaHelloPod> pods = await _orcaHelloFetcher.FetchPodMetricsAsync(Orcanodes);
+            List<OrcaHelloPod> pods = await _orcaHelloFetcher.FetchPodMetricsAsync(Orcanodes, _logger);
             Pods = pods.OrderBy(n => n.NamespaceName).ToList();
 
-            List<OrcaHelloNode> nodes = await _orcaHelloFetcher.FetchNodeMetricsAsync();
+            List<OrcaHelloNode> nodes = await _orcaHelloFetcher.FetchNodeMetricsAsync(_logger);
             Nodes = nodes.OrderBy(n => n.Name).ToList();
         }
     }

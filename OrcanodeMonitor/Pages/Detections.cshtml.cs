@@ -197,7 +197,7 @@ namespace OrcanodeMonitor.Pages
 
                         if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                         {
-                            OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node);
+                            OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node, _logger);
                             EnsureNodeEntries(node, pod?.GetConfidenceThreshold() ?? "Unknown");
                         }
 
@@ -282,7 +282,7 @@ namespace OrcanodeMonitor.Pages
                 {
                     if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                     {
-                        OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node);
+                        OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node, _logger);
                         EnsureNodeEntries(node, pod?.GetConfidenceThreshold() ?? "Unknown");
                     }
                 }

@@ -117,7 +117,7 @@ using (var scope = app.Services.CreateScope())
 
     var context = services.GetRequiredService<OrcanodeMonitorContext>();
 
-    // Seed sample data for offline mode
+    // Seed sample data for offline mode.
     if (Fetcher.IsOffline)
     {
         context.Database.EnsureCreated();

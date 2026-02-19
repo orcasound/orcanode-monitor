@@ -19,10 +19,19 @@ namespace Test
     public class FetcherTests
     {
         OrcanodeMonitorContext _context;
-        Mock<ILogger> _mockLogger;
-        ILogger _logger => _mockLogger.Object;
+        ILogger _logger;
         OrcasiteTestHelper.MockOrcasiteHelperContainer _container;
         HttpClient _httpClient;
+
+        private ILogger CreateConsoleLogger()
+        {
+            using var loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder.AddConsole();
+                builder.SetMinimumLevel(LogLevel.Debug);
+            });
+            return loggerFactory.CreateLogger<OrcaHelloFetcherTests>();
+        }
 
         [TestInitialize]
         public void FetcherTestsInitialize()
@@ -34,7 +43,7 @@ namespace Test
                             .Options;
             _context = new OrcanodeMonitorContext(options);
 
-            _mockLogger = new Mock<ILogger>();
+            _logger = CreateConsoleLogger();
 
             _container = OrcasiteTestHelper.GetMockOrcasiteHelperWithRequestVerification(_logger);
 
@@ -107,7 +116,7 @@ namespace Test
             OrcaHelloFetcher fetcher = OrcasiteTestHelper.GetMockOrcaHelloFetcher(node);
 
             // Act
-            var pod = await fetcher.GetOrcaHelloPodAsync(node);
+            var pod = await fetcher.GetOrcaHelloPodAsync(node, _logger);
 
             // Assert
             Assert.IsNotNull(pod, "Pod should not be null");

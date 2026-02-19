@@ -1,17 +1,40 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
+using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
+using System.Net.Http;
 
 namespace Test
 {
     [TestClass]
     public class OrcaHelloFetcherTests
     {
+        ILogger _logger;
+
+        private ILogger CreateConsoleLogger()
+        {
+            using var loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder.AddConsole();
+                builder.SetMinimumLevel(LogLevel.Debug);
+            });
+            return loggerFactory.CreateLogger<OrcaHelloFetcherTests>();
+        }
+
+        [TestInitialize]
+        public void TestsInitialize()
+        {
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+
+            _logger = CreateConsoleLogger();
+        }
+
         [TestMethod]
         public async Task GetOrcaHelloPodAsync_ReturnsNull_WhenClientIsNull()
         {
@@ -20,7 +43,7 @@ namespace Test
             var orcanode = new Orcanode { OrcasoundSlug = "test-slug" };
 
             // Act
-            var result = await fetcher.GetOrcaHelloPodAsync(orcanode);
+            var result = await fetcher.GetOrcaHelloPodAsync(orcanode, _logger);
 
             // Assert
             Assert.IsNull(result);
@@ -30,12 +53,11 @@ namespace Test
         public async Task UpdateOrcaHelloDataAsync_HandlesNullClient()
         {
             // Arrange
-            var mockLogger = new Mock<ILogger>();
             var mockContext = new Mock<IOrcanodeMonitorContext>();
             var orcaHelloFetcher = new OrcaHelloFetcher(null);
 
             // Act
-            await orcaHelloFetcher.UpdateOrcaHelloDataAsync(mockContext.Object, mockLogger.Object);
+            await orcaHelloFetcher.UpdateOrcaHelloDataAsync(mockContext.Object, _logger);
 
             // Assert
             // Should complete without throwing an exception
@@ -51,7 +73,7 @@ namespace Test
             var orcanodes = new List<Orcanode>();
 
             // Act
-            var result = await fetcher.FetchPodMetricsAsync(orcanodes);
+            var result = await fetcher.FetchPodMetricsAsync(orcanodes, _logger);
 
             // Assert
             Assert.IsNotNull(result);
@@ -65,7 +87,7 @@ namespace Test
             var fetcher = new OrcaHelloFetcher(null);
 
             // Act
-            var result = await fetcher.FetchNodeMetricsAsync();
+            var result = await fetcher.FetchNodeMetricsAsync(_logger);
 
             // Assert
             Assert.IsNotNull(result);
@@ -79,7 +101,7 @@ namespace Test
             var fetcher = new OrcaHelloFetcher(null);
 
             // Act
-            var result = await fetcher.GetOrcaHelloNodeAsync("test-node");
+            var result = await fetcher.GetOrcaHelloNodeAsync("test-node", _logger);
 
             // Assert
             Assert.IsNull(result);
