@@ -4,7 +4,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
-using System.Net.Http;
 using System.Text.Json;
 
 namespace OrcanodeMonitor.Core
