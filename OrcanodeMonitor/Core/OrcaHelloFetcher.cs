@@ -84,7 +84,7 @@ namespace OrcanodeMonitor.Core
             string? k8sCACert = Fetcher.GetConfig("KUBERNETES_CA_CERT");
             if (k8sCACert == null)
             {
-                logger.LogError($"[CreateK8sClient] No KUBERNETES_CA_CERT");
+                logger.LogError("[CreateK8sClient] No KUBERNETES_CA_CERT");
                 return null;
             }
             byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
@@ -92,13 +92,13 @@ namespace OrcanodeMonitor.Core
             string? host = Fetcher.GetConfig("KUBERNETES_SERVICE_HOST");
             if (string.IsNullOrEmpty(host))
             {
-                logger.LogError($"[CreateK8sClient] No KUBERNETES_SERVICE_HOST");
+                logger.LogError("[CreateK8sClient] No KUBERNETES_SERVICE_HOST");
                 return null;
             }
             string? accessToken = Fetcher.GetConfig("KUBERNETES_TOKEN");
             if (string.IsNullOrEmpty(accessToken))
             {
-                logger.LogError($"[CreateK8sClient] No KUBERNETES_TOKEN");
+                logger.LogError("[CreateK8sClient] No KUBERNETES_TOKEN");
                 return null;
             }
             var config = new KubernetesClientConfiguration
@@ -152,7 +152,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"[GetOrcaHelloNodeAsync] Error retrieving node info for '{nodeName}'");
+                logger.LogError(ex, "[GetOrcaHelloNodeAsync] Error retrieving node info for '{NodeName}'", nodeName);
                 return null;
             }
         }
@@ -349,8 +349,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                // Optionally log the exception here if logging is available
-                logger.LogError(ex, $"[GetPodCommandOutput] Error retrieving node info for '{namespaceName}'");
+                logger.LogError(ex, "[GetPodCommandOutput] Error retrieving node info for '{NamespaceName}'", namespaceName);
                 return string.Empty;
             }
 
@@ -447,7 +446,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"[GetModelThresholdsAsync] Error retrieving ConfigMap for namespace '{namespaceName}'");
+                logger.LogError(ex, "[GetModelThresholdsAsync] Error retrieving ConfigMap for namespace '{NamespaceName}'", namespaceName);
             }
 
             return (null, null);
@@ -464,7 +463,7 @@ namespace OrcanodeMonitor.Core
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
-                logger.LogError($"[GetOrcaHelloPodAsync] Kubernetes client is null");
+                logger.LogError("[GetOrcaHelloPodAsync] Kubernetes client is null");
                 return null;
             }
 
@@ -473,7 +472,7 @@ namespace OrcanodeMonitor.Core
             GetBestPodStatus(pods.Items, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
             if (bestPod == null)
             {
-                logger.LogError($"[GetOrcaHelloPodAsync] Best pod is null");
+                logger.LogError("[GetOrcaHelloPodAsync] Best pod is null");
                 return null;
             }
 
@@ -570,7 +569,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Exception in GetOrcaHelloLogAsync");
+                logger.LogError(ex, "Exception in GetOrcaHelloLogAsync");
                 return string.Empty;
             }
         }
@@ -717,7 +716,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Exception in UpdateOrcaHelloDataAsync");
+                logger.LogError(ex, "Exception in UpdateOrcaHelloDataAsync");
             }
         }
 
@@ -767,7 +766,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"[GetOrcaHelloDetectionsAsync] Error retrieving detections");
+                logger.LogError(ex, "[GetOrcaHelloDetectionsAsync] Error retrieving detections");
             }
 
             return allDetections;
@@ -818,7 +817,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"[GetOrcaHelloDetectionCountAsync] Error retrieving detections");
+                logger.LogError(ex, "[GetOrcaHelloDetectionCountAsync] Error retrieving detections");
                 return 0;
             }
         }
@@ -895,7 +894,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"[FetchPodMetricsAsync] Error retrieving container metrics");
+                logger.LogError(ex, "[FetchPodMetricsAsync] Error retrieving container metrics");
             }
 
             return resultList;
@@ -941,7 +940,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"[FetchNodeMetricsAsync] Error retrieving node metrics");
+                logger.LogError(ex, "[FetchNodeMetricsAsync] Error retrieving node metrics");
             }
 
             return resultList;

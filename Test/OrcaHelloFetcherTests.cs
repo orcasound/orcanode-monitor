@@ -33,6 +33,12 @@ namespace Test
             _logger = CreateConsoleLogger();
         }
 
+        [TestCleanup]
+        public void TestsCleanup()
+        {
+            _loggerFactory?.Dispose();
+        }
+
         [TestMethod]
         public async Task GetOrcaHelloPodAsync_ReturnsNull_WhenClientIsNull()
         {

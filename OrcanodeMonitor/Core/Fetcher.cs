@@ -188,14 +188,14 @@ namespace OrcanodeMonitor.Core
                 if (dataArray.ValueKind != JsonValueKind.Array)
                 {
                     // Error.
-                    logger.LogError($"Invalid dataArray kind in GetOrcasoundDataAsync: {dataArray.ValueKind}");
+                    logger.LogError("Invalid dataArray kind in GetOrcasoundDataAsync: {DataArrayValueKind}", dataArray.ValueKind);
                     return null;
                 }
                 return dataArray;
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Exception in GetOrcasoundDataAsync: {ex.Message}");
+                logger.LogError(ex, "Exception in GetOrcasoundDataAsync");
                 return null;
             }
         }
@@ -204,23 +204,23 @@ namespace OrcanodeMonitor.Core
         {
             if (!feed.TryGetProperty("id", out var feedId))
             {
-                logger.LogError($"Missing id in UpdateOrcasoundNode");
+                logger.LogError("Missing id in UpdateOrcasoundNode");
                 return;
             }
             if (!feed.TryGetProperty("attributes", out JsonElement attributes))
             {
-                logger.LogError($"Missing attributes in UpdateOrcasoundNode");
+                logger.LogError("Missing attributes in UpdateOrcasoundNode");
                 return;
             }
             if (!attributes.TryGetProperty("name", out var name))
             {
-                logger.LogError($"Missing name in UpdateOrcasoundNode");
+                logger.LogError("Missing name in UpdateOrcasoundNode");
                 return;
             }
             string orcasoundName = name.ToString();
             if (!attributes.TryGetProperty("dataplicity_id", out var dataplicity_id))
             {
-                logger.LogError($"Missing dataplicity_id in UpdateOrcasoundNode");
+                logger.LogError("Missing dataplicity_id in UpdateOrcasoundNode");
                 return;
             }
             bool hidden = false;
@@ -388,7 +388,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Exception in UpdateOrcasoundDataAsync: {ex.Message}");
+                logger.LogError(ex, "Exception in UpdateOrcasoundDataAsync");
             }
         }
 
@@ -410,7 +410,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Exception in UpdateS3DataAsync: {ex.Message}");
+                logger.LogError(ex, "Exception in UpdateS3DataAsync");
             }
         }
 
@@ -489,7 +489,7 @@ namespace OrcanodeMonitor.Core
             using HttpResponseMessage response = await _httpClient.GetAsync(url);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                logger.LogError($"{node.S3NodeName} not found on S3");
+                logger.LogError("{NodeName} not found on S3", node.S3NodeName);
 
                 // Absent.
                 if (updateNode)
@@ -500,7 +500,7 @@ namespace OrcanodeMonitor.Core
             }
             if (response.StatusCode == HttpStatusCode.Forbidden)
             {
-                logger.LogError($"{node.S3NodeName} got access denied on S3");
+                logger.LogError("{NodeName} got access denied on S3", node.S3NodeName);
 
                 // Access denied.
                 if (updateNode)
@@ -511,7 +511,7 @@ namespace OrcanodeMonitor.Core
             }
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogError($"{node.S3NodeName} got status {response.StatusCode} on S3");
+                logger.LogError("{NodeName} got status {StatusCode} on S3", node.S3NodeName, response.StatusCode);
 
                 return null;
             }
@@ -589,7 +589,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Failed to fetch recent events");
+                logger.LogError(ex, "Failed to fetch recent events");
                 return null;
             }
         }
@@ -631,7 +631,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Failed to fetch events for node {id}");
+                logger.LogError(ex, "Failed to fetch events for node {NodeId}", id);
                 return null;
             }
         }
@@ -680,7 +680,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Exception in GetRecentDetectionsAsync: {ex.Message}");
+                logger.LogError(ex, "Exception in GetRecentDetectionsAsync");
                 return null;
             }
         }
@@ -730,7 +730,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Exception in GetRecentDetectionsForNodeAsync: {ex.Message}");
+                logger.LogError(ex, "Exception in GetRecentDetectionsForNodeAsync");
                 return null;
             }
         }
@@ -828,7 +828,7 @@ namespace OrcanodeMonitor.Core
             {
                 // We couldn't fetch the stream audio so could not update the
                 // audio standard deviation. Just ignore this for now.
-                logger.LogError(ex, $"Exception in UpdateManifestTimestampAsync: {ex.Message}");
+                logger.LogError(ex, "Exception in UpdateManifestTimestampAsync");
             }
             return null;
         }
