@@ -112,6 +112,21 @@
         </table>
     </div>
 
+    <h2>Recent Log</h2>
+    <div id="logBox"
+         style="border: 1px solid #ccc; padding: 10px; text-align: left;
+            height: 400px; overflow-y: auto; white-space: pre-wrap;">
+        <pre>@Model.LogData</pre>
+    </div>
+
+    <script>
+        // Scroll to bottom once the DOM is ready
+        window.addEventListener("DOMContentLoaded", function () {
+            var box = document.getElementById("logBox");
+            box.scrollTop = box.scrollHeight;
+        });
+    </script>
+
     @if (Model.OtherPods.Any())
     {
         <h2>Other Pods</h2>
@@ -135,20 +150,5 @@
             }
         </table>
     }
-
-    <h2>Recent Log</h2>
-    <div id="logBox"
-         style="border: 1px solid #ccc; padding: 10px; text-align: left;
-            height: 400px; overflow-y: auto; white-space: pre-wrap;">
-        <pre>@Model.LogData</pre>
-    </div>
-
-    <script>
-        // Scroll to bottom once the DOM is ready
-        window.addEventListener("DOMContentLoaded", function () {
-            var box = document.getElementById("logBox");
-            box.scrollTop = box.scrollHeight;
-        });
-    </script>
 
 </div>

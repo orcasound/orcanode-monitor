@@ -52,16 +52,20 @@ namespace OrcanodeMonitor.Models
             _pod.Status?.ContainerStatuses?.Sum(cs => cs.RestartCount) ?? 0;
 
         /// <summary>
+        /// Start time of the pod (or creation timestamp as a fallback), used for sorting.
+        /// </summary>
+        public DateTime? StartTime => _pod.Status?.StartTime ?? _pod.Metadata?.CreationTimestamp;
+
+        /// <summary>
         /// Age of the pod since its start time (or creation timestamp as a fallback).
         /// </summary>
         public string Age
         {
             get
             {
-                DateTime? startTime = _pod.Status?.StartTime ?? _pod.Metadata?.CreationTimestamp;
-                if (startTime.HasValue)
+                if (StartTime.HasValue)
                 {
-                    TimeSpan age = DateTime.UtcNow - startTime.Value;
+                    TimeSpan age = DateTime.UtcNow - StartTime.Value;
                     return Orcanode.FormatTimeSpan(age);
                 }
                 return "Unknown";

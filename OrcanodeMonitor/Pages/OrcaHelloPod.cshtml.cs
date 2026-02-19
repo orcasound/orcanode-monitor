@@ -169,7 +169,9 @@ namespace OrcanodeMonitor.Pages
 
             Namespace = podNamespace;
 
-            OtherPods = await _orcaHelloFetcher.GetOtherPodsAsync(_orcanode);
+            OtherPods = (await _orcaHelloFetcher.GetOtherPodsAsync(_orcanode))
+                .OrderByDescending(p => p.StartTime)
+                .ToList();
 
             _logData = await _orcaHelloFetcher.GetOrcaHelloLogAsync(_pod, podNamespace, _logger);
             if (_logData.IsNullOrEmpty())
