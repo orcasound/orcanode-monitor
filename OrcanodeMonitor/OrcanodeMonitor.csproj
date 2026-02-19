@@ -12,17 +12,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.S3" Version="4.0.17.3" />
+    <PackageReference Include="AWSSDK.S3" Version="4.0.18.6" />
     <PackageReference Include="FFMpegCore" Version="5.4.0" />
     <PackageReference Include="FFMpegInstaller.Windows.x64" Version="0.1.10" />
     <PackageReference Include="FftSharp" Version="2.2.0" />
     <PackageReference Include="KubernetesClient" Version="17.0.14" />
-    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.23" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Cosmos" Version="8.0.23" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="8.0.24" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Cosmos" Version="8.0.24" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.23" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.23" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.23" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.23">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="8.0.24" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.24" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.24">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
