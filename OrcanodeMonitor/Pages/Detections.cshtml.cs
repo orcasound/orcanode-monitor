@@ -204,6 +204,7 @@ namespace OrcanodeMonitor.Pages
                 {
                     if (!_detectionCounts.ContainsKey(node.OrcasoundSlug))
                     {
+                        OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node);
                         _detectionCounts[node.OrcasoundSlug] = new DetectionData
                         {
                             CumulativeNegativeMachineDetectionConfidence = 0,
@@ -212,7 +213,7 @@ namespace OrcanodeMonitor.Pages
                             MaximumNegativeMachineDetectionConfidence = 0,
                             PositiveHumanDetectionCount = 0,
                             NegativeHumanDetectionCount = 0,
-                            ConfidenceThreshold = "Unknown"
+                            ConfidenceThreshold = pod?.GetConfidenceThreshold() ?? "Unknown"
                         };
                     }
                 }
