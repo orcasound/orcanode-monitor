@@ -1,42 +1,100 @@
 ﻿@page
 @model OrcanodeMonitor.Pages.DetectionsModel
 @{
-    ViewData["Title"] = "Detections";
+    ViewData["Title"] = "Detection Stats";
 }
 
 <div class="text-center">
-    <h1 class="display-4">Detections</h1>
+    <h1 class="display-4">Detection Stats</h1>
+    <p>
+        Status as of: @Model.LastChecked Pacific
+    </p>
+
+    <!-- Filter Buttons for Time Range -->
+    <div>
+        Filter by Time Range:
+        <button id="btn-timeRange-pastWeek" class="btn selected" onclick="updateFilter('pastWeek')">Past Week</button>
+        <button id="btn-timeRange-pastMonth" class="btn unselected" onclick="updateFilter('pastMonth')">Past Month</button>
+        <p></p>
+    </div>
+
     <table>
-        <tr>
-            <th>Name</th>
-            <th>Human Detections</th>
-            <th>Machine Detections</th>
-            <th>Negative Confidence</th>
-            <th>Configured Threshold</th>
-            <th>Positive Confidence</th>
-        </tr>
-        @foreach (Models.Orcanode item in Model.Nodes)
-        {
+        <thead>
             <tr>
-                <td title="@Html.DisplayFor(modelItem => item.DataplicityDescription)">
-                    @Html.DisplayFor(modelItem => item.DisplayName)
-                </td>
-                <td>
-                    @Model.GetHumanDetectionCount(item)
-                </td>
-                <td>
-                    @Model.GetMachineDetectionCount(item)
-                </td>
-                <td>
-                    @Model.GetAverageNegativeMachineConfidence(item)
-                </td>
-                <td>
-                    @Model.GetConfiguredConfidenceThreshold(item)
-                </td>
-                <td>
-                    @Model.GetAveragePositiveMachineConfidence(item)
-                </td>
+                <th>Location</th>
+                <th>Human Detections</th>
+                <th>Machine Detections</th>
+                <th>Negative Confidence</th>
+                <th>Configured Threshold</th>
+                <th>Positive Confidence</th>
             </tr>
-        }
+        </thead>
+        <tbody id="tbody-pastWeek">
+            @foreach (Models.Orcanode item in Model.Nodes)
+            {
+                <tr>
+                    <td title="@Html.DisplayFor(modelItem => item.DataplicityDescription)">
+                        @Html.DisplayFor(modelItem => item.DisplayName)
+                    </td>
+                    <td>
+                        @Model.GetHumanDetectionCount(item, "pastWeek")
+                    </td>
+                    <td style="background-color: @Model.GetMachineDetectionBackgroundColor(item, "pastWeek")">
+                        @Model.GetMachineDetectionCount(item, "pastWeek")
+                    </td>
+                    <td>
+                        @Model.GetAverageNegativeMachineConfidence(item, "pastWeek")
+                    </td>
+                    <td>
+                        @Model.GetConfiguredConfidenceThreshold(item)
+                    </td>
+                    <td>
+                        @Model.GetAveragePositiveMachineConfidence(item, "pastWeek")
+                    </td>
+                </tr>
+            }
+        </tbody>
+        <tbody id="tbody-pastMonth" style="display:none;">
+            @foreach (Models.Orcanode item in Model.Nodes)
+            {
+                <tr>
+                    <td title="@Html.DisplayFor(modelItem => item.DataplicityDescription)">
+                        @Html.DisplayFor(modelItem => item.DisplayName)
+                    </td>
+                    <td>
+                        @Model.GetHumanDetectionCount(item, "pastMonth")
+                    </td>
+                    <td style="background-color: @Model.GetMachineDetectionBackgroundColor(item, "pastMonth")">
+                        @Model.GetMachineDetectionCount(item, "pastMonth")
+                    </td>
+                    <td>
+                        @Model.GetAverageNegativeMachineConfidence(item, "pastMonth")
+                    </td>
+                    <td>
+                        @Model.GetConfiguredConfidenceThreshold(item)
+                    </td>
+                    <td>
+                        @Model.GetAveragePositiveMachineConfidence(item, "pastMonth")
+                    </td>
+                </tr>
+            }
+        </tbody>
     </table>
+
+    <script>
+        var currentTimeRange = 'pastWeek';
+
+        function updateFilter(filterValue) {
+            document.getElementById('btn-timeRange-' + currentTimeRange).classList.remove('selected');
+            document.getElementById('btn-timeRange-' + currentTimeRange).classList.add('unselected');
+
+            currentTimeRange = filterValue;
+
+            document.getElementById('btn-timeRange-' + currentTimeRange).classList.remove('unselected');
+            document.getElementById('btn-timeRange-' + currentTimeRange).classList.add('selected');
+
+            document.getElementById('tbody-pastWeek').style.display = (currentTimeRange === 'pastWeek') ? '' : 'none';
+            document.getElementById('tbody-pastMonth').style.display = (currentTimeRange === 'pastMonth') ? '' : 'none';
+        }
+    </script>
 </div>
