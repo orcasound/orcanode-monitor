@@ -2,13 +2,11 @@
 // SPDX-License-Identifier: MIT
 
 using Microsoft.AspNetCore.Builder;
-using Microsoft.Azure.Cosmos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using Moq;
 using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
@@ -18,11 +16,21 @@ namespace Test
     [TestClass]
     public class FetcherTests
     {
-        OrcanodeMonitorContext _context;
-        Mock<ILogger> _mockLogger;
-        ILogger _logger => _mockLogger.Object;
-        OrcasiteTestHelper.MockOrcasiteHelperContainer _container;
-        HttpClient _httpClient;
+        private OrcanodeMonitorContext _context;
+        private ILogger<FetcherTests> _logger;
+        private ILoggerFactory _loggerFactory;
+        private OrcasiteTestHelper.MockOrcasiteHelperContainer _container;
+        private HttpClient _httpClient;
+
+        private ILogger<FetcherTests> CreateConsoleLogger()
+        {
+            _loggerFactory = LoggerFactory.Create(builder =>
+            {
+                builder.AddConsole();
+                builder.SetMinimumLevel(LogLevel.Debug);
+            });
+            return _loggerFactory.CreateLogger<FetcherTests>();
+        }
 
         [TestInitialize]
         public void FetcherTestsInitialize()
@@ -34,7 +42,7 @@ namespace Test
                             .Options;
             _context = new OrcanodeMonitorContext(options);
 
-            _mockLogger = new Mock<ILogger>();
+            _logger = CreateConsoleLogger();
 
             _container = OrcasiteTestHelper.GetMockOrcasiteHelperWithRequestVerification(_logger);
 
@@ -54,6 +62,7 @@ namespace Test
         [TestCleanup]
         public void FetcherTestsCleanup()
         {
+            _loggerFactory?.Dispose();
             Fetcher.Uninitialize();
         }
 
@@ -107,7 +116,7 @@ namespace Test
             OrcaHelloFetcher fetcher = OrcasiteTestHelper.GetMockOrcaHelloFetcher(node);
 
             // Act
-            var pod = await fetcher.GetOrcaHelloPodAsync(node);
+            var pod = await fetcher.GetOrcaHelloPodAsync(node, _logger);
 
             // Assert
             Assert.IsNotNull(pod, "Pod should not be null");

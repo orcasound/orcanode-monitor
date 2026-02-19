@@ -172,7 +172,7 @@ namespace OrcanodeMonitor.Pages
                 List<Detection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger);
 
                 // Fetch OrcaHello detection details for the past month to support both time ranges.
-                var orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(_logger, "1m");
+                var orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync("1m", _logger);
 
                 var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
                 var oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
@@ -197,7 +197,7 @@ namespace OrcanodeMonitor.Pages
 
                         if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                         {
-                            OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node);
+                            OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node, _logger);
                             EnsureNodeEntries(node, pod?.GetConfidenceThreshold() ?? "Unknown");
                         }
 
@@ -282,7 +282,7 @@ namespace OrcanodeMonitor.Pages
                 {
                     if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                     {
-                        OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node);
+                        OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node, _logger);
                         EnsureNodeEntries(node, pod?.GetConfidenceThreshold() ?? "Unknown");
                     }
                 }

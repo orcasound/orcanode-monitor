@@ -37,6 +37,8 @@ namespace Test
         [TestMethod]
         public void MezmoFetcherHttpClientDisablesAutoRedirect()
         {
+            MezmoFetcher.Initialize();
+
             // Use reflection to access the private static HttpClient field.
             var httpClientField = typeof(MezmoFetcher).GetField("_httpClient", BindingFlags.NonPublic | BindingFlags.Static);
             Assert.IsNotNull(httpClientField, "HttpClient field should exist");
@@ -87,6 +89,8 @@ namespace Test
         [TestMethod]
         public async Task TestRedirectBehaviorMezmoFetcher()
         {
+            MezmoFetcher.Initialize();
+
             // Test that HttpClient doesn't follow redirects by making a request to a redirect URL.
             FieldInfo? httpClientField = typeof(MezmoFetcher).GetField("_httpClient", BindingFlags.NonPublic | BindingFlags.Static);
             Assert.IsNotNull(httpClientField, "HttpClient field should exist");

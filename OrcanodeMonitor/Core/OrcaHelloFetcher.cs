@@ -84,7 +84,7 @@ namespace OrcanodeMonitor.Core
             string? k8sCACert = Fetcher.GetConfig("KUBERNETES_CA_CERT");
             if (k8sCACert == null)
             {
-                logger.LogError($"[CreateK8sClient] No KUBERNETES_CA_CERT");
+                logger.LogError("[CreateK8sClient] No KUBERNETES_CA_CERT");
                 return null;
             }
             byte[] caCertBytes = Convert.FromBase64String(k8sCACert);
@@ -92,13 +92,13 @@ namespace OrcanodeMonitor.Core
             string? host = Fetcher.GetConfig("KUBERNETES_SERVICE_HOST");
             if (string.IsNullOrEmpty(host))
             {
-                logger.LogError($"[CreateK8sClient] No KUBERNETES_SERVICE_HOST");
+                logger.LogError("[CreateK8sClient] No KUBERNETES_SERVICE_HOST");
                 return null;
             }
             string? accessToken = Fetcher.GetConfig("KUBERNETES_TOKEN");
             if (string.IsNullOrEmpty(accessToken))
             {
-                logger.LogError($"[CreateK8sClient] No KUBERNETES_TOKEN");
+                logger.LogError("[CreateK8sClient] No KUBERNETES_TOKEN");
                 return null;
             }
             var config = new KubernetesClientConfiguration
@@ -116,8 +116,9 @@ namespace OrcanodeMonitor.Core
         /// Get an object representing a node hosting an OrcaHello inference pod.
         /// </summary>
         /// <param name="nodeName">OrcaHello node name</param>
+        /// <param name="logger">Logger</param>
         /// <returns>OrcaHelloNode</returns>
-        public async Task<OrcaHelloNode?> GetOrcaHelloNodeAsync(string nodeName)
+        public async Task<OrcaHelloNode?> GetOrcaHelloNodeAsync(string nodeName, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
@@ -143,7 +144,7 @@ namespace OrcanodeMonitor.Core
                 GetBestPodStatus(allPodsOnNode, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
                 if (bestPod != null && bestPod.Metadata != null)
                 {
-                    lscpuOutput = await GetPodLscpuOutputAsync(bestPod.Metadata.Name, bestPod.Metadata.NamespaceProperty);
+                    lscpuOutput = await GetPodLscpuOutputAsync(bestPod.Metadata.Name, bestPod.Metadata.NamespaceProperty, logger);
                 }
 
                 PodMetricsList podMetrics = await client.GetKubernetesPodsMetricsAsync();
@@ -151,7 +152,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[GetOrcaHelloNodeAsync] Error retrieving node info for '{nodeName}': {ex}");
+                logger.LogError(ex, "[GetOrcaHelloNodeAsync] Error retrieving node info for '{NodeName}'", nodeName);
                 return null;
             }
         }
@@ -311,12 +312,14 @@ namespace OrcanodeMonitor.Core
         /// <param name="podName">Name of pod to exec into</param>
         /// <param name="namespaceName">Pod namespace</param>
         /// <param name="cmd">The command to execute in the pod.</param>
+        /// <param name="logger">Logger</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the specified command executed in the pod, as a string.</returns>
-        private async Task<string> GetPodCommandOutput(string podName, string namespaceName, string[] cmd)
+        private async Task<string> GetPodCommandOutputAsync(string podName, string namespaceName, string[] cmd, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
+                logger.LogWarning("[GetPodCommandOutputAsync] Kubernetes client is null");
                 return string.Empty;
             }
 
@@ -347,8 +350,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                // Optionally log the exception here if logging is available
-                Console.Error.WriteLine($"[GetPodCommandOutput] Error retrieving node info for '{namespaceName}': {ex.Message}");
+                logger.LogError(ex, "[GetPodCommandOutput] Error retrieving node info for '{NamespaceName}'", namespaceName);
                 return string.Empty;
             }
 
@@ -360,19 +362,21 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="podName">Name of pod to exec into</param>
         /// <param name="namespaceName">Namespace of pod to exec into</param>
+        /// <param name="logger">Logger</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the <c>lscpu</c> command executed in the pod, as a string.</returns>
-        private async Task<string> GetPodLscpuOutputAsync(string podName, string namespaceName)
+        private async Task<string> GetPodLscpuOutputAsync(string podName, string namespaceName, ILogger logger)
         {
             string[] cmd = { "lscpu" };
-            return await GetPodCommandOutput(podName, namespaceName, cmd);
+            return await GetPodCommandOutputAsync(podName, namespaceName, cmd, logger);
         }
 
         /// <summary>
         /// Exec into a pod running to get model info.
         /// </summary>
         /// <param name="pod">Pod to exec into</param>
+        /// <param name="logger">Logger</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the command executed in the pod, as a string.</returns>
-        private async Task<string> GetPodModelTimestampAsync(V1Pod pod)
+        private async Task<string> GetPodModelTimestampAsync(V1Pod pod, ILogger logger)
         {
             if (pod.Metadata == null)
             {
@@ -380,19 +384,21 @@ namespace OrcanodeMonitor.Core
             }
 
             string[] command = { "stat", "-c", "%y", "/usr/src/app/model/model.pkl" };
-            return await GetPodCommandOutput(pod.Metadata.Name, pod.Metadata.NamespaceProperty, command);
+            return await GetPodCommandOutputAsync(pod.Metadata.Name, pod.Metadata.NamespaceProperty, command, logger);
         }
 
         /// <summary>
         /// Get model thresholds from the hydrophone-configs ConfigMap.
         /// </summary>
         /// <param name="namespaceName">Namespace name</param>
+        /// <param name="logger">Logger</param>
         /// <returns>Tuple of (localThreshold, globalThreshold) or (null, null) if not found</returns>
-        private async Task<(double? localThreshold, int? globalThreshold)> GetModelThresholdsAsync(string namespaceName)
+        private async Task<(double? localThreshold, int? globalThreshold)> GetModelThresholdsAsync(string namespaceName, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
+                logger.LogWarning("[GetModelThresholdsAsync] Kubernetes client is null");
                 return (null, null);
             }
 
@@ -442,7 +448,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[GetModelThresholdsAsync] Error retrieving ConfigMap for namespace '{namespaceName}': {ex.Message}");
+                logger.LogError(ex, "[GetModelThresholdsAsync] Error retrieving ConfigMap for namespace '{NamespaceName}'", namespaceName);
             }
 
             return (null, null);
@@ -452,13 +458,14 @@ namespace OrcanodeMonitor.Core
         /// Get an object representing an OrcaHello inference pod.
         /// </summary>
         /// <param name="orcanode">Orcanode object associated with the pod</param>
+        /// <param name="logger">Logger</param>
         /// <returns>OrcaHelloPod</returns>
-        public async Task<OrcaHelloPod?> GetOrcaHelloPodAsync(Orcanode orcanode)
+        public async Task<OrcaHelloPod?> GetOrcaHelloPodAsync(Orcanode orcanode, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
-                Console.Error.WriteLine($"[GetOrcaHelloPodAsync] Kubernetes client is null");
+                logger.LogWarning("[GetOrcaHelloPodAsync] Kubernetes client is null");
                 return null;
             }
 
@@ -467,7 +474,7 @@ namespace OrcanodeMonitor.Core
             GetBestPodStatus(pods.Items, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
             if (bestPod == null)
             {
-                Console.Error.WriteLine($"[GetOrcaHelloPodAsync] Best pod is null");
+                logger.LogError("[GetOrcaHelloPodAsync] Best pod is null");
                 return null;
             }
 
@@ -477,11 +484,11 @@ namespace OrcanodeMonitor.Core
             string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
             string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
-            string modelTimestamp = await GetPodModelTimestampAsync(bestPod);
+            string modelTimestamp = await GetPodModelTimestampAsync(bestPod, logger);
 
-            long detectionCount = await GetOrcaHelloDetectionCountAsync(orcanode);
+            long detectionCount = await GetOrcaHelloDetectionCountAsync(orcanode, logger);
 
-            (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(namespaceName);
+            (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(namespaceName, logger);
 
             return new OrcaHelloPod(bestPod, cpuUsage, memoryUsage, modelTimestamp, detectionCount, localThreshold, globalThreshold);
         }
@@ -492,12 +499,14 @@ namespace OrcanodeMonitor.Core
         /// should appear in the "Other Pods" table on the OrcaHelloPod page.
         /// </summary>
         /// <param name="orcanode">Orcanode whose namespace is to be queried</param>
+        /// <param name="logger">Logger</param>
         /// <returns>List of non-best pods, or an empty list if none are found</returns>
-        public async Task<IList<OrcaHelloPodInstance>> GetOtherPodsAsync(Orcanode orcanode)
+        public async Task<IList<OrcaHelloPodInstance>> GetOtherPodsAsync(Orcanode orcanode, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
+                logger.LogWarning("[GetOtherPodsAsync] Kubernetes client is null");
                 return new List<OrcaHelloPodInstance>();
             }
 
@@ -537,6 +546,7 @@ namespace OrcanodeMonitor.Core
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
+                logger.LogWarning("[GetOrcaHelloLogAsync] Kubernetes client is null");
                 return string.Empty;
             }
 
@@ -564,7 +574,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Exception in GetOrcaHelloLogAsync: {ex.Message}");
+                logger.LogError(ex, "[GetOrcaHelloLogAsync] Error reading pod log for '{PodName}'", podName);
                 return string.Empty;
             }
         }
@@ -582,6 +592,7 @@ namespace OrcanodeMonitor.Core
                 IKubernetes? client = _k8sClient;
                 if (client == null)
                 {
+                    logger.LogWarning("[UpdateOrcaHelloDataAsync] Kubernetes client is null");
                     return;
                 }
 
@@ -711,17 +722,17 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, $"Exception in UpdateOrcaHelloDataAsync: {ex.Message}");
+                logger.LogError(ex, "[UpdateOrcaHelloDataAsync] Error updating OrcaHello data");
             }
         }
 
         /// <summary>
         /// Get all OrcaHello detections in the given timeframe.
         /// </summary>
-        /// <param name="logger">Logger</param>
         /// <param name="timeframe">Timeframe string for the API (e.g., "1w" for one week, "1m" for one month)</param>
+        /// <param name="logger">Logger</param>
         /// <returns>List of AI detections in the given timeframe</returns>
-        public async Task<List<OrcaHelloDetection>> GetRecentDetectionsAsync(ILogger logger, string timeframe = "1w")
+        public async Task<List<OrcaHelloDetection>> GetRecentDetectionsAsync(string timeframe, ILogger logger)
         {
             long pageCount = 1;
             var allDetections = new List<OrcaHelloDetection>();
@@ -761,7 +772,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError($"[GetOrcaHelloDetectionsAsync] Error retrieving detections: {ex}");
+                logger.LogError(ex, "[GetOrcaHelloDetectionsAsync] Error retrieving detections");
             }
 
             return allDetections;
@@ -771,8 +782,9 @@ namespace OrcanodeMonitor.Core
         /// Get the number of OrcaHello detections for a given location in the past week.
         /// </summary>
         /// <param name="orcanode">Node to check</param>
+        /// <param name="logger">Logger instance</param>
         /// <returns>Count of AI detections in the past week</returns>
-        public async Task<long> GetOrcaHelloDetectionCountAsync(Orcanode orcanode)
+        public async Task<long> GetOrcaHelloDetectionCountAsync(Orcanode orcanode, ILogger logger)
         {
             try
             {
@@ -811,7 +823,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[GetOrcaHelloDetectionCountAsync] Error retrieving detections: {ex}");
+                logger.LogError(ex, "[GetOrcaHelloDetectionCountAsync] Error retrieving detections");
                 return 0;
             }
         }
@@ -821,13 +833,14 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="nodes">List of Orcanodes</param>
         /// <param name="counts">Dictionary of counts</param>
+        /// <param name="logger">Logger instance</param>
         /// <returns></returns>
-        public async Task FetchOrcaHelloDetectionCountsAsync(List<Orcanode> nodes, Dictionary<string, long> counts)
+        public async Task FetchOrcaHelloDetectionCountsAsync(List<Orcanode> nodes, Dictionary<string, long> counts, ILogger logger)
         {
             var detectionTasks = nodes.Select(async node => new
             {
                 Slug = node.OrcasoundSlug,
-                Count = await GetOrcaHelloDetectionCountAsync(node)
+                Count = await GetOrcaHelloDetectionCountAsync(node, logger)
             });
             var results = await Task.WhenAll(detectionTasks);
             foreach (var result in results)
@@ -840,13 +853,15 @@ namespace OrcanodeMonitor.Core
         /// Get a list of OrcaHelloPod objects.
         /// </summary>
         /// <param name="orcanodes">List of orcanodes</param>
+        /// <param name="logger">Logger instance</param>
         /// <returns>List of OrcaHelloPod objects</returns>
-        public async Task<List<OrcaHelloPod>> FetchPodMetricsAsync(List<Orcanode> orcanodes)
+        public async Task<List<OrcaHelloPod>> FetchPodMetricsAsync(List<Orcanode> orcanodes, ILogger logger)
         {
             var resultList = new List<OrcaHelloPod>();
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
+                logger.LogWarning("[FetchPodMetricsAsync] Kubernetes client is null");
                 return resultList;
             }
 
@@ -876,9 +891,9 @@ namespace OrcanodeMonitor.Core
                     string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
                     Orcanode? orcanode = orcanodes.Find(a => a.OrcasoundSlug == pod.Metadata.NamespaceProperty);
-                    long detectionCount = (orcanode != null) ? await GetOrcaHelloDetectionCountAsync(orcanode) : 0;
+                    long detectionCount = (orcanode != null) ? await GetOrcaHelloDetectionCountAsync(orcanode, logger) : 0;
 
-                    (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty);
+                    (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty, logger);
 
                     var orcaHelloPod = new OrcaHelloPod(pod, cpuUsage, memoryUsage, modelTimestamp: string.Empty, detectionCount, localThreshold, globalThreshold);
                     resultList.Add(orcaHelloPod);
@@ -886,7 +901,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FetchPodMetricsAsync] Error retrieving container metrics: {ex}");
+                logger.LogError(ex, "[FetchPodMetricsAsync] Error retrieving container metrics");
             }
 
             return resultList;
@@ -895,13 +910,15 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Get a list of OrcaHelloNode objects.
         /// </summary>
+        /// <param name="logger">Logger instance</param>
         /// <returns>List of OrcaHelloNode objects</returns>
-        public async Task<List<OrcaHelloNode>> FetchNodeMetricsAsync()
+        public async Task<List<OrcaHelloNode>> FetchNodeMetricsAsync(ILogger logger)
         {
             var resultList = new List<OrcaHelloNode>();
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
+                logger.LogWarning("[FetchNodeMetricsAsync] Kubernetes client is null");
                 return resultList;
             }
 
@@ -922,7 +939,7 @@ namespace OrcanodeMonitor.Core
                     GetBestPodStatus(allPodsOnNode, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
                     if (bestPod != null && bestPod.Metadata != null)
                     {
-                        lscpuOutput = await GetPodLscpuOutputAsync(bestPod.Metadata.Name, bestPod.Metadata.NamespaceProperty);
+                        lscpuOutput = await GetPodLscpuOutputAsync(bestPod.Metadata.Name, bestPod.Metadata.NamespaceProperty, logger);
                     }
 
                     var orcaHelloNode = new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput, v1Pods.Items, podMetrics.Items);
@@ -931,7 +948,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                Console.Error.WriteLine($"[FetchNodeMetricsAsync] Error retrieving node metrics: {ex}");
+                logger.LogError(ex, "[FetchNodeMetricsAsync] Error retrieving node metrics");
             }
 
             return resultList;
