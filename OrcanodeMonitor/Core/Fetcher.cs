@@ -271,7 +271,7 @@ namespace OrcanodeMonitor.Core
                     {
                         // We have duplicate nodes to merge. In theory we shouldn't have any
                         // node state for the dataplicity-only node. (TODO: verify this)
-                        logger.LogWarning($"Merging duplicate nodes for {node.DataplicitySerial}");
+                        logger.LogWarning("Merging duplicate nodes for {DataplicitySerial}", node.DataplicitySerial);
                         node.DataplicityDescription = dataplicityNode.DataplicityDescription;
                         node.DataplicityName = dataplicityNode.DataplicityName;
                         node.DataplicityOnline = dataplicityNode.DataplicityOnline;
@@ -295,7 +295,7 @@ namespace OrcanodeMonitor.Core
                 if (!node.DataplicitySerial.IsNullOrEmpty() && dataplicitySerial != node.DataplicitySerial)
                 {
                     // TODO: The orcasound entry for the node changed its dataplicity_id.
-                    logger.LogWarning($"dataplicity_id changed for {node.DisplayName} from {node.DataplicitySerial} to {dataplicitySerial}");
+                    logger.LogWarning("dataplicity_id changed for {DisplayName} from {OldSerial} to {NewSerial}", node.DisplayName, node.DataplicitySerial, dataplicitySerial);
                 }
                 node.DataplicitySerial = dataplicitySerial;
             }
@@ -737,7 +737,7 @@ namespace OrcanodeMonitor.Core
 
         public static void AddOrcanodeEvent(IOrcanodeMonitorContext context, ILogger logger, Orcanode node, string type, string value, string? url = null)
         {
-            logger.LogInformation($"Orcanode event: {node.DisplayName} {type} {value}");
+            logger.LogInformation("Orcanode event: {DisplayName} {Type} {Value}", node.DisplayName, type, value);
             var orcanodeEvent = new OrcanodeEvent(node, type, value, DateTime.UtcNow, url);
             context.OrcanodeEvents.Add(orcanodeEvent);
         }

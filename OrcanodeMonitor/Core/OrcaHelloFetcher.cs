@@ -574,7 +574,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception in GetOrcaHelloLogAsync");
+                logger.LogError(ex, "[GetOrcaHelloLogAsync] Error reading pod log for '{PodName}'", podName);
                 return string.Empty;
             }
         }
@@ -722,17 +722,17 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Exception in UpdateOrcaHelloDataAsync");
+                logger.LogError(ex, "[UpdateOrcaHelloDataAsync] Error updating OrcaHello data");
             }
         }
 
         /// <summary>
         /// Get all OrcaHello detections in the given timeframe.
         /// </summary>
-        /// <param name="logger">Logger</param>
         /// <param name="timeframe">Timeframe string for the API (e.g., "1w" for one week, "1m" for one month)</param>
+        /// <param name="logger">Logger</param>
         /// <returns>List of AI detections in the given timeframe</returns>
-        public async Task<List<OrcaHelloDetection>> GetRecentDetectionsAsync(ILogger logger, string timeframe = "1w")
+        public async Task<List<OrcaHelloDetection>> GetRecentDetectionsAsync(string timeframe, ILogger logger)
         {
             long pageCount = 1;
             var allDetections = new List<OrcaHelloDetection>();

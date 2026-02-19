@@ -172,7 +172,7 @@ namespace OrcanodeMonitor.Pages
                 List<Detection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger);
 
                 // Fetch OrcaHello detection details for the past month to support both time ranges.
-                var orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(_logger, "1m");
+                var orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync("1m", _logger);
 
                 var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
                 var oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
