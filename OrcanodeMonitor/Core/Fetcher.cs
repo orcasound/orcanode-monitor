@@ -640,49 +640,74 @@ namespace OrcanodeMonitor.Core
         /// Get recent detections.
         /// </summary>
         /// <param name="logger">Logger</param>
+        /// <param name="since">Optional start time; if provided, paginate to return all detections since this time</param>
         /// <returns>null on error, or list of detections on success</returns>
-        public static async Task<List<Detection>?> GetRecentDetectionsAsync(ILogger logger)
+        public static async Task<List<Detection>?> GetRecentDetectionsAsync(ILogger logger, DateTime? since = null)
         {
             string site = _orcasoundProdSite;
-            string url = $"https://{site}/api/json/detections?page%5Blimit%5D=500&page%5Boffset%5D=0&fields%5Bdetection%5D=id%2Cplaylist_timestamp%2Cplayer_offset%2Ctimestamp%2Cdescription%2Csource%2Ccategory%2Cfeed_id%2Cidempotency_key";
+            const int pageLimit = 100;
+            int offset = 0;
+            var allDetections = new List<Detection>();
+            string fields = "id%2Cplaylist_timestamp%2Cplayer_offset%2Ctimestamp%2Cdescription%2Csource%2Ccategory%2Cfeed_id%2Cidempotency_key";
 
             try
             {
-                string jsonString = await _httpClient.GetStringAsync(url);
-                if (jsonString.IsNullOrEmpty())
+                while (true)
                 {
-                    // Error.
-                    return null;
-                }
+                    string url = $"https://{site}/api/json/detections?page%5Blimit%5D={pageLimit}&page%5Boffset%5D={offset}&fields%5Bdetection%5D={fields}";
 
-                var response = JsonSerializer.Deserialize<DetectionResponse>(
-                    jsonString,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                );
-                if (response?.Data == null)
-                {
-                    return null;
-                }
-
-                List<Detection> detections =
-                    response.Data.Select(d => new Detection
+                    string jsonString = await _httpClient.GetStringAsync(url);
+                    if (jsonString.IsNullOrEmpty())
                     {
-                        ID = d.Id,
-                        NodeID = d.Attributes?.FeedId ?? string.Empty,
-                        Timestamp = d.Attributes?.Timestamp ?? default,
-                        Source = d.Attributes?.Source ?? string.Empty,
-                        Description = d.Attributes?.Description ?? string.Empty,
-                        Category = d.Attributes?.Category ?? string.Empty,
-                        IdempotencyKey = d.Attributes?.IdempotencyKey ?? string.Empty,
-                    }).ToList();
+                        break;
+                    }
 
-                return detections;
+                    var response = JsonSerializer.Deserialize<DetectionResponse>(
+                        jsonString,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    );
+                    if (response?.Data == null || response.Data.Count == 0)
+                    {
+                        break;
+                    }
+
+                    List<Detection> pageDetections =
+                        response.Data.Select(d => new Detection
+                        {
+                            ID = d.Id,
+                            NodeID = d.Attributes?.FeedId ?? string.Empty,
+                            Timestamp = d.Attributes?.Timestamp ?? default,
+                            Source = d.Attributes?.Source ?? string.Empty,
+                            Description = d.Attributes?.Description ?? string.Empty,
+                            Category = d.Attributes?.Category ?? string.Empty,
+                            IdempotencyKey = d.Attributes?.IdempotencyKey ?? string.Empty,
+                        }).ToList();
+
+                    // Determine whether we have gone past the 'since' boundary.
+                    bool reachedBeforeSince = since.HasValue && pageDetections.Any(d => d.Timestamp < since.Value);
+
+                    allDetections.AddRange(since.HasValue
+                        ? pageDetections.Where(d => d.Timestamp >= since.Value)
+                        : pageDetections);
+
+                    bool isUnboundedFetch = !since.HasValue;          // No time bound specified: only return one page.
+                    bool hasReachedTimeLimit = reachedBeforeSince;     // Current page contains records before 'since'.
+                    bool isLastPage = response.Data.Count < pageLimit; // Fewer records than requested: no more pages.
+                    if (isUnboundedFetch || hasReachedTimeLimit || isLastPage)
+                    {
+                        break;
+                    }
+
+                    offset += pageLimit;
+                }
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Exception in GetRecentDetectionsAsync");
                 return null;
             }
+
+            return allDetections;
         }
 
         /// <summary>
