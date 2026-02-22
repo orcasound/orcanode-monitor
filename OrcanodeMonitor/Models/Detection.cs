@@ -48,6 +48,11 @@ namespace OrcanodeMonitor.Models
         public string Source { get; set; } = DetectionSource.Machine;
         public string Description { get; set; } = string.Empty;
         public string IdempotencyKey { get; set; } = string.Empty;
+
+        public override string ToString()
+        {
+            return $"{Source} {Timestamp}";
+        }
     }
 
     public static class DetectionCategory

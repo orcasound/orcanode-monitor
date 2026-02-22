@@ -168,14 +168,15 @@ namespace OrcanodeMonitor.Pages
                               .OrderBy(n => n.DisplayName)
                               .ToList();
 
+                var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
+                var oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
+
                 // Fetch additional detection details (human/machine detections, confidence levels, etc.)
-                List<Detection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger);
+                // Pass oneMonthAgo so that pagination stops once records older than a month are reached.
+                List<Detection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger, oneMonthAgo);
 
                 // Fetch OrcaHello detection details for the past month to support both time ranges.
                 var orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync("1m", _logger);
-
-                var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
-                var oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
 
                 if (detections != null)
                 {
