@@ -684,7 +684,9 @@ namespace OrcanodeMonitor.Core
                         }).ToList();
 
                     // Determine whether we have gone past the 'since' boundary.
-                    bool reachedBeforeSince = since.HasValue && pageDetections.Any(d => d.Timestamp < since.Value);
+                    // Orcasite does not guarantee that the entries are sorted by timestamp, so keep going
+                    // until we don't get any more in range.
+                    bool reachedBeforeSince = since.HasValue && pageDetections.All(d => d.Timestamp < since.Value);
 
                     allDetections.AddRange(since.HasValue
                         ? pageDetections.Where(d => d.Timestamp >= since.Value)
