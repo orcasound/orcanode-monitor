@@ -228,13 +228,25 @@ namespace OrcanodeMonitor.Core
                     {
                         node.AgentVersion = agentVersion.ToString();
                     }
-                    if (device.TryGetProperty("disk_capacity", out var diskCapacity))
+                    if (device.TryGetProperty("disk_capacity", out var diskCapacity) &&
+                        diskCapacity.ValueKind == JsonValueKind.Number &&
+                        diskCapacity.TryGetInt64(out long diskCapacityValue))
                     {
-                        node.DiskCapacity = diskCapacity.GetInt64();
+                        node.DiskCapacity = diskCapacityValue;
                     }
-                    if (device.TryGetProperty("disk_used", out var diskUsed))
+                    else
                     {
-                        node.DiskUsed = diskUsed.GetInt64();
+                        node.DiskCapacity = 0;
+                    }
+                    if (device.TryGetProperty("disk_used", out var diskUsed) &&
+                        diskUsed.ValueKind == JsonValueKind.Number &&
+                        diskUsed.TryGetInt64(out long diskUsedValue))
+                    {
+                        node.DiskUsed = diskUsedValue;
+                    }
+                    else
+                    {
+                        node.DiskUsed = 0;
                     }
                     if (device.TryGetProperty("upgrade_available", out var upgradeAvailable))
                     {
