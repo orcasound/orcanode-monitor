@@ -234,19 +234,11 @@ namespace OrcanodeMonitor.Core
                     {
                         node.DiskCapacity = diskCapacityValue;
                     }
-                    else
-                    {
-                        node.DiskCapacity = 0;
-                    }
                     if (device.TryGetProperty("disk_used", out var diskUsed) &&
                         diskUsed.ValueKind == JsonValueKind.Number &&
                         diskUsed.TryGetInt64(out long diskUsedValue))
                     {
                         node.DiskUsed = diskUsedValue;
-                    }
-                    else
-                    {
-                        node.DiskUsed = 0;
                     }
                     if (device.TryGetProperty("upgrade_available", out var upgradeAvailable))
                     {
