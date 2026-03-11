@@ -88,7 +88,7 @@
                     @item.ImageName
                 </td>
                 <td>
-                    @item.ModelCountThreshold
+                    @(item.ModelCountThreshold?.ToString() ?? "Unknown")
                 </td>
                 <td>
                     @item.GetConfidenceThreshold()
