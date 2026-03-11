@@ -29,14 +29,14 @@ namespace OrcanodeMonitor.Models
         public long DetectionCount { get; private set; }
 
         /// <summary>
-        /// Model local threshold from ConfigMap (0.0 to 1.0).
+        /// Model confidence threshold from ConfigMap (0.0 to 1.0).
         /// </summary>
-        public double? ModelLocalThreshold { get; private set; }
+        public double? ModelConfidenceThreshold { get; private set; }
 
         /// <summary>
-        /// Model global threshold from ConfigMap (integer).
+        /// Model count threshold from ConfigMap (integer).
         /// </summary>
-        public int? ModelGlobalThreshold { get; private set; }
+        public int? ModelCountThreshold { get; private set; }
 
         public double MemoryPercent => MemoryCapacityInKi > 0 ? (100.0 * MemoryUsageInKi / MemoryCapacityInKi) : 0;
         public string MemoryUsage => $"{(MemoryUsageInKi / 1024f / 1024f):F1} GiB";
@@ -55,13 +55,13 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        public OrcaHelloPod(V1Pod pod, string cpuUsage, string memoryUsage, string modelTimestamp, long detectionCount, double? modelLocalThreshold = null, int? modelGlobalThreshold = null)
+        public OrcaHelloPod(V1Pod pod, string cpuUsage, string memoryUsage, string modelTimestamp, long detectionCount, double? modelConfidenceThreshold = null, int? modelCountThreshold = null)
         {
             _pod = pod;
             ModelTimestamp = modelTimestamp;
             DetectionCount = detectionCount;
-            ModelLocalThreshold = modelLocalThreshold;
-            ModelGlobalThreshold = modelGlobalThreshold;
+            ModelConfidenceThreshold = modelConfidenceThreshold;
+            ModelCountThreshold = modelCountThreshold;
 
             long nanocores = long.Parse(cpuUsage.Replace("n", ""));
             CpuUsageCores = nanocores / 1_000_000_000.0;
@@ -92,15 +92,13 @@ namespace OrcanodeMonitor.Models
 
         /// <summary>
         /// Get the confidence threshold display string for a pod.
-        /// Format: "{globalThreshold} @ {localThreshold}%" (e.g., "3 @ 70%")
         /// </summary>
         /// <returns>Confidence threshold string</returns>
         public string GetConfidenceThreshold()
         {
-            if (ModelGlobalThreshold.HasValue && ModelLocalThreshold.HasValue)
+            if (ModelConfidenceThreshold.HasValue)
             {
-                int globalThreshold = ModelGlobalThreshold.Value;
-                return $"{globalThreshold} @ {ModelLocalThreshold.Value:P0}";
+                return $"{ModelConfidenceThreshold.Value:P0}";
             }
             return "Unknown";
         }

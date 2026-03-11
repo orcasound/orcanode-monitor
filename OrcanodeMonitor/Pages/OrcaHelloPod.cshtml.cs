@@ -131,21 +131,13 @@ namespace OrcanodeMonitor.Pages
 
         /// <summary>
         /// Get the confidence threshold display string.
-        /// Format: "{globalThreshold} @ {localThreshold}%" (e.g., "3 @ 70%")
         /// </summary>
-        public string ConfidenceThreshold
-        {
-            get
-            {
-                if (_pod?.ModelGlobalThreshold.HasValue == true && _pod?.ModelLocalThreshold.HasValue == true)
-                {
-                    int globalThreshold = _pod.ModelGlobalThreshold.Value;
-                    int localThresholdPercent = (int)Math.Round(_pod.ModelLocalThreshold.Value * 100);
-                    return $"{globalThreshold} @ {localThresholdPercent}%";
-                }
-                return "Unknown";
-            }
-        }
+        public string ConfidenceThreshold => _pod?.GetConfidenceThreshold() ?? "Unknown";
+
+        /// <summary>
+        /// Get the count threshold display string.
+        /// </summary>
+        public string CountThreshold => _pod?.ModelCountThreshold.HasValue == true ? $"{_pod.ModelCountThreshold.Value}" : "Unknown";
 
         public async Task<IActionResult> OnGetAsync(string podNamespace)
         {
