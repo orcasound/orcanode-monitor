@@ -92,13 +92,22 @@ namespace OrcanodeMonitor.Models
 
         /// <summary>
         /// Get the confidence threshold display string for a pod.
+        /// Format: "{countThreshold} @ {confidenceThreshold}%" (e.g., "3 @ 70%")
         /// </summary>
         /// <returns>Confidence threshold string</returns>
         public string GetConfidenceThreshold()
         {
             if (ModelConfidenceThreshold.HasValue)
             {
-                return $"{ModelConfidenceThreshold.Value:P0}";
+                if (ModelCountThreshold.HasValue)
+                {
+                    int countThreshold = ModelCountThreshold.Value;
+                    return $"{countThreshold} @ {ModelConfidenceThreshold.Value:P0}";
+                }
+                else
+                {
+                    return $"{ModelConfidenceThreshold.Value:P0}";
+                }
             }
             return "Unknown";
         }

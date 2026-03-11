@@ -134,11 +134,6 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         public string ConfidenceThreshold => _pod?.GetConfidenceThreshold() ?? "Unknown";
 
-        /// <summary>
-        /// Get the count threshold display string.
-        /// </summary>
-        public string CountThreshold => _pod?.ModelCountThreshold.HasValue == true ? $"{_pod.ModelCountThreshold.Value}" : "Unknown";
-
         public async Task<IActionResult> OnGetAsync(string podNamespace)
         {
             _orcanode = _databaseContext.Orcanodes.Where(n => n.OrcasoundSlug == podNamespace).FirstOrDefault();

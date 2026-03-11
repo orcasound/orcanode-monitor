@@ -461,25 +461,11 @@ namespace OrcanodeMonitor.Core
                             countThreshold = parsed;
                         }
                     }
-                    else if (config.TryGetValue("model_config_overrides", out object? overrides))
-                    {
-                        if (overrides is Dictionary<object, object> overridesDict)
-                        {
-                            if (overridesDict.TryGetValue("inference", out object? inference))
-                            {
-                                if (inference is Dictionary<object, object> inferenceDict)
-                                {
-                                    if (inferenceDict.TryGetValue("max_batch_size", out object? thresholdValue))
-                                    {
-                                        if (int.TryParse(thresholdValue?.ToString(), out int parsed))
-                                        {
-                                            countThreshold = parsed;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+
+                    // Note: model_config_overrides does not contain a detection count threshold.
+                    // The inference.max_batch_size is an unrelated inference engine parameter
+                    // and should not be used as a threshold value. If no model_global_threshold
+                    // is found, countThreshold remains null.
 
                     return (confidenceThreshold, countThreshold);
                 }
