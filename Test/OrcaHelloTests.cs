@@ -1,5 +1,6 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
+using k8s.Models;
 using OrcanodeMonitor.Models;
 
 namespace Test
@@ -114,32 +115,159 @@ namespace Test
             Environment.SetEnvironmentVariable("ORCAHELLO_HIGH_DETECTION_THRESHOLD", null);
         }
 
-        [TestMethod]
-        public void TestConfidenceThresholdFormatting()
+        /// <summary>
+        /// Helper method to create a minimal V1Pod for testing OrcaHelloPod.
+        /// </summary>
+        private static V1Pod CreateTestPod()
         {
-            // Test that confidence threshold formatting works correctly.
-            // Create a mock pod with known threshold values.
-            var thresholds = new { LocalThreshold = 0.7, GlobalThreshold = 3 };
-
-            // Verify the expected formatting: "3 @ 70%".
-            int globalThreshold = thresholds.GlobalThreshold;
-            int localThresholdPercent = (int)Math.Round(thresholds.LocalThreshold * 100);
-            string expected = $"{globalThreshold} @ {localThresholdPercent}%";
-
-            Assert.AreEqual("3 @ 70%", expected,
-                "Confidence threshold should be formatted as 'global @ local%'");
+            return new V1Pod
+            {
+                Metadata = new V1ObjectMeta
+                {
+                    Name = "test-pod",
+                    NamespaceProperty = "test-namespace"
+                },
+                Spec = new V1PodSpec
+                {
+                    NodeName = "test-node",
+                    Containers = new List<V1Container>
+                    {
+                        new V1Container
+                        {
+                            Name = "inference-system",
+                            Resources = new V1ResourceRequirements
+                            {
+                                Limits = new Dictionary<string, ResourceQuantity>
+                                {
+                                    { "cpu", new ResourceQuantity("2") },
+                                    { "memory", new ResourceQuantity("4Gi") }
+                                }
+                            }
+                        }
+                    }
+                },
+                Status = new V1PodStatus
+                {
+                    ContainerStatuses = new List<V1ContainerStatus>
+                    {
+                        new V1ContainerStatus
+                        {
+                            Ready = true,
+                            RestartCount = 0,
+                            State = new V1ContainerState
+                            {
+                                Running = new V1ContainerStateRunning
+                                {
+                                    StartedAt = DateTime.UtcNow
+                                }
+                            }
+                        }
+                    }
+                }
+            };
         }
 
         [TestMethod]
-        public void TestConfidenceThresholdRounding()
+        public void TestGetConfidenceThreshold_WithBothThresholds()
         {
-            // Test that local threshold is properly rounded to nearest percent.
-            var thresholds = new { LocalThreshold = 0.749, GlobalThreshold = 5 };
+            // Test that GetConfidenceThreshold returns "3 @ 70%" when both thresholds are set.
+            var pod = CreateTestPod();
+            var orcaHelloPod = new OrcaHelloPod(
+                pod,
+                cpuUsage: "100000000n",
+                memoryUsage: "256Ki",
+                modelTimestamp: "2024-01-01",
+                detectionCount: 10,
+                modelConfidenceThreshold: 0.7,
+                modelCountThreshold: 3
+            );
 
-            int localThresholdPercent = (int)Math.Round(thresholds.LocalThreshold * 100);
+            string result = orcaHelloPod.GetConfidenceThreshold();
 
-            Assert.AreEqual(75, localThresholdPercent,
-                "Local threshold should round 0.749 to 75%");
+            Assert.AreEqual("3 @ 70%", result,
+                "GetConfidenceThreshold should return '3 @ 70%' when both thresholds are set");
+        }
+
+        [TestMethod]
+        public void TestGetConfidenceThreshold_WithOnlyConfidenceThreshold()
+        {
+            // Test that GetConfidenceThreshold returns "70%" when only confidence threshold is set.
+            var pod = CreateTestPod();
+            var orcaHelloPod = new OrcaHelloPod(
+                pod,
+                cpuUsage: "100000000n",
+                memoryUsage: "256Ki",
+                modelTimestamp: "2024-01-01",
+                detectionCount: 10,
+                modelConfidenceThreshold: 0.7,
+                modelCountThreshold: null
+            );
+
+            string result = orcaHelloPod.GetConfidenceThreshold();
+
+            Assert.AreEqual("70%", result,
+                "GetConfidenceThreshold should return '70%' when only confidence threshold is set");
+        }
+
+        [TestMethod]
+        public void TestGetConfidenceThreshold_WithNoThresholds()
+        {
+            // Test that GetConfidenceThreshold returns "Unknown" when no thresholds are set.
+            var pod = CreateTestPod();
+            var orcaHelloPod = new OrcaHelloPod(
+                pod,
+                cpuUsage: "100000000n",
+                memoryUsage: "256Ki",
+                modelTimestamp: "2024-01-01",
+                detectionCount: 10,
+                modelConfidenceThreshold: null,
+                modelCountThreshold: null
+            );
+
+            string result = orcaHelloPod.GetConfidenceThreshold();
+
+            Assert.AreEqual("Unknown", result,
+                "GetConfidenceThreshold should return 'Unknown' when no thresholds are set");
+        }
+
+        [TestMethod]
+        public void TestGetConfidenceThreshold_WithRounding()
+        {
+            // Test that confidence threshold is properly rounded to nearest percent (0.749 -> 75%).
+            var pod = CreateTestPod();
+            var orcaHelloPod = new OrcaHelloPod(
+                pod,
+                cpuUsage: "100000000n",
+                memoryUsage: "256Ki",
+                modelTimestamp: "2024-01-01",
+                detectionCount: 10,
+                modelConfidenceThreshold: 0.749,
+                modelCountThreshold: 5
+            );
+
+            string result = orcaHelloPod.GetConfidenceThreshold();
+
+            Assert.AreEqual("5 @ 75%", result,
+                "GetConfidenceThreshold should round 0.749 to 75%");
+        }
+
+        [TestMethod]
+        public void TestGetConfidenceThreshold_WithDifferentValues()
+        {
+            // Test various threshold combinations.
+            var pod = CreateTestPod();
+
+            // Test 0.5 -> 50%
+            var orcaHelloPod1 = new OrcaHelloPod(pod, "100n", "256Ki", "", 0, 0.5, 2);
+            Assert.AreEqual("2 @ 50%", orcaHelloPod1.GetConfidenceThreshold());
+
+            // Test 0.95 -> 95%
+            var orcaHelloPod2 = new OrcaHelloPod(pod, "100n", "256Ki", "", 0, 0.95, 10);
+            Assert.AreEqual("10 @ 95%", orcaHelloPod2.GetConfidenceThreshold());
+
+            // Test 0.05 -> 5%
+            var orcaHelloPod3 = new OrcaHelloPod(pod, "100n", "256Ki", "", 0, 0.05, 1);
+            Assert.AreEqual("1 @ 5%", orcaHelloPod3.GetConfidenceThreshold());
         }
     }
 }

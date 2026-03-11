@@ -392,8 +392,8 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="namespaceName">Namespace name</param>
         /// <param name="logger">Logger</param>
-        /// <returns>Tuple of (localThreshold, globalThreshold) or (null, null) if not found</returns>
-        private async Task<(double? localThreshold, int? globalThreshold)> GetModelThresholdsAsync(string namespaceName, ILogger logger)
+        /// <returns>Tuple of (confidenceThreshold, countThreshold) or (null, null) if not found</returns>
+        private async Task<(double? confidenceThreshold, int? countThreshold)> GetModelThresholdsAsync(string namespaceName, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
@@ -416,18 +416,37 @@ namespace OrcanodeMonitor.Core
 
                     var config = deserializer.Deserialize<Dictionary<string, object>>(yamlContent);
 
-                    double? localThreshold = null;
-                    int? globalThreshold = null;
+                    double? confidenceThreshold = null;
+                    int? countThreshold = null;
 
                     if (config.TryGetValue("model_local_threshold", out object? localValue))
                     {
                         if (localValue is double d)
                         {
-                            localThreshold = d;
+                            confidenceThreshold = d;
                         }
                         else if (double.TryParse(localValue?.ToString(), out double parsed))
                         {
-                            localThreshold = parsed;
+                            confidenceThreshold = parsed;
+                        }
+                    }
+                    else if (config.TryGetValue("model_config_overrides", out object? overrides))
+                    {
+                        if (overrides is Dictionary<object, object> overridesDict)
+                        {
+                            if (overridesDict.TryGetValue("global_prediction", out object? globalPrediction))
+                            {
+                                if (globalPrediction is Dictionary<object, object> globalPredictionDict)
+                                {
+                                    if (globalPredictionDict.TryGetValue("pred_global_threshold", out object? thresholdValue))
+                                    {
+                                        if (double.TryParse(thresholdValue?.ToString(), out double parsed))
+                                        {
+                                            confidenceThreshold = parsed;
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -435,15 +454,20 @@ namespace OrcanodeMonitor.Core
                     {
                         if (globalValue is int i)
                         {
-                            globalThreshold = i;
+                            countThreshold = i;
                         }
                         else if (int.TryParse(globalValue?.ToString(), out int parsed))
                         {
-                            globalThreshold = parsed;
+                            countThreshold = parsed;
                         }
                     }
 
-                    return (localThreshold, globalThreshold);
+                    // Note: model_config_overrides does not contain a detection count threshold.
+                    // The inference.max_batch_size is an unrelated inference engine parameter
+                    // and should not be used as a threshold value. If no model_global_threshold
+                    // is found, countThreshold remains null.
+
+                    return (confidenceThreshold, countThreshold);
                 }
             }
             catch (Exception ex)
@@ -488,9 +512,9 @@ namespace OrcanodeMonitor.Core
 
             long detectionCount = await GetOrcaHelloDetectionCountAsync(orcanode, logger);
 
-            (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(namespaceName, logger);
+            (double? confidenceThreshold, int? countThreshold) = await GetModelThresholdsAsync(namespaceName, logger);
 
-            return new OrcaHelloPod(bestPod, cpuUsage, memoryUsage, modelTimestamp, detectionCount, localThreshold, globalThreshold);
+            return new OrcaHelloPod(bestPod, cpuUsage, memoryUsage, modelTimestamp, detectionCount, confidenceThreshold, countThreshold);
         }
 
         /// <summary>
@@ -893,9 +917,9 @@ namespace OrcanodeMonitor.Core
                     Orcanode? orcanode = orcanodes.Find(a => a.OrcasoundSlug == pod.Metadata.NamespaceProperty);
                     long detectionCount = (orcanode != null) ? await GetOrcaHelloDetectionCountAsync(orcanode, logger) : 0;
 
-                    (double? localThreshold, int? globalThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty, logger);
+                    (double? confidenceThreshold, int? countThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty, logger);
 
-                    var orcaHelloPod = new OrcaHelloPod(pod, cpuUsage, memoryUsage, modelTimestamp: string.Empty, detectionCount, localThreshold, globalThreshold);
+                    var orcaHelloPod = new OrcaHelloPod(pod, cpuUsage, memoryUsage, modelTimestamp: string.Empty, detectionCount, confidenceThreshold, countThreshold);
                     resultList.Add(orcaHelloPod);
                 }
             }
