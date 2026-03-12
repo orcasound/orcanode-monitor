@@ -94,7 +94,7 @@ namespace OrcanodeMonitor.Pages
                 return;
             }
 
-            List<Detection>? detections = await Fetcher.GetRecentDetectionsForNodeAsync(_node.OrcasoundFeedId, _logger);
+            List<Detection>? detections = await Fetcher.GetRecentDetectionsForNodeAsync(_node.OrcasoundFeedId, _logger, DateTime.UtcNow.AddMonths(-1));
             if (detections != null)
             {
                 _detections = detections;
