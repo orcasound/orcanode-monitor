@@ -61,7 +61,9 @@
             {
                 <tr>
                     <td title="@Html.DisplayFor(modelItem => item.DataplicityDescription)">
-                        @Html.DisplayFor(modelItem => item.DisplayName)
+                        <a asp-page="/NodeDetections" asp-route-slug="@item.OrcasoundSlug">
+                            @Html.DisplayFor(modelItem => item.DisplayName)
+                        </a>
                     </td>
                     <td>
                         @Model.GetHumanDetectionCount(item, "pastMonth")
