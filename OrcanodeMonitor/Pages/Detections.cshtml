@@ -78,11 +78,6 @@
                     <td>
                         @Model.GetAveragePositiveMachineConfidence(item, "pastMonth")
                     </td>
-                    <td>
-                        <a asp-page="/NodeDetections" asp-route-slug="@item.OrcasoundSlug" class="btn btn-primary">
-                            View All Detections
-                        </a>
-                    </td>
                 </tr>
             }
         </tbody>
