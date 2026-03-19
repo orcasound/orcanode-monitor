@@ -328,9 +328,16 @@ namespace OrcanodeMonitor.Pages
             {
                 return "Unknown";
             }
-            if (data.ReviewedMachineDetectionCount == 0)
+            // If there are no machine detections at all, report "None".
+            if (data.TotalMachineDetectionCount == 0)
             {
                 return "None";
+            }
+            // If there are detections but none have been reviewed yet, show the total
+            // without attempting to compute a percentage on a zero denominator.
+            if (data.ReviewedMachineDetectionCount == 0)
+            {
+                return $"{data.TotalMachineDetectionCount} (unreviewed)";
             }
             string result = $"{data.PositiveMachineDetectionCount} / {data.ReviewedMachineDetectionCount} ({(data.PositiveMachineDetectionCount / (double)data.ReviewedMachineDetectionCount):P0})";
             if (data.UnreviewedMachineDetectionCount > 0)
