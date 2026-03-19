@@ -110,6 +110,10 @@ namespace OrcanodeMonitor.Pages
             {
                 return string.Empty;
             }
+            if (node.S3StreamStatus == OrcanodeOnlineStatus.Offline)
+            {
+                return OrcanodeOnlineStatus.Offline.ToString();
+            }
             var status = node.OrcaHelloStatus;
             if ((status == OrcanodeOnlineStatus.Lagged || status == OrcanodeOnlineStatus.Online) &&
                 (node.OrcaHelloInferencePodLag.HasValue))
@@ -202,6 +206,10 @@ namespace OrcanodeMonitor.Pages
             if (node == null)
             {
                 return ColorTranslator.ToHtml(Color.Red);
+            }
+            if (node.S3StreamStatus == OrcanodeOnlineStatus.Offline)
+            {
+                return IndexModel.GetBackgroundColor(node.S3StreamStatus, node.OrcasoundStatus);
             }
             return IndexModel.GetBackgroundColor(node.OrcaHelloStatus, node.OrcasoundStatus);
         }

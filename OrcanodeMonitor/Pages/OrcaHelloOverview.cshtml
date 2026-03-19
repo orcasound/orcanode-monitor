@@ -129,7 +129,7 @@
             <b>Detections</b>: Number of detections (regardless of review status) within the past week.
         </li>
         <li>
-            <b>Lag</b>: Time behind current audio that the AI inference container is running.
+            <b>Lag</b>: Time behind current audio that the AI inference container is running, or "Offline" if the S3 stream is offline.
         </li>
         <li>
             <b>Image</b>: The Docker image used by the pod.
@@ -147,7 +147,7 @@
             <b>Absent</b>: No AI inference container is defined.
         </li>
         <li>
-            <b>Offline</b>: AI inference container is not running.
+            <b>Offline</b>: AI inference container is not running (in Uptime column), or S3 stream is not sending audio (in Lag column).
         </li>
         <li>
             <b>Unstable</b>: AI inference container was crashing.
