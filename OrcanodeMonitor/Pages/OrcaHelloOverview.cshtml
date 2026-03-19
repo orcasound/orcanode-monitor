@@ -107,4 +107,50 @@
             </tr>
         }
     </table>
+    <p/>
+    <h4 style="text-align: left;">Legend</h4>
+    <ul style="text-align: left;">
+        <li>
+            <b>CPU</b>: Percentage of CPU currently in use.
+        </li>
+        <li>
+            <b>Memory</b>: Amount and percentage of memory currently in use.
+        </li>
+        <li>
+            <b>AVX-512</b>: Whether the node supports the AVX-512 instruction set.
+        </li>
+        <li>
+            <b>Locations</b>: Kubernetes namespaces of pods running on this node.
+        </li>
+        <li>
+            <b>Problems</b>: Any known issues reported for this node.
+        </li>
+        <li>
+            <b>Detections</b>: Number of detections within the past week.
+        </li>
+        <li>
+            <b>Lag</b>: Time behind current audio that the AI inference container is running.
+        </li>
+        <li>
+            <b>Image</b>: The Docker image used by the pod.
+        </li>
+        <li>
+            <b>Confidence Threshold</b>: Minimum confidence score required to trigger a detection.
+        </li>
+        <li>
+            <b>Uptime</b>: How long the node or pod has been running.
+        </li>
+        <li>
+            <b>Restarts</b>: Number of times the pod has restarted.
+        </li>
+        <li>
+            <b>Absent</b>: No AI inference container is defined.
+        </li>
+        <li>
+            <b>Offline</b>: AI inference container is not running.
+        </li>
+        <li>
+            <b>Unstable</b>: AI inference container was crashing.
+        </li>
+    </ul>
 </div>
