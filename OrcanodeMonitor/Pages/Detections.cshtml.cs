@@ -69,9 +69,19 @@ namespace OrcanodeMonitor.Pages
         public double MaximumNegativeMachineDetectionConfidence;
 
         /// <summary>
-        /// Total number of machine detections.
+        /// Number of unreviewed machine detections.
+        /// </summary>
+        public long UnreviewedMachineDetectionCount;
+
+        /// <summary>
+        /// Total number of reviewed machine detections (positive + negative).
         /// </summary>
         public long MachineDetectionCount => PositiveMachineDetectionCount + NegativeMachineDetectionCount;
+
+        /// <summary>
+        /// Total number of machine detections (reviewed and unreviewed).
+        /// </summary>
+        public long TotalMachineDetectionCount => MachineDetectionCount + UnreviewedMachineDetectionCount;
 
         /// <summary>
         /// Number of positive human detections.
@@ -229,9 +239,11 @@ namespace OrcanodeMonitor.Pages
                                 continue;
                             }
 
-                            // Only count reviewed detections.
+                            // Only count reviewed detections in confirmed/total stats.
                             if (!orcaHelloDetection.Reviewed)
                             {
+                                monthData.UnreviewedMachineDetectionCount++;
+                                if (inPastWeek) weekData.UnreviewedMachineDetectionCount++;
                                 continue;
                             }
 
@@ -317,7 +329,12 @@ namespace OrcanodeMonitor.Pages
             {
                 return "None";
             }
-            return $"{data.PositiveMachineDetectionCount} / {data.MachineDetectionCount} ({(data.PositiveMachineDetectionCount / (double)data.MachineDetectionCount):P0})";
+            string result = $"{data.PositiveMachineDetectionCount} / {data.MachineDetectionCount} ({(data.PositiveMachineDetectionCount / (double)data.MachineDetectionCount):P0})";
+            if (data.UnreviewedMachineDetectionCount > 0)
+            {
+                result += $" of {data.TotalMachineDetectionCount}";
+            }
+            return result;
         }
 
         public string GetMachineDetectionBackgroundColor(Orcanode node, string timeRange)
