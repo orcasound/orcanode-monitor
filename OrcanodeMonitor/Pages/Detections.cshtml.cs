@@ -69,9 +69,19 @@ namespace OrcanodeMonitor.Pages
         public double MaximumNegativeMachineDetectionConfidence;
 
         /// <summary>
-        /// Total number of machine detections.
+        /// Number of unreviewed machine detections.
         /// </summary>
-        public long MachineDetectionCount => PositiveMachineDetectionCount + NegativeMachineDetectionCount;
+        public long UnreviewedMachineDetectionCount;
+
+        /// <summary>
+        /// Total number of reviewed machine detections (positive + negative).
+        /// </summary>
+        public long ReviewedMachineDetectionCount => PositiveMachineDetectionCount + NegativeMachineDetectionCount;
+
+        /// <summary>
+        /// Total number of machine detections (reviewed and unreviewed).
+        /// </summary>
+        public long TotalMachineDetectionCount => ReviewedMachineDetectionCount + UnreviewedMachineDetectionCount;
 
         /// <summary>
         /// Number of positive human detections.
@@ -229,9 +239,14 @@ namespace OrcanodeMonitor.Pages
                                 continue;
                             }
 
-                            // Only count reviewed detections.
+                            // Count unreviewed detections separately; only reviewed detections affect the confirmed/total stats.
                             if (!orcaHelloDetection.Reviewed)
                             {
+                                monthData.UnreviewedMachineDetectionCount++;
+                                if (inPastWeek)
+                                {
+                                    weekData.UnreviewedMachineDetectionCount++;
+                                }
                                 continue;
                             }
 
@@ -313,11 +328,23 @@ namespace OrcanodeMonitor.Pages
             {
                 return "Unknown";
             }
-            if (data.MachineDetectionCount == 0)
+            // If there are no machine detections at all, report "None".
+            if (data.TotalMachineDetectionCount == 0)
             {
                 return "None";
             }
-            return $"{data.PositiveMachineDetectionCount} / {data.MachineDetectionCount} ({(data.PositiveMachineDetectionCount / (double)data.MachineDetectionCount):P0})";
+            // If there are detections but none have been reviewed yet, show the total
+            // without attempting to compute a percentage on a zero denominator.
+            if (data.ReviewedMachineDetectionCount == 0)
+            {
+                return $"{data.TotalMachineDetectionCount} (unreviewed)";
+            }
+            string result = $"{data.PositiveMachineDetectionCount} / {data.ReviewedMachineDetectionCount} ({(data.PositiveMachineDetectionCount / (double)data.ReviewedMachineDetectionCount):P0})";
+            if (data.UnreviewedMachineDetectionCount > 0)
+            {
+                result += $" of {data.TotalMachineDetectionCount}";
+            }
+            return result;
         }
 
         public string GetMachineDetectionBackgroundColor(Orcanode node, string timeRange)
@@ -326,11 +353,11 @@ namespace OrcanodeMonitor.Pages
             {
                 return ColorTranslator.ToHtml(Color.White);
             }
-            if (data.MachineDetectionCount == 0)
+            if (data.ReviewedMachineDetectionCount == 0)
             {
                 return ColorTranslator.ToHtml(Color.White);
             }
-            double percentage = data.PositiveMachineDetectionCount / (double)data.MachineDetectionCount;
+            double percentage = data.PositiveMachineDetectionCount / (double)data.ReviewedMachineDetectionCount;
             if (percentage > 0.5)
             {
                 return ColorTranslator.ToHtml(Color.LightGreen);
