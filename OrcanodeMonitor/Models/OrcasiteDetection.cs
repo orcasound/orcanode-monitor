@@ -39,7 +39,7 @@ namespace OrcanodeMonitor.Models
         public string? IdempotencyKey { get; set; }
     }
 
-    public class Detection
+    public class OrcasiteDetection
     {
         public string ID { get; set; } = string.Empty;
         public string NodeID { get; set; } = string.Empty;

@@ -65,6 +65,7 @@
                 <th>Timestamp (Pacific)</th>
                 <th>Category</th>
                 <th>Source</th>
+                <th>Status</th>
                 <th align="left">Description</th>
                 <th></th>
                 <th></th>
@@ -77,7 +78,7 @@
                     <td colspan="6" class="text-center">No detections found for this time period.</td>
                 </tr>
             }
-            @foreach (Models.Detection item in Model.RecentDetections)
+            @foreach (Models.OrcasiteDetection item in Model.RecentDetections)
             {
                 <tr class="@Model.GetDetectionClasses(item)">
                     @{
@@ -87,6 +88,7 @@
                     <td>@pacificTime.ToString("g")</td>
                     <td>@item.Category</td>
                     <td>@item.Source</td>
+                    <td>@Model.GetDetectionStatus(item)</td>
                     <td align="left">
                         <span>@item.Description</span>
                     </td>

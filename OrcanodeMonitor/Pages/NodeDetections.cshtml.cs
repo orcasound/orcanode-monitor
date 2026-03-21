@@ -16,14 +16,18 @@ namespace OrcanodeMonitor.Pages
         public string NodeName => _node?.DisplayName ?? "Unknown";
         public string Id => _node?.ID ?? string.Empty;
         public string OrcasoundSlug => _node?.OrcasoundSlug ?? string.Empty;
-        private List<Detection> _detections;
-        public List<Detection> RecentDetections => _detections;
+        private List<OrcasiteDetection> _orcasiteDetections;
+        public List<OrcasiteDetection> RecentDetections => _orcasiteDetections;
+        private readonly OrcaHelloFetcher _orcaHelloFetcher;
+        private List<OrcaHelloDetection> _orcaHelloDetections;
 
-        public NodeDetectionsModel(OrcanodeMonitorContext context, ILogger<NodeDetectionsModel> logger)
+        public NodeDetectionsModel(OrcanodeMonitorContext context, ILogger<NodeDetectionsModel> logger, OrcaHelloFetcher orcaHelloFetcher)
         {
             _databaseContext = context;
             _logger = logger;
-            _detections = new List<Detection>();
+            _orcaHelloFetcher = orcaHelloFetcher;
+            _orcasiteDetections = new List<OrcasiteDetection>();
+            _orcaHelloDetections = new List<OrcaHelloDetection>();
         }
 
         /// <summary>
@@ -31,7 +35,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public static string GetSourceClass(Detection item) => item.Source switch
+        public static string GetSourceClass(OrcasiteDetection item) => item.Source switch
         {
             DetectionSource.Machine => "machine",
             DetectionSource.Human => "human",
@@ -43,7 +47,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public static string GetCategoryClass(Detection item) => item.Category switch
+        public static string GetCategoryClass(OrcasiteDetection item) => item.Category switch
         {
             DetectionCategory.Whale => "whale",
             DetectionCategory.Vessel => "vessel",
@@ -56,7 +60,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>String containing CSS classes</returns>
-        public static string GetTimeRangeClass(Detection item)
+        public static string GetTimeRangeClass(OrcasiteDetection item)
         {
             DateTime oneWeekAgo = DateTime.UtcNow.AddDays(-7);
             if (item.Timestamp.ToUniversalTime() > oneWeekAgo)
@@ -78,10 +82,47 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>String containing CSS classes</returns>
-        public string GetDetectionClasses(Detection item)
+        public string GetDetectionClasses(OrcasiteDetection item)
         {
             string classes = GetSourceClass(item) + " " + GetCategoryClass(item) + " " + GetTimeRangeClass(item);
             return classes;
+        }
+
+        public string GetDetectionStatus(OrcasiteDetection orcasiteDetection)
+        {
+            if (orcasiteDetection.Source == DetectionSource.Machine)
+            {
+                OrcaHelloDetection? orcaHelloDetection = _orcaHelloDetections.FirstOrDefault(d => d.Id == orcasiteDetection.IdempotencyKey);
+                if (orcaHelloDetection == null)
+                {
+                    return "Unknown";
+                }
+                else if (orcaHelloDetection.IsPositive(orcasiteDetection))
+                {
+                    return "SRKW";
+                }
+                else if (!orcaHelloDetection.Reviewed)
+                {
+                    return "Unreviewed";
+                }
+                else
+                {
+                    return "Not SRKW";
+                }
+            }
+
+            if (orcasiteDetection.Category != "whale")
+            {
+                return "Not whale";
+            }
+            else if (string.IsNullOrEmpty(orcasiteDetection.Description))
+            {
+                return "Unreviewed";
+            }
+            else
+            {
+                return "Whale";
+            }
         }
 
         public async Task OnGetAsync(string slug)
@@ -94,10 +135,16 @@ namespace OrcanodeMonitor.Pages
                 return;
             }
 
-            List<Detection>? detections = await Fetcher.GetRecentDetectionsForNodeAsync(_node.OrcasoundFeedId, _logger, DateTime.UtcNow.AddMonths(-1));
-            if (detections != null)
+            List<OrcasiteDetection>? orcasiteDetections = await Fetcher.GetRecentDetectionsForNodeAsync(_node.OrcasoundFeedId, _logger, DateTime.UtcNow.AddMonths(-1));
+            if (orcasiteDetections != null)
             {
-                _detections = detections;
+                _orcasiteDetections = orcasiteDetections;
+            }
+
+            List<OrcaHelloDetection> orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: _node.S3NodeName, _logger);
+            if (orcaHelloDetections != null)
+            {
+                _orcaHelloDetections = orcaHelloDetections;
             }
         }
     }
