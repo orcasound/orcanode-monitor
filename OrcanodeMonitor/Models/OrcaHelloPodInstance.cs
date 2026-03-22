@@ -12,7 +12,16 @@ namespace OrcanodeMonitor.Models
     {
         private readonly V1Pod _pod;
 
+        /// <summary>
+        /// Gets the name of the pod from its metadata.
+        /// </summary>
         public string Name => _pod.Metadata?.Name ?? string.Empty;
+
+        /// <summary>
+        /// Returns a string representation of the pod instance using its name.
+        /// </summary>
+        /// <returns>The pod name</returns>
+        public override string ToString() => this.Name;
 
         /// <summary>
         /// Kubernetes phase (Pending, Running, Succeeded, Failed, Unknown).
@@ -20,17 +29,50 @@ namespace OrcanodeMonitor.Models
         public string Phase => _pod.Status?.Phase ?? "Unknown";
 
         /// <summary>
-        /// Short status shown in kubectl output: the pod Reason (e.g. "Evicted") when set,
+        /// Determines the kubectl-style status string for a pod, mimicking the logic used by kubectl.
+        /// Checks for special conditions like ContainerStatusUnknown, non-zero exit codes, evictions,
+        /// and falls back to the pod phase.
+        /// </summary>
+        /// <param name="pod">The Kubernetes pod to evaluate</param>
+        /// <returns>A status string representing the pod's current state</returns>
+        string GetKubectlStatus(V1Pod pod)
+        {
+            var cs = pod.Status.ContainerStatuses?.FirstOrDefault();
+
+            // 1. ContainerStatusUnknown (waiting OR terminated)?
+            if (cs?.State?.Waiting?.Reason == "ContainerStatusUnknown" ||
+                cs?.State?.Terminated?.Reason == "ContainerStatusUnknown")
+            {
+                return "ContainerStatusUnknown";
+            }
+
+            // 2. Terminated with non-zero exit code -> Error.
+            var term = cs?.State?.Terminated;
+            if (term != null && term.ExitCode != 0)
+            {
+                return "Error";
+            }
+
+            // 3. Pod-level eviction.
+            if (pod.Status.Reason == "Evicted")
+            {
+                return "Evicted";
+            }
+
+            // 4. Fall back to phase
+            return pod.Status.Phase;
+        }
+
+        /// <summary>
+        /// Short status shown in kubectl output: the pod Reason (e.g., "Evicted") when set,
         /// otherwise the Phase.
         /// </summary>
-        public string Status
-        {
-            get
-            {
-                string? reason = _pod.Status?.Reason;
-                return !string.IsNullOrEmpty(reason) ? reason : Phase;
-            }
-        }
+        public string Status => GetKubectlStatus(_pod);
+
+        /// <summary>
+        /// Message associated with the pod's current status, e.g., eviction reason or error message.
+        /// </summary>
+        public string Message => _pod.Status?.Message ?? string.Empty;
 
         /// <summary>
         /// "ready/total" container count, e.g., "0/1".
