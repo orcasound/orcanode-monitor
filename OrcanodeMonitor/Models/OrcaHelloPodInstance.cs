@@ -185,7 +185,23 @@ namespace OrcanodeMonitor.Models
                 if (_pod.Spec?.Containers?.Count == 1)
                 {
                     var cs = _pod.Status?.ContainerStatuses?.FirstOrDefault();
-                    timeToFormat = cs?.State?.Running?.StartedAt ?? cs?.State?.Terminated?.StartedAt;
+                    if (cs != null)
+                    {
+                        // Check current running container.
+                        timeToFormat = cs.State?.Running?.StartedAt;
+
+                        // Check current terminated container.
+                        if (!timeToFormat.HasValue)
+                        {
+                            timeToFormat = cs.State?.Terminated?.StartedAt;
+                        }
+
+                        // Check last terminated state (useful for CrashLoopBackOff, waiting states).
+                        if (!timeToFormat.HasValue)
+                        {
+                            timeToFormat = cs.LastState?.Terminated?.StartedAt;
+                        }
+                    }
                 }
 
                 // Fall back to pod start time if container time not available or multi-container pod.
