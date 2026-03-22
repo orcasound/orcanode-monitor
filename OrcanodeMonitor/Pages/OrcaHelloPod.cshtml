@@ -38,7 +38,11 @@
             </tr>
             <tr>
                 <td style="text-align: right; font-weight: bold; padding: 4px;">Detections:</td>
-                <td style="text-align: left; padding: 4px;">@Model.DetectionCount</td>
+                <td style="text-align: left; padding: 4px;">
+                    <a asp-page="/NodeDetections" asp-route-slug="@Model.OrcasoundSlug">
+                        @Model.DetectionCount
+                    </a>
+                </td>
             </tr>
             <tr>
                 <td style="text-align: right; font-weight: bold; padding: 4px;">Lag:</td>

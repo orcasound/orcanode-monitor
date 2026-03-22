@@ -33,6 +33,7 @@ namespace OrcanodeMonitor.Pages
         private long _memoryCapacityInKi => _pod?.MemoryCapacityInKi ?? 0;
         public string MemoryCapacity => $"{(_memoryCapacityInKi / 1024f / 1024f):F1} GiB";
         public double MemoryPercent => _pod?.MemoryPercent ?? 0;
+        public string OrcasoundSlug => _orcanode?.OrcasoundSlug ?? string.Empty;
 
         /// <summary>
         /// Get the reason (in parentheses) the pod last terminated, if any.
