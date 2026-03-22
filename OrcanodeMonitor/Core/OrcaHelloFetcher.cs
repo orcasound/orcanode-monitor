@@ -50,9 +50,9 @@ namespace OrcanodeMonitor.Core
         {
             return $"{Location.Name}@{Timestamp}";
         }
-        public bool IsPositive(Detection orcasiteDetection)
+        public bool IsPositive(OrcasiteDetection orcasiteDetection)
         {
-            if (Found.ToLower() == "yes")
+            if (Found?.ToLower() == "yes")
             {
                 return true; // SRKW
             }
@@ -736,8 +736,9 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="timeframe">Timeframe string for the API (e.g., "1w" for one week, "1m" for one month)</param>
         /// <param name="logger">Logger</param>
+        /// <param name="hydrophoneId">Hydrophone ID (e.g., "rpi_andrews_bay"), or "all"</param>
         /// <returns>List of AI detections in the given timeframe</returns>
-        public async Task<List<OrcaHelloDetection>> GetRecentDetectionsAsync(string timeframe, ILogger logger)
+        public async Task<List<OrcaHelloDetection>> GetRecentDetectionsAsync(string timeframe, string hydrophoneId, ILogger logger)
         {
             long pageCount = 1;
             var allDetections = new List<OrcaHelloDetection>();
@@ -747,10 +748,19 @@ namespace OrcanodeMonitor.Core
                 for (long page = 1; page <= pageCount; page++)
                 {
                     // The API is paginated, so we need to loop through pages until we've retrieved them all.
-                    var uri = new Uri($"https://aifororcasdetections.azurewebsites.net/api/detections?Timeframe={timeframe}&Location=all&RecordsPerPage=50&Page={page}");
+                    var uri = new Uri($"https://aifororcasdetections.azurewebsites.net/api/detections?Timeframe={timeframe}&HydrophoneId={hydrophoneId}&RecordsPerPage=50&Page={page}");
 
                     using var request = new HttpRequestMessage(HttpMethod.Get, uri);
                     using var response = await Fetcher.HttpClient.SendAsync(request);
+                    if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+                    {
+                        break;
+                    }
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        logger.LogError("[GetRecentDetectionsAsync] Unexpected status code {StatusCode}", response.StatusCode);
+                        break;
+                    }
 
                     // Get the total number of pages from the custom header. If the header is missing or invalid,
                     // we'll just return the first page of results.
@@ -777,7 +787,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "[GetOrcaHelloDetectionsAsync] Error retrieving detections");
+                logger.LogError(ex, "[GetRecentDetectionsAsync] Error retrieving detections");
             }
 
             return allDetections;
@@ -796,7 +806,7 @@ namespace OrcanodeMonitor.Core
                 string location = Uri.EscapeDataString(orcanode.OrcaHelloDisplayName);
 
                 // Ask for a record of 1 page just to get the total count in a header.
-                // This should be more efficient than querying GetOrcaHelloDetectionsAsync
+                // This should be more efficient than querying GetRecentDetectionsAsync
                 // to enumerate all of them just to get the count.
                 var uri = new Uri($"https://aifororcasdetections.azurewebsites.net/api/detections?Timeframe=1w&Location={location}&RecordsPerPage=1");
 

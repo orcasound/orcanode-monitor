@@ -183,14 +183,14 @@ namespace OrcanodeMonitor.Pages
 
                 // Fetch additional detection details (human/machine detections, confidence levels, etc.)
                 // Pass oneMonthAgo so that pagination stops once records older than a month are reached.
-                List<Detection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger, oneMonthAgo);
+                List<OrcasiteDetection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger, oneMonthAgo);
 
                 // Fetch OrcaHello detection details for the past month to support both time ranges.
-                var orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync("1m", _logger);
+                var orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: "all", logger: _logger);
 
                 if (detections != null)
                 {
-                    foreach (Detection detection in detections)
+                    foreach (OrcasiteDetection detection in detections)
                     {
                         Orcanode? node = _nodes.Where(n => n.OrcasoundFeedId == detection.NodeID).FirstOrDefault();
                         if (node == null)

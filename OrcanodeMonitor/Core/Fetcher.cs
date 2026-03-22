@@ -642,12 +642,12 @@ namespace OrcanodeMonitor.Core
         /// <param name="logger">Logger</param>
         /// <param name="since">Optional start time; if provided, paginate to return all detections since this time</param>
         /// <returns>null on error, or list of detections on success</returns>
-        public static async Task<List<Detection>?> GetRecentDetectionsAsync(ILogger logger, DateTime? since = null)
+        public static async Task<List<OrcasiteDetection>?> GetRecentDetectionsAsync(ILogger logger, DateTime? since = null)
         {
             string site = _orcasoundProdSite;
             const int pageLimit = 100;
             int offset = 0;
-            var allDetections = new List<Detection>();
+            var allDetections = new List<OrcasiteDetection>();
             string fields = "id%2Cplaylist_timestamp%2Cplayer_offset%2Ctimestamp%2Cdescription%2Csource%2Ccategory%2Cfeed_id%2Cidempotency_key";
 
             try
@@ -671,8 +671,8 @@ namespace OrcanodeMonitor.Core
                         break;
                     }
 
-                    List<Detection> pageDetections =
-                        response.Data.Select(d => new Detection
+                    List<OrcasiteDetection> pageDetections =
+                        response.Data.Select(d => new OrcasiteDetection
                         {
                             ID = d.Id,
                             NodeID = d.Attributes?.FeedId ?? string.Empty,
@@ -719,12 +719,12 @@ namespace OrcanodeMonitor.Core
         /// <param name="logger">Logger</param>
         /// <param name="since">Optional start time; if provided, paginate to return all detections since this time</param>
         /// <returns>null on error, or list of detections on success</returns>
-        public static async Task<List<Detection>?> GetRecentDetectionsForNodeAsync(string feedId, ILogger logger, DateTime? since = null)
+        public static async Task<List<OrcasiteDetection>?> GetRecentDetectionsForNodeAsync(string feedId, ILogger logger, DateTime? since = null)
         {
             string site = _orcasoundProdSite;
             const int pageLimit = 100;
             int offset = 0;
-            var allDetections = new List<Detection>();
+            var allDetections = new List<OrcasiteDetection>();
             string fields = "id%2Cplaylist_timestamp%2Cplayer_offset%2Ctimestamp%2Cdescription%2Csource%2Ccategory%2Cfeed_id%2Cidempotency_key";
 
             try
@@ -748,8 +748,8 @@ namespace OrcanodeMonitor.Core
                         break;
                     }
 
-                    List<Detection> pageDetections =
-                        response.Data.Select(d => new Detection
+                    List<OrcasiteDetection> pageDetections =
+                        response.Data.Select(d => new OrcasiteDetection
                         {
                             ID = d.Id,
                             NodeID = d.Attributes?.FeedId ?? string.Empty,
