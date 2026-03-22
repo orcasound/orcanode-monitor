@@ -12,7 +12,16 @@ namespace OrcanodeMonitor.Models
     {
         private readonly V1Pod _pod;
 
+        /// <summary>
+        /// Gets the name of the pod from its metadata.
+        /// </summary>
         public string Name => _pod.Metadata?.Name ?? string.Empty;
+
+        /// <summary>
+        /// Returns a string representation of the pod instance using its name.
+        /// </summary>
+        /// <returns>The pod name</returns>
+        public override string ToString() => this.Name;
 
         /// <summary>
         /// Kubernetes phase (Pending, Running, Succeeded, Failed, Unknown).
@@ -20,15 +29,104 @@ namespace OrcanodeMonitor.Models
         public string Phase => _pod.Status?.Phase ?? "Unknown";
 
         /// <summary>
-        /// Short status shown in kubectl output: the pod Reason (e.g. "Evicted") when set,
-        /// otherwise the Phase.
+        /// Determines the kubectl-style status string for a pod, mimicking the logic used by kubectl.
+        /// Checks for special conditions like ContainerStatusUnknown, non-zero exit codes, evictions,
+        /// and falls back to the pod phase.
         /// </summary>
-        public string Status
+        /// <param name="pod">The Kubernetes pod to evaluate</param>
+        /// <returns>A status string representing the pod's current state</returns>
+        string GetKubectlStatus(V1Pod pod)
+        {
+            // Guard against null status
+            if (pod.Status == null)
+            {
+                return "Unknown";
+            }
+
+            var cs = pod.Status.ContainerStatuses?.FirstOrDefault();
+
+            // 1. ContainerStatusUnknown (waiting OR terminated)?
+            if (cs?.State?.Waiting?.Reason == "ContainerStatusUnknown" ||
+                cs?.State?.Terminated?.Reason == "ContainerStatusUnknown")
+            {
+                return "ContainerStatusUnknown";
+            }
+
+            // 2. Waiting state reason (e.g., CrashLoopBackOff, ImagePullBackOff).
+            if (!string.IsNullOrEmpty(cs?.State?.Waiting?.Reason))
+            {
+                return cs.State.Waiting.Reason;
+            }
+
+            // 3. Terminated state reason (e.g., OOMKilled, Error).
+            var term = cs?.State?.Terminated;
+            if (term != null)
+            {
+                if (!string.IsNullOrEmpty(term.Reason))
+                {
+                    return term.Reason;
+                }
+                // Fall back to "Error" only if no reason is provided but exit code is non-zero.
+                if (term.ExitCode != 0)
+                {
+                    return "Error";
+                }
+            }
+
+            // 4. Pod-level reason (e.g., "Evicted").
+            if (!string.IsNullOrEmpty(pod.Status.Reason))
+            {
+                return pod.Status.Reason;
+            }
+
+            // 5. Fall back to phase
+            return pod.Status.Phase ?? "Unknown";
+        }
+
+        /// <summary>
+        /// Short status shown in kubectl output. Returns special statuses for container errors 
+        /// (ContainerStatusUnknown, Error), pod-level reasons (e.g., "Evicted"), or falls back to the Phase.
+        /// </summary>
+        public string Status => GetKubectlStatus(_pod);
+
+        /// <summary>
+        /// Message associated with the pod's current status, e.g., eviction reason or error message.
+        /// Falls back to container-level messages when pod-level message is not available.
+        /// </summary>
+        public string Message
         {
             get
             {
-                string? reason = _pod.Status?.Reason;
-                return !string.IsNullOrEmpty(reason) ? reason : Phase;
+                // Try pod-level message first.
+                if (!string.IsNullOrEmpty(_pod.Status?.Message))
+                {
+                    return _pod.Status.Message;
+                }
+
+                // Fall back to container-level messages.
+                var cs = _pod.Status?.ContainerStatuses?.FirstOrDefault();
+                if (cs != null)
+                {
+                    // Check waiting state message.
+                    if (!string.IsNullOrEmpty(cs.State?.Waiting?.Message))
+                    {
+                        return cs.State.Waiting.Message;
+                    }
+
+                    // Check terminated state message.
+                    if (!string.IsNullOrEmpty(cs.State?.Terminated?.Message))
+                    {
+                        return cs.State.Terminated.Message;
+                    }
+
+                    // Check last terminated state message
+                    if (!string.IsNullOrEmpty(cs.LastState?.Terminated?.Message))
+                    {
+                        return cs.LastState.Terminated.Message;
+                    }
+                }
+
+                return string.Empty;
             }
         }
 
