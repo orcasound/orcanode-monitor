@@ -371,23 +371,6 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Exec into a pod running to get model info.
-        /// </summary>
-        /// <param name="pod">Pod to exec into</param>
-        /// <param name="logger">Logger</param>
-        /// <returns>A task that represents the asynchronous operation. The task result contains the combined standard output and error from the command executed in the pod, as a string.</returns>
-        private async Task<string> GetPodModelTimestampAsync(V1Pod pod, ILogger logger)
-        {
-            if (pod.Metadata == null)
-            {
-                return string.Empty;
-            }
-
-            string[] command = { "stat", "-c", "%y", "/usr/src/app/model/model.pkl" };
-            return await GetPodCommandOutputAsync(pod.Metadata.Name, pod.Metadata.NamespaceProperty, command, logger);
-        }
-
-        /// <summary>
         /// Get model thresholds from the hydrophone-configs ConfigMap.
         /// </summary>
         /// <param name="namespaceName">Namespace name</param>
@@ -508,13 +491,11 @@ namespace OrcanodeMonitor.Core
             string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
             string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
-            string modelTimestamp = await GetPodModelTimestampAsync(bestPod, logger);
-
             long detectionCount = await GetOrcaHelloDetectionCountAsync(orcanode, logger);
 
             (double? confidenceThreshold, int? countThreshold) = await GetModelThresholdsAsync(namespaceName, logger);
 
-            return new OrcaHelloPod(bestPod, cpuUsage, memoryUsage, modelTimestamp, detectionCount, confidenceThreshold, countThreshold);
+            return new OrcaHelloPod(bestPod, cpuUsage, memoryUsage, detectionCount, confidenceThreshold, countThreshold);
         }
 
         /// <summary>
@@ -919,7 +900,7 @@ namespace OrcanodeMonitor.Core
 
                     (double? confidenceThreshold, int? countThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty, logger);
 
-                    var orcaHelloPod = new OrcaHelloPod(pod, cpuUsage, memoryUsage, modelTimestamp: string.Empty, detectionCount, confidenceThreshold, countThreshold);
+                    var orcaHelloPod = new OrcaHelloPod(pod, cpuUsage, memoryUsage, detectionCount, confidenceThreshold, countThreshold);
                     resultList.Add(orcaHelloPod);
                 }
             }
