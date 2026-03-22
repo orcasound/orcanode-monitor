@@ -88,6 +88,14 @@ namespace OrcanodeMonitor.Pages
             return classes;
         }
 
+        /// <summary>
+        /// Get the human-readable status of a detection based on its source, review state, and classification.
+        /// </summary>
+        /// <param name="orcasiteDetection">The Orcasite detection to evaluate</param>
+        /// <returns>
+        /// For machine detections: "Unknown", "Unreviewed", "SRKW", or "Not SRKW".
+        /// For human detections: "Not whale", "Unreviewed", or "Whale".
+        /// </returns>
         public string GetDetectionStatus(OrcasiteDetection orcasiteDetection)
         {
             if (orcasiteDetection.Source == DetectionSource.Machine)
