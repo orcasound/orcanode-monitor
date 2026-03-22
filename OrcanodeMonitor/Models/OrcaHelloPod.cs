@@ -11,7 +11,6 @@ namespace OrcanodeMonitor.Models
         public string NamespaceName => _pod.Metadata?.NamespaceProperty ?? string.Empty;
         public string NodeName => _pod.Spec?.NodeName ?? string.Empty;
         public string LastTerminationReason { get; private set; }
-        public string ModelTimestamp { get; private set; }
         public double CpuUsageCores { get; private set; }
         public double CpuCapacityCores { get; private set; }
         public double CpuPercent => CpuCapacityCores > 0 ? (100.0 * CpuUsageCores / CpuCapacityCores) : 0;
@@ -55,10 +54,9 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        public OrcaHelloPod(V1Pod pod, string cpuUsage, string memoryUsage, string modelTimestamp, long detectionCount, double? modelConfidenceThreshold = null, int? modelCountThreshold = null)
+        public OrcaHelloPod(V1Pod pod, string cpuUsage, string memoryUsage, long detectionCount, double? modelConfidenceThreshold = null, int? modelCountThreshold = null)
         {
             _pod = pod;
-            ModelTimestamp = modelTimestamp;
             DetectionCount = detectionCount;
             ModelConfidenceThreshold = modelConfidenceThreshold;
             ModelCountThreshold = modelCountThreshold;
