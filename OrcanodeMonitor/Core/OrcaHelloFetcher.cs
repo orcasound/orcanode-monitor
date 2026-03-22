@@ -771,6 +771,15 @@ namespace OrcanodeMonitor.Core
 
                     using var request = new HttpRequestMessage(HttpMethod.Get, uri);
                     using var response = await Fetcher.HttpClient.SendAsync(request);
+                    if (response.StatusCode == System.Net.HttpStatusCode.NoContent)
+                    {
+                        break;
+                    }
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        logger.LogError("[GetRecentDetectionsAsync] Unexpected status code {StatusCode}", response.StatusCode);
+                        break;
+                    }
 
                     // Get the total number of pages from the custom header. If the header is missing or invalid,
                     // we'll just return the first page of results.

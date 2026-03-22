@@ -186,7 +186,7 @@ namespace OrcanodeMonitor.Pages
                 List<OrcasiteDetection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger, oneMonthAgo);
 
                 // Fetch OrcaHello detection details for the past month to support both time ranges.
-                var orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: "all", _logger);
+                var orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: "all", logger: _logger);
 
                 if (detections != null)
                 {

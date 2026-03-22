@@ -97,13 +97,13 @@ namespace OrcanodeMonitor.Pages
                 {
                     return "Unknown";
                 }
-                else if (orcaHelloDetection.IsPositive(orcasiteDetection))
-                {
-                    return "SRKW";
-                }
                 else if (!orcaHelloDetection.Reviewed)
                 {
                     return "Unreviewed";
+                }
+                else if (orcaHelloDetection.IsPositive(orcasiteDetection))
+                {
+                    return "SRKW";
                 }
                 else
                 {
@@ -141,7 +141,7 @@ namespace OrcanodeMonitor.Pages
                 _orcasiteDetections = orcasiteDetections;
             }
 
-            List<OrcaHelloDetection> orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: _node.S3NodeName, _logger);
+            List<OrcaHelloDetection> orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: _node.S3NodeName, logger: _logger);
             if (orcaHelloDetections != null)
             {
                 _orcaHelloDetections = orcaHelloDetections;
