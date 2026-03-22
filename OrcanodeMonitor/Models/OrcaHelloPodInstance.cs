@@ -37,6 +37,12 @@ namespace OrcanodeMonitor.Models
         /// <returns>A status string representing the pod's current state</returns>
         string GetKubectlStatus(V1Pod pod)
         {
+            // Guard against null status
+            if (pod.Status == null)
+            {
+                return "Unknown";
+            }
+
             var cs = pod.Status.ContainerStatuses?.FirstOrDefault();
 
             // 1. ContainerStatusUnknown (waiting OR terminated)?
@@ -53,14 +59,14 @@ namespace OrcanodeMonitor.Models
                 return "Error";
             }
 
-            // 3. Pod-level eviction.
-            if (pod.Status.Reason == "Evicted")
+            // 3. Pod-level reason (e.g., "Evicted").
+            if (!string.IsNullOrEmpty(pod.Status.Reason))
             {
-                return "Evicted";
+                return pod.Status.Reason;
             }
 
             // 4. Fall back to phase
-            return pod.Status.Phase;
+            return pod.Status.Phase ?? "Unknown";
         }
 
         /// <summary>
