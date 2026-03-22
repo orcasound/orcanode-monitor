@@ -52,20 +52,34 @@ namespace OrcanodeMonitor.Models
                 return "ContainerStatusUnknown";
             }
 
-            // 2. Terminated with non-zero exit code -> Error.
-            var term = cs?.State?.Terminated;
-            if (term != null && term.ExitCode != 0)
+            // 2. Waiting state reason (e.g., CrashLoopBackOff, ImagePullBackOff).
+            if (!string.IsNullOrEmpty(cs?.State?.Waiting?.Reason))
             {
-                return "Error";
+                return cs.State.Waiting.Reason;
             }
 
-            // 3. Pod-level reason (e.g., "Evicted").
+            // 3. Terminated state reason (e.g., OOMKilled, Error).
+            var term = cs?.State?.Terminated;
+            if (term != null)
+            {
+                if (!string.IsNullOrEmpty(term.Reason))
+                {
+                    return term.Reason;
+                }
+                // Fall back to "Error" only if no reason is provided but exit code is non-zero.
+                if (term.ExitCode != 0)
+                {
+                    return "Error";
+                }
+            }
+
+            // 4. Pod-level reason (e.g., "Evicted").
             if (!string.IsNullOrEmpty(pod.Status.Reason))
             {
                 return pod.Status.Reason;
             }
 
-            // 4. Fall back to phase
+            // 5. Fall back to phase
             return pod.Status.Phase ?? "Unknown";
         }
 
@@ -77,8 +91,44 @@ namespace OrcanodeMonitor.Models
 
         /// <summary>
         /// Message associated with the pod's current status, e.g., eviction reason or error message.
+        /// Falls back to container-level messages when pod-level message is not available.
         /// </summary>
-        public string Message => _pod.Status?.Message ?? string.Empty;
+        public string Message
+        {
+            get
+            {
+                // Try pod-level message first.
+                if (!string.IsNullOrEmpty(_pod.Status?.Message))
+                {
+                    return _pod.Status.Message;
+                }
+
+                // Fall back to container-level messages.
+                var cs = _pod.Status?.ContainerStatuses?.FirstOrDefault();
+                if (cs != null)
+                {
+                    // Check waiting state message.
+                    if (!string.IsNullOrEmpty(cs.State?.Waiting?.Message))
+                    {
+                        return cs.State.Waiting.Message;
+                    }
+
+                    // Check terminated state message.
+                    if (!string.IsNullOrEmpty(cs.State?.Terminated?.Message))
+                    {
+                        return cs.State.Terminated.Message;
+                    }
+
+                    // Check last terminated state message
+                    if (!string.IsNullOrEmpty(cs.LastState?.Terminated?.Message))
+                    {
+                        return cs.LastState.Terminated.Message;
+                    }
+                }
+
+                return string.Empty;
+            }
+        }
 
         /// <summary>
         /// "ready/total" container count, e.g., "0/1".
