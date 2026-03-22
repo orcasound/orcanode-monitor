@@ -1,6 +1,7 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 using k8s.Models;
+using OrcanodeMonitor.Core;
 
 namespace OrcanodeMonitor.Models
 {
@@ -165,6 +166,70 @@ namespace OrcanodeMonitor.Models
                 {
                     TimeSpan age = DateTime.UtcNow - StartTime.Value;
                     return Orcanode.FormatTimeSpan(age);
+                }
+                return "Unknown";
+            }
+        }
+
+        /// <summary>
+        /// Start time of the pod formatted in Pacific time (America/Los_Angeles), or "Unknown" if not available.
+        /// For single-container pods, uses the container's start time if available; otherwise uses pod start time.
+        /// </summary>
+        public string StartTimePacific
+        {
+            get
+            {
+                DateTime? timeToFormat = null;
+
+                // For single-container pods, prefer the container's start time.
+                if (_pod.Spec?.Containers?.Count == 1)
+                {
+                    var cs = _pod.Status?.ContainerStatuses?.FirstOrDefault();
+                    timeToFormat = cs?.State?.Running?.StartedAt ?? cs?.State?.Terminated?.StartedAt;
+                }
+
+                // Fall back to pod start time if container time not available or multi-container pod.
+                if (!timeToFormat.HasValue)
+                {
+                    timeToFormat = StartTime;
+                }
+
+                if (timeToFormat.HasValue)
+                {
+                    DateTime? pacificTime = Fetcher.UtcToLocalDateTime(timeToFormat.Value);
+                    if (pacificTime.HasValue)
+                    {
+                        return pacificTime.Value.ToString("yyyy-MM-dd HH:mm:ss");
+                    }
+                }
+                return "Unknown";
+            }
+        }
+
+        /// <summary>
+        /// End time of the pod formatted in Pacific time (America/Los_Angeles), or "Unknown" if not available.
+        /// For single-container pods, uses the container's termination time if available; otherwise returns "Unknown".
+        /// </summary>
+        public string EndTimePacific
+        {
+            get
+            {
+                DateTime? timeToFormat = null;
+
+                // For single-container pods, prefer the container's termination time.
+                if (_pod.Spec?.Containers?.Count == 1)
+                {
+                    var cs = _pod.Status?.ContainerStatuses?.FirstOrDefault();
+                    timeToFormat = cs?.State?.Terminated?.FinishedAt ?? cs?.LastState?.Terminated?.FinishedAt;
+                }
+
+                if (timeToFormat.HasValue)
+                {
+                    DateTime? pacificTime = Fetcher.UtcToLocalDateTime(timeToFormat.Value);
+                    if (pacificTime.HasValue)
+                    {
+                        return pacificTime.Value.ToString("yyyy-MM-dd HH:mm:ss");
+                    }
                 }
                 return "Unknown";
             }
