@@ -70,8 +70,8 @@ namespace OrcanodeMonitor.Models
         }
 
         /// <summary>
-        /// Short status shown in kubectl output: the pod Reason (e.g., "Evicted") when set,
-        /// otherwise the Phase.
+        /// Short status shown in kubectl output. Returns special statuses for container errors 
+        /// (ContainerStatusUnknown, Error), pod-level reasons (e.g., "Evicted"), or falls back to the Phase.
         /// </summary>
         public string Status => GetKubectlStatus(_pod);
 
