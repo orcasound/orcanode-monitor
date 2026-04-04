@@ -585,6 +585,53 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
+        /// Try to get the inference pod lag from a new-format "Segment:" log line.
+        /// Format: "2026-04-04 18:28:00,422 INFO Segment: folder=1775286025, indices=[4113:4119), start=2026-04-04T18:25:57Z, duration=60.0s"
+        /// The lag is the time between when the log line was written and the end of the audio segment it describes.
+        /// </summary>
+        /// <param name="line">Log line to parse</param>
+        /// <returns>Lag TimeSpan if the line matches the Segment format, null otherwise</returns>
+        public static TimeSpan? GetLagFromSegmentLine(string line)
+        {
+            Match segmentMatch = Regex.Match(line, @"^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d+) INFO Segment: folder=\d+, indices=\[\d+:\d+\), start=(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z), duration=(\d+\.?\d*)s");
+            if (!segmentMatch.Success)
+            {
+                return null;
+            }
+
+            if (!DateTimeOffset.TryParseExact(
+                    segmentMatch.Groups[1].Value,
+                    "yyyy-MM-dd HH:mm:ss,fff",
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.AssumeUniversal,
+                    out DateTimeOffset logTimestamp))
+            {
+                return null;
+            }
+
+            if (!DateTimeOffset.TryParse(
+                    segmentMatch.Groups[2].Value,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.RoundtripKind,
+                    out DateTimeOffset startTime))
+            {
+                return null;
+            }
+
+            if (!double.TryParse(
+                    segmentMatch.Groups[3].Value,
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out double durationSeconds))
+            {
+                return null;
+            }
+
+            DateTimeOffset endTime = startTime.AddSeconds(durationSeconds);
+            return logTimestamp - endTime;
+        }
+
+        /// <summary>
         /// Update the list of Orcanodes using data about InferenceSystem containers in Azure.
         /// </summary>
         /// <param name="context">Database context to update</param>
@@ -645,18 +692,33 @@ namespace OrcanodeMonitor.Core
                             if (logs != null)
                             {
                                 int lastLiveIndex = -1;
+                                TimeSpan? lastSegmentLag = null;
                                 using var reader = new StreamReader(logs);
                                 string? line;
                                 while ((line = await reader.ReadLineAsync()) != null)
                                 {
-                                    Match m = Regex.Match(line, @"(?<=live)\d+(?=\.ts)");
-                                    if (m.Success)
+                                    // Try new log format first: "2026-04-04 18:28:00,422 INFO Segment: ..."
+                                    TimeSpan? segmentLag = GetLagFromSegmentLine(line);
+                                    if (segmentLag.HasValue)
                                     {
-                                        lastLiveIndex = int.Parse(m.Value);
+                                        lastSegmentLag = segmentLag;
+                                    }
+                                    else
+                                    {
+                                        // Fall back to old log format: live\d+\.ts
+                                        Match m = Regex.Match(line, @"(?<=live)\d+(?=\.ts)");
+                                        if (m.Success)
+                                        {
+                                            lastLiveIndex = int.Parse(m.Value);
+                                        }
                                     }
                                 }
 
-                                if (lastLiveIndex >= 0)
+                                if (lastSegmentLag.HasValue)
+                                {
+                                    node.OrcaHelloInferencePodLag = lastSegmentLag.Value;
+                                }
+                                else if (lastLiveIndex >= 0)
                                 {
                                     // TODO: below is the second call to GetLatestS3TimestampAsync.
                                     // We should cache result from before instead of calling it a second time.

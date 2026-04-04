@@ -110,5 +110,73 @@ namespace Test
             // Assert
             Assert.IsNull(result);
         }
+
+        [TestMethod]
+        public void GetLagFromSegmentLine_ReturnsNull_ForNonMatchingLine()
+        {
+            // Arrange
+            string line = "2026-04-04 18:28:00,422 INFO Some other log message";
+
+            // Act
+            TimeSpan? result = OrcaHelloFetcher.GetLagFromSegmentLine(line);
+
+            // Assert
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
+        public void GetLagFromSegmentLine_ReturnsNull_ForEmptyLine()
+        {
+            // Act
+            TimeSpan? result = OrcaHelloFetcher.GetLagFromSegmentLine(string.Empty);
+
+            // Assert
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
+        public void GetLagFromSegmentLine_ReturnsCorrectLag_ForNewFormatLine()
+        {
+            // Arrange
+            // Log written at 18:28:00, audio started at 18:25:57, duration=60s -> ends at 18:26:57
+            // Lag = 18:28:00.422 - 18:26:57 = 63.422 seconds
+            string line = "2026-04-04 18:28:00,422 INFO Segment: folder=1775286025, indices=[4113:4119), start=2026-04-04T18:25:57Z, duration=60.0s";
+
+            // Act
+            TimeSpan? result = OrcaHelloFetcher.GetLagFromSegmentLine(line);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(TimeSpan.FromSeconds(63.422), result.Value);
+        }
+
+        [TestMethod]
+        public void GetLagFromSegmentLine_ReturnsCorrectLag_WithNonRoundDuration()
+        {
+            // Arrange
+            // Log written at 18:30:00,000 UTC, audio started at 18:28:00Z, duration=45.5s -> ends at 18:28:45.5Z
+            // Lag = 18:30:00 - 18:28:45.5 = 74.5 seconds
+            string line = "2026-04-04 18:30:00,000 INFO Segment: folder=1234567890, indices=[100:110), start=2026-04-04T18:28:00Z, duration=45.5s";
+
+            // Act
+            TimeSpan? result = OrcaHelloFetcher.GetLagFromSegmentLine(line);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(TimeSpan.FromSeconds(74.5), result.Value);
+        }
+
+        [TestMethod]
+        public void GetLagFromSegmentLine_ReturnsNull_ForOldFormatLine()
+        {
+            // Arrange - old format log line containing "live\d+.ts" pattern
+            string line = "Processing file live42.ts from stream";
+
+            // Act
+            TimeSpan? result = OrcaHelloFetcher.GetLagFromSegmentLine(line);
+
+            // Assert
+            Assert.IsNull(result, "Old format log line should not match new Segment format");
+        }
     }
 }
