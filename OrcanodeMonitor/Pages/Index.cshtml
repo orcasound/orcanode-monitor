@@ -23,7 +23,7 @@
             <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Logging</a></th>
             <th><a href="https://www.dataplicity.com/app/" target="_blank">Dataplicity</a></th>
             <th>Agent Version</th>
-            <th>SD Card Util.</th>
+            <!-- <th>SD Card Util.</th> -->
         </tr>
     @foreach (Models.Orcanode item in Model.Nodes)
     {
@@ -115,10 +115,16 @@
             <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
                 @Html.DisplayFor(modelItem => item.AgentVersion)
             </td>
-            <td style="background-color: @Model.NodeDiskUsagePercentageColor(item)">
+            <!-- Commented out for now since SocketXP doesn't provide this natively
+                 and we haven't really used it for anything on the dashboard yet,
+                 so reclaim some screen real estate. We can always add it back
+                 in later if we find a good use for it.
+
+                <td style="background-color: @Model.NodeDiskUsagePercentageColor(item)">
                 @Html.DisplayFor(modelItem => item.DiskUsedInGigs)/@Html.DisplayFor(modelItem => item.DiskCapacityInGigs)G
                 (@Html.DisplayFor(modelItem => item.DiskUsagePercentage)%)
-            </td>
+                </td>
+            -->
         </tr>
     }
     </table>
@@ -208,6 +214,9 @@
         </li>
         <li>
             <b>Dataplicity Online</b>: Dataplicity connection is up.
+        </li>
+        <li>
+            <b>Agent Version</b>: Dataplicity agent version.
         </li>
     </ul>
     <p/>
