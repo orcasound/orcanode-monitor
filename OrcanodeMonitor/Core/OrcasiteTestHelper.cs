@@ -13,7 +13,8 @@ namespace OrcanodeMonitor.Core
 {
     public class OrcasiteTestHelper
     {
-        public static readonly string TestDeviceSerial = "7dcdf551-6283-4867-a0d4-13dc587e4233";
+        public static readonly string TestDataplicityDeviceSerial = "7dcdf551-6283-4867-a0d4-13dc587e4233";
+        public static readonly string TestSocketXPDeviceId = "40f6aa1e-474a-4e0b-ab93-e25824ac1456";
         private static readonly string? _solutionDirectory = InitializeSolutionDirectory();
 
         /// <summary>
@@ -75,8 +76,12 @@ namespace OrcanodeMonitor.Core
 
             // Mock the GET request to dataplicity.
             container.AddJsonResponse(
-                $"https://apps.dataplicity.com/devices/{TestDeviceSerial}/",
+                $"https://apps.dataplicity.com/devices/{TestDataplicityDeviceSerial}/",
                 "DataplicityGetRequestWithSerial.json");
+
+            container.AddJsonResponse(
+                $"https://api.socketxp.com/v1/devices/1/100",
+                "SocketXPGetDevices.json");
 
             container.AddJsonResponse(
                 "https://api.mezmo.com/v1/config/view",

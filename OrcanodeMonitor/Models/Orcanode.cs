@@ -59,6 +59,10 @@ namespace OrcanodeMonitor.Models
             DataplicityDescription = string.Empty;
             DataplicityName = string.Empty;
             DataplicitySerial = string.Empty;
+            SocketXPAgentVersion = string.Empty;
+            SocketXPDeviceId = string.Empty;
+            SocketXPDeviceStatus = string.Empty;
+            SocketXPKernelVersion = string.Empty;
             OrcaHelloId = string.Empty;
             PartitionValue = 1;
             MezmoLogSize = 0;
@@ -146,12 +150,12 @@ namespace OrcanodeMonitor.Models
         public string AgentVersion { get; set; }
 
         /// <summary>
-        /// The disk capacity as reported by Dataplicity.
+        /// The SD card capacity in bytes.
         /// </summary>
         public long DiskCapacity { get; set; }
 
         /// <summary>
-        /// The disk used value as reported by Dataplicity.
+        /// The SD card used value in bytes.
         /// </summary>
         public long DiskUsed { get; set; }
 
@@ -160,6 +164,9 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         public bool? DataplicityOnline { get; set; }
 
+        /// <summary>
+        /// Whether a Dataplicity upgrade is available for the node, as reported by Dataplicity.
+        /// </summary>
         public bool? DataplicityUpgradeAvailable { get; set; }
 
         public double? AudioStandardDeviation { get; set; }
@@ -169,34 +176,10 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         public double? DecibelLevel { get; set; }
 
-        public string RealDecibelLevelForDisplay
-        {
-            get
-            {
-                if (DecibelLevel == null || DecibelLevel == double.NegativeInfinity)
-                {
-                    return "N/A";
-                }
-                return ((int)Math.Round(DecibelLevel ?? double.NegativeInfinity)).ToString();
-            }
-        }
-
         /// <summary>
         /// Measure of hum volume. Negative infinity is absolute silence.
         /// </summary>
         public double? HumDecibelLevel { get; set; }
-
-        public string HumDecibelLevelForDisplay
-        {
-            get
-            {
-                if (HumDecibelLevel == null || HumDecibelLevel == double.NegativeInfinity)
-                {
-                    return "N/A";
-                }
-                return ((int)Math.Round(HumDecibelLevel ?? double.NegativeInfinity)).ToString();
-            }
-        }
 
         /// <summary>
         /// Whether the node is visible on the orcasound website.
@@ -258,10 +241,53 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         public int? MezmoLogSize { get; set; }
 
+        /// <summary>
+        /// The "DeviceId" at SocketXP.
+        /// </summary>
+        public string SocketXPDeviceId { get; set; }
+
+        /// <summary>
+        /// The "DeviceStatus" at SocketXP.
+        /// </summary>
+        public string SocketXPDeviceStatus { get; set; }
+
+        /// <summary>
+        /// The "AgentVersion" as reported by SocketXP.
+        /// </summary>
+        public string SocketXPAgentVersion { get; set; }
+
+        /// <summary>
+        /// The "SysKernelVersion" as reported by SocketXP.
+        /// </summary>
+        public string SocketXPKernelVersion { get; set; }
+
         #endregion persisted
 
         #region derived
 
+        public string HumDecibelLevelForDisplay
+        {
+            get
+            {
+                if (HumDecibelLevel == null || HumDecibelLevel == double.NegativeInfinity)
+                {
+                    return "N/A";
+                }
+                return ((int)Math.Round(HumDecibelLevel ?? double.NegativeInfinity)).ToString();
+            }
+        }
+
+        public string RealDecibelLevelForDisplay
+        {
+            get
+            {
+                if (DecibelLevel == null || DecibelLevel == double.NegativeInfinity)
+                {
+                    return "N/A";
+                }
+                return ((int)Math.Round(DecibelLevel ?? double.NegativeInfinity)).ToString();
+            }
+        }
 
         /// <summary>
         /// Mezmo status of the node.
@@ -369,8 +395,9 @@ namespace OrcanodeMonitor.Models
         /// The disk usage percentage.
         /// </summary>
         public long DiskUsagePercentage => (DiskCapacity > 0) ? (100 * DiskUsed / DiskCapacity) : 0;
-        public long DiskUsedInGigs => DiskUsed / 1000000000;
-        public long DiskCapacityInGigs => DiskCapacity / 1000000000;
+        public long DiskUsedInGigs => (long)Math.Round(DiskUsed / 1000000000.0);
+        public long DiskCapacityInGigs => (long)Math.Round(DiskCapacity / 1000000_000.0);
+
 
         public OrcanodeUpgradeStatus DataplicityUpgradeStatus => DataplicityUpgradeAvailable ?? false ? OrcanodeUpgradeStatus.UpgradeAvailable : OrcanodeUpgradeStatus.UpToDate;
         public OrcanodeOnlineStatus DataplicityConnectionStatus
@@ -382,6 +409,25 @@ namespace OrcanodeMonitor.Models
                     return OrcanodeOnlineStatus.Absent;
                 }
                 return (DataplicityOnline.Value) ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Offline;
+            }
+        }
+
+        /// <summary>
+        /// Whether the Raspberry Pi is connected to the SocketXP service.
+        /// </summary>
+        public OrcanodeOnlineStatus SocketXPConnectionStatus
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(SocketXPDeviceStatus))
+                {
+                    return OrcanodeOnlineStatus.Absent;
+                }
+                if (SocketXPDeviceStatus == "Online")
+                {
+                    return OrcanodeOnlineStatus.Online;
+                }
+                return OrcanodeOnlineStatus.Offline;
             }
         }
 

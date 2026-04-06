@@ -173,6 +173,10 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeDataplicityTextColor(Orcanode node) => GetTextColor(NodeDataplicityBackgroundColor(node));
 
+        public string NodeSocketXPBackgroundColor(Orcanode node) => GetBackgroundColor(node.SocketXPConnectionStatus, node.OrcasoundStatus);
+
+        public string NodeSocketXPTextColor(Orcanode node) => GetTextColor(NodeSocketXPBackgroundColor(node));
+
         public string NodeOrcasoundBackgroundColor(Orcanode node)
         {
             string color = GetBackgroundColor(node.OrcasoundStatus);
