@@ -109,8 +109,33 @@ namespace OrcanodeMonitor.Core
 
                     string responseContent = await response.Content.ReadAsStringAsync();
 
-                    // TODO: Parse out job ID.
-                    // TODO: Remove the job when done.
+                    string? jobId = null;
+                    if (!string.IsNullOrWhiteSpace(responseContent))
+                    {
+                        try
+                        {
+                            using JsonDocument responseJson = JsonDocument.Parse(responseContent);
+                            JsonElement root = responseJson.RootElement;
+                            if (root.ValueKind == JsonValueKind.Object &&
+                                root.TryGetProperty("JobId", out JsonElement jobIdElement))
+                            {
+                                jobId = jobIdElement.GetString();
+                            }
+                        }
+                        catch (JsonException)
+                        {
+                            logger.LogWarning("SocketXP reboot response for node {NodeName} was not valid JSON: {ResponseContent}", node.S3NodeName, responseContent);
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(jobId))
+                    {
+                        logger.LogInformation("Created SocketXP reboot job {JobId} for node {NodeName}", jobId, node.S3NodeName);
+                    }
+                    else
+                    {
+                        logger.LogInformation("Rebooted SocketXP node {NodeName}. Response: {ResponseContent}", node.S3NodeName, responseContent);
+                    }
 
                     return true;
                 }
