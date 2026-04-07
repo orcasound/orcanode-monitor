@@ -19,6 +19,7 @@ namespace OrcanodeMonitor.Models
         Silent,
         Unstable,
         Lagged,
+        Unknown, // Used when the status is unknown due to missing information.
     }
     public enum OrcanodeUpgradeStatus
     {
@@ -404,6 +405,11 @@ namespace OrcanodeMonitor.Models
         {
             get
             {
+                if (!string.IsNullOrEmpty(DataplicitySerial) && !DataplicityUpgradeAvailable.HasValue)
+                {
+                    // Status is unknown.
+                    return OrcanodeOnlineStatus.Unknown;
+                }
                 if (!DataplicityOnline.HasValue)
                 {
                     return OrcanodeOnlineStatus.Absent;

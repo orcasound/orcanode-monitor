@@ -154,14 +154,22 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
+                List<Orcanode> originalList = await context.Orcanodes.ToListAsync();
+
                 string jsonArray = await GetDataplicityDataAsync(string.Empty, logger);
                 if (jsonArray.IsNullOrEmpty())
                 {
-                    // Indeterminate result, so don't update anything.
+                    // Indeterminate result, so update any existing nodes to be status Unknown
+                    // since we can't tell if they are online.
+                    var unknownNodes = originalList.Where(n => !string.IsNullOrEmpty(n.DataplicitySerial));
+                    foreach (var unknownNode in unknownNodes)
+                    {
+                        unknownNode.DataplicityUpgradeAvailable = null;
+                    }
+                    MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
+                    await Fetcher.SaveChangesAsync(context);
                     return;
                 }
-
-                List<Orcanode> originalList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = originalList.ToList();
@@ -193,7 +201,6 @@ namespace OrcanodeMonitor.Core
                     }
 
                     Orcanode node = Fetcher.FindOrCreateOrcanodeByDataplicitySerial(context.Orcanodes, serial.ToString(), out OrcanodeOnlineStatus oldStatus);
-                    OrcanodeUpgradeStatus oldAgentUpgradeStatus = node.DataplicityUpgradeStatus;
                     long oldDiskCapacityInGigs = node.DiskCapacityInGigs;
 
                     if (device.TryGetProperty("name", out var name))
@@ -259,10 +266,6 @@ namespace OrcanodeMonitor.Core
                     }
                     if (oldStatus != OrcanodeOnlineStatus.Absent)
                     {
-                        if (oldAgentUpgradeStatus != node.DataplicityUpgradeStatus)
-                        {
-                            AddDataplicityAgentUpgradeStatusChangeEvent(context, node, logger);
-                        }
                         if (oldDiskCapacityInGigs != node.DiskCapacityInGigs)
                         {
                             AddDiskCapacityChangeEvent(context, node, logger);
@@ -340,12 +343,6 @@ namespace OrcanodeMonitor.Core
         {
             string value = node.DataplicityConnectionStatus.ToString();
             Fetcher.AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.DataplicityConnection, value);
-        }
-
-        private static void AddDataplicityAgentUpgradeStatusChangeEvent(IOrcanodeMonitorContext context, Orcanode node, ILogger logger)
-        {
-            string value = node.DataplicityUpgradeStatus.ToString();
-            Fetcher.AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.AgentUpgradeStatus, value);
         }
 
         private static void AddDiskCapacityChangeEvent(IOrcanodeMonitorContext context, Orcanode node, ILogger logger)
