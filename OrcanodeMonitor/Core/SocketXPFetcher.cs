@@ -83,7 +83,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 const string artifactId = "87699fef-4858-4e3d-a134-bdb9f73a978a";
-                const string jobName = "test-job-123";
+                string jobName = $"reboot-{node.S3NodeName}-{Random.Shared.Next()}";
                 string rebootUrlString = "https://api.socketxp.com/v1/job";
 
                 // Build the JSON body.
@@ -103,7 +103,7 @@ namespace OrcanodeMonitor.Core
                     Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
                 })
                 {
-                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_socketxp_token);
+                    request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", orcasound_socketxp_token);
                     using HttpResponseMessage response = await Fetcher.HttpClient.SendAsync(request);
                     response.EnsureSuccessStatusCode();
 
