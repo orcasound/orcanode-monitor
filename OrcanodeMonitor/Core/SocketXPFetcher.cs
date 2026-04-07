@@ -181,10 +181,12 @@ namespace OrcanodeMonitor.Core
                         unfoundList.Remove(oldListNode);
                     }
 
-                    Orcanode? node = nodeList.Find(a => a.S3NodeName == deviceName.ToString());
+                    string deviceNameValue = deviceName.ToString();
+                    Orcanode? node = nodeList.Find(a => a.S3NodeName == deviceNameValue);
                     if (node == null)
                     {
                         logger.LogError($"Unrecognized DeviceName in UpdateSocketXPDataAsync result");
+                        logger.LogError($"Unrecognized DeviceName '{deviceNameValue}' in UpdateSocketXPDataAsync result");
                         continue;
                     }
 
