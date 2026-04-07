@@ -21,8 +21,9 @@
             <th>OrcaHello Lag</th>
             <th>OrcaHello Detections</th>
             <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Logging</a></th>
-            <th><a href="https://www.dataplicity.com/app/" target="_blank">Dataplicity</a></th>
-            <th>Agent Version</th>
+            <th><a href="https://www.dataplicity.com/app/" target="_blank" rel="noopener noreferrer">Dataplicity</a></th>
+            <th>Dataplicity Version</th>
+            <th><a href="https://portal.socketxp.com/#/devices" target="_blank" rel="noopener noreferrer">SocketXP</a></th>
             <!-- <th>SD Card Util.</th> -->
         </tr>
     @foreach (Models.Orcanode item in Model.Nodes)
@@ -114,6 +115,20 @@
             </td>
             <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
                 @Html.DisplayFor(modelItem => item.AgentVersion)
+            </td>
+            <td style="background-color: @Model.NodeSocketXPBackgroundColor(item)">
+                @if (!string.IsNullOrWhiteSpace(item.SocketXPDeviceId))
+                {
+                    <a asp-page="/SocketXPNode" asp-route-deviceId="@item.SocketXPDeviceId" style="color: @Model.NodeSocketXPTextColor(item)">
+                        @Html.DisplayFor(modelItem => item.SocketXPConnectionStatus)
+                    </a>
+                }
+                else
+                {
+                    <span style="color: @Model.NodeSocketXPTextColor(item)">
+                        @Html.DisplayFor(modelItem => item.SocketXPConnectionStatus)
+                    </span>
+                }
             </td>
             <!-- Commented out for now since SocketXP doesn't provide this natively
                  and we haven't really used it for anything on the dashboard yet,
@@ -216,7 +231,16 @@
             <b>Dataplicity Online</b>: Dataplicity connection is up.
         </li>
         <li>
-            <b>Agent Version</b>: Dataplicity agent version.
+            <b>Dataplicity Version</b>: Dataplicity agent version.
+        </li>
+        <li>
+            <b>SocketXP Absent</b>: SocketXP does not know about the node.
+        </li>
+        <li>
+            <b>SocketXP Offline</b>: SocketXP connection is down.
+        </li>
+        <li>
+            <b>SocketXP Online</b>: SocketXP connection is up.
         </li>
     </ul>
     <p/>

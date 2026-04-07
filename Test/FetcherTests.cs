@@ -67,6 +67,20 @@ namespace Test
         }
 
         [TestMethod]
+        public async Task TestGetSocketXPDataAsync()
+        {
+            string result = await SocketXPFetcher.GetSocketXPDataAsync(string.Empty, _logger);
+            Assert.IsFalse(result.IsNullOrEmpty(), "GetSocketXPDataAsync failed");
+        }
+
+        [TestMethod]
+        public async Task TestGetSocketXPDataWithDeviceIdAsync()
+        {
+            string result = await SocketXPFetcher.GetSocketXPDataAsync(OrcasiteTestHelper.TestSocketXPDeviceId, _logger);
+            Assert.IsFalse(result.IsNullOrEmpty(), "GetSocketXPDataAsync failed");
+        }
+
+        [TestMethod]
         public async Task TestGetDataplicityDataAsync()
         {
             string result = await DataplicityFetcher.GetDataplicityDataAsync(string.Empty, _logger);
@@ -76,7 +90,7 @@ namespace Test
         [TestMethod]
         public async Task TestGetDataplicityDataWithSerialAsync()
         {
-            string result = await DataplicityFetcher.GetDataplicityDataAsync(OrcasiteTestHelper.TestDeviceSerial, _logger);
+            string result = await DataplicityFetcher.GetDataplicityDataAsync(OrcasiteTestHelper.TestDataplicityDeviceSerial, _logger);
             Assert.IsFalse(result.IsNullOrEmpty(), "GetDataplicityDataAsync failed");
         }
 
@@ -84,6 +98,12 @@ namespace Test
         public async Task TestUpdateDataplicityDataAsync()
         {
             await DataplicityFetcher.UpdateDataplicityDataAsync(_context, _logger);
+        }
+
+        [TestMethod]
+        public async Task TestUpdateSocketXPDataAsync()
+        {
+            await SocketXPFetcher.UpdateSocketXPDataAsync(_context, _logger);
         }
 
         [TestMethod]

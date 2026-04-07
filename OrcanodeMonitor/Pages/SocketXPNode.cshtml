@@ -1,0 +1,13 @@
+﻿@page "{deviceId}"
+@model OrcanodeMonitor.Pages.SocketXPNodeModel
+@{
+    ViewData["Title"] = "SocketXP Node";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Current <a href="https://portal.socketxp.com/#/devices" target="_blank" rel="noopener noreferrer">SocketXP</a> State</h1>
+    <h2>JSON Data</h2>
+    <div style="border: 1px solid #ccc; padding: 10px; text-align: left;">
+        <pre>@Model.JsonData</pre>
+    </div>
+</div>

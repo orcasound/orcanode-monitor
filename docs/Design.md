@@ -129,6 +129,8 @@ use the appropriate environment variable configuration settings there.
 
 **ORCASOUND_DATAPLICITY_TOKEN**: Security token that allows reading state from Dataplicity.
 
+**ORCASOUND_SOCKETXP_TOKEN**: Security token that allows reading state from SocketXP.
+
 **ORCASOUND_REBOOT_HOUR_OFFSET_MINUTES**: The number of minutes from the top of the hour when reboot checks should occur. This allows multiple deployments (production and staging) to avoid conflicts by running at different times. Default: 0 (top of hour)
 
 **ORCASOUND_MAX_SILENCE_DECIBELS**: The maximum decibel level at which a stream might still be considered unintelligible due to silence. Default: -80

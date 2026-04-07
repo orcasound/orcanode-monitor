@@ -18,9 +18,6 @@ namespace OrcanodeMonitor.Pages
         public List<string> Labels => _labels;
         private List<string> _labels;
 
-        private List<int> _dataplicityStatus;
-        public List<int> DataplicityStatus => _dataplicityStatus;
-
         private List<int> _mezmoStatus;
         public List<int> MezmoStatus => _mezmoStatus;
 
@@ -49,6 +46,7 @@ namespace OrcanodeMonitor.Pages
             {
                 "hydrophoneStream" => OrcanodeEventTypes.HydrophoneStream,
                 "dataplicityConnection" => OrcanodeEventTypes.DataplicityConnection,
+                "socketXPConnection" => OrcanodeEventTypes.SocketXPConnection,
                 "mezmoLogging" => OrcanodeEventTypes.MezmoLogging,
                 _ => OrcanodeEventTypes.HydrophoneStream
             };
@@ -61,10 +59,10 @@ namespace OrcanodeMonitor.Pages
             _logger = logger;
             _events = new List<OrcanodeEvent>();
             _labels = new List<string>();
-            _dataplicityStatus = new List<int>();
             _mezmoStatus = new List<int>();
             _hydrophoneStreamStatus = new List<int>();
             JsonDataplicityData = string.Empty;
+            JsonSocketXPData = string.Empty;
             JsonMezmoData = string.Empty;
             JsonHydrophoneStreamData = string.Empty;
         }
@@ -86,6 +84,7 @@ namespace OrcanodeMonitor.Pages
         }
 
         public string JsonDataplicityData { get; set; }
+        public string JsonSocketXPData { get; set; }
         public string JsonMezmoData { get; set; }
         public string JsonHydrophoneStreamData { get; set; }
 
@@ -143,6 +142,7 @@ namespace OrcanodeMonitor.Pages
             DateTime now = DateTime.UtcNow;
             List<DateTime> allTimestamps = _events.Select(e => e.DateTimeUtc).Union(new List<DateTime> { now }).OrderBy(t => t).ToList();
             JsonDataplicityData = CreateJsonDataset(OrcanodeEventTypes.DataplicityConnection, allTimestamps, now);
+            JsonSocketXPData = CreateJsonDataset(OrcanodeEventTypes.SocketXPConnection, allTimestamps, now);
             JsonMezmoData = CreateJsonDataset(OrcanodeEventTypes.MezmoLogging, allTimestamps, now);
             JsonHydrophoneStreamData = CreateJsonDataset(OrcanodeEventTypes.HydrophoneStream, allTimestamps, now);
         }
@@ -157,6 +157,7 @@ namespace OrcanodeMonitor.Pages
         {
             OrcanodeEventTypes.HydrophoneStream => "hydrophoneStream",
             OrcanodeEventTypes.DataplicityConnection => "dataplicityConnection",
+            OrcanodeEventTypes.SocketXPConnection => "socketXPConnection",
             OrcanodeEventTypes.MezmoLogging => "mezmoLogging",
             OrcanodeEventTypes.AgentUpgradeStatus => "agentUpgradeStatus",
             OrcanodeEventTypes.SDCardSize => "sdCardSize",
