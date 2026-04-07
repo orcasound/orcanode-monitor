@@ -218,6 +218,10 @@ namespace OrcanodeMonitor.Core
                     {
                         node.SocketXPAgentVersion = agentVersion.ToString();
                     }
+                    if (device.TryGetProperty("SysKernelVersion", out var sysKernelVersion))
+                    {
+                        node.SocketXPKernelVersion = sysKernelVersion.ToString();
+                    }
                     if (device.TryGetProperty("SysTotalDisk", out var sysTotalDisk) &&
                         sysTotalDisk.ValueKind == JsonValueKind.Number &&
                         sysTotalDisk.TryGetInt64(out long diskCapacityValue))
