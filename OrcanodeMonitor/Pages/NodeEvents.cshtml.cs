@@ -159,7 +159,6 @@ namespace OrcanodeMonitor.Pages
             OrcanodeEventTypes.DataplicityConnection => "dataplicityConnection",
             OrcanodeEventTypes.SocketXPConnection => "socketXPConnection",
             OrcanodeEventTypes.MezmoLogging => "mezmoLogging",
-            OrcanodeEventTypes.AgentUpgradeStatus => "agentUpgradeStatus",
             OrcanodeEventTypes.SDCardSize => "sdCardSize",
             _ => string.Empty
         };

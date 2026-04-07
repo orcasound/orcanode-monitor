@@ -173,7 +173,6 @@ namespace OrcanodeMonitor.Models
         public const string MezmoLogging = "Mezmo logging";
         public const string DataplicityConnection = "dataplicity connection";
         public const string SocketXPConnection = "socketxp connection";
-        public const string AgentUpgradeStatus = "agent upgrade status";
         public const string SDCardSize = "SD card size";
     }
 }
