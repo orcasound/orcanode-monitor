@@ -18,12 +18,6 @@ namespace OrcanodeMonitor.Pages
         public List<string> Labels => _labels;
         private List<string> _labels;
 
-        private List<int> _dataplicityStatus;
-        public List<int> SocketXPStatus => _socketXPStatus;
-
-        private List<int> _socketXPStatus;
-        public List<int> DataplicityStatus => _dataplicityStatus;
-
         private List<int> _mezmoStatus;
         public List<int> MezmoStatus => _mezmoStatus;
 
@@ -65,8 +59,6 @@ namespace OrcanodeMonitor.Pages
             _logger = logger;
             _events = new List<OrcanodeEvent>();
             _labels = new List<string>();
-            _dataplicityStatus = new List<int>();
-            _socketXPStatus = new List<int>();
             _mezmoStatus = new List<int>();
             _hydrophoneStreamStatus = new List<int>();
             JsonDataplicityData = string.Empty;

@@ -160,7 +160,6 @@ namespace OrcanodeMonitor.Core
                     logger.LogError($"Invalid deviceArray kind in UpdateSocketXPDataAsync: {deviceArray.ValueKind}");
                     return;
                 }
-                var nodeList = context.Orcanodes.ToList();
                 foreach (JsonElement device in deviceArray.EnumerateArray())
                 {
                     if (!device.TryGetProperty("DeviceName", out var deviceName))
@@ -182,10 +181,9 @@ namespace OrcanodeMonitor.Core
                     }
 
                     string deviceNameValue = deviceName.ToString();
-                    Orcanode? node = nodeList.Find(a => a.S3NodeName == deviceNameValue);
+                    Orcanode? node = originalList.Find(a => a.S3NodeName == deviceNameValue);
                     if (node == null)
                     {
-                        logger.LogError($"Unrecognized DeviceName in UpdateSocketXPDataAsync result");
                         logger.LogError($"Unrecognized DeviceName '{deviceNameValue}' in UpdateSocketXPDataAsync result");
                         continue;
                     }
@@ -254,6 +252,8 @@ namespace OrcanodeMonitor.Core
                     var oldNode = originalList.Find(a => a.S3NodeName == unfoundNode.S3NodeName);
                     if (oldNode != null)
                     {
+                        oldNode.SocketXPDeviceStatus = string.Empty;
+                        oldNode.SocketXPDeviceId = string.Empty;
                         oldNode.SocketXPDeviceStatus = string.Empty;
                     }
                 }

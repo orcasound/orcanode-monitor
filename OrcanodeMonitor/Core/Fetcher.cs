@@ -625,6 +625,7 @@ namespace OrcanodeMonitor.Core
                 // Add one older event per type we can filter on.
                 orcanodeEvents = AddOlderEvent(orcanodeEvents, events, since, OrcanodeEventTypes.HydrophoneStream);
                 orcanodeEvents = AddOlderEvent(orcanodeEvents, events, since, OrcanodeEventTypes.DataplicityConnection);
+                orcanodeEvents = AddOlderEvent(orcanodeEvents, events, since, OrcanodeEventTypes.SocketXPConnection);
                 orcanodeEvents = AddOlderEvent(orcanodeEvents, events, since, OrcanodeEventTypes.MezmoLogging);
 
                 return orcanodeEvents;
