@@ -117,9 +117,18 @@
                 @Html.DisplayFor(modelItem => item.AgentVersion)
             </td>
             <td style="background-color: @Model.NodeSocketXPBackgroundColor(item)">
-                <a asp-page="/SocketXPNode" asp-route-deviceId="@item.SocketXPDeviceId" style="color: @Model.NodeSocketXPTextColor(item)">
-                    @Html.DisplayFor(modelItem => item.SocketXPConnectionStatus)
-                </a>
+                @if (!string.IsNullOrWhiteSpace(item.SocketXPDeviceId))
+                {
+                    <a asp-page="/SocketXPNode" asp-route-deviceId="@item.SocketXPDeviceId" style="color: @Model.NodeSocketXPTextColor(item)">
+                        @Html.DisplayFor(modelItem => item.SocketXPConnectionStatus)
+                    </a>
+                }
+                else
+                {
+                    <span style="color: @Model.NodeSocketXPTextColor(item)">
+                        @Html.DisplayFor(modelItem => item.SocketXPConnectionStatus)
+                    </span>
+                }
             </td>
             <!-- Commented out for now since SocketXP doesn't provide this natively
                  and we haven't really used it for anything on the dashboard yet,
