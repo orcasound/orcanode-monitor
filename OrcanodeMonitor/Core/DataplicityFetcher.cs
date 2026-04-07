@@ -154,14 +154,22 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
+                List<Orcanode> originalList = await context.Orcanodes.ToListAsync();
+
                 string jsonArray = await GetDataplicityDataAsync(string.Empty, logger);
                 if (jsonArray.IsNullOrEmpty())
                 {
-                    // Indeterminate result, so don't update anything.
+                    // Indeterminate result, so don't update any existing nodes to be status Unknown
+                    // since we can't tell if they are online.
+                    var unknownNodes = originalList.Where(n => !string.IsNullOrEmpty(n.DataplicitySerial));
+                    foreach (var unknownNode in unknownNodes)
+                    {
+                        unknownNode.DataplicityUpgradeAvailable = null;
+                    }
+                    MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
+                    await Fetcher.SaveChangesAsync(context);
                     return;
                 }
-
-                List<Orcanode> originalList = await context.Orcanodes.ToListAsync();
 
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = originalList.ToList();

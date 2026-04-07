@@ -22,7 +22,7 @@
             <th>OrcaHello Detections</th>
             <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Logging</a></th>
             <th><a href="https://www.dataplicity.com/app/" target="_blank" rel="noopener noreferrer">Dataplicity</a></th>
-            <th>Dataplicity Version</th>
+            <!-- <th>Dataplicity Version</th> -->
             <th><a href="https://portal.socketxp.com/#/devices" target="_blank" rel="noopener noreferrer">SocketXP</a></th>
             <!-- <th>SD Card Util.</th> -->
         </tr>
@@ -108,14 +108,26 @@
                     </a>
                 </td>
             }
-            <td style="background-color: @Model.NodeDataplicityBackgroundColor(item)">
-                <a asp-page="/DataplicityNode" asp-route-serial="@item.DataplicitySerial" style="color: @Model.NodeDataplicityTextColor(item)">
+            @if (item.DataplicityConnectionStatus == Models.OrcanodeOnlineStatus.Unknown ||
+                 string.IsNullOrWhiteSpace(item.DataplicitySerial))
+            {
+                <td style="background-color: @Model.NodeDataplicityBackgroundColor(item); color: @Model.NodeDataplicityTextColor(item)">
                     @Html.DisplayFor(modelItem => item.DataplicityConnectionStatus)
-                </a>
-            </td>
-            <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
-                @Html.DisplayFor(modelItem => item.AgentVersion)
-            </td>
+                </td>
+            }
+            else
+            {
+                <td style="background-color: @Model.NodeDataplicityBackgroundColor(item)">
+                    <a asp-page="/DataplicityNode" asp-route-serial="@item.DataplicitySerial" style="color: @Model.NodeDataplicityTextColor(item)">
+                        @Html.DisplayFor(modelItem => item.DataplicityConnectionStatus)
+                    </a>
+                </td>
+            }
+            <!--
+               <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
+                   @Html.DisplayFor(modelItem => item.AgentVersion)
+               </td>
+            -->
             <td style="background-color: @Model.NodeSocketXPBackgroundColor(item)">
                 @if (!string.IsNullOrWhiteSpace(item.SocketXPDeviceId))
                 {
@@ -225,14 +237,19 @@
             <b>Dataplicity Absent</b>: Dataplicity does not know about the node.
         </li>
         <li>
+            <b>Dataplicity Unknown</b>: Cannot tell whether Dataplicity connection is up or down.
+        </li>
+        <li>
             <b>Dataplicity Offline</b>: Dataplicity connection is down.
         </li>
         <li>
             <b>Dataplicity Online</b>: Dataplicity connection is up.
         </li>
-        <li>
-            <b>Dataplicity Version</b>: Dataplicity agent version.
-        </li>
+        <!--
+           <li>
+               <b>Dataplicity Version</b>: Dataplicity agent version.
+           </li>
+        -->
         <li>
             <b>SocketXP Absent</b>: SocketXP does not know about the node.
         </li>
