@@ -337,7 +337,7 @@ namespace OrcanodeMonitor.Pages
             // without attempting to compute a percentage on a zero denominator.
             if (data.ReviewedMachineDetectionCount == 0)
             {
-                return $"{data.TotalMachineDetectionCount} (unreviewed)";
+                return $"0 / 0 of {data.TotalMachineDetectionCount}";
             }
             string result = $"{data.PositiveMachineDetectionCount} / {data.ReviewedMachineDetectionCount} ({(data.PositiveMachineDetectionCount / (double)data.ReviewedMachineDetectionCount):P0})";
             if (data.UnreviewedMachineDetectionCount > 0)
