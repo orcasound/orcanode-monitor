@@ -6,8 +6,145 @@
 
 <div class="text-center">
     <h1 class="display-4">Current <a href="https://portal.socketxp.com/#/devices" target="_blank" rel="noopener noreferrer">SocketXP</a> State</h1>
-    <h2>JSON Data</h2>
-    <div style="border: 1px solid #ccc; padding: 10px; text-align: left;">
-        <pre>@Model.JsonData</pre>
-    </div>
+
+    <table style="border: 1px solid #ccc; border-collapse: separate; margin: 20px auto;">
+        <tr>
+            <th colspan="2" style="text-align: center; font-size: 1.2em; font-weight: bold; border-bottom: 1px solid #ccc; padding: 8px;">
+                Device Information
+            </th>
+        </tr>
+        @if (!string.IsNullOrEmpty(Model.DeviceName))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Device Name:</td>
+                <td style="text-align: left; padding: 4px;">@Model.DeviceName</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.DeviceGroup))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Device Group:</td>
+                <td style="text-align: left; padding: 4px;">@Model.DeviceGroup</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.DeviceStatus))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Status:</td>
+                <td style="text-align: left; padding: 4px;">@Model.DeviceStatus</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.CustomerName))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Customer Name:</td>
+                <td style="text-align: left; padding: 4px;">@Model.CustomerName</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.CustomerSite))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Customer Site:</td>
+                <td style="text-align: left; padding: 4px;">@Model.CustomerSite</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.CreatedTime))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Created Time:</td>
+                <td style="text-align: left; padding: 4px;">@Model.CreatedTime</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.ModifiedTime))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Modified Time:</td>
+                <td style="text-align: left; padding: 4px;">@Model.ModifiedTime</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.AgentVersion))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Agent Version:</td>
+                <td style="text-align: left; padding: 4px;">@Model.AgentVersion</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.AgentDate))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Agent Date:</td>
+                <td style="text-align: left; padding: 4px;">@Model.AgentDate</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.SysCpuModel))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">CPU Model:</td>
+                <td style="text-align: left; padding: 4px;">@Model.SysCpuModel</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.SysTotalMemory))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Total Memory:</td>
+                <td style="text-align: left; padding: 4px;">@Model.SysTotalMemory MB</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.SysTotalDisk))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Total Disk:</td>
+                <td style="text-align: left; padding: 4px;">@Model.SysTotalDisk MB</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.SysArch))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Architecture:</td>
+                <td style="text-align: left; padding: 4px;">@Model.SysArch</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.SysOS))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">OS:</td>
+                <td style="text-align: left; padding: 4px;">@Model.SysOS</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.SysHostname))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Hostname:</td>
+                <td style="text-align: left; padding: 4px;">@Model.SysHostname</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.SysPlatform))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Platform:</td>
+                <td style="text-align: left; padding: 4px;">@Model.SysPlatform</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.SysInterfaceName))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Interface Name:</td>
+                <td style="text-align: left; padding: 4px;">@Model.SysInterfaceName</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.SysMacAddress))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">MAC Address:</td>
+                <td style="text-align: left; padding: 4px;">@Model.SysMacAddress</td>
+            </tr>
+        }
+        @if (!string.IsNullOrEmpty(Model.SysKernelVersion))
+        {
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Kernel Version:</td>
+                <td style="text-align: left; padding: 4px;">@Model.SysKernelVersion</td>
+            </tr>
+        }
+    </table>
 </div>
