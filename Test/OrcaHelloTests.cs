@@ -57,6 +57,23 @@ namespace Test
         }
 
         [TestMethod]
+        public void TestStatusWhenOrcaHelloOfflineDueToNoAudio()
+        {
+            // Test that OrcaHello status is Offline when pod is ready but no audio stream is found (lag is null).
+            var node = new Orcanode
+            {
+                OrcaHelloId = "test-id",
+                OrcaHelloInferencePodReady = true,
+                OrcaHelloInferencePodLag = null,
+                OrcasoundSlug = "test-node"
+            };
+
+            // Verify the node's OrcaHello status is Offline.
+            Assert.AreEqual(OrcanodeOnlineStatus.Offline, node.OrcaHelloStatus,
+                "OrcaHello status should be Offline when pod is ready but no audio stream is found");
+        }
+
+        [TestMethod]
         public void TestStatusWhenOrcaHelloLagged()
         {
             // Test that OrcaHello status is Lagged when lag exceeds 5 minutes.
