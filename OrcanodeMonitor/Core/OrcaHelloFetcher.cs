@@ -731,6 +731,11 @@ namespace OrcanodeMonitor.Core
                                         node.OrcaHelloInferencePodLag = now - clipEndTime;
                                     }
                                 }
+                                else
+                                {
+                                    // Clear any stale lag value.
+                                    node.OrcaHelloInferencePodLag = null;
+                                }
                             }
                         }
                         else

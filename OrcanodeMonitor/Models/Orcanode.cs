@@ -476,6 +476,11 @@ namespace OrcanodeMonitor.Models
                 {
                     return OrcanodeOnlineStatus.Lagged;
                 }
+                if (!OrcaHelloInferencePodLag.HasValue)
+                {
+                    // Can't find audio.
+                    return OrcanodeOnlineStatus.Offline;
+                }
                 return OrcanodeOnlineStatus.Online;
             }
         }
