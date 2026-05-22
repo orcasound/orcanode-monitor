@@ -19,7 +19,7 @@ namespace OrcanodeMonitor.Pages
         private string _logData;
         private InferencePod? _pod = null;
         private Orcanode? _orcanode = null;
-        private InferenceSystemNode? _orcaHelloNode = null;
+        private InferenceSystemNode? _inferenceSystemNode = null;
         public IList<InferencePodInstance> OtherPods { get; private set; } = new List<InferencePodInstance>();
         public string Location => _orcanode?.DisplayName ?? "Unknown";
         public string Namespace { get; set; }
@@ -56,17 +56,17 @@ namespace OrcanodeMonitor.Pages
         public long RestartCount => _pod?.RestartCount ?? 0;
 
         public string NodeName => _pod?.NodeName ?? "Unknown";
-        public string NodeCpuModel => _orcaHelloNode?.CpuModel ?? "Unknown";
-        public bool NodeHasAvx2 => _orcaHelloNode?.HasAvx2 ?? false;
-        public bool NodeHasAvx512 => _orcaHelloNode?.HasAvx512 ?? false;
-        public double NodeCpuPercent => _orcaHelloNode?.CpuPercent ?? 0;
-        public double NodeCpuCapacityCores => _orcaHelloNode?.CpuCapacityCores ?? 0;
-        public double NodeCpuUsageCores => _orcaHelloNode?.CpuUsageCores ?? 0;
-        private long _nodeMemoryUsageInKi => _orcaHelloNode?.MemoryUsageInKi ?? 0;
+        public string NodeCpuModel => _inferenceSystemNode?.CpuModel ?? "Unknown";
+        public bool NodeHasAvx2 => _inferenceSystemNode?.HasAvx2 ?? false;
+        public bool NodeHasAvx512 => _inferenceSystemNode?.HasAvx512 ?? false;
+        public double NodeCpuPercent => _inferenceSystemNode?.CpuPercent ?? 0;
+        public double NodeCpuCapacityCores => _inferenceSystemNode?.CpuCapacityCores ?? 0;
+        public double NodeCpuUsageCores => _inferenceSystemNode?.CpuUsageCores ?? 0;
+        private long _nodeMemoryUsageInKi => _inferenceSystemNode?.MemoryUsageInKi ?? 0;
         public string NodeMemoryUsage => $"{(_nodeMemoryUsageInKi / 1024f / 1024f):F1} GiB";
-        private long _nodeMemoryCapacityInKi => _orcaHelloNode?.MemoryCapacityInKi ?? 0;
+        private long _nodeMemoryCapacityInKi => _inferenceSystemNode?.MemoryCapacityInKi ?? 0;
         public string NodeMemoryCapacity => $"{(_nodeMemoryCapacityInKi / 1024f / 1024f):F1} GiB";
-        public double NodeMemoryPercent => _orcaHelloNode?.MemoryPercent ?? 0;
+        public double NodeMemoryPercent => _inferenceSystemNode?.MemoryPercent ?? 0;
 
         public string LogData => _logData;
 
@@ -117,17 +117,17 @@ namespace OrcanodeMonitor.Pages
         {
             get
             {
-                if (_orcaHelloNode != null)
+                if (_inferenceSystemNode != null)
                 {
-                    return $"{Orcanode.FormatTimeSpan(_orcaHelloNode.Uptime)}";
+                    return $"{Orcanode.FormatTimeSpan(_inferenceSystemNode.Uptime)}";
                 }
                 return "None";
             }
         }
 
-        public string NodeInstanceType => _orcaHelloNode?.InstanceType ?? "Unknown";
+        public string NodeInstanceType => _inferenceSystemNode?.InstanceType ?? "Unknown";
 
-        public string NodeProblems => _orcaHelloNode?.Problems ?? "-";
+        public string NodeProblems => _inferenceSystemNode?.Problems ?? "-";
 
         /// <summary>
         /// Get the confidence threshold display string.
@@ -148,8 +148,8 @@ namespace OrcanodeMonitor.Pages
                 return NotFound(); // Return a 404 error page
             }
 
-            _orcaHelloNode = await _inferenceSystemFetcher.GetNodeAsync(_pod.NodeName, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
-            if (_orcaHelloNode == null)
+            _inferenceSystemNode = await _inferenceSystemFetcher.GetNodeAsync(_pod.NodeName, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+            if (_inferenceSystemNode == null)
             {
                 return NotFound(); // Return a 404 error page
             }
