@@ -93,14 +93,14 @@
             @if (Model.GetPodsAIStatus(item) == Models.OrcanodeOnlineStatus.Absent)
             {
                 <td style="background-color: @Model.NodePodsAIStatusBackgroundColor(item); color: @Model.NodePodsAITextColor(item)">
-                    @Model.GetPodsAIStatusString(item)
+                    @item.PodsAIStatusString
                 </td>
             }
             else
             {
                 <td style="background-color: @Model.NodePodsAIStatusBackgroundColor(item)">
                     <a asp-page="/PodsAIPod" asp-route-podNamespace="@item.OrcasoundSlug" style="color: @Model.NodePodsAITextColor(item)">
-                        @Model.GetPodsAIStatusString(item)
+                        @item.PodsAIStatusString
                     </a>
                 </td>
             }

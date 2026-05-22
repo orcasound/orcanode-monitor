@@ -177,17 +177,6 @@ namespace OrcanodeMonitor.Pages
             return OrcanodeOnlineStatus.Online;
         }
 
-        public string GetPodsAIStatusString(Orcanode node)
-        {
-            OrcanodeOnlineStatus status = GetPodsAIStatus(node);
-            TimeSpan? lag = GetPodsAILag(node);
-            if ((status == OrcanodeOnlineStatus.Lagged || status == OrcanodeOnlineStatus.Online) && lag.HasValue)
-            {
-                return Orcanode.FormatTimeSpan(lag.Value);
-            }
-            return status.ToString();
-        }
-
         public string NodePodsAIStatusBackgroundColor(Orcanode node) => GetBackgroundColor(GetPodsAIStatus(node), node.OrcasoundStatus);
 
         public string NodePodsAITextColor(Orcanode node) => GetTextColor(NodePodsAIStatusBackgroundColor(node));

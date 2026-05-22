@@ -114,13 +114,27 @@ namespace Test
         }
 
         [TestMethod]
-        public async Task FetchNodeMetricsAsync_ReturnsEmptyList_WhenClientIsNull()
+        public async Task FetchOrcaHelloNodeMetricsAsync_ReturnsEmptyList_WhenClientIsNull()
         {
             // Arrange
             var fetcher = new OrcaHelloFetcher(null);
 
             // Act
-            var result = await fetcher.FetchNodeMetricsAsync(_logger);
+            var result = await fetcher.FetchNodeMetricsAsync(_logger, "inference-system");
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(0, result.Count);
+        }
+
+        [TestMethod]
+        public async Task FetchPodsAINodeMetricsAsync_ReturnsEmptyList_WhenClientIsNull()
+        {
+            // Arrange
+            var fetcher = new OrcaHelloFetcher(null);
+
+            // Act
+            var result = await fetcher.FetchNodeMetricsAsync(_logger, "pods-ai-inference-system");
 
             // Assert
             Assert.IsNotNull(result);

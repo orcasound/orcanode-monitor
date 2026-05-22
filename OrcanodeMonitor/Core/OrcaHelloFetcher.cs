@@ -141,7 +141,7 @@ namespace OrcanodeMonitor.Core
                     .Where(p => p.Spec.NodeName == nodeName)
                     .ToList();
 
-                GetBestPodStatus(allPodsOnNode, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+                GetBestPodStatus(allPodsOnNode, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus, "inference-system");
                 if (bestPod != null && bestPod.Metadata != null)
                 {
                     lscpuOutput = await GetPodLscpuOutputAsync(bestPod.Metadata.Name, bestPod.Metadata.NamespaceProperty, logger);
@@ -272,7 +272,8 @@ namespace OrcanodeMonitor.Core
         /// <param name="nodepods">List of pods</param>
         /// <param name="bestPod">Returns the best pod</param>
         /// <param name="bestPodStatus">Returns the best pod status</param>
-        private static void GetBestPodStatus(IEnumerable<V1Pod> nodepods, out V1Pod? bestPod, out V1ContainerStatus? bestPodStatus, string podNamePrefix = "inference-system")
+        /// <param name="podNamePrefix">Only consider pods whose names start with this prefix</param>
+        private static void GetBestPodStatus(IEnumerable<V1Pod> nodepods, out V1Pod? bestPod, out V1ContainerStatus? bestPodStatus, string podNamePrefix)
         {
             bestPod = null;
             bestPodStatus = null;
@@ -697,7 +698,7 @@ namespace OrcanodeMonitor.Core
                         continue;
                     }
                     var nodepods = pods.Items.Where(p => p.Metadata?.NamespaceProperty == slug);
-                    GetBestPodStatus(nodepods, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+                    GetBestPodStatus(nodepods, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus, "inference-system");
                     node.OrcaHelloInferenceRestartCount = 0;
                     if (bestPod != null)
                     {
@@ -1042,8 +1043,9 @@ namespace OrcanodeMonitor.Core
         /// Get a list of OrcaHelloNode objects.
         /// </summary>
         /// <param name="logger">Logger instance</param>
+        /// <param name="podNamePrefix">Prefix for pod names to filter</param>
         /// <returns>List of OrcaHelloNode objects</returns>
-        public async Task<List<OrcaHelloNode>> FetchNodeMetricsAsync(ILogger logger)
+        public async Task<List<OrcaHelloNode>> FetchNodeMetricsAsync(ILogger logger, string podNamePrefix)
         {
             var resultList = new List<OrcaHelloNode>();
             IKubernetes? client = _k8sClient;
@@ -1067,7 +1069,7 @@ namespace OrcanodeMonitor.Core
 
                     string lscpuOutput = string.Empty;
                     var allPodsOnNode = v1Pods.Items.Where(c => c.Spec.NodeName == node.Metadata.Name);
-                    GetBestPodStatus(allPodsOnNode, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+                    GetBestPodStatus(allPodsOnNode, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus, podNamePrefix);
                     if (bestPod != null && bestPod.Metadata != null)
                     {
                         lscpuOutput = await GetPodLscpuOutputAsync(bestPod.Metadata.Name, bestPod.Metadata.NamespaceProperty, logger);

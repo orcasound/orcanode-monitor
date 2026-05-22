@@ -263,7 +263,9 @@ namespace OrcanodeMonitor.Pages
             List<OrcaHelloPod> pods = await _orcaHelloFetcher.FetchPodMetricsAsync(Orcanodes, _logger);
             Pods = pods.OrderBy(n => n.NamespaceName).ToList();
 
-            List<OrcaHelloNode> nodes = await _orcaHelloFetcher.FetchNodeMetricsAsync(_logger);
+            // Assume that all nodes have an OrcaHello instance on them.
+            // TODO: fix this assumption by fetching the list of nodes from Kubernetes and matching them to the Orcanodes in the database.
+            List<OrcaHelloNode> nodes = await _orcaHelloFetcher.FetchNodeMetricsAsync(_logger, "inference-system");
             Nodes = nodes.OrderBy(n => n.Name).ToList();
         }
     }
