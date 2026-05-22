@@ -7,7 +7,7 @@ namespace OrcanodeMonitor.Core
     public class PeriodicTasks : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
-        private readonly OrcaHelloFetcher _orcaHelloFetcher;
+        private readonly InferenceSystemFetcher _inferenceSystemFetcher;
         const int _defaultFrequencyToPollInMinutes = 5;
         public static TimeSpan FrequencyToPoll
         {
@@ -30,11 +30,11 @@ namespace OrcanodeMonitor.Core
 
         private readonly ILogger<PeriodicTasks> _logger;
 
-        public PeriodicTasks(IServiceScopeFactory scopeFactory, ILogger<PeriodicTasks> logger, OrcaHelloFetcher orcaHelloFetcher)
+        public PeriodicTasks(IServiceScopeFactory scopeFactory, ILogger<PeriodicTasks> logger, InferenceSystemFetcher inferenceSystemFetcher)
         {
             _logger = logger;
             _scopeFactory = scopeFactory;
-            _orcaHelloFetcher = orcaHelloFetcher;
+            _inferenceSystemFetcher = inferenceSystemFetcher;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -73,7 +73,9 @@ namespace OrcanodeMonitor.Core
 
             await Fetcher.UpdateS3DataAsync(context, _logger);
 
-            await _orcaHelloFetcher.UpdateOrcaHelloDataAsync(context, _logger);
+            await _inferenceSystemFetcher.UpdateOrcaHelloDataAsync(context, _logger);
+
+            await _inferenceSystemFetcher.UpdatePodsAIDataAsync(context, _logger);
 
             await DataplicityFetcher.CheckForRebootsNeededAsync(context, _logger);
         }

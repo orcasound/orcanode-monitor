@@ -105,17 +105,17 @@ namespace OrcanodeMonitor.Pages
     {
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<DetectionsModel> _logger;
-        private readonly OrcaHelloFetcher _orcaHelloFetcher;
+        private readonly InferenceSystemFetcher _inferenceSystemFetcher;
         private readonly Dictionary<string, DetectionData> _detectionCountsPastWeek = new Dictionary<string, DetectionData>();
         private readonly Dictionary<string, DetectionData> _detectionCountsPastMonth = new Dictionary<string, DetectionData>();
         private List<Orcanode> _nodes;
         public List<Orcanode> Nodes => _nodes;
 
-        public DetectionsModel(OrcanodeMonitorContext context, ILogger<DetectionsModel> logger, OrcaHelloFetcher orcaHelloFetcher)
+        public DetectionsModel(OrcanodeMonitorContext context, ILogger<DetectionsModel> logger, InferenceSystemFetcher inferenceSystemFetcher)
         {
             _databaseContext = context;
             _logger = logger;
-            _orcaHelloFetcher = orcaHelloFetcher;
+            _inferenceSystemFetcher = inferenceSystemFetcher;
             _nodes = new List<Orcanode>();
         }
 
@@ -185,8 +185,8 @@ namespace OrcanodeMonitor.Pages
                 // Pass oneMonthAgo so that pagination stops once records older than a month are reached.
                 List<OrcasiteDetection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger, oneMonthAgo);
 
-                // Fetch OrcaHello detection details for the past month to support both time ranges.
-                var orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: "all", logger: _logger);
+                // Fetch machine detection details for the past month to support both time ranges.
+                var machineDetections = await _inferenceSystemFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: "all", logger: _logger);
 
                 if (detections != null)
                 {
@@ -208,8 +208,11 @@ namespace OrcanodeMonitor.Pages
 
                         if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                         {
-                            OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node, _logger);
-                            EnsureNodeEntries(node, pod?.GetConfidenceThreshold() ?? "Unknown");
+                            OrcaHelloPod? inferencePod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+                            EnsureNodeEntries(node, inferencePod?.GetConfidenceThreshold() ?? "Unknown");
+
+                            inferencePod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
+                            EnsureNodeEntries(node, inferencePod?.GetConfidenceThreshold() ?? "Unknown");
                         }
 
                         DetectionData monthData = _detectionCountsPastMonth[node.OrcasoundSlug];
@@ -231,16 +234,16 @@ namespace OrcanodeMonitor.Pages
                         }
                         else // detection.Source == "machine"
                         {
-                            // Find the matching OrcaHelloDetection.
-                            OrcaHelloDetection? orcaHelloDetection = orcaHelloDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
-                            if (orcaHelloDetection == null)
+                            // Find the matching InferenceSystemDetection.
+                            MachineDetection? inferenceSystemDetection = machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
+                            if (inferenceSystemDetection == null)
                             {
-                                _logger.LogError($"Failed to find matching orcaHelloDetection for {detection.ID}");
+                                _logger.LogError($"Failed to find matching inferenceSystemDetection for {detection.ID}");
                                 continue;
                             }
 
                             // Count unreviewed detections separately; only reviewed detections affect the confirmed/total stats.
-                            if (!orcaHelloDetection.Reviewed)
+                            if (!inferenceSystemDetection.Reviewed)
                             {
                                 monthData.UnreviewedMachineDetectionCount++;
                                 if (inPastWeek)
@@ -250,9 +253,9 @@ namespace OrcanodeMonitor.Pages
                                 continue;
                             }
 
-                            double globalConfidence = orcaHelloDetection.Confidence;
+                            double globalConfidence = inferenceSystemDetection.Confidence;
 
-                            if (orcaHelloDetection.IsPositive(detection))
+                            if (inferenceSystemDetection.IsPositive(detection))
                             {
                                 monthData.PositiveMachineDetectionCount++;
                                 monthData.CumulativePositiveMachineDetectionConfidence += globalConfidence;
@@ -298,7 +301,10 @@ namespace OrcanodeMonitor.Pages
                 {
                     if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                     {
-                        OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node, _logger);
+                        OrcaHelloPod? pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+                        EnsureNodeEntries(node, pod?.GetConfidenceThreshold() ?? "Unknown");
+
+                        pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
                         EnsureNodeEntries(node, pod?.GetConfidenceThreshold() ?? "Unknown");
                     }
                 }

@@ -1,6 +1,7 @@
 // Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 using k8s.Models;
+using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Models;
 
 namespace Test
@@ -151,7 +152,7 @@ namespace Test
                     {
                         new V1Container
                         {
-                            Name = "inference-system",
+                            Name = InferenceSystemFetcher.OrcaHelloInferenceContainerName,
                             Resources = new V1ResourceRequirements
                             {
                                 Limits = new Dictionary<string, ResourceQuantity>
@@ -191,6 +192,7 @@ namespace Test
             var pod = CreateTestPod();
             var orcaHelloPod = new OrcaHelloPod(
                 pod,
+                InferenceSystemFetcher.OrcaHelloInferenceContainerName,
                 cpuUsage: "100000000n",
                 memoryUsage: "256Ki",
                 detectionCount: 10,
@@ -211,6 +213,7 @@ namespace Test
             var pod = CreateTestPod();
             var orcaHelloPod = new OrcaHelloPod(
                 pod,
+                InferenceSystemFetcher.OrcaHelloInferenceContainerName,
                 cpuUsage: "100000000n",
                 memoryUsage: "256Ki",
                 detectionCount: 10,
@@ -231,6 +234,7 @@ namespace Test
             var pod = CreateTestPod();
             var orcaHelloPod = new OrcaHelloPod(
                 pod,
+                InferenceSystemFetcher.OrcaHelloInferenceContainerName,
                 cpuUsage: "100000000n",
                 memoryUsage: "256Ki",
                 detectionCount: 10,
@@ -251,6 +255,7 @@ namespace Test
             var pod = CreateTestPod();
             var orcaHelloPod = new OrcaHelloPod(
                 pod,
+                InferenceSystemFetcher.OrcaHelloInferenceContainerName,
                 cpuUsage: "100000000n",
                 memoryUsage: "256Ki",
                 detectionCount: 10,
@@ -271,15 +276,15 @@ namespace Test
             var pod = CreateTestPod();
 
             // Test 0.5 -> 50%
-            var orcaHelloPod1 = new OrcaHelloPod(pod, "100n", "256Ki", 0, 0.5, 2);
+            var orcaHelloPod1 = new OrcaHelloPod(pod, InferenceSystemFetcher.OrcaHelloInferenceContainerName, "100n", "256Ki", 0, 0.5, 2);
             Assert.AreEqual("2 @ 50%", orcaHelloPod1.GetConfidenceThreshold());
 
             // Test 0.95 -> 95%
-            var orcaHelloPod2 = new OrcaHelloPod(pod, "100n", "256Ki", 0, 0.95, 10);
+            var orcaHelloPod2 = new OrcaHelloPod(pod, InferenceSystemFetcher.OrcaHelloInferenceContainerName, "100n", "256Ki", 0, 0.95, 10);
             Assert.AreEqual("10 @ 95%", orcaHelloPod2.GetConfidenceThreshold());
 
             // Test 0.05 -> 5%
-            var orcaHelloPod3 = new OrcaHelloPod(pod, "100n", "256Ki", 0, 0.05, 1);
+            var orcaHelloPod3 = new OrcaHelloPod(pod, InferenceSystemFetcher.OrcaHelloInferenceContainerName, "100n", "256Ki", 0, 0.05, 1);
             Assert.AreEqual("1 @ 5%", orcaHelloPod3.GetConfidenceThreshold());
         }
     }

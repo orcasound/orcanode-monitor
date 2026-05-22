@@ -9,7 +9,7 @@ namespace OrcanodeMonitor.Pages
 {
     public class OrcaHelloNodeModel : PageModel
     {
-        private readonly OrcaHelloFetcher _orcaHelloFetcher;
+        private readonly InferenceSystemFetcher _inferenceSystemFetcher;
         private OrcaHelloNode? _orcaHelloNode = null;
         private readonly ILogger<OrcaHelloNodeModel> _logger;
         public List<OrcaHelloPod> Pods => _orcaHelloNode?.Pods ?? new List<OrcaHelloPod>();
@@ -54,16 +54,16 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         public string NowLocal { get; private set; }
 
-        public OrcaHelloNodeModel(OrcaHelloFetcher orcaHelloFetcher, ILogger<OrcaHelloNodeModel> logger)
+        public OrcaHelloNodeModel(InferenceSystemFetcher inferenceSystemFetcher, ILogger<OrcaHelloNodeModel> logger)
         {
-            _orcaHelloFetcher = orcaHelloFetcher;
+            _inferenceSystemFetcher = inferenceSystemFetcher;
             _logger = logger;
             NowLocal = Fetcher.UtcToLocalDateTime(DateTime.UtcNow)?.ToString() ?? "Unknown";
         }
 
         public async Task<IActionResult> OnGetAsync(string nodeName)
         {
-            _orcaHelloNode = await _orcaHelloFetcher.GetOrcaHelloNodeAsync(nodeName, _logger);
+            _orcaHelloNode = await _inferenceSystemFetcher.GetInferenceNodeAsync(nodeName, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
             if (_orcaHelloNode == null)
             {
                 return NotFound(); // Return a 404 error page

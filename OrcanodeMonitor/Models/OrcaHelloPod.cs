@@ -54,7 +54,7 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        public OrcaHelloPod(V1Pod pod, string cpuUsage, string memoryUsage, long detectionCount, double? modelConfidenceThreshold = null, int? modelCountThreshold = null, string containerName = "inference-system")
+        public OrcaHelloPod(V1Pod pod, string containerName, string cpuUsage, string memoryUsage, long detectionCount, double? modelConfidenceThreshold = null, int? modelCountThreshold = null)
         {
             _pod = pod;
             DetectionCount = detectionCount;

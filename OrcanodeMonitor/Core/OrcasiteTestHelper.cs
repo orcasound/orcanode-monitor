@@ -173,7 +173,7 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="node">Orcanode</param>
         /// <returns>OrcaHelloFetcher</returns>
-        public static OrcaHelloFetcher GetMockOrcaHelloFetcher(Orcanode node)
+        public static InferenceSystemFetcher GetMockOrcaHelloFetcher(Orcanode node)
         {
             var mockCoreV1 = new Mock<ICoreV1Operations>();
             var mockCustomObjects = new Mock<ICustomObjectsOperations>();
@@ -409,7 +409,7 @@ model_timestamp: {DateTime.UtcNow.AddDays(-1):yyyy-MM-ddTHH:mm:ssZ}";
                     Body = configMap
                 });
 
-            return new OrcaHelloFetcher(mockK8s.Object);
+            return new InferenceSystemFetcher(mockK8s.Object);
         }
     }
 }

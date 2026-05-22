@@ -14,7 +14,7 @@ namespace OrcanodeMonitor.Pages
     {
         private OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<IndexModel> _logger;
-        private readonly OrcaHelloFetcher _orcaHelloFetcher;
+        private readonly InferenceSystemFetcher _orcaHelloFetcher;
         private List<OrcanodeEvent> _events;
         private List<Orcanode> _nodes;
         public List<Orcanode> Nodes => _nodes;
@@ -23,7 +23,7 @@ namespace OrcanodeMonitor.Pages
 
         public string AksUrl => Fetcher.Configuration?["AZURE_AKS_URL"] ?? "";
 
-        public IndexModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger, OrcaHelloFetcher orcaHelloFetcher)
+        public IndexModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger, InferenceSystemFetcher orcaHelloFetcher)
         {
             _databaseContext = context;
             _logger = logger;
@@ -174,7 +174,7 @@ namespace OrcanodeMonitor.Pages
             TimeSpan? lastSegmentLag = null;
             foreach (string line in Regex.Split(logs, "\r?\n"))
             {
-                TimeSpan? segmentLag = OrcaHelloFetcher.GetLagFromSegmentLine(line);
+                TimeSpan? segmentLag = InferenceSystemFetcher.GetLagFromSegmentLine(line);
                 if (segmentLag.HasValue)
                 {
                     lastSegmentLag = segmentLag;
@@ -351,7 +351,7 @@ namespace OrcanodeMonitor.Pages
                 var events = await _databaseContext.OrcanodeEvents.ToListAsync();
                 _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
 
-                await _orcaHelloFetcher.FetchOrcaHelloDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts, _logger);
+                await _orcaHelloFetcher.FetchMachineDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts, _logger);
                 List<OrcaHelloPod> podsAIPods = await _orcaHelloFetcher.FetchPodsAIMetricsAsync(_nodes, _logger);
                 Dictionary<string, Orcanode> nodesBySlug = _nodes.ToDictionary(n => n.OrcasoundSlug, StringComparer.OrdinalIgnoreCase);
                 foreach (OrcaHelloPod pod in podsAIPods)

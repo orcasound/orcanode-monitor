@@ -10,19 +10,19 @@ using OrcanodeMonitor.Models;
 namespace Test
 {
     [TestClass]
-    public class OrcaHelloFetcherTests
+    public class InferenceSystemFetcherTests
     {
-        private ILogger<OrcaHelloFetcherTests> _logger;
+        private ILogger<InferenceSystemFetcherTests> _logger;
         private ILoggerFactory _loggerFactory;
 
-        private ILogger<OrcaHelloFetcherTests> CreateConsoleLogger()
+        private ILogger<InferenceSystemFetcherTests> CreateConsoleLogger()
         {
             _loggerFactory = LoggerFactory.Create(builder =>
             {
                 builder.AddConsole();
                 builder.SetMinimumLevel(LogLevel.Debug);
             });
-            return _loggerFactory.CreateLogger<OrcaHelloFetcherTests>();
+            return _loggerFactory.CreateLogger<InferenceSystemFetcherTests>();
         }
 
         [TestInitialize]
@@ -39,43 +39,39 @@ namespace Test
             _loggerFactory?.Dispose();
         }
 
-        [TestMethod]
-        public async Task GetOrcaHelloPodAsync_ReturnsNull_WhenClientIsNull()
+        private async Task GetInferencePodAsync_ReturnsNull_WhenClientIsNull(string containerName)
         {
             // Arrange
-            var fetcher = new OrcaHelloFetcher(null);
+            var fetcher = new InferenceSystemFetcher(null);
             var orcanode = new Orcanode { OrcasoundSlug = "test-slug" };
 
             // Act
-            var result = await fetcher.GetOrcaHelloPodAsync(orcanode, _logger);
+            var result = await fetcher.GetInferencePodByNameAsync(orcanode, containerName, _logger);
 
             // Assert
             Assert.IsNull(result);
+        }
+
+        [TestMethod]
+        public async Task GetOrcaHelloPodAsync_ReturnsNull_WhenClientIsNull()
+        {
+            await GetInferencePodAsync_ReturnsNull_WhenClientIsNull(InferenceSystemFetcher.OrcaHelloInferenceContainerName);
         }
 
         [TestMethod]
         public async Task GetPodsAIPodAsync_ReturnsNull_WhenClientIsNull()
         {
-            // Arrange
-            var fetcher = new OrcaHelloFetcher(null);
-            var orcanode = new Orcanode { OrcasoundSlug = "test-slug" };
-
-            // Act
-            var result = await fetcher.GetPodsAIPodAsync(orcanode, _logger);
-
-            // Assert
-            Assert.IsNull(result);
+            await GetInferencePodAsync_ReturnsNull_WhenClientIsNull(InferenceSystemFetcher.PodsAIInferenceContainerName);
         }
 
-        [TestMethod]
-        public async Task UpdateOrcaHelloDataAsync_HandlesNullClient()
+        private async Task UpdateInferenceDataAsync_HandlesNullClient(string containerName, string fieldPrefix)
         {
             // Arrange
             var mockContext = new Mock<IOrcanodeMonitorContext>();
-            var orcaHelloFetcher = new OrcaHelloFetcher(null);
+            var orcaHelloFetcher = new InferenceSystemFetcher(null);
 
             // Act
-            await orcaHelloFetcher.UpdateOrcaHelloDataAsync(mockContext.Object, _logger);
+            await orcaHelloFetcher.UpdateInferenceSystemDataAsync(mockContext.Object, containerName, fieldPrefix, _logger);
 
             // Assert
             // Should complete without throwing an exception
@@ -84,14 +80,25 @@ namespace Test
         }
 
         [TestMethod]
-        public async Task FetchPodMetricsAsync_ReturnsEmptyList_WhenClientIsNull()
+        public async Task UpdateOrcaHelloDataAsync_HandlesNullClient()
+        {
+            await UpdateInferenceDataAsync_HandlesNullClient(InferenceSystemFetcher.OrcaHelloInferenceContainerName, InferenceSystemFetcher.OrcaHelloFieldPrefix);
+        }
+
+        [TestMethod]
+        public async Task UpdatePodsAIDataAsync_HandlesNullClient()
+        {
+            await UpdateInferenceDataAsync_HandlesNullClient(InferenceSystemFetcher.PodsAIInferenceContainerName, InferenceSystemFetcher.PodsAIFieldPrefix);
+        }
+
+        private async Task FetchMetricsAsync_ReturnsEmptyList_WhenClientIsNull(string containerName)
         {
             // Arrange
-            var fetcher = new OrcaHelloFetcher(null);
+            var fetcher = new InferenceSystemFetcher(null);
             var orcanodes = new List<Orcanode>();
 
             // Act
-            var result = await fetcher.FetchPodMetricsAsync(orcanodes, _logger);
+            var result = await fetcher.FetchPodMetricsAsync(orcanodes, containerName, _logger);
 
             // Assert
             Assert.IsNotNull(result);
@@ -99,10 +106,22 @@ namespace Test
         }
 
         [TestMethod]
+        public async Task FetchOrcaHelloPodMetricsAsync_ReturnsEmptyList_WhenClientIsNull()
+        {
+            await FetchMetricsAsync_ReturnsEmptyList_WhenClientIsNull(InferenceSystemFetcher.OrcaHelloInferenceContainerName);
+        }
+
+        [TestMethod]
+        public async Task FetchPodsAIPodMetricsAsync_ReturnsEmptyList_WhenClientIsNull()
+        {
+            await FetchMetricsAsync_ReturnsEmptyList_WhenClientIsNull(InferenceSystemFetcher.PodsAIInferenceContainerName);
+        }
+
+        [TestMethod]
         public async Task FetchPodsAIMetricsAsync_ReturnsEmptyList_WhenClientIsNull()
         {
             // Arrange
-            var fetcher = new OrcaHelloFetcher(null);
+            var fetcher = new InferenceSystemFetcher(null);
             var orcanodes = new List<Orcanode>();
 
             // Act
@@ -117,7 +136,7 @@ namespace Test
         public async Task FetchOrcaHelloNodeMetricsAsync_ReturnsEmptyList_WhenClientIsNull()
         {
             // Arrange
-            var fetcher = new OrcaHelloFetcher(null);
+            var fetcher = new InferenceSystemFetcher(null);
 
             // Act
             var result = await fetcher.FetchNodeMetricsAsync(_logger, "inference-system");
@@ -131,7 +150,7 @@ namespace Test
         public async Task FetchPodsAINodeMetricsAsync_ReturnsEmptyList_WhenClientIsNull()
         {
             // Arrange
-            var fetcher = new OrcaHelloFetcher(null);
+            var fetcher = new InferenceSystemFetcher(null);
 
             // Act
             var result = await fetcher.FetchNodeMetricsAsync(_logger, "pods-ai-inference-system");
@@ -141,17 +160,28 @@ namespace Test
             Assert.AreEqual(0, result.Count);
         }
 
-        [TestMethod]
-        public async Task GetOrcaHelloNodeAsync_ReturnsNull_WhenClientIsNull()
+        private async Task GetInferenceNodeAsync_ReturnsNull_WhenClientIsNull(string containerName)
         {
             // Arrange
-            var fetcher = new OrcaHelloFetcher(null);
+            var fetcher = new InferenceSystemFetcher(null);
 
             // Act
-            var result = await fetcher.GetOrcaHelloNodeAsync("test-node", _logger);
+            var result = await fetcher.GetInferenceNodeAsync("test-node", containerName, _logger);
 
             // Assert
             Assert.IsNull(result);
+        }
+
+        [TestMethod]
+        public async Task GetOrcaHelloNodeAsync_ReturnsNull_WhenClientIsNull()
+        {
+            await GetInferenceNodeAsync_ReturnsNull_WhenClientIsNull(InferenceSystemFetcher.OrcaHelloInferenceContainerName);
+        }
+
+        [TestMethod]
+        public async Task GetPodsAINodeAsync_ReturnsNull_WhenClientIsNull()
+        {
+            await GetInferenceNodeAsync_ReturnsNull_WhenClientIsNull(InferenceSystemFetcher.PodsAIInferenceContainerName);
         }
 
         [TestMethod]
@@ -161,7 +191,7 @@ namespace Test
             string line = "2026-04-04 18:28:00,422 INFO Some other log message";
 
             // Act
-            TimeSpan? result = OrcaHelloFetcher.GetLagFromSegmentLine(line);
+            TimeSpan? result = InferenceSystemFetcher.GetLagFromSegmentLine(line);
 
             // Assert
             Assert.IsNull(result);
@@ -171,7 +201,7 @@ namespace Test
         public void GetLagFromSegmentLine_ReturnsNull_ForEmptyLine()
         {
             // Act
-            TimeSpan? result = OrcaHelloFetcher.GetLagFromSegmentLine(string.Empty);
+            TimeSpan? result = InferenceSystemFetcher.GetLagFromSegmentLine(string.Empty);
 
             // Assert
             Assert.IsNull(result);
@@ -186,7 +216,7 @@ namespace Test
             string line = "2026-04-04 18:28:00,422 INFO Segment: folder=1775286025, indices=[4113:4119), start=2026-04-04T18:25:57Z, duration=60.0s";
 
             // Act
-            TimeSpan? result = OrcaHelloFetcher.GetLagFromSegmentLine(line);
+            TimeSpan? result = InferenceSystemFetcher.GetLagFromSegmentLine(line);
 
             // Assert
             Assert.IsNotNull(result);
@@ -202,7 +232,7 @@ namespace Test
             string line = "2026-04-04 18:30:00,000 INFO Segment: folder=1234567890, indices=[100:110), start=2026-04-04T18:28:00Z, duration=45.5s";
 
             // Act
-            TimeSpan? result = OrcaHelloFetcher.GetLagFromSegmentLine(line);
+            TimeSpan? result = InferenceSystemFetcher.GetLagFromSegmentLine(line);
 
             // Assert
             Assert.IsNotNull(result);
@@ -216,7 +246,7 @@ namespace Test
             string line = "Processing file live42.ts from stream";
 
             // Act
-            TimeSpan? result = OrcaHelloFetcher.GetLagFromSegmentLine(line);
+            TimeSpan? result = InferenceSystemFetcher.GetLagFromSegmentLine(line);
 
             // Assert
             Assert.IsNull(result, "Old format log line should not match new Segment format");

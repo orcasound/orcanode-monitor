@@ -15,7 +15,7 @@ namespace OrcanodeMonitor.Pages
 
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<OrcaHelloPodModel> _logger;
-        private readonly OrcaHelloFetcher _orcaHelloFetcher;
+        private readonly InferenceSystemFetcher _inferenceSystemFetcher;
         private string _logData;
         private OrcaHelloPod? _pod = null;
         private Orcanode? _orcanode = null;
@@ -75,11 +75,11 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         public string NowLocal { get; private set; }
 
-        public OrcaHelloPodModel(OrcanodeMonitorContext context, ILogger<OrcaHelloPodModel> logger, OrcaHelloFetcher orcaHelloFetcher)
+        public OrcaHelloPodModel(OrcanodeMonitorContext context, ILogger<OrcaHelloPodModel> logger, InferenceSystemFetcher orcaHelloFetcher)
         {
             _databaseContext = context;
             _logger = logger;
-            _orcaHelloFetcher = orcaHelloFetcher;
+            _inferenceSystemFetcher = orcaHelloFetcher;
             Namespace = string.Empty;
             _logData = string.Empty;
             NowLocal = Fetcher.UtcToLocalDateTime(DateTime.UtcNow)?.ToString() ?? "Unknown";
@@ -142,13 +142,13 @@ namespace OrcanodeMonitor.Pages
                 return NotFound(); // Return a 404 error page
             }
 
-            _pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(_orcanode, _logger);
+            _pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(_orcanode, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
             if (_pod == null)
             {
                 return NotFound(); // Return a 404 error page
             }
 
-            _orcaHelloNode = await _orcaHelloFetcher.GetOrcaHelloNodeAsync(_pod.NodeName, _logger);
+            _orcaHelloNode = await _inferenceSystemFetcher.GetInferenceNodeAsync(_pod.NodeName, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
             if (_orcaHelloNode == null)
             {
                 return NotFound(); // Return a 404 error page
@@ -156,11 +156,11 @@ namespace OrcanodeMonitor.Pages
 
             Namespace = podNamespace;
 
-            OtherPods = (await _orcaHelloFetcher.GetOtherPodsAsync(_orcanode, _logger))
+            OtherPods = (await _inferenceSystemFetcher.GetOrcaHelloOtherPodsAsync(_orcanode, _logger))
                 .OrderByDescending(p => p.StartTime)
                 .ToList();
 
-            _logData = await _orcaHelloFetcher.GetAIContainerLogAsync(_pod, podNamespace, _logger);
+            _logData = await _inferenceSystemFetcher.GetAIContainerLogAsync(_pod, podNamespace, _logger);
             if (_logData.IsNullOrEmpty())
             {
                 return NotFound(); // Return a 404 error page

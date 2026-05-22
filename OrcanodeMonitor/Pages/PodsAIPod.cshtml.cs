@@ -15,7 +15,7 @@ namespace OrcanodeMonitor.Pages
 
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<PodsAIPodModel> _logger;
-        private readonly OrcaHelloFetcher _orcaHelloFetcher;
+        private readonly InferenceSystemFetcher _orcaHelloFetcher;
         private string _logData;
         private OrcaHelloPod? _pod = null;
         private Orcanode? _orcanode = null;
@@ -75,7 +75,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         public string NowLocal { get; private set; }
 
-        public PodsAIPodModel(OrcanodeMonitorContext context, ILogger<PodsAIPodModel> logger, OrcaHelloFetcher orcaHelloFetcher)
+        public PodsAIPodModel(OrcanodeMonitorContext context, ILogger<PodsAIPodModel> logger, InferenceSystemFetcher orcaHelloFetcher)
         {
             _databaseContext = context;
             _logger = logger;
@@ -142,13 +142,13 @@ namespace OrcanodeMonitor.Pages
                 return NotFound(); // Return a 404 error page
             }
 
-            _pod = await _orcaHelloFetcher.GetPodsAIPodAsync(_orcanode, _logger);
+            _pod = await _orcaHelloFetcher.GetInferencePodByNameAsync(_orcanode, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
             if (_pod == null)
             {
                 return NotFound(); // Return a 404 error page
             }
 
-            _orcaHelloNode = await _orcaHelloFetcher.GetOrcaHelloNodeAsync(_pod.NodeName, _logger);
+            _orcaHelloNode = await _orcaHelloFetcher.GetInferenceNodeAsync(_pod.NodeName, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
             if (_orcaHelloNode == null)
             {
                 return NotFound(); // Return a 404 error page

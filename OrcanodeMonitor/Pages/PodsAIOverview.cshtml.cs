@@ -12,7 +12,7 @@ namespace OrcanodeMonitor.Pages
     {
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<PodsAIOverviewModel> _logger;
-        private readonly OrcaHelloFetcher _orcaHelloFetcher;
+        private readonly InferenceSystemFetcher _orcaHelloFetcher;
         public List<Orcanode> Orcanodes { get; private set; }
         public List<OrcaHelloNode> Nodes { get; private set; }
         public List<OrcaHelloPod> Pods { get; private set; }
@@ -23,7 +23,7 @@ namespace OrcanodeMonitor.Pages
             return $"{(nodeMemoryUsageInKi / 1024f / 1024f):F1} GiB";
         }
 
-        public PodsAIOverviewModel(OrcanodeMonitorContext context, ILogger<PodsAIOverviewModel> logger, OrcaHelloFetcher orcaHelloFetcher)
+        public PodsAIOverviewModel(OrcanodeMonitorContext context, ILogger<PodsAIOverviewModel> logger, InferenceSystemFetcher orcaHelloFetcher)
         {
             _databaseContext = context;
             _logger = logger;

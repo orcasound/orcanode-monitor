@@ -18,16 +18,16 @@ namespace OrcanodeMonitor.Pages
         public string OrcasoundSlug => _node?.OrcasoundSlug ?? string.Empty;
         private List<OrcasiteDetection> _orcasiteDetections;
         public List<OrcasiteDetection> RecentDetections => _orcasiteDetections;
-        private readonly OrcaHelloFetcher _orcaHelloFetcher;
-        private List<OrcaHelloDetection> _orcaHelloDetections;
+        private readonly InferenceSystemFetcher _orcaHelloFetcher;
+        private List<MachineDetection> _orcaHelloDetections;
 
-        public NodeDetectionsModel(OrcanodeMonitorContext context, ILogger<NodeDetectionsModel> logger, OrcaHelloFetcher orcaHelloFetcher)
+        public NodeDetectionsModel(OrcanodeMonitorContext context, ILogger<NodeDetectionsModel> logger, InferenceSystemFetcher orcaHelloFetcher)
         {
             _databaseContext = context;
             _logger = logger;
             _orcaHelloFetcher = orcaHelloFetcher;
             _orcasiteDetections = new List<OrcasiteDetection>();
-            _orcaHelloDetections = new List<OrcaHelloDetection>();
+            _orcaHelloDetections = new List<MachineDetection>();
         }
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace OrcanodeMonitor.Pages
         {
             if (orcasiteDetection.Source == DetectionSource.Machine)
             {
-                OrcaHelloDetection? orcaHelloDetection = _orcaHelloDetections.FirstOrDefault(d => d.Id == orcasiteDetection.IdempotencyKey);
+                MachineDetection? orcaHelloDetection = _orcaHelloDetections.FirstOrDefault(d => d.Id == orcasiteDetection.IdempotencyKey);
                 if (orcaHelloDetection == null)
                 {
                     return "Unknown";
@@ -149,7 +149,7 @@ namespace OrcanodeMonitor.Pages
                 _orcasiteDetections = orcasiteDetections;
             }
 
-            List<OrcaHelloDetection> orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: _node.S3NodeName, logger: _logger);
+            List<MachineDetection> orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: _node.S3NodeName, logger: _logger);
             if (orcaHelloDetections != null)
             {
                 _orcaHelloDetections = orcaHelloDetections;

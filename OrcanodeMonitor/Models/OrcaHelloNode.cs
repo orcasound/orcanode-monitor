@@ -139,7 +139,7 @@ namespace OrcanodeMonitor.Models
                 string cpuUsagePod = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
                 string memoryUsagePod = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
-                OrcaHelloPod orcaPod = new OrcaHelloPod(pod, cpuUsagePod, memoryUsagePod, 0, containerName: containerName);
+                OrcaHelloPod orcaPod = new OrcaHelloPod(pod, containerName, cpuUsagePod, memoryUsagePod, 0, 0.5, 2);
                 _pods.Add(orcaPod);
             }
         }
