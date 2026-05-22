@@ -93,8 +93,6 @@ namespace OrcanodeMonitor.Pages
         public string NodeS3TextColor(Orcanode node) => GetTextColor(NodeS3BackgroundColor(node));
 
         private readonly Dictionary<string, long> _orcaHelloDetectionCounts = new Dictionary<string, long>();
-        private readonly HashSet<string> _podsAINamespaces = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        private readonly Dictionary<string, TimeSpan?> _podsAILagByNamespace = new Dictionary<string, TimeSpan?>(StringComparer.OrdinalIgnoreCase);
 
         public long GetOrcaHelloDetectionCount(Orcanode node)
         {
@@ -352,22 +350,6 @@ namespace OrcanodeMonitor.Pages
                 _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
 
                 await _orcaHelloFetcher.FetchMachineDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts, _logger);
-                List<OrcaHelloPod> podsAIPods = await _orcaHelloFetcher.FetchPodsAIMetricsAsync(_nodes, _logger);
-                Dictionary<string, Orcanode> nodesBySlug = _nodes.ToDictionary(n => n.OrcasoundSlug, StringComparer.OrdinalIgnoreCase);
-                foreach (OrcaHelloPod pod in podsAIPods)
-                {
-                    _podsAINamespaces.Add(pod.NamespaceName);
-                    if (_podsAILagByNamespace.ContainsKey(pod.NamespaceName))
-                    {
-                        continue;
-                    }
-                    if (!nodesBySlug.TryGetValue(pod.NamespaceName, out Orcanode? node))
-                    {
-                        _podsAILagByNamespace[pod.NamespaceName] = null;
-                        continue;
-                    }
-                    _podsAILagByNamespace[pod.NamespaceName] = await GetPodLagAsync(pod, node);
-                }
 
                 _recentEvents = await Fetcher.GetRecentEventsAsync(_databaseContext, DateTime.UtcNow.AddDays(-7), _logger) ?? new List<OrcanodeEvent>();
             }
