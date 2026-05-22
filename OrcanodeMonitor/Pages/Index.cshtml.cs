@@ -6,6 +6,7 @@ using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Drawing;
+using System.Text.RegularExpressions;
 
 namespace OrcanodeMonitor.Pages
 {
@@ -93,6 +94,7 @@ namespace OrcanodeMonitor.Pages
 
         private readonly Dictionary<string, long> _orcaHelloDetectionCounts = new Dictionary<string, long>();
         private readonly HashSet<string> _podsAINamespaces = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, TimeSpan?> _podsAILagByNamespace = new Dictionary<string, TimeSpan?>(StringComparer.OrdinalIgnoreCase);
 
         public long GetOrcaHelloDetectionCount(Orcanode node)
         {
@@ -158,14 +160,94 @@ namespace OrcanodeMonitor.Pages
 
         public OrcanodeOnlineStatus GetPodsAIStatus(Orcanode node)
         {
-            return _podsAINamespaces.Contains(node.OrcasoundSlug) ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Absent;
+            if (!_podsAINamespaces.Contains(node.OrcasoundSlug))
+            {
+                return OrcanodeOnlineStatus.Absent;
+            }
+
+            TimeSpan? lag = GetPodsAILag(node);
+            if (!lag.HasValue)
+            {
+                return OrcanodeOnlineStatus.Offline;
+            }
+            if (lag.Value > TimeSpan.FromMinutes(5))
+            {
+                return OrcanodeOnlineStatus.Lagged;
+            }
+            return OrcanodeOnlineStatus.Online;
         }
 
-        public string GetPodsAIStatusString(Orcanode node) => GetPodsAIStatus(node).ToString();
+        public string GetPodsAIStatusString(Orcanode node)
+        {
+            OrcanodeOnlineStatus status = GetPodsAIStatus(node);
+            TimeSpan? lag = GetPodsAILag(node);
+            if ((status == OrcanodeOnlineStatus.Lagged || status == OrcanodeOnlineStatus.Online) && lag.HasValue)
+            {
+                return Orcanode.FormatTimeSpan(lag.Value);
+            }
+            return status.ToString();
+        }
 
         public string NodePodsAIStatusBackgroundColor(Orcanode node) => GetBackgroundColor(GetPodsAIStatus(node), node.OrcasoundStatus);
 
         public string NodePodsAITextColor(Orcanode node) => GetTextColor(NodePodsAIStatusBackgroundColor(node));
+
+        private TimeSpan? GetPodsAILag(Orcanode node)
+        {
+            if (!_podsAILagByNamespace.TryGetValue(node.OrcasoundSlug, out TimeSpan? lag))
+            {
+                return null;
+            }
+            return lag;
+        }
+
+        private async Task<TimeSpan?> GetPodLagAsync(OrcaHelloPod pod, Orcanode node)
+        {
+            string logs = await _orcaHelloFetcher.GetOrcaHelloLogAsync(pod, pod.NamespaceName, _logger);
+            if (string.IsNullOrEmpty(logs))
+            {
+                return null;
+            }
+
+            int lastLiveIndex = -1;
+            TimeSpan? lastSegmentLag = null;
+            foreach (string line in Regex.Split(logs, "\r?\n"))
+            {
+                TimeSpan? segmentLag = OrcaHelloFetcher.GetLagFromSegmentLine(line);
+                if (segmentLag.HasValue)
+                {
+                    lastSegmentLag = segmentLag;
+                }
+                else
+                {
+                    Match m = Regex.Match(line, @"(?<=live)\d+(?=\.ts)");
+                    if (m.Success)
+                    {
+                        lastLiveIndex = int.Parse(m.Value);
+                    }
+                }
+            }
+
+            if (lastSegmentLag.HasValue)
+            {
+                return lastSegmentLag.Value;
+            }
+            if (lastLiveIndex < 0)
+            {
+                return null;
+            }
+
+            Fetcher.TimestampResult? result = await Fetcher.GetLatestS3TimestampAsync(node, true, _logger);
+            if (result?.Offset == null)
+            {
+                return null;
+            }
+
+            DateTimeOffset offset = result.Offset.Value;
+            DateTimeOffset clipEndTime = offset.AddSeconds((lastLiveIndex * 10) + 12);
+            DateTimeOffset now = DateTimeOffset.UtcNow;
+            return now - clipEndTime;
+        }
 
         /// <summary>
         /// Gets the text color for the Mezmo status of the specified node.
@@ -310,9 +392,20 @@ namespace OrcanodeMonitor.Pages
 
                 await _orcaHelloFetcher.FetchOrcaHelloDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts, _logger);
                 List<OrcaHelloPod> podsAIPods = await _orcaHelloFetcher.FetchPodsAIMetricsAsync(_nodes, _logger);
+                Dictionary<string, Orcanode> nodesBySlug = _nodes.ToDictionary(n => n.OrcasoundSlug, StringComparer.OrdinalIgnoreCase);
                 foreach (OrcaHelloPod pod in podsAIPods)
                 {
                     _podsAINamespaces.Add(pod.NamespaceName);
+                    if (_podsAILagByNamespace.ContainsKey(pod.NamespaceName))
+                    {
+                        continue;
+                    }
+                    if (!nodesBySlug.TryGetValue(pod.NamespaceName, out Orcanode? node))
+                    {
+                        _podsAILagByNamespace[pod.NamespaceName] = null;
+                        continue;
+                    }
+                    _podsAILagByNamespace[pod.NamespaceName] = await GetPodLagAsync(pod, node);
                 }
 
                 _recentEvents = await Fetcher.GetRecentEventsAsync(_databaseContext, DateTime.UtcNow.AddDays(-7), _logger) ?? new List<OrcanodeEvent>();
