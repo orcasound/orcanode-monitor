@@ -39,9 +39,14 @@ namespace OrcanodeMonitor.Pages
             }
         }
 
-        public bool IsInferencePod(OrcaHelloPod pod)
+        public bool IsOrcaHelloPod(OrcaHelloPod pod)
         {
             return pod.Name.StartsWith("inference-system-");
+        }
+
+        public bool IsPodsAIPod(OrcaHelloPod pod)
+        {
+            return pod.Name.StartsWith("pods-ai-inference-system-");
         }
 
         /// <summary>

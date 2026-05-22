@@ -92,6 +92,7 @@ namespace OrcanodeMonitor.Pages
         public string NodeS3TextColor(Orcanode node) => GetTextColor(NodeS3BackgroundColor(node));
 
         private readonly Dictionary<string, long> _orcaHelloDetectionCounts = new Dictionary<string, long>();
+        private readonly HashSet<string> _podsAINamespaces = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         public long GetOrcaHelloDetectionCount(Orcanode node)
         {
@@ -154,6 +155,17 @@ namespace OrcanodeMonitor.Pages
         public string NodeOrcaHelloTextColor(Orcanode node) => GetTextColor(NodeOrcaHelloStatusBackgroundColor(node));
 
         public string NodeOrcaHelloStatusBackgroundColor(Orcanode node) => GetBackgroundColor(node.OrcaHelloStatus, node.OrcasoundStatus);
+
+        public OrcanodeOnlineStatus GetPodsAIStatus(Orcanode node)
+        {
+            return _podsAINamespaces.Contains(node.OrcasoundSlug) ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Absent;
+        }
+
+        public string GetPodsAIStatusString(Orcanode node) => GetPodsAIStatus(node).ToString();
+
+        public string NodePodsAIStatusBackgroundColor(Orcanode node) => GetBackgroundColor(GetPodsAIStatus(node), node.OrcasoundStatus);
+
+        public string NodePodsAITextColor(Orcanode node) => GetTextColor(NodePodsAIStatusBackgroundColor(node));
 
         /// <summary>
         /// Gets the text color for the Mezmo status of the specified node.
@@ -297,6 +309,11 @@ namespace OrcanodeMonitor.Pages
                 _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
 
                 await _orcaHelloFetcher.FetchOrcaHelloDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts, _logger);
+                List<OrcaHelloPod> podsAIPods = await _orcaHelloFetcher.FetchPodsAIMetricsAsync(_nodes, _logger);
+                foreach (OrcaHelloPod pod in podsAIPods)
+                {
+                    _podsAINamespaces.Add(pod.NamespaceName);
+                }
 
                 _recentEvents = await Fetcher.GetRecentEventsAsync(_databaseContext, DateTime.UtcNow.AddDays(-7), _logger) ?? new List<OrcanodeEvent>();
             }

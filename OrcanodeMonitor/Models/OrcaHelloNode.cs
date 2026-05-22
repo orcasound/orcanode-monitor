@@ -133,12 +133,13 @@ namespace OrcanodeMonitor.Models
                     continue;
                 }
 
-                PodMetrics? podMetrics = podMetricsList.Where(pm => pm.Metadata.Name == pod.Metadata.Name).FirstOrDefault();
-                var container = podMetrics?.Containers.FirstOrDefault(c => c.Name == "inference-system");
+                PodMetrics? podMetrics = podMetricsList.FirstOrDefault(pm => pm.Metadata?.Name == pod.Metadata?.Name);
+                string containerName = (pod.Metadata?.Name?.StartsWith("pods-ai-inference-system-") == true) ? "pods-ai-inference-system" : "inference-system";
+                var container = podMetrics?.Containers.FirstOrDefault(c => c.Name == containerName);
                 string cpuUsagePod = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
                 string memoryUsagePod = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
-                OrcaHelloPod orcaPod = new OrcaHelloPod(pod, cpuUsagePod, memoryUsagePod, 0);
+                OrcaHelloPod orcaPod = new OrcaHelloPod(pod, cpuUsagePod, memoryUsagePod, 0, containerName: containerName);
                 _pods.Add(orcaPod);
             }
         }

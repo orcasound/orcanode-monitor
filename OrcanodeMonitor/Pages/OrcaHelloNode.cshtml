@@ -1,11 +1,11 @@
 ﻿@page "{nodeName}"
 @model OrcanodeMonitor.Pages.OrcaHelloNodeModel
 @{
-    ViewData["Title"] = "OrcaHello for " + Model.NodeName;
+    ViewData["Title"] = "AI Pods for " + Model.NodeName;
 }
 
 <div class="text-center">
-    <h1 class="display-4">OrcaHello for @Model.NodeName</h1>
+    <h1 class="display-4">AI Pods for @Model.NodeName</h1>
     As of: @Model.NowLocal (Pacific)<br />
 
     <table>
@@ -62,9 +62,15 @@
         {
             <tr>
                 <td>
-                @if (Model.IsInferencePod(pod))
+                @if (Model.IsOrcaHelloPod(pod))
                 {
                     <a asp-page="/OrcaHelloPod" asp-route-podNamespace="@pod.NamespaceName">
+                        @pod.NamespaceName
+                    </a>
+                }
+                else if (Model.IsPodsAIPod(pod))
+                {
+                    <a asp-page="/PodsAIPod" asp-route-podNamespace="@pod.NamespaceName">
                         @pod.NamespaceName
                     </a>
                 }
