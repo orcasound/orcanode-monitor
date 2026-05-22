@@ -190,7 +190,7 @@ namespace Test
         {
             // Test that GetConfidenceThreshold returns "3 @ 70%" when both thresholds are set.
             var pod = CreateTestPod();
-            var orcaHelloPod = new OrcaHelloPod(
+            var orcaHelloPod = new InferencePod(
                 pod,
                 InferenceSystemFetcher.OrcaHelloInferenceContainerName,
                 cpuUsage: "100000000n",
@@ -211,7 +211,7 @@ namespace Test
         {
             // Test that GetConfidenceThreshold returns "70%" when only confidence threshold is set.
             var pod = CreateTestPod();
-            var orcaHelloPod = new OrcaHelloPod(
+            var orcaHelloPod = new InferencePod(
                 pod,
                 InferenceSystemFetcher.OrcaHelloInferenceContainerName,
                 cpuUsage: "100000000n",
@@ -232,7 +232,7 @@ namespace Test
         {
             // Test that GetConfidenceThreshold returns "Unknown" when no thresholds are set.
             var pod = CreateTestPod();
-            var orcaHelloPod = new OrcaHelloPod(
+            var orcaHelloPod = new InferencePod(
                 pod,
                 InferenceSystemFetcher.OrcaHelloInferenceContainerName,
                 cpuUsage: "100000000n",
@@ -253,7 +253,7 @@ namespace Test
         {
             // Test that confidence threshold is properly rounded to nearest percent (0.749 -> 75%).
             var pod = CreateTestPod();
-            var orcaHelloPod = new OrcaHelloPod(
+            var orcaHelloPod = new InferencePod(
                 pod,
                 InferenceSystemFetcher.OrcaHelloInferenceContainerName,
                 cpuUsage: "100000000n",
@@ -276,15 +276,15 @@ namespace Test
             var pod = CreateTestPod();
 
             // Test 0.5 -> 50%
-            var orcaHelloPod1 = new OrcaHelloPod(pod, InferenceSystemFetcher.OrcaHelloInferenceContainerName, "100n", "256Ki", 0, 0.5, 2);
+            var orcaHelloPod1 = new InferencePod(pod, InferenceSystemFetcher.OrcaHelloInferenceContainerName, "100n", "256Ki", 0, 0.5, 2);
             Assert.AreEqual("2 @ 50%", orcaHelloPod1.GetConfidenceThreshold());
 
             // Test 0.95 -> 95%
-            var orcaHelloPod2 = new OrcaHelloPod(pod, InferenceSystemFetcher.OrcaHelloInferenceContainerName, "100n", "256Ki", 0, 0.95, 10);
+            var orcaHelloPod2 = new InferencePod(pod, InferenceSystemFetcher.OrcaHelloInferenceContainerName, "100n", "256Ki", 0, 0.95, 10);
             Assert.AreEqual("10 @ 95%", orcaHelloPod2.GetConfidenceThreshold());
 
             // Test 0.05 -> 5%
-            var orcaHelloPod3 = new OrcaHelloPod(pod, InferenceSystemFetcher.OrcaHelloInferenceContainerName, "100n", "256Ki", 0, 0.05, 1);
+            var orcaHelloPod3 = new InferencePod(pod, InferenceSystemFetcher.OrcaHelloInferenceContainerName, "100n", "256Ki", 0, 0.05, 1);
             Assert.AreEqual("1 @ 5%", orcaHelloPod3.GetConfidenceThreshold());
         }
     }

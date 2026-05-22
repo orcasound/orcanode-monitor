@@ -208,7 +208,7 @@ namespace OrcanodeMonitor.Pages
 
                         if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                         {
-                            OrcaHelloPod? inferencePod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+                            InferencePod? inferencePod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
                             EnsureNodeEntries(node, inferencePod?.GetConfidenceThreshold() ?? "Unknown");
 
                             inferencePod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
@@ -301,7 +301,7 @@ namespace OrcanodeMonitor.Pages
                 {
                     if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                     {
-                        OrcaHelloPod? pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+                        InferencePod? pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
                         EnsureNodeEntries(node, pod?.GetConfidenceThreshold() ?? "Unknown");
 
                         pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);

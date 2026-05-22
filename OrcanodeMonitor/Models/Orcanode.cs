@@ -488,7 +488,7 @@ namespace OrcanodeMonitor.Models
         private bool IsOrcaHelloStable => IsStable(OrcaHelloInferencePodRunningSince);
 
         /// <summary>
-        /// Check whether a PodsAI container has been stable for a while.
+        /// Check whether a PODS-AI container has been stable for a while.
         /// </summary>
         private bool IsPodsAIStable => IsStable(PodsAIInferencePodRunningSince);
 

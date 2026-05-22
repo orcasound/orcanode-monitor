@@ -7,12 +7,12 @@ using OrcanodeMonitor.Models;
 
 namespace OrcanodeMonitor.Pages
 {
-    public class OrcaHelloNodeModel : PageModel
+    public class InferenceSystemNodeModel : PageModel
     {
         private readonly InferenceSystemFetcher _inferenceSystemFetcher;
-        private OrcaHelloNode? _orcaHelloNode = null;
-        private readonly ILogger<OrcaHelloNodeModel> _logger;
-        public List<OrcaHelloPod> Pods => _orcaHelloNode?.Pods ?? new List<OrcaHelloPod>();
+        private InferenceSystemNode? _orcaHelloNode = null;
+        private readonly ILogger<InferenceSystemNodeModel> _logger;
+        public List<InferencePod> Pods => _orcaHelloNode?.Pods ?? new List<InferencePod>();
         public string NodeName => _orcaHelloNode?.Name ?? "Unknown";
         public string InstanceType => _orcaHelloNode?.InstanceType ?? "Unknown";
         public string CpuModel => _orcaHelloNode?.CpuModel ?? "Unknown";
@@ -39,14 +39,14 @@ namespace OrcanodeMonitor.Pages
             }
         }
 
-        public bool IsOrcaHelloPod(OrcaHelloPod pod)
+        public bool IsOrcaHelloPod(InferencePod pod)
         {
-            return pod.Name.StartsWith("inference-system-");
+            return pod.Name.StartsWith(InferenceSystemFetcher.OrcaHelloInferenceContainerName + "-");
         }
 
-        public bool IsPodsAIPod(OrcaHelloPod pod)
+        public bool IsPodsAIPod(InferencePod pod)
         {
-            return pod.Name.StartsWith("pods-ai-inference-system-");
+            return pod.Name.StartsWith(InferenceSystemFetcher.PodsAIInferenceContainerName + "-");
         }
 
         /// <summary>
@@ -54,7 +54,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         public string NowLocal { get; private set; }
 
-        public OrcaHelloNodeModel(InferenceSystemFetcher inferenceSystemFetcher, ILogger<OrcaHelloNodeModel> logger)
+        public InferenceSystemNodeModel(InferenceSystemFetcher inferenceSystemFetcher, ILogger<InferenceSystemNodeModel> logger)
         {
             _inferenceSystemFetcher = inferenceSystemFetcher;
             _logger = logger;
@@ -63,7 +63,7 @@ namespace OrcanodeMonitor.Pages
 
         public async Task<IActionResult> OnGetAsync(string nodeName)
         {
-            _orcaHelloNode = await _inferenceSystemFetcher.GetInferenceNodeAsync(nodeName, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+            _orcaHelloNode = await _inferenceSystemFetcher.GetNodeAsync(nodeName, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
             if (_orcaHelloNode == null)
             {
                 return NotFound(); // Return a 404 error page

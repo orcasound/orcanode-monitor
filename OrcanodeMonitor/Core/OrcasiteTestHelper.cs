@@ -167,6 +167,84 @@ namespace OrcanodeMonitor.Core
             return documents;
         }
 
+        private static V1Pod CreateMockPod(string containerName, string namespaceName)
+        {
+            return new V1Pod
+            {
+                Metadata = new V1ObjectMeta
+                {
+                    Name = containerName + "-" + namespaceName,
+                    NamespaceProperty = namespaceName
+                },
+                Spec = new V1PodSpec
+                {
+                    NodeName = "test-node",
+                    Containers = new List<V1Container>
+                    {
+                        new V1Container
+                        {
+                            Name = containerName,
+                            Image = "orcaconservancy.io/" + containerName + ":latest",
+                            Resources = new V1ResourceRequirements
+                            {
+                                Limits = new Dictionary<string, ResourceQuantity>
+                                {
+                                    { "cpu", new ResourceQuantity("2") },
+                                    { "memory", new ResourceQuantity("4Gi") }
+                                }
+                            }
+                        }
+                    }
+                },
+                Status = new V1PodStatus
+                {
+                    Phase = "Running",
+                    ContainerStatuses = new List<V1ContainerStatus>
+                    {
+                        new V1ContainerStatus
+                        {
+                            Name = containerName,
+                            Ready = true,
+                            RestartCount = 0,
+                            State = new V1ContainerState
+                            {
+                                Running = new V1ContainerStateRunning
+                                {
+                                    StartedAt = DateTime.UtcNow.AddHours(-1)
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        private static dynamic CreateMockContainerInfo(string containerName, string namespaceName)
+        {
+            return new
+            {
+                metadata = new
+                {
+                    name = containerName + "-" + namespaceName,
+                    @namespace = namespaceName
+                },
+                timestamp = DateTime.UtcNow,
+                window = "30s",
+                containers = new[]
+                                    {
+                            new
+                            {
+                                name = containerName,
+                                usage = new
+                                {
+                                    cpu = "100", // 100m
+                                    memory = "256" // 256Mi
+                                }
+                            }
+                        }
+            };
+        }
+
         /// <summary>
         /// Get a mock OrcaHelloFetcher for a given node.  Currently this only
         /// supports one node, but it could be a list of nodes in the future.
@@ -184,108 +262,12 @@ namespace OrcanodeMonitor.Core
 
             string namespaceName = node.OrcasoundSlug;
 
-            // Create a mock pod to return.
-            var mockPod = new V1Pod
-            {
-                Metadata = new V1ObjectMeta
-                {
-                    Name = "inference-system-andrews-bay",
-                    NamespaceProperty = namespaceName
-                },
-                Spec = new V1PodSpec
-                {
-                    NodeName = "test-node",
-                    Containers = new List<V1Container>
-                    {
-                        new V1Container
-                        {
-                            Name = "inference-system",
-                            Image = "orcaconservancy.io/inference-system:latest",
-                            Resources = new V1ResourceRequirements
-                            {
-                                Limits = new Dictionary<string, ResourceQuantity>
-                                {
-                                    { "cpu", new ResourceQuantity("2") },
-                                    { "memory", new ResourceQuantity("4Gi") }
-                                }
-                            }
-                        }
-                    }
-                },
-                Status = new V1PodStatus
-                {
-                    Phase = "Running",
-                    ContainerStatuses = new List<V1ContainerStatus>
-                    {
-                        new V1ContainerStatus
-                        {
-                            Name = "inference-system",
-                            Ready = true,
-                            RestartCount = 0,
-                            State = new V1ContainerState
-                            {
-                                Running = new V1ContainerStateRunning
-                                {
-                                    StartedAt = DateTime.UtcNow.AddHours(-1)
-                                }
-                            }
-                        }
-                    }
-                }
-            };
-
-            var mockPodsAIPod = new V1Pod
-            {
-                Metadata = new V1ObjectMeta
-                {
-                    Name = "pods-ai-inference-system-andrews-bay",
-                    NamespaceProperty = namespaceName
-                },
-                Spec = new V1PodSpec
-                {
-                    NodeName = "test-node",
-                    Containers = new List<V1Container>
-                    {
-                        new V1Container
-                        {
-                            Name = "pods-ai-inference-system",
-                            Image = "orcaconservancy.io/pods-ai-inference-system:latest",
-                            Resources = new V1ResourceRequirements
-                            {
-                                Limits = new Dictionary<string, ResourceQuantity>
-                                {
-                                    { "cpu", new ResourceQuantity("2") },
-                                    { "memory", new ResourceQuantity("4Gi") }
-                                }
-                            }
-                        }
-                    }
-                },
-                Status = new V1PodStatus
-                {
-                    Phase = "Running",
-                    ContainerStatuses = new List<V1ContainerStatus>
-                    {
-                        new V1ContainerStatus
-                        {
-                            Name = "pods-ai-inference-system",
-                            Ready = true,
-                            RestartCount = 0,
-                            State = new V1ContainerState
-                            {
-                                Running = new V1ContainerStateRunning
-                                {
-                                    StartedAt = DateTime.UtcNow.AddHours(-1)
-                                }
-                            }
-                        }
-                    }
-                }
-            };
-
+            // Create mock pods to return.
+            var mockOrcaHelloPod = CreateMockPod(InferenceSystemFetcher.OrcaHelloInferenceContainerName, namespaceName);
+            var mockPodsAIPod = CreateMockPod(InferenceSystemFetcher.PodsAIInferenceContainerName, namespaceName);
             var podList = new V1PodList
             {
-                Items = new List<V1Pod> { mockPod, mockPodsAIPod }
+                Items = new List<V1Pod> { mockOrcaHelloPod, mockPodsAIPod }
             };
 
             // Set up the CoreV1 operations mock to return the pod list.
@@ -317,50 +299,8 @@ namespace OrcanodeMonitor.Core
                 metadata = new { },
                 items = new[]
                 {
-                    new
-                    {
-                        metadata = new
-                        {
-                            name = "inference-system-andrews-bay",
-                            @namespace = namespaceName
-                        },
-                        timestamp = DateTime.UtcNow,
-                        window = "30s",
-                        containers = new[]
-                        {
-                            new
-                            {
-                                name = "inference-system",
-                                usage = new
-                                {
-                                    cpu = "100", // 100m
-                                    memory = "256" // 256Mi
-                                }
-                            }
-                        }
-                    },
-                    new
-                    {
-                        metadata = new
-                        {
-                            name = "pods-ai-inference-system-andrews-bay",
-                            @namespace = namespaceName
-                        },
-                        timestamp = DateTime.UtcNow,
-                        window = "30s",
-                        containers = new[]
-                        {
-                            new
-                            {
-                                name = "pods-ai-inference-system",
-                                usage = new
-                                {
-                                    cpu = "100",
-                                    memory = "256"
-                                }
-                            }
-                        }
-                    }
+                    CreateMockContainerInfo(InferenceSystemFetcher.OrcaHelloInferenceContainerName, namespaceName),
+                    CreateMockContainerInfo(InferenceSystemFetcher.PodsAIInferenceContainerName, namespaceName)
                 }
             });
 

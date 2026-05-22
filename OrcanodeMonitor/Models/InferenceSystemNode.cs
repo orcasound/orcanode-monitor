@@ -2,10 +2,11 @@
 // SPDX-License-Identifier: MIT
 using k8s;
 using k8s.Models;
+using OrcanodeMonitor.Core;
 
 namespace OrcanodeMonitor.Models
 {
-    public class OrcaHelloNode
+    public class InferenceSystemNode
     {
         readonly V1Node _node;
 
@@ -13,8 +14,8 @@ namespace OrcanodeMonitor.Models
         /// VMSS node name.
         /// </summary>
         public string Name => _node.Metadata.Name;
-        private readonly List<OrcaHelloPod> _pods = new List<OrcaHelloPod>();
-        public List<OrcaHelloPod> Pods => _pods;
+        private readonly List<InferencePod> _pods = new List<InferencePod>();
+        public List<InferencePod> Pods => _pods;
 
         public string InstanceType { get; private set; }
         public double CpuUsageCores { get; private set; }
@@ -76,7 +77,7 @@ namespace OrcanodeMonitor.Models
             return labels.ContainsKey(key);
         }
 
-        public OrcaHelloNode(V1Node node, string cpuUsage, string memoryUsage, string lscpuOutput, IEnumerable<V1Pod> v1Pods, IEnumerable<PodMetrics> podMetricsList)
+        public InferenceSystemNode(V1Node node, string cpuUsage, string memoryUsage, string lscpuOutput, IEnumerable<V1Pod> v1Pods, IEnumerable<PodMetrics> podMetricsList)
         {
             _node = node;
 
@@ -134,12 +135,12 @@ namespace OrcanodeMonitor.Models
                 }
 
                 PodMetrics? podMetrics = podMetricsList.FirstOrDefault(pm => pm.Metadata?.Name == pod.Metadata?.Name);
-                string containerName = (pod.Metadata?.Name?.StartsWith("pods-ai-inference-system-") == true) ? "pods-ai-inference-system" : "inference-system";
+                string containerName = (pod.Metadata?.Name?.StartsWith(InferenceSystemFetcher.PodsAIInferenceContainerName + "-") == true) ? InferenceSystemFetcher.PodsAIInferenceContainerName : InferenceSystemFetcher.OrcaHelloInferenceContainerName;
                 var container = podMetrics?.Containers.FirstOrDefault(c => c.Name == containerName);
                 string cpuUsagePod = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
                 string memoryUsagePod = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
-                OrcaHelloPod orcaPod = new OrcaHelloPod(pod, containerName, cpuUsagePod, memoryUsagePod, 0, 0.5, 2);
+                InferencePod orcaPod = new InferencePod(pod, containerName, cpuUsagePod, memoryUsagePod, 0, 0.5, 2);
                 _pods.Add(orcaPod);
             }
         }

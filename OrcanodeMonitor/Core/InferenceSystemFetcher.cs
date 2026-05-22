@@ -119,8 +119,8 @@ namespace OrcanodeMonitor.Core
         /// <param name="nodeName">Inference node name</param>
         /// <param name="containerName">Container name to look for when determining the best pod</param>
         /// <param name="logger">Logger</param>
-        /// <returns>OrcaHelloNode</returns>
-        public async Task<OrcaHelloNode?> GetInferenceNodeAsync(string nodeName, string containerName, ILogger logger)
+        /// <returns>InferenceSystemNode</returns>
+        public async Task<InferenceSystemNode?> GetNodeAsync(string nodeName, string containerName, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
@@ -150,7 +150,7 @@ namespace OrcanodeMonitor.Core
                 }
 
                 PodMetricsList podMetrics = await client.GetKubernetesPodsMetricsAsync();
-                return new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput, v1Pods.Items, podMetrics.Items);
+                return new InferenceSystemNode(node, cpuUsage, memoryUsage, lscpuOutput, v1Pods.Items, podMetrics.Items);
             }
             catch (Exception ex)
             {
@@ -470,8 +470,8 @@ namespace OrcanodeMonitor.Core
         /// <param name="orcanode">Orcanode object associated with the pod</param>
         /// <param name="containerName">Name of the container</param>
         /// <param name="logger">Logger</param>
-        /// <returns>OrcaHelloPod</returns>
-        public async Task<OrcaHelloPod?> GetInferencePodByNameAsync(Orcanode orcanode, string containerName, ILogger logger)
+        /// <returns>InferencePod</returns>
+        public async Task<InferencePod?> GetInferencePodByNameAsync(Orcanode orcanode, string containerName, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
@@ -499,7 +499,7 @@ namespace OrcanodeMonitor.Core
 
             (double? confidenceThreshold, int? countThreshold) = await GetModelThresholdsAsync(namespaceName, logger);
 
-            return new OrcaHelloPod(bestPod, containerName, cpuUsage, memoryUsage, detectionCount, confidenceThreshold, countThreshold);
+            return new InferencePod(bestPod, containerName, cpuUsage, memoryUsage, detectionCount, confidenceThreshold, countThreshold);
         }
 
         /// <summary>
@@ -510,13 +510,13 @@ namespace OrcanodeMonitor.Core
         /// <param name="podNamePrefix">Only consider pods whose names start with this prefix, skipping any benchmark and other auxiliary pods</param>
         /// <param name="logger">Logger</param>
         /// <returns>List of non-best pods, or an empty list if none are found</returns>
-        public async Task<IList<OrcaHelloPodInstance>> GetOtherPodsByNameAsync(Orcanode orcanode, string podNamePrefix, ILogger logger)
+        public async Task<IList<InferencePodInstance>> GetOtherPodsByNameAsync(Orcanode orcanode, string podNamePrefix, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
                 logger.LogWarning("[GetOtherPodsByNameAsync] Kubernetes client is null");
-                return new List<OrcaHelloPodInstance>();
+                return new List<InferencePodInstance>();
             }
 
             string namespaceName = orcanode.OrcasoundSlug;
@@ -533,7 +533,7 @@ namespace OrcanodeMonitor.Core
                         && name.StartsWith(podNamePrefix)
                         && name != bestPodName;
                 })
-                .Select(p => new OrcaHelloPodInstance(p))
+                .Select(p => new InferencePodInstance(p))
                 .ToList();
         }
 
@@ -544,7 +544,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="namespaceName">Namespace</param>
         /// <param name="logger">Logger</param>
         /// <returns>Log</returns>
-        public async Task<string> GetAIContainerLogAsync(OrcaHelloPod? container, string namespaceName, ILogger logger)
+        public async Task<string> GetAIContainerLogAsync(InferencePod? container, string namespaceName, ILogger logger)
         {
             if (container == null)
             {
@@ -974,14 +974,14 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get a list of OrcaHelloPod objects.
+        /// Get a list of InferencePod objects.
         /// </summary>
         /// <param name="orcanodes">List of orcanodes</param>
         /// <param name="logger">Logger instance</param>
-        /// <returns>List of OrcaHelloPod objects</returns>
-        public async Task<List<OrcaHelloPod>> FetchPodMetricsAsync(List<Orcanode> orcanodes, string containerName, ILogger logger)
+        /// <returns>List of InferencePod objects</returns>
+        public async Task<List<InferencePod>> FetchPodMetricsAsync(List<Orcanode> orcanodes, string containerName, ILogger logger)
         {
-            var resultList = new List<OrcaHelloPod>();
+            var resultList = new List<InferencePod>();
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
@@ -1019,7 +1019,7 @@ namespace OrcanodeMonitor.Core
 
                     (double? confidenceThreshold, int? countThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty, logger);
 
-                    var inferencePod = new OrcaHelloPod(pod, containerName, cpuUsage, memoryUsage, detectionCount, confidenceThreshold, countThreshold);
+                    var inferencePod = new InferencePod(pod, containerName, cpuUsage, memoryUsage, detectionCount, confidenceThreshold, countThreshold);
                     resultList.Add(inferencePod);
                 }
             }
@@ -1032,14 +1032,14 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get a list of OrcaHelloNode objects.
+        /// Get a list of InferenceSystemNode objects.
         /// </summary>
         /// <param name="logger">Logger instance</param>
         /// <param name="podNamePrefix">Prefix for pod names to filter</param>
-        /// <returns>List of OrcaHelloNode objects</returns>
-        public async Task<List<OrcaHelloNode>> FetchNodeMetricsAsync(ILogger logger, string podNamePrefix)
+        /// <returns>List of InferenceSystemNode objects</returns>
+        public async Task<List<InferenceSystemNode>> FetchNodeMetricsAsync(ILogger logger, string podNamePrefix)
         {
-            var resultList = new List<OrcaHelloNode>();
+            var resultList = new List<InferenceSystemNode>();
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
@@ -1067,7 +1067,7 @@ namespace OrcanodeMonitor.Core
                         lscpuOutput = await GetPodLscpuOutputAsync(bestPod.Metadata.Name, bestPod.Metadata.NamespaceProperty, logger);
                     }
 
-                    var inferenceNode = new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput, v1Pods.Items, podMetrics.Items);
+                    var inferenceNode = new InferenceSystemNode(node, cpuUsage, memoryUsage, lscpuOutput, v1Pods.Items, podMetrics.Items);
                     resultList.Add(inferenceNode);
                 }
             }

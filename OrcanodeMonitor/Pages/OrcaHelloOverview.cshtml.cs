@@ -14,10 +14,10 @@ namespace OrcanodeMonitor.Pages
         private readonly ILogger<OrcaHelloOverviewModel> _logger;
         private readonly InferenceSystemFetcher _orcaHelloFetcher;
         public List<Orcanode> Orcanodes { get; private set; }
-        public List<OrcaHelloNode> Nodes { get; private set; }
-        public List<OrcaHelloPod> Pods { get; private set; }
+        public List<InferenceSystemNode> Nodes { get; private set; }
+        public List<InferencePod> Pods { get; private set; }
         public string AksUrl => Fetcher.Configuration?["AZURE_AKS_URL"] ?? "";
-        public string GetNodeMemoryUsage(OrcaHelloNode node)
+        public string GetNodeMemoryUsage(InferenceSystemNode node)
         {
             long nodeMemoryUsageInKi = node.MemoryUsageInKi;
             return $"{(nodeMemoryUsageInKi / 1024f / 1024f):F1} GiB";
@@ -28,8 +28,8 @@ namespace OrcanodeMonitor.Pages
             _databaseContext = context;
             _logger = logger;
             _orcaHelloFetcher = orcaHelloFetcher;
-            Nodes = new List<OrcaHelloNode>();
-            Pods = new List<OrcaHelloPod>();
+            Nodes = new List<InferenceSystemNode>();
+            Pods = new List<InferencePod>();
             Orcanodes = new List<Orcanode>();
             NowLocal = Fetcher.UtcToLocalDateTime(DateTime.UtcNow)?.ToString() ?? "Unknown";
         }
@@ -44,7 +44,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="node">VMSS node</param>
         /// <returns>Comma-separated list of namespaces</returns>
-        public string GetLocations(OrcaHelloNode node)
+        public string GetLocations(InferenceSystemNode node)
         {
             // Get unique namespace names for pods running on the given node.
             var namespaces = Pods
@@ -59,7 +59,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="node">Node to check</param>
         /// <returns>Problems string</returns>
-        public string GetNodeProblems(OrcaHelloNode node)
+        public string GetNodeProblems(InferenceSystemNode node)
         {
             return node.Problems;
         }
@@ -69,7 +69,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="node">Node to check</param>
         /// <returns>Uptime string</returns>
-        public string GetNodeUptime(OrcaHelloNode node)
+        public string GetNodeUptime(InferenceSystemNode node)
         {
             return Orcanode.FormatTimeSpan(node.Uptime);
         }
@@ -79,7 +79,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="pod">Pod to check</param>
         /// <returns>Reason, in parentheses</returns>
-        public string GetPodLastTerminationReason(OrcaHelloPod pod)
+        public string GetPodLastTerminationReason(InferencePod pod)
         {
             if (string.IsNullOrEmpty(pod.LastTerminationReason))
             {
@@ -93,7 +93,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="pod">pod</param>
         /// <returns>Orcanode object, or null on error</returns>
-        Orcanode? GetOrcanode(OrcaHelloPod pod)
+        Orcanode? GetOrcanode(InferencePod pod)
         {
             return Orcanodes.Where(n => n.OrcasoundSlug == pod.NamespaceName).FirstOrDefault();
         }
@@ -103,7 +103,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="pod">The OrcaHello pod to check for lag.</param>
         /// <returns>A string representation of the lag time if available, or the pod's status otherwise.</returns>
-        public string GetLag(OrcaHelloPod pod)
+        public string GetLag(InferencePod pod)
         {
             Orcanode? node = GetOrcanode(pod);
             if (node == null)
@@ -128,7 +128,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="pod">Pod</param>
         /// <returns>Status value</returns>
-        public OrcanodeOnlineStatus GetPodStatus(OrcaHelloPod pod) =>
+        public OrcanodeOnlineStatus GetPodStatus(InferencePod pod) =>
             GetOrcanode(pod)?.OrcaHelloStatus ?? OrcanodeOnlineStatus.Absent;
 
         /// <summary>
@@ -136,7 +136,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="pod">Pod</param>
         /// <returns>HTML color string</returns>
-        public string GetPodUptimeTextColor(OrcaHelloPod pod)
+        public string GetPodUptimeTextColor(InferencePod pod)
         {
             Orcanode? node = GetOrcanode(pod);
             if (node == null)
@@ -151,7 +151,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="pod">Pod</param>
         /// <returns>Uptime string</returns>
-        public string GetPodUptime(OrcaHelloPod pod)
+        public string GetPodUptime(InferencePod pod)
         {
             Orcanode? node = GetOrcanode(pod);
             if (node == null)
@@ -171,7 +171,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="pod">Pod</param>
         /// <returns>HTML color string</returns>
-        public string GetPodRestartsBackgroundColor(OrcaHelloPod pod)
+        public string GetPodRestartsBackgroundColor(InferencePod pod)
         {
             if (pod.RestartCount == 0)
             {
@@ -189,7 +189,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="pod">Pod</param>
         /// <returns>HTML color string</returns>
-        public string GetPodDetectionsBackgroundColor(OrcaHelloPod pod)
+        public string GetPodDetectionsBackgroundColor(InferencePod pod)
         {
             Orcanode? node = GetOrcanode(pod);
             return IndexModel.GetNodeMachineDetectionsBackgroundColor(node, pod.DetectionCount);
@@ -200,7 +200,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="pod">Pod</param>
         /// <returns>HTML color string</returns>
-        public string GetPodLagBackgroundColor(OrcaHelloPod pod)
+        public string GetPodLagBackgroundColor(InferencePod pod)
         {
             Orcanode? node = GetOrcanode(pod);
             if (node == null)
@@ -219,7 +219,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="pod">Pod</param>
         /// <returns>HTML color string</returns>
-        public string GetPodUptimeBackgroundColor(OrcaHelloPod pod)
+        public string GetPodUptimeBackgroundColor(InferencePod pod)
         {
             Orcanode? node = GetOrcanode(pod);
             if (node == null)
@@ -260,12 +260,12 @@ namespace OrcanodeMonitor.Pages
                           .ToList();
 
             // Fetch pods and nodes for display.
-            List<OrcaHelloPod> pods = await _orcaHelloFetcher.FetchPodMetricsAsync(Orcanodes, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+            List<InferencePod> pods = await _orcaHelloFetcher.FetchPodMetricsAsync(Orcanodes, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
             Pods = pods.OrderBy(n => n.NamespaceName).ToList();
 
             // Assume that all nodes have an OrcaHello instance on them.
             // TODO: fix this assumption by fetching the list of nodes from Kubernetes and matching them to the Orcanodes in the database.
-            List<OrcaHelloNode> nodes = await _orcaHelloFetcher.FetchNodeMetricsAsync(_logger, "inference-system");
+            List<InferenceSystemNode> nodes = await _orcaHelloFetcher.FetchNodeMetricsAsync(_logger, "inference-system");
             Nodes = nodes.OrderBy(n => n.Name).ToList();
         }
     }

@@ -148,7 +148,7 @@ namespace Test
             var fetcher = new InferenceSystemFetcher(null);
 
             // Act
-            var result = await fetcher.GetInferenceNodeAsync("test-node", containerName, _logger);
+            var result = await fetcher.GetNodeAsync("test-node", containerName, _logger);
 
             // Assert
             Assert.IsNull(result);

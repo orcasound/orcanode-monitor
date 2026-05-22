@@ -18,11 +18,11 @@
             <th>Problems</th>
             <th>Uptime</th>
         </tr>
-        @foreach (Models.OrcaHelloNode item in Model.Nodes)
+        @foreach (Models.InferenceSystemNode item in Model.Nodes)
         {
             <tr>
                 <td>
-                    <a asp-page="/OrcaHelloNode" asp-route-nodeName="@item.Name">
+                    <a asp-page="/InferenceSystemNode" asp-route-nodeName="@item.Name">
                         @Html.DisplayFor(modelItem => item.Name)
                     </a>
                 </td>
@@ -61,7 +61,7 @@
             <th>Uptime</th>
             <th>Restarts</th>
         </tr>
-        @foreach (Models.OrcaHelloPod item in Model.Pods)
+        @foreach (Models.InferencePod item in Model.Pods)
         {
             <tr>
                 <td>

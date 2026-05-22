@@ -160,7 +160,7 @@ namespace OrcanodeMonitor.Pages
 
         public string NodePodsAITextColor(Orcanode node) => GetTextColor(NodePodsAIStatusBackgroundColor(node));
 
-        private async Task<TimeSpan?> GetPodLagAsync(OrcaHelloPod pod, Orcanode node)
+        private async Task<TimeSpan?> GetPodLagAsync(InferencePod pod, Orcanode node)
         {
             string logs = await _orcaHelloFetcher.GetAIContainerLogAsync(pod, pod.NamespaceName, _logger);
             if (string.IsNullOrEmpty(logs))
