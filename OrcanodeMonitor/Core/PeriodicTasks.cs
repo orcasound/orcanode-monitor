@@ -73,9 +73,8 @@ namespace OrcanodeMonitor.Core
 
             await Fetcher.UpdateS3DataAsync(context, _logger);
 
-            await _inferenceSystemFetcher.UpdateOrcaHelloDataAsync(context, _logger);
-
-            await _inferenceSystemFetcher.UpdatePodsAIDataAsync(context, _logger);
+            // Update both OrcaHello and Pods AI using a shared pod snapshot to reduce K8s API load.
+            await _inferenceSystemFetcher.UpdateBothInferenceSystemsAsync(context, _logger);
 
             await DataplicityFetcher.CheckForRebootsNeededAsync(context, _logger);
         }

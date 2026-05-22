@@ -640,26 +640,49 @@ namespace OrcanodeMonitor.Core
         public const string OrcaHelloFieldPrefix = "OrcaHello";
         public const string PodsAIFieldPrefix = "PodsAI";
 
-        public async Task UpdateOrcaHelloDataAsync(IOrcanodeMonitorContext context, ILogger logger)
+        /// <summary>
+        /// Update both OrcaHello and PodsAI data using a shared Kubernetes pod list snapshot.
+        /// This avoids duplicate full-cluster queries and reduces K8s API load.
+        /// </summary>
+        /// <param name="context">Database context to update</param>
+        /// <param name="logger">Logger</param>
+        /// <returns></returns>
+        public async Task UpdateBothInferenceSystemsAsync(IOrcanodeMonitorContext context, ILogger logger)
         {
-            await UpdateInferenceSystemDataAsync(context, OrcaHelloInferenceContainerName, OrcaHelloFieldPrefix, logger);
-        }
+            IKubernetes? client = _k8sClient;
+            if (client == null)
+            {
+                logger.LogWarning("[UpdateBothInferenceSystemsAsync] Kubernetes client is null");
+                return;
+            }
 
-        public async Task UpdatePodsAIDataAsync(IOrcanodeMonitorContext context, ILogger logger)
-        {
-            await UpdateInferenceSystemDataAsync(context, PodsAIInferenceContainerName, PodsAIFieldPrefix, logger);
+            try
+            {
+                // Fetch the pod list once for both updates
+                var pods = await client.CoreV1.ListPodForAllNamespacesAsync();
+
+                // Update both systems using the shared snapshot
+                await UpdateInferenceSystemDataAsync(context, pods, OrcaHelloInferenceContainerName, OrcaHelloFieldPrefix, logger);
+                await UpdateInferenceSystemDataAsync(context, pods, PodsAIInferenceContainerName, PodsAIFieldPrefix, logger);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "[UpdateBothInferenceSystemsAsync] Error updating both inference systems");
+            }
         }
 
         /// <summary>
         /// Update the list of Orcanodes using data about inference containers in Azure.
         /// </summary>
         /// <param name="context">Database context to update</param>
+        /// <param name="sharedPods">Pre-fetched pod list to avoid duplicate K8s API calls. If null, will fetch internally.</param>
         /// <param name="containerName">Container name</param>
         /// <param name="fieldNamePrefix">Field name prefix to use when saving data</param>
         /// <param name="logger">Logger</param>
         /// <returns></returns>
-        public async Task UpdateInferenceSystemDataAsync(
+        private async Task UpdateInferenceSystemDataAsync(
             IOrcanodeMonitorContext context,
+            V1PodList sharedPods,
             string containerName,
             string fieldNamePrefix,
             ILogger logger)
@@ -679,7 +702,9 @@ namespace OrcanodeMonitor.Core
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = foundList.ToList();
 
-                var pods = await client.CoreV1.ListPodForAllNamespacesAsync();
+                // Use shared pod list if provided, otherwise fetch it
+                var pods = sharedPods ?? await client.CoreV1.ListPodForAllNamespacesAsync();
+
                 foreach (Orcanode node in foundList)
                 {
                     string slug = node.OrcasoundSlug;

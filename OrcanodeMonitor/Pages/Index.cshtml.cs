@@ -6,7 +6,6 @@ using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Drawing;
-using System.Text.RegularExpressions;
 
 namespace OrcanodeMonitor.Pages
 {
@@ -159,54 +158,6 @@ namespace OrcanodeMonitor.Pages
         public string NodePodsAIStatusBackgroundColor(Orcanode node) => GetBackgroundColor(node.PodsAIStatus, node.OrcasoundStatus);
 
         public string NodePodsAITextColor(Orcanode node) => GetTextColor(NodePodsAIStatusBackgroundColor(node));
-
-        private async Task<TimeSpan?> GetPodLagAsync(InferencePod pod, Orcanode node)
-        {
-            string logs = await _inferenceSystemFetcher.GetAIContainerLogAsync(pod, pod.NamespaceName, _logger);
-            if (string.IsNullOrEmpty(logs))
-            {
-                return null;
-            }
-
-            int lastLiveIndex = -1;
-            TimeSpan? lastSegmentLag = null;
-            foreach (string line in Regex.Split(logs, "\r?\n"))
-            {
-                TimeSpan? segmentLag = InferenceSystemFetcher.GetLagFromSegmentLine(line);
-                if (segmentLag.HasValue)
-                {
-                    lastSegmentLag = segmentLag;
-                }
-                else
-                {
-                    Match m = Regex.Match(line, @"(?<=live)\d+(?=\.ts)");
-                    if (m.Success)
-                    {
-                        lastLiveIndex = int.Parse(m.Value);
-                    }
-                }
-            }
-
-            if (lastSegmentLag.HasValue)
-            {
-                return lastSegmentLag.Value;
-            }
-            if (lastLiveIndex < 0)
-            {
-                return null;
-            }
-
-            Fetcher.TimestampResult? result = await Fetcher.GetLatestS3TimestampAsync(node, true, _logger);
-            if (result?.Offset == null)
-            {
-                return null;
-            }
-
-            DateTimeOffset offset = result.Offset.Value;
-            DateTimeOffset clipEndTime = offset.AddSeconds((lastLiveIndex * 10) + 12);
-            DateTimeOffset now = DateTimeOffset.UtcNow;
-            return now - clipEndTime;
-        }
 
         /// <summary>
         /// Gets the text color for the Mezmo status of the specified node.

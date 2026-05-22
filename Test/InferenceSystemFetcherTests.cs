@@ -64,31 +64,20 @@ namespace Test
             await GetInferencePodAsync_ReturnsNull_WhenClientIsNull(InferenceSystemFetcher.PodsAIInferenceContainerName);
         }
 
-        private async Task UpdateInferenceDataAsync_HandlesNullClient(string containerName, string fieldPrefix)
+        [TestMethod]
+        public async Task UpdateBothInferenceSystemsAsync_HandlesNullClient()
         {
             // Arrange
             var mockContext = new Mock<IOrcanodeMonitorContext>();
-            var orcaHelloFetcher = new InferenceSystemFetcher(null);
+            var fetcher = new InferenceSystemFetcher(null);
 
             // Act
-            await orcaHelloFetcher.UpdateInferenceSystemDataAsync(mockContext.Object, containerName, fieldPrefix, _logger);
+            await fetcher.UpdateBothInferenceSystemsAsync(mockContext.Object, _logger);
 
             // Assert
             // Should complete without throwing an exception
             // Verify no database calls were made since client is null
             mockContext.Verify(c => c.Orcanodes, Times.Never);
-        }
-
-        [TestMethod]
-        public async Task UpdateOrcaHelloDataAsync_HandlesNullClient()
-        {
-            await UpdateInferenceDataAsync_HandlesNullClient(InferenceSystemFetcher.OrcaHelloInferenceContainerName, InferenceSystemFetcher.OrcaHelloFieldPrefix);
-        }
-
-        [TestMethod]
-        public async Task UpdatePodsAIDataAsync_HandlesNullClient()
-        {
-            await UpdateInferenceDataAsync_HandlesNullClient(InferenceSystemFetcher.PodsAIInferenceContainerName, InferenceSystemFetcher.PodsAIFieldPrefix);
         }
 
         private async Task FetchMetricsAsync_ReturnsEmptyList_WhenClientIsNull(string containerName)

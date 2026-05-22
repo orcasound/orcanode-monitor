@@ -25,7 +25,8 @@
                 <th>Human Detections</th>
                 <th>Machine Detections</th>
                 <th>Negative Confidence</th>
-                <th>Configured Threshold</th>
+                <th>OrcaHello Threshold</th>
+                <th>PODS-AI Threshold</th>
                 <th>Positive Confidence</th>
             </tr>
         </thead>
@@ -48,7 +49,10 @@
                         @Model.GetAverageNegativeMachineConfidence(item, "pastWeek")
                     </td>
                     <td>
-                        @Model.GetConfiguredConfidenceThreshold(item)
+                        @Model.GetOrcaHelloConfiguredConfidenceThreshold(item)
+                    </td>
+                    <td>
+                        @Model.GetPodsAIConfiguredConfidenceThreshold(item)
                     </td>
                     <td>
                         @Model.GetAveragePositiveMachineConfidence(item, "pastWeek")
@@ -75,7 +79,10 @@
                         @Model.GetAverageNegativeMachineConfidence(item, "pastMonth")
                     </td>
                     <td>
-                        @Model.GetConfiguredConfidenceThreshold(item)
+                        @Model.GetOrcaHelloConfiguredConfidenceThreshold(item)
+                    </td>
+                    <td>
+                        @Model.GetPodsAIConfiguredConfidenceThreshold(item)
                     </td>
                     <td>
                         @Model.GetAveragePositiveMachineConfidence(item, "pastMonth")
@@ -92,13 +99,16 @@
             <b>Human Detections</b>: Number of human detections, shown as whale category detections / total (percentage).
         </li>
         <li>
-            <b>Machine Detections</b>: Number of confirmed SRKW detections made by the AI inference container, shown as confirmed / total reviewed (percentage). When unreviewed detections exist, the total including unreviewed is shown as "of N".
+            <b>Machine Detections</b>: Number of confirmed SRKW detections made by AI inference containers, shown as confirmed / total reviewed (percentage). When unreviewed detections exist, the total including unreviewed is shown as "of N".
         </li>
         <li>
             <b>Negative Confidence</b>: Average and maximum confidence score for negative (non-SRKW) machine detections.
         </li>
         <li>
-            <b>Configured Threshold</b>: The confidence threshold configured for the AI inference container.
+            <b>OrcaHello Threshold</b>: The confidence threshold configured for the OrcaHello inference container.
+        </li>
+        <li>
+            <b>PODS-AI Threshold</b>: The confidence threshold configured for the PODS-AI inference container.
         </li>
         <li>
             <b>Positive Confidence</b>: Minimum and average confidence score for positive (SRKW) machine detections.

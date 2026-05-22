@@ -135,7 +135,20 @@ namespace OrcanodeMonitor.Models
                 }
 
                 PodMetrics? podMetrics = podMetricsList.FirstOrDefault(pm => pm.Metadata?.Name == pod.Metadata?.Name);
-                string containerName = (pod.Metadata?.Name?.StartsWith(InferenceSystemFetcher.PodsAIInferenceContainerName + "-") == true) ? InferenceSystemFetcher.PodsAIInferenceContainerName : InferenceSystemFetcher.OrcaHelloInferenceContainerName;
+                string containerName;
+                if (pod.Metadata?.Name?.StartsWith(InferenceSystemFetcher.PodsAIInferenceContainerName + "-") == true)
+                {
+                    containerName = InferenceSystemFetcher.PodsAIInferenceContainerName;
+                }
+                else if (pod.Metadata?.Name?.StartsWith(InferenceSystemFetcher.OrcaHelloInferenceContainerName + "-") == true)
+                {
+                    containerName = InferenceSystemFetcher.OrcaHelloInferenceContainerName;
+                }
+                else
+                {
+                    continue;
+                }
+
                 var container = podMetrics?.Containers.FirstOrDefault(c => c.Name == containerName);
                 string cpuUsagePod = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
                 string memoryUsagePod = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
