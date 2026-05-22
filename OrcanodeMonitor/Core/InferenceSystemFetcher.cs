@@ -8,12 +8,10 @@ using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Reflection;
-using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Xml.Linq;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -492,7 +490,7 @@ namespace OrcanodeMonitor.Core
             }
 
             PodMetricsList? metricsList = await client.GetKubernetesPodsMetricsByNamespaceAsync(namespaceName);
-            PodMetrics? podMetric = metricsList?.Items?.FirstOrDefault(n => n.Metadata?.Name?.StartsWith(containerName) == true);
+            PodMetrics? podMetric = metricsList?.Items?.FirstOrDefault(n => n.Metadata?.Name?.StartsWith(containerName + "-") == true);
             var container = podMetric?.Containers?.FirstOrDefault(c => c.Name == containerName);
             string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
             string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
@@ -505,31 +503,6 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get the list of inference-system pods in the namespace that are not the currently
-        /// running (best) pod.  These are the Pending, Evicted, Failed, etc. instances that
-        /// should appear in the "Other Pods" table on the OrcaHelloPod page.
-        /// </summary>
-        /// <param name="orcanode">Orcanode whose namespace is to be queried</param>
-        /// <param name="logger">Logger</param>
-        /// <returns>List of non-best pods, or an empty list if none are found</returns>
-        public async Task<IList<OrcaHelloPodInstance>> GetOrcaHelloOtherPodsAsync(Orcanode orcanode, ILogger logger)
-        {
-            return await GetOtherPodsByNameAsync(orcanode, OrcaHelloInferenceContainerName, logger);
-        }
-
-        /// <summary>
-        /// Get the list of pods-ai-inference-system pods in the namespace that are not the currently
-        /// running (best) pod.
-        /// </summary>
-        /// <param name="orcanode">Orcanode whose namespace is to be queried</param>
-        /// <param name="logger">Logger</param>
-        /// <returns>List of non-best pods, or an empty list if none are found</returns>
-        public async Task<IList<OrcaHelloPodInstance>> GetPodsAIOtherPodsAsync(Orcanode orcanode, ILogger logger)
-        {
-            return await GetOtherPodsByNameAsync(orcanode, PodsAIInferenceContainerName, logger);
-        }
-
-        /// <summary>
         /// Get the list of inference system pods in the namespace that are not the currently
         /// running (best) pod.
         /// </summary>
@@ -537,7 +510,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="podNamePrefix">Only consider pods whose names start with this prefix, skipping any benchmark and other auxiliary pods</param>
         /// <param name="logger">Logger</param>
         /// <returns>List of non-best pods, or an empty list if none are found</returns>
-        private async Task<IList<OrcaHelloPodInstance>> GetOtherPodsByNameAsync(Orcanode orcanode, string podNamePrefix, ILogger logger)
+        public async Task<IList<OrcaHelloPodInstance>> GetOtherPodsByNameAsync(Orcanode orcanode, string podNamePrefix, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
@@ -784,7 +757,6 @@ namespace OrcanodeMonitor.Core
 
                                 if (lastSegmentLag.HasValue)
                                 {
-                                    // Save the lag.
                                     lagProperty?.SetValue(node, lastSegmentLag.Value);
                                 }
                                 else if (lastLiveIndex >= 0)
@@ -797,8 +769,6 @@ namespace OrcanodeMonitor.Core
                                         DateTimeOffset offset = result.Offset.Value;
                                         DateTimeOffset clipEndTime = offset.AddSeconds((lastLiveIndex * 10) + 12);
                                         DateTimeOffset now = DateTimeOffset.UtcNow;
-
-                                        // Save the lag.
                                         lagProperty?.SetValue(node, now - clipEndTime);
                                     }
                                 }
@@ -1011,27 +981,11 @@ namespace OrcanodeMonitor.Core
         /// <returns>List of OrcaHelloPod objects</returns>
         public async Task<List<OrcaHelloPod>> FetchPodMetricsAsync(List<Orcanode> orcanodes, string containerName, ILogger logger)
         {
-            return await FetchPodMetricsByNameAsync(orcanodes, logger, containerName, nameof(FetchPodMetricsAsync));
-        }
-
-        /// <summary>
-        /// Get a list of Pods AI pod objects.
-        /// </summary>
-        /// <param name="orcanodes">List of orcanodes</param>
-        /// <param name="logger">Logger instance</param>
-        /// <returns>List of OrcaHelloPod objects</returns>
-        public async Task<List<OrcaHelloPod>> FetchPodsAIMetricsAsync(List<Orcanode> orcanodes, ILogger logger)
-        {
-            return await FetchPodMetricsByNameAsync(orcanodes, logger, PodsAIInferenceContainerName, nameof(FetchPodsAIMetricsAsync));
-        }
-
-        private async Task<List<OrcaHelloPod>> FetchPodMetricsByNameAsync(List<Orcanode> orcanodes, ILogger logger, string containerName, string methodName)
-        {
             var resultList = new List<OrcaHelloPod>();
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
-                logger.LogWarning("[{MethodName}] Kubernetes client is null", methodName);
+                logger.LogWarning("[FetchPodMetricsByNameAsync] Kubernetes client is null");
                 return resultList;
             }
 
@@ -1041,7 +995,7 @@ namespace OrcanodeMonitor.Core
                 PodMetricsList? metricsList = await client.GetKubernetesPodsMetricsAsync();
                 foreach (V1Pod pod in allPods)
                 {
-                    if (pod.Metadata == null || !pod.Metadata.Name.StartsWith(containerName))
+                    if (pod.Metadata == null || !pod.Metadata.Name.StartsWith(containerName + "-"))
                     {
                         continue;
                     }
@@ -1071,7 +1025,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "[{MethodName}] Error retrieving container metrics", methodName);
+                logger.LogError(ex, "[FetchPodMetricsByNameAsync] Error retrieving container metrics");
             }
 
             return resultList;

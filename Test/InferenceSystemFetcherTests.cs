@@ -117,15 +117,13 @@ namespace Test
             await FetchMetricsAsync_ReturnsEmptyList_WhenClientIsNull(InferenceSystemFetcher.PodsAIInferenceContainerName);
         }
 
-        [TestMethod]
-        public async Task FetchPodsAIMetricsAsync_ReturnsEmptyList_WhenClientIsNull()
+        private async Task FetchInferenceNodeMetricsAsync_ReturnsEmptyList_WhenClientIsNull(string containerName)
         {
             // Arrange
             var fetcher = new InferenceSystemFetcher(null);
-            var orcanodes = new List<Orcanode>();
 
             // Act
-            var result = await fetcher.FetchPodsAIMetricsAsync(orcanodes, _logger);
+            var result = await fetcher.FetchNodeMetricsAsync(_logger, containerName);
 
             // Assert
             Assert.IsNotNull(result);
@@ -135,29 +133,13 @@ namespace Test
         [TestMethod]
         public async Task FetchOrcaHelloNodeMetricsAsync_ReturnsEmptyList_WhenClientIsNull()
         {
-            // Arrange
-            var fetcher = new InferenceSystemFetcher(null);
-
-            // Act
-            var result = await fetcher.FetchNodeMetricsAsync(_logger, "inference-system");
-
-            // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(0, result.Count);
+            await FetchInferenceNodeMetricsAsync_ReturnsEmptyList_WhenClientIsNull(InferenceSystemFetcher.OrcaHelloInferenceContainerName);
         }
 
         [TestMethod]
         public async Task FetchPodsAINodeMetricsAsync_ReturnsEmptyList_WhenClientIsNull()
         {
-            // Arrange
-            var fetcher = new InferenceSystemFetcher(null);
-
-            // Act
-            var result = await fetcher.FetchNodeMetricsAsync(_logger, "pods-ai-inference-system");
-
-            // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(0, result.Count);
+            await FetchInferenceNodeMetricsAsync_ReturnsEmptyList_WhenClientIsNull(InferenceSystemFetcher.PodsAIInferenceContainerName);
         }
 
         private async Task GetInferenceNodeAsync_ReturnsNull_WhenClientIsNull(string containerName)

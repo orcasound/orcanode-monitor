@@ -259,10 +259,10 @@ namespace OrcanodeMonitor.Pages
                           .ToList();
 
             // Fetch pods and nodes for display.
-            List<OrcaHelloPod> pods = await _orcaHelloFetcher.FetchPodsAIMetricsAsync(Orcanodes, _logger);
+            List<OrcaHelloPod> pods = await _orcaHelloFetcher.FetchPodMetricsAsync(orcanodes, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
             Pods = pods.OrderBy(n => n.NamespaceName).ToList();
 
-            List<OrcaHelloNode> nodes = await _orcaHelloFetcher.FetchNodeMetricsAsync(_logger, "pods-ai-inference-system");
+            List<OrcaHelloNode> nodes = await _orcaHelloFetcher.FetchNodeMetricsAsync(_logger, InferenceSystemFetcher.PodsAIInferenceContainerName);
             Nodes = nodes.OrderBy(n => n.Name).ToList();
         }
     }
