@@ -1,11 +1,11 @@
 ﻿@page "{nodeName}"
 @model OrcanodeMonitor.Pages.OrcaHelloNodeModel
 @{
-    ViewData["Title"] = "AI Pods for " + Model.NodeName;
+    ViewData["Title"] = "AI Inference Pods for " + Model.NodeName;
 }
 
 <div class="text-center">
-    <h1 class="display-4">AI Pods for @Model.NodeName</h1>
+    <h1 class="display-4">AI Inference Pods for @Model.NodeName</h1>
     As of: @Model.NowLocal (Pacific)<br />
 
     <table>

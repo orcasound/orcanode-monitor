@@ -1002,7 +1002,7 @@ namespace OrcanodeMonitor.Core
                 PodMetricsList? metricsList = await client.GetKubernetesPodsMetricsAsync();
                 foreach (V1Pod pod in allPods)
                 {
-                    if (pod.Metadata == null || !pod.Metadata.Name.StartsWith(podNamePrefix + "-"))
+                    if (pod.Metadata == null || !pod.Metadata.Name.StartsWith(podNamePrefix))
                     {
                         continue;
                     }
