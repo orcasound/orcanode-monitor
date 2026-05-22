@@ -91,7 +91,7 @@ namespace OrcanodeMonitor.Pages
         {
             get
             {
-                TimeSpan? ts = _orcanode?.OrcaHelloInferencePodLag;
+                TimeSpan? ts = _orcanode?.PodsAIInferencePodLag;
                 if (!ts.HasValue)
                 {
                     return string.Empty;
@@ -104,9 +104,9 @@ namespace OrcanodeMonitor.Pages
         {
             get
             {
-                if (_orcanode?.OrcaHelloInferencePodRunningSince.HasValue ?? false)
+                if (_orcanode?.PodsAIInferencePodRunningSince.HasValue ?? false)
                 {
-                    TimeSpan runTime = DateTime.UtcNow - _orcanode.OrcaHelloInferencePodRunningSince.Value;
+                    TimeSpan runTime = DateTime.UtcNow - _orcanode.PodsAIInferencePodRunningSince.Value;
                     return $"{Orcanode.FormatTimeSpan(runTime)}";
                 }
                 return "None";
