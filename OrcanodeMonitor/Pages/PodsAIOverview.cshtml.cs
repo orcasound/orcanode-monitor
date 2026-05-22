@@ -12,7 +12,7 @@ namespace OrcanodeMonitor.Pages
     {
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<PodsAIOverviewModel> _logger;
-        private readonly InferenceSystemFetcher _orcaHelloFetcher;
+        private readonly InferenceSystemFetcher _inferenceSystemFetcher;
         public List<Orcanode> Orcanodes { get; private set; }
         public List<InferenceSystemNode> Nodes { get; private set; }
         public List<InferencePod> Pods { get; private set; }
@@ -23,11 +23,11 @@ namespace OrcanodeMonitor.Pages
             return $"{(nodeMemoryUsageInKi / 1024f / 1024f):F1} GiB";
         }
 
-        public PodsAIOverviewModel(OrcanodeMonitorContext context, ILogger<PodsAIOverviewModel> logger, InferenceSystemFetcher orcaHelloFetcher)
+        public PodsAIOverviewModel(OrcanodeMonitorContext context, ILogger<PodsAIOverviewModel> logger, InferenceSystemFetcher inferenceSystemFetcher)
         {
             _databaseContext = context;
             _logger = logger;
-            _orcaHelloFetcher = orcaHelloFetcher;
+            _inferenceSystemFetcher = inferenceSystemFetcher;
             Nodes = new List<InferenceSystemNode>();
             Pods = new List<InferencePod>();
             Orcanodes = new List<Orcanode>();
@@ -259,10 +259,10 @@ namespace OrcanodeMonitor.Pages
                           .ToList();
 
             // Fetch pods and nodes for display.
-            List<InferencePod> pods = await _orcaHelloFetcher.FetchPodMetricsAsync(orcanodes, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
+            List<InferencePod> pods = await _inferenceSystemFetcher.FetchPodMetricsAsync(orcanodes, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
             Pods = pods.OrderBy(n => n.NamespaceName).ToList();
 
-            List<InferenceSystemNode> nodes = await _orcaHelloFetcher.FetchNodeMetricsAsync(_logger, InferenceSystemFetcher.PodsAIInferenceContainerName);
+            List<InferenceSystemNode> nodes = await _inferenceSystemFetcher.FetchNodeMetricsAsync(_logger, InferenceSystemFetcher.PodsAIInferenceContainerName);
             Nodes = nodes.OrderBy(n => n.Name).ToList();
         }
     }

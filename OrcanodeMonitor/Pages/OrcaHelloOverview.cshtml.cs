@@ -12,7 +12,7 @@ namespace OrcanodeMonitor.Pages
     {
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<OrcaHelloOverviewModel> _logger;
-        private readonly InferenceSystemFetcher _orcaHelloFetcher;
+        private readonly InferenceSystemFetcher _inferenceSystemFetcher;
         public List<Orcanode> Orcanodes { get; private set; }
         public List<InferenceSystemNode> Nodes { get; private set; }
         public List<InferencePod> Pods { get; private set; }
@@ -23,11 +23,11 @@ namespace OrcanodeMonitor.Pages
             return $"{(nodeMemoryUsageInKi / 1024f / 1024f):F1} GiB";
         }
 
-        public OrcaHelloOverviewModel(OrcanodeMonitorContext context, ILogger<OrcaHelloOverviewModel> logger, InferenceSystemFetcher orcaHelloFetcher)
+        public OrcaHelloOverviewModel(OrcanodeMonitorContext context, ILogger<OrcaHelloOverviewModel> logger, InferenceSystemFetcher inferenceSystemFetcher)
         {
             _databaseContext = context;
             _logger = logger;
-            _orcaHelloFetcher = orcaHelloFetcher;
+            _inferenceSystemFetcher = inferenceSystemFetcher;
             Nodes = new List<InferenceSystemNode>();
             Pods = new List<InferencePod>();
             Orcanodes = new List<Orcanode>();
@@ -260,12 +260,12 @@ namespace OrcanodeMonitor.Pages
                           .ToList();
 
             // Fetch pods and nodes for display.
-            List<InferencePod> pods = await _orcaHelloFetcher.FetchPodMetricsAsync(Orcanodes, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+            List<InferencePod> pods = await _inferenceSystemFetcher.FetchPodMetricsAsync(Orcanodes, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
             Pods = pods.OrderBy(n => n.NamespaceName).ToList();
 
             // Assume that all nodes have an OrcaHello instance on them.
             // TODO: fix this assumption by fetching the list of nodes from Kubernetes and matching them to the Orcanodes in the database.
-            List<InferenceSystemNode> nodes = await _orcaHelloFetcher.FetchNodeMetricsAsync(_logger, "inference-system");
+            List<InferenceSystemNode> nodes = await _inferenceSystemFetcher.FetchNodeMetricsAsync(_logger, InferenceSystemFetcher.OrcaHelloInferenceContainerName);
             Nodes = nodes.OrderBy(n => n.Name).ToList();
         }
     }

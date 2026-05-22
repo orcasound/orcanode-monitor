@@ -18,16 +18,16 @@ namespace OrcanodeMonitor.Pages
         public string OrcasoundSlug => _node?.OrcasoundSlug ?? string.Empty;
         private List<OrcasiteDetection> _orcasiteDetections;
         public List<OrcasiteDetection> RecentDetections => _orcasiteDetections;
-        private readonly InferenceSystemFetcher _orcaHelloFetcher;
-        private List<MachineDetection> _orcaHelloDetections;
+        private readonly InferenceSystemFetcher _inferenceSystemFetcher;
+        private List<MachineDetection> _machineDetections;
 
-        public NodeDetectionsModel(OrcanodeMonitorContext context, ILogger<NodeDetectionsModel> logger, InferenceSystemFetcher orcaHelloFetcher)
+        public NodeDetectionsModel(OrcanodeMonitorContext context, ILogger<NodeDetectionsModel> logger, InferenceSystemFetcher inferenceSystemFetcher)
         {
             _databaseContext = context;
             _logger = logger;
-            _orcaHelloFetcher = orcaHelloFetcher;
+            _inferenceSystemFetcher = inferenceSystemFetcher;
             _orcasiteDetections = new List<OrcasiteDetection>();
-            _orcaHelloDetections = new List<MachineDetection>();
+            _machineDetections = new List<MachineDetection>();
         }
 
         /// <summary>
@@ -100,16 +100,16 @@ namespace OrcanodeMonitor.Pages
         {
             if (orcasiteDetection.Source == DetectionSource.Machine)
             {
-                MachineDetection? orcaHelloDetection = _orcaHelloDetections.FirstOrDefault(d => d.Id == orcasiteDetection.IdempotencyKey);
-                if (orcaHelloDetection == null)
+                MachineDetection? machineDetection = _machineDetections.FirstOrDefault(d => d.Id == orcasiteDetection.IdempotencyKey);
+                if (machineDetection == null)
                 {
                     return "Unknown";
                 }
-                else if (!orcaHelloDetection.Reviewed)
+                else if (!machineDetection.Reviewed)
                 {
                     return "Unreviewed";
                 }
-                else if (orcaHelloDetection.IsPositive(orcasiteDetection))
+                else if (machineDetection.IsPositive(orcasiteDetection))
                 {
                     return "SRKW";
                 }
@@ -149,10 +149,10 @@ namespace OrcanodeMonitor.Pages
                 _orcasiteDetections = orcasiteDetections;
             }
 
-            List<MachineDetection> orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: _node.S3NodeName, logger: _logger);
-            if (orcaHelloDetections != null)
+            List<MachineDetection> machineDetections = await _inferenceSystemFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: _node.S3NodeName, logger: _logger);
+            if (machineDetections != null)
             {
-                _orcaHelloDetections = orcaHelloDetections;
+                _machineDetections = machineDetections;
             }
         }
     }

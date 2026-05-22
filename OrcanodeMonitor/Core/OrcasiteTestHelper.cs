@@ -101,7 +101,7 @@ namespace OrcanodeMonitor.Core
 
             container.AddJsonResponse(
                 "https://aifororcasdetections.azurewebsites.net/api/detections",
-                "OrcaHelloDetections.json");
+                "MachineDetections.json");
 
             DateTime recent = DateTime.Now.AddMinutes(-1);
             long unixTimestamp = Fetcher.DateTimeToUnixTimeStamp(recent);
@@ -156,11 +156,11 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public static List<JsonElement> GetSampleOrcaHelloDetections()
+        public static List<JsonElement> GetSampleMachineDetections()
         {
-            string sampleOrcaHelloDetection = GetStringFromFile("OrcaHelloDetection.json");
+            string sampleMachineDetections = GetStringFromFile("MachineDetections.json");
 
-            using JsonDocument doc = JsonDocument.Parse(sampleOrcaHelloDetection);
+            using JsonDocument doc = JsonDocument.Parse(sampleMachineDetections);
             JsonElement testDocument = doc.RootElement.Clone();
 
             var documents = new List<JsonElement> { testDocument };
@@ -246,12 +246,12 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get a mock OrcaHelloFetcher for a given node.  Currently this only
+        /// Get a mock InferenceSystemFetcher for a given node.  Currently this only
         /// supports one node, but it could be a list of nodes in the future.
         /// </summary>
         /// <param name="node">Orcanode</param>
-        /// <returns>OrcaHelloFetcher</returns>
-        public static InferenceSystemFetcher GetMockOrcaHelloFetcher(Orcanode node)
+        /// <returns>InferenceSystemFetcher</returns>
+        public static InferenceSystemFetcher GetMockInferenceSystemFetcher(Orcanode node)
         {
             var mockCoreV1 = new Mock<ICoreV1Operations>();
             var mockCustomObjects = new Mock<ICustomObjectsOperations>();

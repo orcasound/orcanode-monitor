@@ -50,7 +50,7 @@ if (Fetcher.IsOffline) // Use Test data with in-memory database.
     // TODO: get nodes from file.
     var node = new Orcanode { OrcasoundSlug = "andrews-bay" };
 
-    InferenceSystemFetcher inferenceSystemFetcher = OrcasiteTestHelper.GetMockOrcaHelloFetcher(node);
+    InferenceSystemFetcher inferenceSystemFetcher = OrcasiteTestHelper.GetMockInferenceSystemFetcher(node);
 
     // Register Kubernetes client.
     builder.Services.AddSingleton<IKubernetes>(sp =>
@@ -58,7 +58,7 @@ if (Fetcher.IsOffline) // Use Test data with in-memory database.
         return inferenceSystemFetcher.K8sClient;
     });
 
-    // Register OrcaHelloFetcher.
+    // Register InferenceSystemFetcher.
     builder.Services.AddSingleton<InferenceSystemFetcher>(inferenceSystemFetcher);
 }
 else // Use Cosmos DB.

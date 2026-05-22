@@ -92,8 +92,8 @@ namespace OrcanodeMonitor.Core
         /// fetching the feeds metadata from Orcasite so that we can convert
         /// a node name to a feed ID.
         ///
-        /// TODO: In the future, we could store this info in OrcaHello, or
-        /// make the Orcasite API accept OrcaHello feed IDs, and avoid this
+        /// TODO: In the future, we could store this info in the machine detection database, or
+        /// make the Orcasite API accept machine detection feed IDs, and avoid this
         /// extra query.
         /// </summary>
         /// <returns>A task that represents the asynchronous operation</returns>
@@ -228,11 +228,11 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Given a detection, extract the nominal timestamp from it.
         /// </summary>
-        /// <param name="orcaHelloDetection">Detection to look in</param>
+        /// <param name="machineDetection">Detection to look in</param>
         /// <returns>Timestamp in DateTime format, or null on error</returns>
-        DateTime? TryGetTimestamp(JsonElement orcaHelloDetection)
+        DateTime? TryGetTimestamp(JsonElement machineDetection)
         {
-            if (!orcaHelloDetection.TryGetProperty("timestamp", out var timestamp))
+            if (!machineDetection.TryGetProperty("timestamp", out var timestamp))
             {
                 _logger.LogError($"Missing timestamp in ExecuteTask result");
                 return null;
@@ -254,11 +254,11 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Given a detection, extract the location id (e.g., "rpi_orcasound_lab") from it.
         /// </summary>
-        /// <param name="orcaHelloDetection">Detection to look in</param>
+        /// <param name="machineDetection">Detection to look in</param>
         /// <returns>Location ID as used by S3 and Orcasite, or null on error</returns>
-        string? TryGetLocationIdString(JsonElement orcaHelloDetection)
+        string? TryGetLocationIdString(JsonElement machineDetection)
         {
-            if (!orcaHelloDetection.TryGetProperty("location", out var location))
+            if (!machineDetection.TryGetProperty("location", out var location))
             {
                 _logger.LogError($"Missing location in ExecuteTask result");
                 return null;
@@ -291,11 +291,11 @@ namespace OrcanodeMonitor.Core
         /// <summary>
         /// Get the start time offset, in seconds, of the best prediction.
         /// </summary>
-        /// <param name="orcaHelloDetection">OrcaHello detection to check</param>
+        /// <param name="machineDetection">Machine detection to check</param>
         /// <returns>Start time offset, in seconds, or null on error</returns>
-        double? TryGetBestStartTime(JsonElement orcaHelloDetection)
+        double? TryGetBestStartTime(JsonElement machineDetection)
         {
-            if (!orcaHelloDetection.TryGetProperty("predictions", out var predictions))
+            if (!machineDetection.TryGetProperty("predictions", out var predictions))
             {
                 _logger.LogError($"Missing predictions");
                 return null;
@@ -344,7 +344,7 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Parse JSON representing an OrcaHello detection into just the fields we need.
+        /// Parse JSON representing a machine detection into just the fields we need.
         /// </summary>
         /// <param name="json">JSON to parse</param>
         /// <param name="id">ID of the detection</param>
@@ -352,7 +352,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="feedId">Feed ID for the hydrophone node in the detection</param>
         /// <param name="commentsString">Comments in the detection</param>
         /// <returns>true on success, false on failure</returns>
-        private bool ParseOrcaHelloDetection(string json, out string idString, out string timestampString, out string feedId, out string commentsString)
+        private bool ParseMachineDetection(string json, out string idString, out string timestampString, out string feedId, out string commentsString)
         {
             idString = string.Empty;
             timestampString = string.Empty;
@@ -360,8 +360,8 @@ namespace OrcanodeMonitor.Core
             commentsString = string.Empty;
 
             using JsonDocument document = JsonDocument.Parse(json);
-            JsonElement orcaHelloDetection = document.RootElement;
-            if (!orcaHelloDetection.TryGetProperty("id", out var id))
+            JsonElement machineDetection = document.RootElement;
+            if (!machineDetection.TryGetProperty("id", out var id))
             {
                 _logger.LogError($"Missing id in ExecuteTask result");
                 return false;
@@ -379,7 +379,7 @@ namespace OrcanodeMonitor.Core
             }
             idString = idStringOrNull;
 
-            string? locationIdString = TryGetLocationIdString(orcaHelloDetection);
+            string? locationIdString = TryGetLocationIdString(machineDetection);
             if (locationIdString == null)
             {
                 return false;
@@ -400,15 +400,15 @@ namespace OrcanodeMonitor.Core
             }
             feedId = feedIdOrNull;
 
-            // Get timestamp according to OrcaHello.
-            DateTime? dateTime = TryGetTimestamp(orcaHelloDetection);
+            // Get timestamp according to the machine detection.
+            DateTime? dateTime = TryGetTimestamp(machineDetection);
             if (dateTime == null)
             {
                 return false;
             }
 
             // Get offset of best prediction.
-            double? startTime = TryGetBestStartTime(orcaHelloDetection);
+            double? startTime = TryGetBestStartTime(machineDetection);
             if (startTime != null)
             {
                 // Adjust the timestamp by the start time of the best prediction.
@@ -417,9 +417,8 @@ namespace OrcanodeMonitor.Core
 
             timestampString = dateTime.Value.ToString("o"); // ISO 8601 format
 
-            // Get comments from OrcaHello.  This property will only be present
-            // if the detection was already moderated within OrcaHello.
-            if (orcaHelloDetection.TryGetProperty("comments", out var comments))
+            // Get comments from the machine detection.
+            if (machineDetection.TryGetProperty("comments", out var comments))
             {
                 commentsString = (comments.ValueKind == JsonValueKind.String ? comments.GetString() : null) ?? string.Empty;
             }
@@ -427,13 +426,13 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Given an OrcaHello detection (in JSON), report it to Orcasite.
+        /// Given a machine detection (in JSON), report it to Orcasite.
         /// </summary>
-        /// <param name="json">OrcaHello detection</param>
+        /// <param name="json">Machine detection</param>
         /// <returns>true on success, false on failure</returns>
         public async Task<bool> PostDetectionAsync(string json)
         {
-            if (!ParseOrcaHelloDetection(json, out var id, out var timestamp, out var feedId, out var comments))
+            if (!ParseMachineDetection(json, out var id, out var timestamp, out var feedId, out var comments))
             {
                 return false;
             }
@@ -558,7 +557,7 @@ namespace OrcanodeMonitor.Core
 
             foreach (JsonElement originalDetection in originalInput)
             {
-                // Get the timestamp that OrcaHello listed in the detection.
+                // Get the timestamp listed in the machine detection.
                 // This is what was used to find the clips, but does not align
                 // with the start of a clip.
                 DateTime? originalDateTime = TryGetTimestamp(originalDetection);

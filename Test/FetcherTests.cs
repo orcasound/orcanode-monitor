@@ -132,7 +132,7 @@ namespace Test
         {
             // Arrange - Create mock Kubernetes client with all required operations.
             var node = new Orcanode { OrcasoundSlug = "andrews-bay" };
-            InferenceSystemFetcher fetcher = OrcasiteTestHelper.GetMockOrcaHelloFetcher(node);
+            InferenceSystemFetcher fetcher = OrcasiteTestHelper.GetMockInferenceSystemFetcher(node);
 
             // Act
             var pod = await fetcher.GetInferencePodByNameAsync(node, containerName, _logger);
