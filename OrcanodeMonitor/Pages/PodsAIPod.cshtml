@@ -1,0 +1,160 @@
+﻿@page "{podNamespace}"
+@model OrcanodeMonitor.Pages.PodsAIPodModel
+@{
+    ViewData["Title"] = "Pods AI for " + Model.Location;
+}
+
+<div class="text-center">
+    <h1 class="display-4">Pods AI for @Model.Location</h1>
+    As of: @Model.NowLocal (Pacific)<br />
+    <div style="display: flex; gap: 20px;">
+        <table style="border: 1px solid #ccc; border-collapse: separate;">
+            <tr>
+                <th colspan="2"
+                    style="text-align: center; font-size: 1.2em; font-weight: bold;
+                 border-bottom: 1px solid #ccc; padding: 8px;">
+                    Pod
+                </th>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Name:</td>
+                <td style="text-align: left; padding: 4px;">@Model.Name</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Namespace:</td>
+                <td style="text-align: left; padding: 4px;">@Model.Namespace</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Image:</td>
+                <td style="text-align: left; padding: 4px;">@Model.ImageName</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Confidence Threshold:</td>
+                <td style="text-align: left; padding: 4px;">@Model.ConfidenceThreshold</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Restarts:</td>
+                <td style="text-align: left; padding: 4px;">@Model.RestartCount @Model.LastTerminationReason</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Detections:</td>
+                <td style="text-align: left; padding: 4px;">
+                    <a asp-page="/NodeDetections" asp-route-slug="@Model.OrcasoundSlug">
+                        @Model.DetectionCount
+                    </a>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Lag:</td>
+                <td style="text-align: left; padding: 4px;">@Model.Lag</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Uptime:</td>
+                <td style="text-align: left; padding: 4px;">@Model.Uptime</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">CPU:</td>
+                <td style="text-align: left; padding: 4px;">@(Math.Round(Model.CpuPercent))% (@Model.CpuUsageCores.ToString("F2") / @Model.CpuCapacityCores cores)</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Memory:</td>
+                <td style="text-align: left; padding: 4px;">@(Math.Round(Model.MemoryPercent))% (@Model.MemoryUsage / @Model.MemoryCapacity)</td>
+            </tr>
+        </table>
+        <table style="border: 1px solid #ccc; border-collapse: separate;">
+            <tr>
+                <th colspan="2"
+                    style="text-align: center; font-size: 1.2em; font-weight: bold;
+                 border-bottom: 1px solid #ccc; padding: 8px;">
+                    Node
+                </th>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Name:</td>
+                <td style="text-align: left; padding: 4px;">
+                    <a asp-page="/OrcaHelloNode" asp-route-nodeName="@Model.NodeName">
+                        @Model.NodeName
+                    </a>
+                </td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Instance Type:</td>
+                <td style="text-align: left; padding: 4px;">@Model.NodeInstanceType</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">CPU Model:</td>
+                <td style="text-align: left; padding: 4px;">@Model.NodeCpuModel</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">AVX2 Support:</td>
+                <td style="text-align: left; padding: 4px;">@Model.NodeHasAvx2</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">AVX-512 Support:</td>
+                <td style="text-align: left; padding: 4px;">@Model.NodeHasAvx512</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Problems:</td>
+                <td style="text-align: left; padding: 4px;">@Model.NodeProblems</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Uptime:</td>
+                <td style="text-align: left; padding: 4px;">@Model.NodeUptime</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">CPU:</td>
+                <td style="text-align: left; padding: 4px;">@(Math.Round(Model.NodeCpuPercent))% (@Model.NodeCpuUsageCores.ToString("F2") / @Model.NodeCpuCapacityCores cores)</td>
+            </tr>
+            <tr>
+                <td style="text-align: right; font-weight: bold; padding: 4px;">Memory:</td>
+                <td style="text-align: left; padding: 4px;">@(Math.Round(Model.NodeMemoryPercent))% (@Model.NodeMemoryUsage / @Model.NodeMemoryCapacity)</td>
+            </tr>
+        </table>
+    </div>
+
+    <h2>Recent Log</h2>
+    <div id="logBox"
+         style="border: 1px solid #ccc; padding: 10px; text-align: left;
+            height: 400px; overflow-y: auto; white-space: pre-wrap;">
+        <pre>@Model.LogData</pre>
+    </div>
+
+    <script>
+        // Scroll to bottom once the DOM is ready
+        window.addEventListener("DOMContentLoaded", function () {
+            var box = document.getElementById("logBox");
+            box.scrollTop = box.scrollHeight;
+        });
+    </script>
+
+    @if (Model.OtherPods.Any())
+    {
+        <h2>Other Pods</h2>
+        <table style="border: 1px solid #ccc; border-collapse: separate; text-align: left;">
+            <tr style="border-bottom: 1px solid #ccc;">
+                <th style="padding: 4px 8px;">Age</th>
+                <th style="padding: 4px 8px;">Started (Pacific)</th>
+                <th style="padding: 4px 8px;">Terminated (Pacific)</th>
+                <th style="padding: 4px 8px;">Name</th>
+                <th style="padding: 4px 8px;">Ready</th>
+                <th style="padding: 4px 8px;">Restarts</th>
+                <th style="padding: 4px 8px;">Status</th>
+                <th style="padding: 4px 8px;">Message</th>
+            </tr>
+            @foreach (var pod in Model.OtherPods)
+            {
+                <tr>
+                    <td style="padding: 4px 8px;">@pod.Age</td>
+                    <td style="padding: 4px 8px;">@pod.StartTimePacific</td>
+                    <td style="padding: 4px 8px;">@pod.EndTimePacific</td>
+                    <td style="padding: 4px 8px;">@pod.Name</td>
+                    <td style="padding: 4px 8px;">@pod.Ready</td>
+                    <td style="padding: 4px 8px;">@pod.RestartCount</td>
+                    <td style="padding: 4px 8px;">@pod.Status</td>
+                    <td style="padding: 4px 8px;">@pod.Message</td>
+                </tr>
+            }
+        </table>
+    }
+
+</div>

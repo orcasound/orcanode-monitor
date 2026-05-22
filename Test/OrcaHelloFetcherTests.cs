@@ -54,6 +54,20 @@ namespace Test
         }
 
         [TestMethod]
+        public async Task GetPodsAIPodAsync_ReturnsNull_WhenClientIsNull()
+        {
+            // Arrange
+            var fetcher = new OrcaHelloFetcher(null);
+            var orcanode = new Orcanode { OrcasoundSlug = "test-slug" };
+
+            // Act
+            var result = await fetcher.GetPodsAIPodAsync(orcanode, _logger);
+
+            // Assert
+            Assert.IsNull(result);
+        }
+
+        [TestMethod]
         public async Task UpdateOrcaHelloDataAsync_HandlesNullClient()
         {
             // Arrange
@@ -78,6 +92,21 @@ namespace Test
 
             // Act
             var result = await fetcher.FetchPodMetricsAsync(orcanodes, _logger);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(0, result.Count);
+        }
+
+        [TestMethod]
+        public async Task FetchPodsAIMetricsAsync_ReturnsEmptyList_WhenClientIsNull()
+        {
+            // Arrange
+            var fetcher = new OrcaHelloFetcher(null);
+            var orcanodes = new List<Orcanode>();
+
+            // Act
+            var result = await fetcher.FetchPodsAIMetricsAsync(orcanodes, _logger);
 
             // Assert
             Assert.IsNotNull(result);

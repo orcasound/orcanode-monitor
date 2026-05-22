@@ -54,7 +54,7 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        public OrcaHelloPod(V1Pod pod, string cpuUsage, string memoryUsage, long detectionCount, double? modelConfidenceThreshold = null, int? modelCountThreshold = null)
+        public OrcaHelloPod(V1Pod pod, string cpuUsage, string memoryUsage, long detectionCount, double? modelConfidenceThreshold = null, int? modelCountThreshold = null, string containerName = "inference-system")
         {
             _pod = pod;
             DetectionCount = detectionCount;
@@ -66,7 +66,7 @@ namespace OrcanodeMonitor.Models
 
             MemoryUsageInKi = long.Parse(memoryUsage.Replace("Ki", ""));
 
-            V1Container? container = pod.Spec.Containers.FirstOrDefault(c => c.Name == "inference-system");
+            V1Container? container = pod.Spec.Containers.FirstOrDefault(c => c.Name == containerName);
             var limits = container?.Resources?.Limits;
             if (limits != null)
             {

@@ -1,0 +1,156 @@
+﻿@page
+@model PodsAIOverviewModel
+@{
+    ViewData["Title"] = "Pods AI Overview";
+}
+
+<div class="text-center">
+    <h1 class="display-4"><a href="@Model.AksUrl" target="_blank">Pods AI</a> Overview</h1>
+    As of: @Model.NowLocal (Pacific)<br />
+    <h2>Nodes</h2>
+    <table>
+        <tr>
+            <th>Name</th>
+            <th>CPU</th>
+            <th>Memory</th>
+            <th>AVX-512</th>
+            <th>Locations</th>
+            <th>Problems</th>
+            <th>Uptime</th>
+        </tr>
+        @foreach (Models.OrcaHelloNode item in Model.Nodes)
+        {
+            <tr>
+                <td>
+                    <a asp-page="/OrcaHelloNode" asp-route-nodeName="@item.Name">
+                        @Html.DisplayFor(modelItem => item.Name)
+                    </a>
+                </td>
+                <td>
+                    @(Math.Round(item.CpuPercent))%
+                </td>
+                <td>
+                    @Model.GetNodeMemoryUsage(item) (@(Math.Round(item.MemoryPercent))%)
+                </td>
+                <td>
+                    @(item.HasAvx512 ? "Yes" : "No")
+                </td>
+                <td>
+                    @Model.GetLocations(item)
+                </td>
+                <td>
+                    @Model.GetNodeProblems(item)
+                </td>
+                <td>
+                    @Model.GetNodeUptime(item)
+                </td>
+            </tr>
+        }
+    </table>
+
+    <h2>Pods</h2>
+    <table>
+        <tr>
+            <th>Location</th>
+            <th>Detections</th>
+            <th>Lag</th>
+            <th>CPU</th>
+            <th>Memory</th>
+            <th>Image</th>
+            <th>Confidence Threshold</th>
+            <th>Uptime</th>
+            <th>Restarts</th>
+        </tr>
+        @foreach (Models.OrcaHelloPod item in Model.Pods)
+        {
+            <tr>
+                <td>
+                    <a asp-page="/PodsAIPod" asp-route-podNamespace="@item.NamespaceName">
+                        @Html.DisplayFor(modelItem => item.NamespaceName)
+                    </a>
+                </td>
+                <td style="background-color: @Model.GetPodDetectionsBackgroundColor(item)">
+                    <a asp-page="/NodeDetections" asp-route-slug="@item.NamespaceName">
+                        @item.DetectionCount
+                    </a>
+                </td>
+                <td style="background-color: @Model.GetPodLagBackgroundColor(item)">
+                    @Model.GetLag(item)
+                </td>
+                <td>
+                    @(Math.Round(item.CpuPercent))%
+                </td>
+                <td>
+                    @item.MemoryUsage (@(Math.Round(item.MemoryPercent))%)
+                </td>
+                <td>
+                    @item.ImageName
+                </td>
+                <td>
+                    @item.GetConfidenceThreshold()
+                </td>
+                @if (Model.GetPodStatus(item) == Models.OrcanodeOnlineStatus.Absent)
+                {
+                    <td style="background-color: @Model.GetPodUptimeBackgroundColor(item); color: @Model.GetPodUptimeTextColor(item)">
+                        @nameof(Models.OrcanodeOnlineStatus.Absent)
+                    </td>
+                }
+                else
+                {
+                    <td style="background-color: @Model.GetPodUptimeBackgroundColor(item)">
+                        @Model.GetPodUptime(item)
+                    </td>
+                }
+                <td style="background-color: @Model.GetPodRestartsBackgroundColor(item)">
+                    @item.RestartCount @Model.GetPodLastTerminationReason(item)
+                </td>
+            </tr>
+        }
+    </table>
+    <p></p>
+    <h4 style="text-align: left;">Legend</h4>
+    <ul style="text-align: left;">
+        <li>
+            <b>CPU</b>: Percentage of CPU currently in use.
+        </li>
+        <li>
+            <b>Memory</b>: Amount and percentage of memory currently in use.
+        </li>
+        <li>
+            <b>AVX-512</b>: Whether the node supports the AVX-512 instruction set.
+        </li>
+        <li>
+            <b>Locations</b>: Kubernetes namespaces of pods running on this node.
+        </li>
+        <li>
+            <b>Problems</b>: Any known issues reported for this node.
+        </li>
+        <li>
+            <b>Detections</b>: Number of detections (regardless of review status) within the past week.
+        </li>
+        <li>
+            <b>Lag</b>: Time behind current audio that the AI inference container is running, or "Offline" if the S3 stream is offline.
+        </li>
+        <li>
+            <b>Image</b>: The Docker image used by the pod.
+        </li>
+        <li>
+            <b>Confidence Threshold</b>: Minimum confidence score required to trigger a detection.
+        </li>
+        <li>
+            <b>Uptime</b>: How long the node or pod has been running.
+        </li>
+        <li>
+            <b>Restarts</b>: Number of times during the Uptime that the pod has restarted (and the reason for the last restart, if any).
+        </li>
+        <li>
+            <b>Absent</b>: No AI inference container is defined.
+        </li>
+        <li>
+            <b>Offline</b>: AI inference container is not running (in Uptime column), or S3 stream is not sending audio (in Lag column).
+        </li>
+        <li>
+            <b>Unstable</b>: AI inference container was crashing.
+        </li>
+    </ul>
+</div>

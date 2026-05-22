@@ -234,9 +234,58 @@ namespace OrcanodeMonitor.Core
                 }
             };
 
+            var mockPodsAIPod = new V1Pod
+            {
+                Metadata = new V1ObjectMeta
+                {
+                    Name = "pods-ai-inference-system-andrews-bay",
+                    NamespaceProperty = namespaceName
+                },
+                Spec = new V1PodSpec
+                {
+                    NodeName = "test-node",
+                    Containers = new List<V1Container>
+                    {
+                        new V1Container
+                        {
+                            Name = "pods-ai-inference-system",
+                            Image = "orcaconservancy.io/pods-ai-inference-system:latest",
+                            Resources = new V1ResourceRequirements
+                            {
+                                Limits = new Dictionary<string, ResourceQuantity>
+                                {
+                                    { "cpu", new ResourceQuantity("2") },
+                                    { "memory", new ResourceQuantity("4Gi") }
+                                }
+                            }
+                        }
+                    }
+                },
+                Status = new V1PodStatus
+                {
+                    Phase = "Running",
+                    ContainerStatuses = new List<V1ContainerStatus>
+                    {
+                        new V1ContainerStatus
+                        {
+                            Name = "pods-ai-inference-system",
+                            Ready = true,
+                            RestartCount = 0,
+                            State = new V1ContainerState
+                            {
+                                Running = new V1ContainerStateRunning
+                                {
+                                    StartedAt = DateTime.UtcNow.AddHours(-1)
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
             var podList = new V1PodList
             {
-                Items = new List<V1Pod> { mockPod }
+                Items = new List<V1Pod> { mockPod, mockPodsAIPod }
             };
 
             // Set up the CoreV1 operations mock to return the pod list.
@@ -286,6 +335,28 @@ namespace OrcanodeMonitor.Core
                                 {
                                     cpu = "100", // 100m
                                     memory = "256" // 256Mi
+                                }
+                            }
+                        }
+                    },
+                    new
+                    {
+                        metadata = new
+                        {
+                            name = "pods-ai-inference-system-andrews-bay",
+                            @namespace = namespaceName
+                        },
+                        timestamp = DateTime.UtcNow,
+                        window = "30s",
+                        containers = new[]
+                        {
+                            new
+                            {
+                                name = "pods-ai-inference-system",
+                                usage = new
+                                {
+                                    cpu = "100",
+                                    memory = "256"
                                 }
                             }
                         }

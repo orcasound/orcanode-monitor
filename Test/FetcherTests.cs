@@ -145,5 +145,23 @@ namespace Test
             Assert.AreEqual("test-node", pod.NodeName);
             Assert.AreEqual(0, pod.RestartCount);
         }
+
+        [TestMethod]
+        public async Task TestGetPodsAIPodAsync()
+        {
+            // Arrange - Create mock Kubernetes client with all required operations.
+            var node = new Orcanode { OrcasoundSlug = "andrews-bay" };
+            OrcaHelloFetcher fetcher = OrcasiteTestHelper.GetMockOrcaHelloFetcher(node);
+
+            // Act
+            var pod = await fetcher.GetPodsAIPodAsync(node, _logger);
+
+            // Assert
+            Assert.IsNotNull(pod, "Pod should not be null");
+            Assert.AreEqual("pods-ai-inference-system-andrews-bay", pod.Name);
+            Assert.AreEqual(node.OrcasoundSlug, pod.NamespaceName);
+            Assert.AreEqual("test-node", pod.NodeName);
+            Assert.AreEqual(0, pod.RestartCount);
+        }
     }
 }
