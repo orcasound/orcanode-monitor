@@ -19,7 +19,8 @@
             <th>Real dB</th>
             <th>Hum dB</th>
             <th>OrcaHello Lag</th>
-            <th>OrcaHello Detections</th>
+            <th>PODS-AI Lag</th>
+            <th>Machine Detections</th>
             <th><a href="https://app.mezmo.com/313dbd82f3/logs/view" target="_blank">Logging</a></th>
             <th><a href="https://www.dataplicity.com/app/" target="_blank" rel="noopener noreferrer">Dataplicity</a></th>
             <!-- <th>Dataplicity Version</th> -->
@@ -89,9 +90,23 @@
                     </a>
                 </td>
             }
-            <td style="background-color: @Model.NodeOrcaHelloDetectionsBackgroundColor(item)">
-                <a asp-page="/NodeDetections" asp-route-slug="@item.OrcasoundSlug" style="color: @Model.NodeOrcaHelloDetectionsTextColor(item)">
-                    @Model.GetOrcaHelloDetectionCount(item)
+            @if (item.PodsAIStatus == Models.OrcanodeOnlineStatus.Absent)
+            {
+                <td style="background-color: @Model.NodePodsAIStatusBackgroundColor(item); color: @Model.NodePodsAITextColor(item)">
+                    @item.PodsAIStatusString
+                </td>
+            }
+            else
+            {
+                <td style="background-color: @Model.NodePodsAIStatusBackgroundColor(item)">
+                    <a asp-page="/PodsAIPod" asp-route-podNamespace="@item.OrcasoundSlug" style="color: @Model.NodePodsAITextColor(item)">
+                        @item.PodsAIStatusString
+                    </a>
+                </td>
+            }
+            <td style="background-color: @Model.NodeMachineDetectionsBackgroundColor(item)">
+                <a asp-page="/NodeDetections" asp-route-slug="@item.OrcasoundSlug" style="color: @Model.NodeMachineDetectionsTextColor(item)">
+                    @Model.GetMachineDetectionCount(item)
                 </a>
             </td>
             @if (item.MezmoStatus == Models.OrcanodeOnlineStatus.Absent)
@@ -219,7 +234,10 @@
             <b>OrcaHello Unstable</b>: AI inference container was crashing.
         </li>
         <li>
-            <b>OrcaHello Detections</b>: Number of detections within the past week.
+            <b>Machine Detections</b>: Number of AI detections within the past week.
+        </li>
+        <li>
+            <b>PODS-AI Lag</b>: Time behind current audio that the pods-ai-inference-system container is running.
         </li>
         <li>
             <b>Logging Absent</b>: Mezmo does not know about the node.

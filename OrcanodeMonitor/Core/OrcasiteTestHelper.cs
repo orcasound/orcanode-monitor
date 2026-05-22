@@ -101,7 +101,7 @@ namespace OrcanodeMonitor.Core
 
             container.AddJsonResponse(
                 "https://aifororcasdetections.azurewebsites.net/api/detections",
-                "OrcaHelloDetections.json");
+                "MachineDetections.json");
 
             DateTime recent = DateTime.Now.AddMinutes(-1);
             long unixTimestamp = Fetcher.DateTimeToUnixTimeStamp(recent);
@@ -156,40 +156,24 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        public static List<JsonElement> GetSampleOrcaHelloDetections()
+        public static List<JsonElement> GetSampleMachineDetections()
         {
-            string sampleOrcaHelloDetection = GetStringFromFile("OrcaHelloDetection.json");
+            string sampleMachineDetections = GetStringFromFile("MachineDetections.json");
 
-            using JsonDocument doc = JsonDocument.Parse(sampleOrcaHelloDetection);
+            using JsonDocument doc = JsonDocument.Parse(sampleMachineDetections);
             JsonElement testDocument = doc.RootElement.Clone();
 
             var documents = new List<JsonElement> { testDocument };
             return documents;
         }
 
-        /// <summary>
-        /// Get a mock OrcaHelloFetcher for a given node.  Currently this only
-        /// supports one node, but it could be a list of nodes in the future.
-        /// </summary>
-        /// <param name="node">Orcanode</param>
-        /// <returns>OrcaHelloFetcher</returns>
-        public static OrcaHelloFetcher GetMockOrcaHelloFetcher(Orcanode node)
+        private static V1Pod CreateMockPod(string containerName, string namespaceName)
         {
-            var mockCoreV1 = new Mock<ICoreV1Operations>();
-            var mockCustomObjects = new Mock<ICustomObjectsOperations>();
-            var mockK8s = new Mock<IKubernetes>();
-
-            mockK8s.Setup(k => k.CoreV1).Returns(mockCoreV1.Object);
-            mockK8s.Setup(k => k.CustomObjects).Returns(mockCustomObjects.Object);
-
-            string namespaceName = node.OrcasoundSlug;
-
-            // Create a mock pod to return.
-            var mockPod = new V1Pod
+            return new V1Pod
             {
                 Metadata = new V1ObjectMeta
                 {
-                    Name = "inference-system-andrews-bay",
+                    Name = containerName + "-" + namespaceName,
                     NamespaceProperty = namespaceName
                 },
                 Spec = new V1PodSpec
@@ -199,8 +183,8 @@ namespace OrcanodeMonitor.Core
                     {
                         new V1Container
                         {
-                            Name = "inference-system",
-                            Image = "orcaconservancy.io/inference-system:latest",
+                            Name = containerName,
+                            Image = "orcaconservancy.io/" + containerName + ":latest",
                             Resources = new V1ResourceRequirements
                             {
                                 Limits = new Dictionary<string, ResourceQuantity>
@@ -219,7 +203,7 @@ namespace OrcanodeMonitor.Core
                     {
                         new V1ContainerStatus
                         {
-                            Name = "inference-system",
+                            Name = containerName,
                             Ready = true,
                             RestartCount = 0,
                             State = new V1ContainerState
@@ -233,10 +217,57 @@ namespace OrcanodeMonitor.Core
                     }
                 }
             };
+        }
 
+        private static dynamic CreateMockContainerInfo(string containerName, string namespaceName)
+        {
+            return new
+            {
+                metadata = new
+                {
+                    name = containerName + "-" + namespaceName,
+                    @namespace = namespaceName
+                },
+                timestamp = DateTime.UtcNow,
+                window = "30s",
+                containers = new[]
+                                    {
+                            new
+                            {
+                                name = containerName,
+                                usage = new
+                                {
+                                    cpu = "100", // 100m
+                                    memory = "256" // 256Mi
+                                }
+                            }
+                        }
+            };
+        }
+
+        /// <summary>
+        /// Get a mock InferenceSystemFetcher for a given node.  Currently this only
+        /// supports one node, but it could be a list of nodes in the future.
+        /// </summary>
+        /// <param name="node">Orcanode</param>
+        /// <returns>InferenceSystemFetcher</returns>
+        public static InferenceSystemFetcher GetMockInferenceSystemFetcher(Orcanode node)
+        {
+            var mockCoreV1 = new Mock<ICoreV1Operations>();
+            var mockCustomObjects = new Mock<ICustomObjectsOperations>();
+            var mockK8s = new Mock<IKubernetes>();
+
+            mockK8s.Setup(k => k.CoreV1).Returns(mockCoreV1.Object);
+            mockK8s.Setup(k => k.CustomObjects).Returns(mockCustomObjects.Object);
+
+            string namespaceName = node.OrcasoundSlug;
+
+            // Create mock pods to return.
+            var mockOrcaHelloPod = CreateMockPod(InferenceSystemFetcher.OrcaHelloInferenceContainerName, namespaceName);
+            var mockPodsAIPod = CreateMockPod(InferenceSystemFetcher.PodsAIInferenceContainerName, namespaceName);
             var podList = new V1PodList
             {
-                Items = new List<V1Pod> { mockPod }
+                Items = new List<V1Pod> { mockOrcaHelloPod, mockPodsAIPod }
             };
 
             // Set up the CoreV1 operations mock to return the pod list.
@@ -268,28 +299,8 @@ namespace OrcanodeMonitor.Core
                 metadata = new { },
                 items = new[]
                 {
-                    new
-                    {
-                        metadata = new
-                        {
-                            name = "inference-system-andrews-bay",
-                            @namespace = namespaceName
-                        },
-                        timestamp = DateTime.UtcNow,
-                        window = "30s",
-                        containers = new[]
-                        {
-                            new
-                            {
-                                name = "inference-system",
-                                usage = new
-                                {
-                                    cpu = "100", // 100m
-                                    memory = "256" // 256Mi
-                                }
-                            }
-                        }
-                    }
+                    CreateMockContainerInfo(InferenceSystemFetcher.OrcaHelloInferenceContainerName, namespaceName),
+                    CreateMockContainerInfo(InferenceSystemFetcher.PodsAIInferenceContainerName, namespaceName)
                 }
             });
 
@@ -338,7 +349,7 @@ model_timestamp: {DateTime.UtcNow.AddDays(-1):yyyy-MM-ddTHH:mm:ssZ}";
                     Body = configMap
                 });
 
-            return new OrcaHelloFetcher(mockK8s.Object);
+            return new InferenceSystemFetcher(mockK8s.Object);
         }
     }
 }

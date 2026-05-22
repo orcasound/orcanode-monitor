@@ -6,6 +6,7 @@ using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Drawing;
+using System.Reflection;
 
 namespace OrcanodeMonitor.Pages
 {
@@ -98,24 +99,25 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         public long HumanDetectionCount => PositiveHumanDetectionCount + NegativeHumanDetectionCount;
 
-        public string ConfidenceThreshold = string.Empty;
+        public string OrcaHelloConfidenceThreshold = string.Empty;
+        public string PodsAIConfidenceThreshold = string.Empty;
     }
 
     public class DetectionsModel : PageModel
     {
         private readonly OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<DetectionsModel> _logger;
-        private readonly OrcaHelloFetcher _orcaHelloFetcher;
+        private readonly InferenceSystemFetcher _inferenceSystemFetcher;
         private readonly Dictionary<string, DetectionData> _detectionCountsPastWeek = new Dictionary<string, DetectionData>();
         private readonly Dictionary<string, DetectionData> _detectionCountsPastMonth = new Dictionary<string, DetectionData>();
         private List<Orcanode> _nodes;
         public List<Orcanode> Nodes => _nodes;
 
-        public DetectionsModel(OrcanodeMonitorContext context, ILogger<DetectionsModel> logger, OrcaHelloFetcher orcaHelloFetcher)
+        public DetectionsModel(OrcanodeMonitorContext context, ILogger<DetectionsModel> logger, InferenceSystemFetcher inferenceSystemFetcher)
         {
             _databaseContext = context;
             _logger = logger;
-            _orcaHelloFetcher = orcaHelloFetcher;
+            _inferenceSystemFetcher = inferenceSystemFetcher;
             _nodes = new List<Orcanode>();
         }
 
@@ -144,24 +146,19 @@ namespace OrcanodeMonitor.Pages
         private Dictionary<string, DetectionData> GetDict(string timeRange) =>
             timeRange == "pastWeek" ? _detectionCountsPastWeek : _detectionCountsPastMonth;
 
-        private void EnsureNodeEntries(Orcanode node, string confidenceThreshold)
+        private void EnsureNodeEntries(Dictionary<string, DetectionData> dictionary, Orcanode node, string confidenceThreshold, string fieldNamePrefix)
         {
-            if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
+            if (!dictionary.ContainsKey(node.OrcasoundSlug))
             {
-                _detectionCountsPastMonth[node.OrcasoundSlug] = new DetectionData
+                dictionary[node.OrcasoundSlug] = new DetectionData
                 {
-                    MinimumPositiveMachineDetectionConfidence = long.MaxValue,
-                    ConfidenceThreshold = confidenceThreshold
+                    MinimumPositiveMachineDetectionConfidence = long.MaxValue
                 };
             }
-            if (!_detectionCountsPastWeek.ContainsKey(node.OrcasoundSlug))
-            {
-                _detectionCountsPastWeek[node.OrcasoundSlug] = new DetectionData
-                {
-                    MinimumPositiveMachineDetectionConfidence = long.MaxValue,
-                    ConfidenceThreshold = confidenceThreshold
-                };
-            }
+
+            var data = dictionary[node.OrcasoundSlug];
+            FieldInfo? field = data.GetType().GetField(fieldNamePrefix + "ConfidenceThreshold");
+            field?.SetValue(data, confidenceThreshold);
         }
 
         public async Task OnGetAsync()
@@ -185,8 +182,8 @@ namespace OrcanodeMonitor.Pages
                 // Pass oneMonthAgo so that pagination stops once records older than a month are reached.
                 List<OrcasiteDetection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger, oneMonthAgo);
 
-                // Fetch OrcaHello detection details for the past month to support both time ranges.
-                var orcaHelloDetections = await _orcaHelloFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: "all", logger: _logger);
+                // Fetch machine detection details for the past month to support both time ranges.
+                var machineDetections = await _inferenceSystemFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: "all", logger: _logger);
 
                 if (detections != null)
                 {
@@ -208,8 +205,13 @@ namespace OrcanodeMonitor.Pages
 
                         if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                         {
-                            OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node, _logger);
-                            EnsureNodeEntries(node, pod?.GetConfidenceThreshold() ?? "Unknown");
+                            InferencePod? inferencePod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+                            EnsureNodeEntries(_detectionCountsPastMonth, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.OrcaHelloFieldPrefix);
+                            EnsureNodeEntries(_detectionCountsPastWeek, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.OrcaHelloFieldPrefix);
+
+                            inferencePod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
+                            EnsureNodeEntries(_detectionCountsPastMonth, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.PodsAIFieldPrefix);
+                            EnsureNodeEntries(_detectionCountsPastWeek, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.PodsAIFieldPrefix);
                         }
 
                         DetectionData monthData = _detectionCountsPastMonth[node.OrcasoundSlug];
@@ -231,16 +233,16 @@ namespace OrcanodeMonitor.Pages
                         }
                         else // detection.Source == "machine"
                         {
-                            // Find the matching OrcaHelloDetection.
-                            OrcaHelloDetection? orcaHelloDetection = orcaHelloDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
-                            if (orcaHelloDetection == null)
+                            // Find the matching InferenceSystemDetection.
+                            MachineDetection? inferenceSystemDetection = machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
+                            if (inferenceSystemDetection == null)
                             {
-                                _logger.LogError($"Failed to find matching orcaHelloDetection for {detection.ID}");
+                                _logger.LogError($"Failed to find matching inferenceSystemDetection for {detection.ID}");
                                 continue;
                             }
 
                             // Count unreviewed detections separately; only reviewed detections affect the confirmed/total stats.
-                            if (!orcaHelloDetection.Reviewed)
+                            if (!inferenceSystemDetection.Reviewed)
                             {
                                 monthData.UnreviewedMachineDetectionCount++;
                                 if (inPastWeek)
@@ -250,9 +252,9 @@ namespace OrcanodeMonitor.Pages
                                 continue;
                             }
 
-                            double globalConfidence = orcaHelloDetection.Confidence;
+                            double globalConfidence = inferenceSystemDetection.Confidence;
 
-                            if (orcaHelloDetection.IsPositive(detection))
+                            if (inferenceSystemDetection.IsPositive(detection))
                             {
                                 monthData.PositiveMachineDetectionCount++;
                                 monthData.CumulativePositiveMachineDetectionConfidence += globalConfidence;
@@ -298,8 +300,13 @@ namespace OrcanodeMonitor.Pages
                 {
                     if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                     {
-                        OrcaHelloPod? pod = await _orcaHelloFetcher.GetOrcaHelloPodAsync(node, _logger);
-                        EnsureNodeEntries(node, pod?.GetConfidenceThreshold() ?? "Unknown");
+                        InferencePod? pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+                        EnsureNodeEntries(_detectionCountsPastMonth, node, pod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.OrcaHelloFieldPrefix);
+                        EnsureNodeEntries(_detectionCountsPastWeek, node, pod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.OrcaHelloFieldPrefix);
+
+                        pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
+                        EnsureNodeEntries(_detectionCountsPastMonth, node, pod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.PodsAIFieldPrefix);
+                        EnsureNodeEntries(_detectionCountsPastWeek, node, pod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.PodsAIFieldPrefix);
                     }
                 }
             }
@@ -404,18 +411,33 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Get the confidence threshold display string for a node.
+        /// Get the OrcaHello confidence threshold display string for a node.
         /// Format: "{globalThreshold} @ {localThreshold}%" (e.g., "3 @ 70%")
         /// </summary>
         /// <param name="node">Node to check</param>
         /// <returns>Confidence threshold string</returns>
-        public string GetConfiguredConfidenceThreshold(Orcanode node)
+        public string GetOrcaHelloConfiguredConfidenceThreshold(Orcanode node)
         {
             if (!_detectionCountsPastMonth.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
             }
-            return data.ConfidenceThreshold;
+            return data.OrcaHelloConfidenceThreshold;
+        }
+
+        /// <summary>
+        /// Get the PODS-AI confidence threshold display string for a node.
+        /// Format: "{globalThreshold} @ {localThreshold}%" (e.g., "3 @ 70%")
+        /// </summary>
+        /// <param name="node">Node to check</param>
+        /// <returns>Confidence threshold string</returns>
+        public string GetPodsAIConfiguredConfidenceThreshold(Orcanode node)
+        {
+            if (!_detectionCountsPastMonth.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
+            {
+                return "Unknown";
+            }
+            return data.PodsAIConfidenceThreshold;
         }
     }
 }

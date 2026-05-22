@@ -13,7 +13,7 @@ namespace OrcanodeMonitor.Pages
     {
         private OrcanodeMonitorContext _databaseContext;
         private readonly ILogger<IndexModel> _logger;
-        private readonly OrcaHelloFetcher _orcaHelloFetcher;
+        private readonly InferenceSystemFetcher _inferenceSystemFetcher;
         private List<OrcanodeEvent> _events;
         private List<Orcanode> _nodes;
         public List<Orcanode> Nodes => _nodes;
@@ -22,11 +22,11 @@ namespace OrcanodeMonitor.Pages
 
         public string AksUrl => Fetcher.Configuration?["AZURE_AKS_URL"] ?? "";
 
-        public IndexModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger, OrcaHelloFetcher orcaHelloFetcher)
+        public IndexModel(OrcanodeMonitorContext context, ILogger<IndexModel> logger, InferenceSystemFetcher inferenceSystemFetcher)
         {
             _databaseContext = context;
             _logger = logger;
-            _orcaHelloFetcher = orcaHelloFetcher;
+            _inferenceSystemFetcher = inferenceSystemFetcher;
             _events = new List<OrcanodeEvent>();
             _nodes = new List<Orcanode>();
             _recentEvents = new List<OrcanodeEvent>();
@@ -91,11 +91,11 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeS3TextColor(Orcanode node) => GetTextColor(NodeS3BackgroundColor(node));
 
-        private readonly Dictionary<string, long> _orcaHelloDetectionCounts = new Dictionary<string, long>();
+        private readonly Dictionary<string, long> _machineDetectionCounts = new Dictionary<string, long>();
 
-        public long GetOrcaHelloDetectionCount(Orcanode node)
+        public long GetMachineDetectionCount(Orcanode node)
         {
-            if (!_orcaHelloDetectionCounts.TryGetValue(node.OrcasoundSlug, out long count))
+            if (!_machineDetectionCounts.TryGetValue(node.OrcasoundSlug, out long count))
             {
                 return 0;
             }
@@ -103,20 +103,20 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Gets the background color for the OrcaHello detections of the specified node.
+        /// Gets the background color for the Machine Detections of the specified node.
         /// </summary>
         /// <param name="node">Node, or null if none</param>
         /// <param name="detectionCount">Detection count</param>
         /// <returns>HTML color string</returns>
-        public static string GetNodeOrcaHelloDetectionsBackgroundColor(Orcanode? node, long detectionCount)
+        public static string GetNodeMachineDetectionsBackgroundColor(Orcanode? node, long detectionCount)
         {
             if (node == null)
             {
                 return ColorTranslator.ToHtml(Color.Red);
             }
 
-            // Light Red if OrcaHello Status is "Absent".
-            if (node.OrcaHelloStatus == OrcanodeOnlineStatus.Absent)
+            // Light Red if OrcaHello and PODS-AI Status values are both "Absent".
+            if (node.OrcaHelloStatus == OrcanodeOnlineStatus.Absent && node.PodsAIStatus == OrcanodeOnlineStatus.Absent)
             {
                 return ColorTranslator.ToHtml(LightRed);
             }
@@ -139,21 +139,25 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Get the background color for the OrcaHello detections cell of the specified node.
+        /// Get the background color for the Machine Detections cell of the specified node.
         /// </summary>
         /// <param name="node">Node</param>
         /// <returns>HTML color string</returns>
-        public string NodeOrcaHelloDetectionsBackgroundColor(Orcanode node)
+        public string NodeMachineDetectionsBackgroundColor(Orcanode node)
         {
-            long detectionCount = GetOrcaHelloDetectionCount(node);
-            return GetNodeOrcaHelloDetectionsBackgroundColor(node, detectionCount);
+            long detectionCount = GetMachineDetectionCount(node);
+            return GetNodeMachineDetectionsBackgroundColor(node, detectionCount);
         }
 
-        public string NodeOrcaHelloDetectionsTextColor(Orcanode node) => GetTextColor(NodeOrcaHelloDetectionsBackgroundColor(node));
+        public string NodeMachineDetectionsTextColor(Orcanode node) => GetTextColor(NodeMachineDetectionsBackgroundColor(node));
 
         public string NodeOrcaHelloTextColor(Orcanode node) => GetTextColor(NodeOrcaHelloStatusBackgroundColor(node));
 
         public string NodeOrcaHelloStatusBackgroundColor(Orcanode node) => GetBackgroundColor(node.OrcaHelloStatus, node.OrcasoundStatus);
+
+        public string NodePodsAIStatusBackgroundColor(Orcanode node) => GetBackgroundColor(node.PodsAIStatus, node.OrcasoundStatus);
+
+        public string NodePodsAITextColor(Orcanode node) => GetTextColor(NodePodsAIStatusBackgroundColor(node));
 
         /// <summary>
         /// Gets the text color for the Mezmo status of the specified node.
@@ -296,7 +300,7 @@ namespace OrcanodeMonitor.Pages
                 var events = await _databaseContext.OrcanodeEvents.ToListAsync();
                 _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
 
-                await _orcaHelloFetcher.FetchOrcaHelloDetectionCountsAsync(_nodes, _orcaHelloDetectionCounts, _logger);
+                await _inferenceSystemFetcher.FetchMachineDetectionCountsAsync(_nodes, _machineDetectionCounts, _logger);
 
                 _recentEvents = await Fetcher.GetRecentEventsAsync(_databaseContext, DateTime.UtcNow.AddDays(-7), _logger) ?? new List<OrcanodeEvent>();
             }

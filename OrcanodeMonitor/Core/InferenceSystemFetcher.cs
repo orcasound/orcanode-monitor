@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
+using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
@@ -16,14 +17,14 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace OrcanodeMonitor.Core
 {
-    public class OrcaHelloDetectionLocation
+    public class MachineDetectionLocation
     {
         public string Name { get; set; } = string.Empty;
         public double Longitude { get; set; }
         public double Latitude { get; set; }
     }
 
-    public class OrcaHelloDetectionAnnotation
+    public class MachineDetectionAnnotation
     {
         public int Id { get; set; }
         public double StartTime { get; set; }
@@ -31,14 +32,14 @@ namespace OrcanodeMonitor.Core
         public double Confidence { get; set; }
     }
 
-    public class OrcaHelloDetection
+    public class MachineDetection
     {
         public string Id { get; set; } = string.Empty;
         public string AudioUri { get; set; } = string.Empty;
         public string SpectrogramUri { get; set; } = string.Empty;
-        public OrcaHelloDetectionLocation Location { get; set; } = new();
+        public MachineDetectionLocation Location { get; set; } = new();
         public string Timestamp { get; set; } = string.Empty;
-        public List<OrcaHelloDetectionAnnotation> Annotations { get; set; } = new();
+        public List<MachineDetectionAnnotation> Annotations { get; set; } = new();
         public bool Reviewed { get; set; }
         public string? Found { get; set; }
         public string? Comments { get; set; }
@@ -60,12 +61,12 @@ namespace OrcanodeMonitor.Core
         }
     }
 
-    public class OrcaHelloFetcher
+    public class InferenceSystemFetcher
     {
         private readonly IKubernetes? _k8sClient;
         public IKubernetes? K8sClient => _k8sClient;
 
-        public OrcaHelloFetcher(IKubernetes? k8sClient)
+        public InferenceSystemFetcher(IKubernetes? k8sClient)
         {
             _k8sClient = k8sClient;
         }
@@ -113,12 +114,13 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get an object representing a node hosting an OrcaHello inference pod.
+        /// Get an object representing a node hosting an inference pod.
         /// </summary>
-        /// <param name="nodeName">OrcaHello node name</param>
+        /// <param name="nodeName">Inference node name</param>
+        /// <param name="containerName">Container name to look for when determining the best pod</param>
         /// <param name="logger">Logger</param>
-        /// <returns>OrcaHelloNode</returns>
-        public async Task<OrcaHelloNode?> GetOrcaHelloNodeAsync(string nodeName, ILogger logger)
+        /// <returns>InferenceSystemNode</returns>
+        public async Task<InferenceSystemNode?> GetNodeAsync(string nodeName, string containerName, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
@@ -141,18 +143,18 @@ namespace OrcanodeMonitor.Core
                     .Where(p => p.Spec.NodeName == nodeName)
                     .ToList();
 
-                GetBestPodStatus(allPodsOnNode, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+                GetBestPodStatus(allPodsOnNode, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus, containerName);
                 if (bestPod != null && bestPod.Metadata != null)
                 {
                     lscpuOutput = await GetPodLscpuOutputAsync(bestPod.Metadata.Name, bestPod.Metadata.NamespaceProperty, logger);
                 }
 
                 PodMetricsList podMetrics = await client.GetKubernetesPodsMetricsAsync();
-                return new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput, v1Pods.Items, podMetrics.Items);
+                return new InferenceSystemNode(node, cpuUsage, memoryUsage, lscpuOutput, v1Pods.Items, podMetrics.Items);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "[GetOrcaHelloNodeAsync] Error retrieving node info for '{NodeName}'", nodeName);
+                logger.LogError(ex, "[GetInferenceNodeAsync] Error retrieving node info for '{NodeName}'", nodeName);
                 return null;
             }
         }
@@ -272,7 +274,8 @@ namespace OrcanodeMonitor.Core
         /// <param name="nodepods">List of pods</param>
         /// <param name="bestPod">Returns the best pod</param>
         /// <param name="bestPodStatus">Returns the best pod status</param>
-        private static void GetBestPodStatus(IEnumerable<V1Pod> nodepods, out V1Pod? bestPod, out V1ContainerStatus? bestPodStatus)
+        /// <param name="podNamePrefix">Only consider pods whose names start with this prefix</param>
+        private static void GetBestPodStatus(IEnumerable<V1Pod> nodepods, out V1Pod? bestPod, out V1ContainerStatus? bestPodStatus, string podNamePrefix)
         {
             bestPod = null;
             bestPodStatus = null;
@@ -283,9 +286,9 @@ namespace OrcanodeMonitor.Core
                     continue;
                 }
 
-                // Only process inference-system pods, skipping any benchmark and other auxiliary pods.
+                // Only process pods whose names start with the specified prefix, skipping any benchmark and other auxiliary pods.
                 var podName = pod.Metadata?.Name;
-                if (string.IsNullOrEmpty(podName) || !podName.StartsWith("inference-system"))
+                if (string.IsNullOrEmpty(podName) || !podName.StartsWith(podNamePrefix))
                 {
                     continue;
                 }
@@ -462,63 +465,64 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get an object representing an OrcaHello inference pod.
+        /// Get an object representing an inference pod.
         /// </summary>
         /// <param name="orcanode">Orcanode object associated with the pod</param>
+        /// <param name="containerName">Name of the container</param>
         /// <param name="logger">Logger</param>
-        /// <returns>OrcaHelloPod</returns>
-        public async Task<OrcaHelloPod?> GetOrcaHelloPodAsync(Orcanode orcanode, ILogger logger)
+        /// <returns>InferencePod</returns>
+        public async Task<InferencePod?> GetInferencePodByNameAsync(Orcanode orcanode, string containerName, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
-                logger.LogWarning("[GetOrcaHelloPodAsync] Kubernetes client is null");
+                logger.LogWarning("[GetInferencePodByNameAsync] Kubernetes client is null");
                 return null;
             }
 
             string namespaceName = orcanode.OrcasoundSlug;
             V1PodList pods = await client.CoreV1.ListNamespacedPodAsync(namespaceName);
-            GetBestPodStatus(pods.Items, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+            GetBestPodStatus(pods.Items, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus, containerName);
             if (bestPod == null)
             {
-                logger.LogError("[GetOrcaHelloPodAsync] Best pod is null");
+                logger.LogError("[GetInferencePodByNameAsync] Best pod is null");
                 return null;
             }
 
             PodMetricsList? metricsList = await client.GetKubernetesPodsMetricsByNamespaceAsync(namespaceName);
-            PodMetrics? podMetric = metricsList?.Items?.FirstOrDefault(n => n.Metadata?.Name?.StartsWith("inference-system-") == true);
-            var container = podMetric?.Containers?.FirstOrDefault(c => c.Name == "inference-system");
+            PodMetrics? podMetric = metricsList?.Items?.FirstOrDefault(n => n.Metadata?.Name?.StartsWith(containerName + "-") == true);
+            var container = podMetric?.Containers?.FirstOrDefault(c => c.Name == containerName);
             string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
             string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
-            long detectionCount = await GetOrcaHelloDetectionCountAsync(orcanode, logger);
+            long detectionCount = await GetMachineDetectionCountAsync(orcanode, logger);
 
             (double? confidenceThreshold, int? countThreshold) = await GetModelThresholdsAsync(namespaceName, logger);
 
-            return new OrcaHelloPod(bestPod, cpuUsage, memoryUsage, detectionCount, confidenceThreshold, countThreshold);
+            return new InferencePod(bestPod, containerName, cpuUsage, memoryUsage, detectionCount, confidenceThreshold, countThreshold);
         }
 
         /// <summary>
-        /// Get the list of inference-system pods in the namespace that are not the currently
-        /// running (best) pod.  These are the Pending, Evicted, Failed, etc. instances that
-        /// should appear in the "Other Pods" table on the OrcaHelloPod page.
+        /// Get the list of inference system pods in the namespace that are not the currently
+        /// running (best) pod.
         /// </summary>
         /// <param name="orcanode">Orcanode whose namespace is to be queried</param>
+        /// <param name="podNamePrefix">Only consider pods whose names start with this prefix, skipping any benchmark and other auxiliary pods</param>
         /// <param name="logger">Logger</param>
         /// <returns>List of non-best pods, or an empty list if none are found</returns>
-        public async Task<IList<OrcaHelloPodInstance>> GetOtherPodsAsync(Orcanode orcanode, ILogger logger)
+        public async Task<IList<InferencePodInstance>> GetOtherPodsByNameAsync(Orcanode orcanode, string podNamePrefix, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
-                logger.LogWarning("[GetOtherPodsAsync] Kubernetes client is null");
-                return new List<OrcaHelloPodInstance>();
+                logger.LogWarning("[GetOtherPodsByNameAsync] Kubernetes client is null");
+                return new List<InferencePodInstance>();
             }
 
             string namespaceName = orcanode.OrcasoundSlug;
             V1PodList pods = await client.CoreV1.ListNamespacedPodAsync(namespaceName);
 
-            GetBestPodStatus(pods.Items, out V1Pod? bestPod, out _);
+            GetBestPodStatus(pods.Items, out V1Pod? bestPod, out _, podNamePrefix);
             string bestPodName = bestPod?.Metadata?.Name ?? string.Empty;
 
             return pods.Items
@@ -526,10 +530,10 @@ namespace OrcanodeMonitor.Core
                 {
                     string? name = p.Metadata?.Name;
                     return !string.IsNullOrEmpty(name)
-                        && name.StartsWith("inference-system")
+                        && name.StartsWith(podNamePrefix)
                         && name != bestPodName;
                 })
-                .Select(p => new OrcaHelloPodInstance(p))
+                .Select(p => new InferencePodInstance(p))
                 .ToList();
         }
 
@@ -540,7 +544,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="namespaceName">Namespace</param>
         /// <param name="logger">Logger</param>
         /// <returns>Log</returns>
-        public async Task<string> GetOrcaHelloLogAsync(OrcaHelloPod? container, string namespaceName, ILogger logger)
+        public async Task<string> GetAIContainerLogAsync(InferencePod? container, string namespaceName, ILogger logger)
         {
             if (container == null)
             {
@@ -551,7 +555,7 @@ namespace OrcanodeMonitor.Core
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
-                logger.LogWarning("[GetOrcaHelloLogAsync] Kubernetes client is null");
+                logger.LogWarning("[GetAIContainerLogAsync] Kubernetes client is null");
                 return string.Empty;
             }
 
@@ -579,7 +583,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "[GetOrcaHelloLogAsync] Error reading pod log for '{PodName}'", podName);
+                logger.LogError(ex, "[GetAIContainerLogAsync] Error reading pod log for '{PodName}'", podName);
                 return string.Empty;
             }
         }
@@ -631,20 +635,64 @@ namespace OrcanodeMonitor.Core
             return logTimestamp - endTime;
         }
 
+        public const string OrcaHelloInferenceContainerName = "inference-system";
+        public const string PodsAIInferenceContainerName = "pods-ai-inference-system";
+        public const string OrcaHelloFieldPrefix = "OrcaHello";
+        public const string PodsAIFieldPrefix = "PodsAI";
+
         /// <summary>
-        /// Update the list of Orcanodes using data about InferenceSystem containers in Azure.
+        /// Update both OrcaHello and PodsAI data using a shared Kubernetes pod list snapshot.
+        /// This avoids duplicate full-cluster queries and reduces K8s API load.
         /// </summary>
         /// <param name="context">Database context to update</param>
         /// <param name="logger">Logger</param>
         /// <returns></returns>
-        public async Task UpdateOrcaHelloDataAsync(IOrcanodeMonitorContext context, ILogger logger)
+        public async Task UpdateBothInferenceSystemsAsync(IOrcanodeMonitorContext context, ILogger logger)
+        {
+            IKubernetes? client = _k8sClient;
+            if (client == null)
+            {
+                logger.LogWarning("[UpdateBothInferenceSystemsAsync] Kubernetes client is null");
+                return;
+            }
+
+            try
+            {
+                // Fetch the pod list once for both updates
+                var pods = await client.CoreV1.ListPodForAllNamespacesAsync();
+
+                // Update both systems using the shared snapshot
+                await UpdateInferenceSystemDataAsync(context, pods, OrcaHelloInferenceContainerName, OrcaHelloFieldPrefix, logger);
+                await UpdateInferenceSystemDataAsync(context, pods, PodsAIInferenceContainerName, PodsAIFieldPrefix, logger);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "[UpdateBothInferenceSystemsAsync] Error updating both inference systems");
+            }
+        }
+
+        /// <summary>
+        /// Update the list of Orcanodes using data about inference containers in Azure.
+        /// </summary>
+        /// <param name="context">Database context to update</param>
+        /// <param name="sharedPods">Pre-fetched pod list to avoid duplicate K8s API calls. If null, will fetch internally.</param>
+        /// <param name="containerName">Container name</param>
+        /// <param name="fieldNamePrefix">Field name prefix to use when saving data</param>
+        /// <param name="logger">Logger</param>
+        /// <returns></returns>
+        private async Task UpdateInferenceSystemDataAsync(
+            IOrcanodeMonitorContext context,
+            V1PodList sharedPods,
+            string containerName,
+            string fieldNamePrefix,
+            ILogger logger)
         {
             try
             {
                 IKubernetes? client = _k8sClient;
                 if (client == null)
                 {
-                    logger.LogWarning("[UpdateOrcaHelloDataAsync] Kubernetes client is null");
+                    logger.LogWarning("[UpdateInferenceSystemDataAsync] Kubernetes client is null");
                     return;
                 }
 
@@ -654,7 +702,9 @@ namespace OrcanodeMonitor.Core
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = foundList.ToList();
 
-                var pods = await client.CoreV1.ListPodForAllNamespacesAsync();
+                // Use shared pod list if provided, otherwise fetch it
+                var pods = sharedPods ?? await client.CoreV1.ListPodForAllNamespacesAsync();
+
                 foreach (Orcanode node in foundList)
                 {
                     string slug = node.OrcasoundSlug;
@@ -663,12 +713,28 @@ namespace OrcanodeMonitor.Core
                         // No slug, so can't match.
                         continue;
                     }
-                    var nodepods = pods.Items.Where(p => p.Metadata?.NamespaceProperty == slug);
-                    GetBestPodStatus(nodepods, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
-                    node.OrcaHelloInferenceRestartCount = 0;
+                    var nodePods = pods.Items.Where(p => p.Metadata?.NamespaceProperty == slug);
+                    GetBestPodStatus(nodePods, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus, containerName);
+
+                    // Find the correct inference system properties.
+                    PropertyInfo? idProperty = node.GetType().GetProperty(fieldNamePrefix + "Id");
+                    PropertyInfo? restartCountProperty = node.GetType().GetProperty(fieldNamePrefix + "InferenceRestartCount");
+                    PropertyInfo? lagProperty = node.GetType().GetProperty(fieldNamePrefix + "InferencePodLag");
+                    PropertyInfo? imageProperty = node.GetType().GetProperty(fieldNamePrefix + "InferenceImage");
+                    PropertyInfo? podReadyProperty = node.GetType().GetProperty(fieldNamePrefix + "InferencePodReady");
+                    PropertyInfo? runningSinceProperty = node.GetType().GetProperty(fieldNamePrefix + "InferencePodRunningSince");
+
+                    // Save the restart count.
+                    if (restartCountProperty != null && restartCountProperty.CanWrite)
+                    {
+                        restartCountProperty.SetValue(node, 0);
+                    }
+
                     if (bestPod != null)
                     {
-                        node.OrcaHelloId = bestPod.Metadata?.Name ?? string.Empty;
+                        // Set the ID property (e.g., OrcaHelloId) to the pod name to indicate a match.  This also allows the UI to link to the pod in Kubernetes.
+                        string idValue = bestPod.Metadata?.Name ?? string.Empty;
+                        idProperty?.SetValue(node, idValue);
 
                         // Remove the returned node from the unfound list only when a pod matched.
                         var nodeToRemove = unfoundList.Find(a => a.OrcasoundSlug == node.OrcasoundSlug);
@@ -716,7 +782,7 @@ namespace OrcanodeMonitor.Core
 
                                 if (lastSegmentLag.HasValue)
                                 {
-                                    node.OrcaHelloInferencePodLag = lastSegmentLag.Value;
+                                    lagProperty?.SetValue(node, lastSegmentLag.Value);
                                 }
                                 else if (lastLiveIndex >= 0)
                                 {
@@ -728,46 +794,46 @@ namespace OrcanodeMonitor.Core
                                         DateTimeOffset offset = result.Offset.Value;
                                         DateTimeOffset clipEndTime = offset.AddSeconds((lastLiveIndex * 10) + 12);
                                         DateTimeOffset now = DateTimeOffset.UtcNow;
-                                        node.OrcaHelloInferencePodLag = now - clipEndTime;
+                                        lagProperty?.SetValue(node, now - clipEndTime);
                                     }
                                 }
                                 else
                                 {
                                     // Clear any stale lag value.
-                                    node.OrcaHelloInferencePodLag = null;
+                                    lagProperty?.SetValue(node, null);
                                 }
                             }
                         }
                         else
                         {
                             // Pod is not ready; clear any stale lag value.
-                            node.OrcaHelloInferencePodLag = null;
+                            lagProperty?.SetValue(node, null);
                         }
                     }
                     else
                     {
                         // No pod matched; clear any stale ID.
-                        node.OrcaHelloId = string.Empty;
+                        idProperty?.SetValue(node, string.Empty);
                     }
 
                     if (bestContainerStatus != null)
                     {
-                        node.OrcaHelloInferenceImage = bestContainerStatus.Image ?? string.Empty;
-                        node.OrcaHelloInferencePodReady = bestContainerStatus.Ready;
+                        imageProperty?.SetValue(node, bestContainerStatus.Image ?? string.Empty);
+                        podReadyProperty?.SetValue(node, bestContainerStatus.Ready);
                         DateTime? runningSince = bestContainerStatus.State?.Running?.StartedAt;
                         if (runningSince != null)
                         {
-                            node.OrcaHelloInferencePodRunningSince = runningSince;
+                            runningSinceProperty?.SetValue(node, runningSince);
                         }
                         if ((runningSince == null) || (DateTime.UtcNow - runningSince < TimeSpan.FromHours(RestartStabilityHours)))
                         {
-                            node.OrcaHelloInferenceRestartCount = bestContainerStatus.RestartCount;
+                            restartCountProperty?.SetValue(node, bestContainerStatus.RestartCount);
                         }
                     }
                     else
                     {
-                        node.OrcaHelloInferenceImage = string.Empty;
-                        node.OrcaHelloInferencePodReady = false;
+                        imageProperty?.SetValue(node, string.Empty);
+                        podReadyProperty?.SetValue(node, false);
                     }
                 }
 
@@ -785,7 +851,8 @@ namespace OrcanodeMonitor.Core
                     }
                     if (oldNode != null)
                     {
-                        oldNode.OrcaHelloId = String.Empty;
+                        PropertyInfo? idProperty = oldNode.GetType().GetProperty(fieldNamePrefix + "Id");
+                        idProperty?.SetValue(oldNode, string.Empty);
                     }
                 }
 
@@ -794,21 +861,21 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "[UpdateOrcaHelloDataAsync] Error updating OrcaHello data");
+                logger.LogError(ex, "[UpdateInferenceSystemDataAsync] Error updating inference system data");
             }
         }
 
         /// <summary>
-        /// Get all OrcaHello detections in the given timeframe.
+        /// Get all machine detections in the given timeframe.
         /// </summary>
         /// <param name="timeframe">Timeframe string for the API (e.g., "1w" for one week, "1m" for one month)</param>
         /// <param name="logger">Logger</param>
         /// <param name="hydrophoneId">Hydrophone ID (e.g., "rpi_andrews_bay"), or "all"</param>
         /// <returns>List of AI detections in the given timeframe</returns>
-        public async Task<List<OrcaHelloDetection>> GetRecentDetectionsAsync(string timeframe, string hydrophoneId, ILogger logger)
+        public async Task<List<MachineDetection>> GetRecentDetectionsAsync(string timeframe, string hydrophoneId, ILogger logger)
         {
             long pageCount = 1;
-            var allDetections = new List<OrcaHelloDetection>();
+            var allDetections = new List<MachineDetection>();
 
             try
             {
@@ -841,7 +908,7 @@ namespace OrcanodeMonitor.Core
                     }
 
                     string jsonString = await response.Content.ReadAsStringAsync();
-                    var detections = JsonSerializer.Deserialize<List<OrcaHelloDetection>>(
+                    var detections = JsonSerializer.Deserialize<List<MachineDetection>>(
                         jsonString,
                         new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                     );
@@ -861,12 +928,12 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get the number of OrcaHello detections for a given location in the past week.
+        /// Get the number of machine detections for a given location in the past week.
         /// </summary>
         /// <param name="orcanode">Node to check</param>
         /// <param name="logger">Logger instance</param>
         /// <returns>Count of AI detections in the past week</returns>
-        public async Task<long> GetOrcaHelloDetectionCountAsync(Orcanode orcanode, ILogger logger)
+        public async Task<long> GetMachineDetectionCountAsync(Orcanode orcanode, ILogger logger)
         {
             try
             {
@@ -884,7 +951,7 @@ namespace OrcanodeMonitor.Core
                     return 0;
                 }
                 string jsonString = await response.Content.ReadAsStringAsync();
-                var detections = JsonSerializer.Deserialize<List<OrcaHelloDetection>>(
+                var detections = JsonSerializer.Deserialize<List<MachineDetection>>(
                     jsonString,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                 );
@@ -905,24 +972,24 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "[GetOrcaHelloDetectionCountAsync] Error retrieving detections");
+                logger.LogError(ex, "[GetMachineDetectionCountAsync] Error retrieving detections");
                 return 0;
             }
         }
 
         /// <summary>
-        /// Fetch OrcaHello detection counts in parallel.
+        /// Fetch machine detection counts in parallel.
         /// </summary>
         /// <param name="nodes">List of Orcanodes</param>
         /// <param name="counts">Dictionary of counts</param>
         /// <param name="logger">Logger instance</param>
         /// <returns></returns>
-        public async Task FetchOrcaHelloDetectionCountsAsync(List<Orcanode> nodes, Dictionary<string, long> counts, ILogger logger)
+        public async Task FetchMachineDetectionCountsAsync(List<Orcanode> nodes, Dictionary<string, long> counts, ILogger logger)
         {
             var detectionTasks = nodes.Select(async node => new
             {
                 Slug = node.OrcasoundSlug,
-                Count = await GetOrcaHelloDetectionCountAsync(node, logger)
+                Count = await GetMachineDetectionCountAsync(node, logger)
             });
             var results = await Task.WhenAll(detectionTasks);
             foreach (var result in results)
@@ -932,18 +999,18 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get a list of OrcaHelloPod objects.
+        /// Get a list of InferencePod objects.
         /// </summary>
         /// <param name="orcanodes">List of orcanodes</param>
         /// <param name="logger">Logger instance</param>
-        /// <returns>List of OrcaHelloPod objects</returns>
-        public async Task<List<OrcaHelloPod>> FetchPodMetricsAsync(List<Orcanode> orcanodes, ILogger logger)
+        /// <returns>List of InferencePod objects</returns>
+        public async Task<List<InferencePod>> FetchPodMetricsAsync(List<Orcanode> orcanodes, string containerName, ILogger logger)
         {
-            var resultList = new List<OrcaHelloPod>();
+            var resultList = new List<InferencePod>();
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
-                logger.LogWarning("[FetchPodMetricsAsync] Kubernetes client is null");
+                logger.LogWarning("[FetchPodMetricsByNameAsync] Kubernetes client is null");
                 return resultList;
             }
 
@@ -953,7 +1020,7 @@ namespace OrcanodeMonitor.Core
                 PodMetricsList? metricsList = await client.GetKubernetesPodsMetricsAsync();
                 foreach (V1Pod pod in allPods)
                 {
-                    if (pod.Metadata == null || !pod.Metadata.Name.StartsWith("inference-system-"))
+                    if (pod.Metadata == null || !pod.Metadata.Name.StartsWith(containerName + "-"))
                     {
                         continue;
                     }
@@ -968,35 +1035,36 @@ namespace OrcanodeMonitor.Core
                         continue;
                     }
                     PodMetrics? podMetrics = metricsList?.Items?.FirstOrDefault(n => n.Metadata.Name == pod.Metadata.Name);
-                    var container = podMetrics?.Containers?.FirstOrDefault(c => c.Name == "inference-system");
+                    var container = podMetrics?.Containers?.FirstOrDefault(c => c.Name == containerName);
                     string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
                     string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
                     Orcanode? orcanode = orcanodes.Find(a => a.OrcasoundSlug == pod.Metadata.NamespaceProperty);
-                    long detectionCount = (orcanode != null) ? await GetOrcaHelloDetectionCountAsync(orcanode, logger) : 0;
+                    long detectionCount = (orcanode != null) ? await GetMachineDetectionCountAsync(orcanode, logger) : 0;
 
                     (double? confidenceThreshold, int? countThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty, logger);
 
-                    var orcaHelloPod = new OrcaHelloPod(pod, cpuUsage, memoryUsage, detectionCount, confidenceThreshold, countThreshold);
-                    resultList.Add(orcaHelloPod);
+                    var inferencePod = new InferencePod(pod, containerName, cpuUsage, memoryUsage, detectionCount, confidenceThreshold, countThreshold);
+                    resultList.Add(inferencePod);
                 }
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "[FetchPodMetricsAsync] Error retrieving container metrics");
+                logger.LogError(ex, "[FetchPodMetricsByNameAsync] Error retrieving container metrics");
             }
 
             return resultList;
         }
 
         /// <summary>
-        /// Get a list of OrcaHelloNode objects.
+        /// Get a list of InferenceSystemNode objects.
         /// </summary>
         /// <param name="logger">Logger instance</param>
-        /// <returns>List of OrcaHelloNode objects</returns>
-        public async Task<List<OrcaHelloNode>> FetchNodeMetricsAsync(ILogger logger)
+        /// <param name="podNamePrefix">Prefix for pod names to filter</param>
+        /// <returns>List of InferenceSystemNode objects</returns>
+        public async Task<List<InferenceSystemNode>> FetchNodeMetricsAsync(ILogger logger, string podNamePrefix)
         {
-            var resultList = new List<OrcaHelloNode>();
+            var resultList = new List<InferenceSystemNode>();
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
@@ -1018,14 +1086,14 @@ namespace OrcanodeMonitor.Core
 
                     string lscpuOutput = string.Empty;
                     var allPodsOnNode = v1Pods.Items.Where(c => c.Spec.NodeName == node.Metadata.Name);
-                    GetBestPodStatus(allPodsOnNode, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus);
+                    GetBestPodStatus(allPodsOnNode, out V1Pod? bestPod, out V1ContainerStatus? bestContainerStatus, podNamePrefix);
                     if (bestPod != null && bestPod.Metadata != null)
                     {
                         lscpuOutput = await GetPodLscpuOutputAsync(bestPod.Metadata.Name, bestPod.Metadata.NamespaceProperty, logger);
                     }
 
-                    var orcaHelloNode = new OrcaHelloNode(node, cpuUsage, memoryUsage, lscpuOutput, v1Pods.Items, podMetrics.Items);
-                    resultList.Add(orcaHelloNode);
+                    var inferenceNode = new InferenceSystemNode(node, cpuUsage, memoryUsage, lscpuOutput, v1Pods.Items, podMetrics.Items);
+                    resultList.Add(inferenceNode);
                 }
             }
             catch (Exception ex)

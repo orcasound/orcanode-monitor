@@ -9,7 +9,7 @@ namespace OrcanodeMonitor.Models
     /// Lightweight summary of a Kubernetes pod (e.g., Pending, Evicted, Failed) used to
     /// populate the "Other Pods" table on the OrcaHelloPod page.
     /// </summary>
-    public class OrcaHelloPodInstance
+    public class InferencePodInstance
     {
         private readonly V1Pod _pod;
 
@@ -251,7 +251,7 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        public OrcaHelloPodInstance(V1Pod pod)
+        public InferencePodInstance(V1Pod pod)
         {
             _pod = pod;
         }

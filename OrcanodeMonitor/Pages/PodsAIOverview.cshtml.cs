@@ -8,10 +8,10 @@ using OrcanodeMonitor.Models;
 using System.Drawing;
 namespace OrcanodeMonitor.Pages
 {
-    public class OrcaHelloOverviewModel : PageModel
+    public class PodsAIOverviewModel : PageModel
     {
         private readonly OrcanodeMonitorContext _databaseContext;
-        private readonly ILogger<OrcaHelloOverviewModel> _logger;
+        private readonly ILogger<PodsAIOverviewModel> _logger;
         private readonly InferenceSystemFetcher _inferenceSystemFetcher;
         public List<Orcanode> Orcanodes { get; private set; }
         public List<InferenceSystemNode> Nodes { get; private set; }
@@ -23,7 +23,7 @@ namespace OrcanodeMonitor.Pages
             return $"{(nodeMemoryUsageInKi / 1024f / 1024f):F1} GiB";
         }
 
-        public OrcaHelloOverviewModel(OrcanodeMonitorContext context, ILogger<OrcaHelloOverviewModel> logger, InferenceSystemFetcher inferenceSystemFetcher)
+        public PodsAIOverviewModel(OrcanodeMonitorContext context, ILogger<PodsAIOverviewModel> logger, InferenceSystemFetcher inferenceSystemFetcher)
         {
             _databaseContext = context;
             _logger = logger;
@@ -101,7 +101,7 @@ namespace OrcanodeMonitor.Pages
         /// <summary>
         /// Get how far behind an AI pod is running in its audio stream.
         /// </summary>
-        /// <param name="pod">The OrcaHello pod to check for lag.</param>
+        /// <param name="pod">The PODS-AI pod to check for lag.</param>
         /// <returns>A string representation of the lag time if available, or the pod's status otherwise.</returns>
         public string GetLag(InferencePod pod)
         {
@@ -114,11 +114,11 @@ namespace OrcanodeMonitor.Pages
             {
                 return OrcanodeOnlineStatus.Offline.ToString();
             }
-            var status = node.OrcaHelloStatus;
+            var status = node.PodsAIStatus;
             if ((status == OrcanodeOnlineStatus.Lagged || status == OrcanodeOnlineStatus.Online) &&
-                (node.OrcaHelloInferencePodLag.HasValue))
+                (node.PodsAIInferencePodLag.HasValue))
             {
-                return $"{Orcanode.FormatTimeSpan(node.OrcaHelloInferencePodLag.Value)}";
+                return $"{Orcanode.FormatTimeSpan(node.PodsAIInferencePodLag.Value)}";
             }
             return status.ToString();
         }
@@ -129,8 +129,7 @@ namespace OrcanodeMonitor.Pages
         /// <param name="pod">Pod</param>
         /// <returns>Status value</returns>
         public OrcanodeOnlineStatus GetPodStatus(InferencePod pod) =>
-            GetOrcanode(pod)?.OrcaHelloStatus ?? OrcanodeOnlineStatus.Absent;
-
+            GetOrcanode(pod)?.PodsAIStatus ?? OrcanodeOnlineStatus.Absent;
         /// <summary>
         /// Get the HTML color for a pod's uptime text.
         /// </summary>
@@ -158,9 +157,9 @@ namespace OrcanodeMonitor.Pages
             {
                 return string.Empty;
             }
-            if (node.OrcaHelloInferencePodRunningSince.HasValue)
+            if (node.PodsAIInferencePodRunningSince.HasValue)
             {
-                TimeSpan runTime = DateTime.UtcNow - node.OrcaHelloInferencePodRunningSince.Value;
+                TimeSpan runTime = DateTime.UtcNow - node.PodsAIInferencePodRunningSince.Value;
                 return $"{Orcanode.FormatTimeSpan(runTime)}";
             }
             return "None";
@@ -211,7 +210,7 @@ namespace OrcanodeMonitor.Pages
             {
                 return IndexModel.GetBackgroundColor(node.S3StreamStatus, node.OrcasoundStatus);
             }
-            return IndexModel.GetBackgroundColor(node.OrcaHelloStatus, node.OrcasoundStatus);
+            return IndexModel.GetBackgroundColor(node.PodsAIStatus, node.OrcasoundStatus);
         }
 
         /// <summary>
@@ -226,9 +225,9 @@ namespace OrcanodeMonitor.Pages
             {
                 return ColorTranslator.ToHtml(Color.Red);
             }
-            if (node.OrcaHelloStatus == OrcanodeOnlineStatus.Online || node.OrcaHelloStatus == OrcanodeOnlineStatus.Lagged)
+            if (node.PodsAIStatus == OrcanodeOnlineStatus.Online || node.PodsAIStatus == OrcanodeOnlineStatus.Lagged)
             {
-                DateTime? since = node.OrcaHelloInferencePodRunningSince;
+                DateTime? since = node.PodsAIInferencePodRunningSince;
                 if (since.HasValue)
                 {
                     var ts = DateTime.UtcNow - since.Value;
@@ -260,12 +259,10 @@ namespace OrcanodeMonitor.Pages
                           .ToList();
 
             // Fetch pods and nodes for display.
-            List<InferencePod> pods = await _inferenceSystemFetcher.FetchPodMetricsAsync(Orcanodes, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+            List<InferencePod> pods = await _inferenceSystemFetcher.FetchPodMetricsAsync(orcanodes, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
             Pods = pods.OrderBy(n => n.NamespaceName).ToList();
 
-            // Assume that all nodes have an OrcaHello instance on them.
-            // TODO: fix this assumption by fetching the list of nodes from Kubernetes and matching them to the Orcanodes in the database.
-            List<InferenceSystemNode> nodes = await _inferenceSystemFetcher.FetchNodeMetricsAsync(_logger, InferenceSystemFetcher.OrcaHelloInferenceContainerName);
+            List<InferenceSystemNode> nodes = await _inferenceSystemFetcher.FetchNodeMetricsAsync(_logger, InferenceSystemFetcher.PodsAIInferenceContainerName);
             Nodes = nodes.OrderBy(n => n.Name).ToList();
         }
     }

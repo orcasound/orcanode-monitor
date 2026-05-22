@@ -128,22 +128,33 @@ namespace Test
             await Fetcher.UpdateS3DataAsync(_context, _logger);
         }
 
-        [TestMethod]
-        public async Task TestGetOrcaHelloPodAsync()
+        private async Task TestGetInferencePodAsync(string containerName)
         {
             // Arrange - Create mock Kubernetes client with all required operations.
             var node = new Orcanode { OrcasoundSlug = "andrews-bay" };
-            OrcaHelloFetcher fetcher = OrcasiteTestHelper.GetMockOrcaHelloFetcher(node);
+            InferenceSystemFetcher fetcher = OrcasiteTestHelper.GetMockInferenceSystemFetcher(node);
 
             // Act
-            var pod = await fetcher.GetOrcaHelloPodAsync(node, _logger);
+            var pod = await fetcher.GetInferencePodByNameAsync(node, containerName, _logger);
 
             // Assert
             Assert.IsNotNull(pod, "Pod should not be null");
-            Assert.AreEqual("inference-system-andrews-bay", pod.Name);
+            Assert.AreEqual(containerName + "-andrews-bay", pod.Name);
             Assert.AreEqual(node.OrcasoundSlug, pod.NamespaceName);
             Assert.AreEqual("test-node", pod.NodeName);
             Assert.AreEqual(0, pod.RestartCount);
+        }
+
+        [TestMethod]
+        public async Task TestGetOrcaHelloPodAsync()
+        {
+            await TestGetInferencePodAsync(InferenceSystemFetcher.OrcaHelloInferenceContainerName);
+        }
+
+        [TestMethod]
+        public async Task TestGetPodsAIPodAsync()
+        {
+            await TestGetInferencePodAsync(InferenceSystemFetcher.PodsAIInferenceContainerName);
         }
     }
 }

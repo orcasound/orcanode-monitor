@@ -65,12 +65,14 @@ namespace OrcanodeMonitor.Models
             SocketXPDeviceStatus = string.Empty;
             SocketXPKernelVersion = string.Empty;
             OrcaHelloId = string.Empty;
+            PodsAIId = string.Empty;
             PartitionValue = 1;
             MezmoLogSize = 0;
             MezmoViewId = string.Empty;
             DecibelLevel = 0;
             HumDecibelLevel = 0;
             OrcaHelloInferenceImage = string.Empty;
+            PodsAIInferenceImage = string.Empty;
         }
 
         #region persisted
@@ -193,9 +195,19 @@ namespace OrcanodeMonitor.Models
         public string OrcaHelloId { get; set; }
 
         /// <summary>
+        /// The name of the PODS-AI InferenceSystem pod for this node.
+        /// </summary>
+        public string PodsAIId { get; set; }
+
+        /// <summary>
         /// How far behind the OrcaHello inference pod is.
         /// </summary>
         public TimeSpan? OrcaHelloInferencePodLag { get; set; }
+
+        /// <summary>
+        /// How far behind the PODS-AI inference pod is.
+        /// </summary>
+        public TimeSpan? PodsAIInferencePodLag { get; set; }
 
         /// <summary>
         /// Whether the OrcaHello InferenceSystem pod is ready.
@@ -203,9 +215,19 @@ namespace OrcanodeMonitor.Models
         public bool? OrcaHelloInferencePodReady { get; set; }
 
         /// <summary>
+        /// Whether the PODS-AI InferenceSystem pod is ready.
+        /// </summary>
+        public bool? PodsAIInferencePodReady { get; set; }
+
+        /// <summary>
         /// The name of the OrcaHello InferenceSystem image for this node.
         /// </summary>
         public string OrcaHelloInferenceImage { get; set; }
+
+        /// <summary>
+        /// The name of the PODS-AI InferenceSystem image for this node.
+        /// </summary>
+        public string PodsAIInferenceImage { get; set; }
 
         /// <summary>
         /// The OrcaHello InferenceSystem pod restart count for this node.
@@ -213,9 +235,19 @@ namespace OrcanodeMonitor.Models
         public int? OrcaHelloInferenceRestartCount { get; set; }
 
         /// <summary>
+        /// The PODS-AI InferenceSystem pod restart count for this node.
+        /// </summary>
+        public int? PodsAIInferenceRestartCount { get; set; }
+
+        /// <summary>
         /// The time when the OrcaHello inference pod was started.
         /// </summary>
         public DateTime? OrcaHelloInferencePodRunningSince { get; set; }
+
+        /// <summary>
+        /// The time when the PODS-AI inference pod was started.
+        /// </summary>
+        public DateTime? PodsAIInferencePodRunningSince { get; set; }
 
         /// <summary>
         /// Partition key fixed value.
@@ -437,24 +469,28 @@ namespace OrcanodeMonitor.Models
             }
         }
 
+        private bool IsStable(DateTime? runningSince)
+        {
+            if (runningSince.HasValue)
+            {
+                TimeSpan runTime = DateTime.UtcNow - runningSince.Value;
+                if (runTime > TimeSpan.FromMinutes(20))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /// <summary>
         /// Check whether an OrcaHello container has been stable for a while.
         /// </summary>
-        private bool IsOrcaHelloStable
-        {
-            get
-            {
-                if (OrcaHelloInferencePodRunningSince.HasValue)
-                {
-                    TimeSpan runTime = DateTime.UtcNow - OrcaHelloInferencePodRunningSince.Value;
-                    if (runTime > TimeSpan.FromMinutes(20))
-                    {
-                        return true;
-                    }
-                }
-                return false;
-            }
-        }
+        private bool IsOrcaHelloStable => IsStable(OrcaHelloInferencePodRunningSince);
+
+        /// <summary>
+        /// Check whether a PODS-AI container has been stable for a while.
+        /// </summary>
+        private bool IsPodsAIStable => IsStable(PodsAIInferencePodRunningSince);
 
         public OrcanodeOnlineStatus OrcaHelloStatus
         {
@@ -477,6 +513,35 @@ namespace OrcanodeMonitor.Models
                     return OrcanodeOnlineStatus.Lagged;
                 }
                 if (!OrcaHelloInferencePodLag.HasValue)
+                {
+                    // Can't find audio.
+                    return OrcanodeOnlineStatus.Offline;
+                }
+                return OrcanodeOnlineStatus.Online;
+            }
+        }
+
+        public OrcanodeOnlineStatus PodsAIStatus
+        {
+            get
+            {
+                if (PodsAIId.IsNullOrEmpty())
+                {
+                    return OrcanodeOnlineStatus.Absent;
+                }
+                if (!(PodsAIInferencePodReady ?? false))
+                {
+                    return OrcanodeOnlineStatus.Offline;
+                }
+                if (((PodsAIInferenceRestartCount ?? 0) > 0) && !IsPodsAIStable)
+                {
+                    return OrcanodeOnlineStatus.Unstable;
+                }
+                if ((PodsAIInferencePodLag ?? TimeSpan.Zero) > TimeSpan.FromMinutes(5))
+                {
+                    return OrcanodeOnlineStatus.Lagged;
+                }
+                if (!PodsAIInferencePodLag.HasValue)
                 {
                     // Can't find audio.
                     return OrcanodeOnlineStatus.Offline;
@@ -760,6 +825,20 @@ namespace OrcanodeMonitor.Models
                     (OrcaHelloInferencePodLag.HasValue))
                 {
                     return $"{Orcanode.FormatTimeSpan(OrcaHelloInferencePodLag.Value)}";
+                }
+                return status.ToString();
+            }
+        }
+
+        public string PodsAIStatusString
+        {
+            get
+            {
+                var status = PodsAIStatus;
+                if ((status == OrcanodeOnlineStatus.Lagged || status == OrcanodeOnlineStatus.Online) &&
+                    (PodsAIInferencePodLag.HasValue))
+                {
+                    return $"{Orcanode.FormatTimeSpan(PodsAIInferencePodLag.Value)}";
                 }
                 return status.ToString();
             }

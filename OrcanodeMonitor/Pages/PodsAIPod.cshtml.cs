@@ -9,12 +9,12 @@ using OrcanodeMonitor.Models;
 
 namespace OrcanodeMonitor.Pages
 {
-    public class OrcaHelloPodModel : PageModel
+    public class PodsAIPodModel : PageModel
     {
         public string AksUrl => Fetcher.Configuration?["AZURE_AKS_URL"] ?? "";
 
         private readonly OrcanodeMonitorContext _databaseContext;
-        private readonly ILogger<OrcaHelloPodModel> _logger;
+        private readonly ILogger<PodsAIPodModel> _logger;
         private readonly InferenceSystemFetcher _inferenceSystemFetcher;
         private string _logData;
         private InferencePod? _pod = null;
@@ -75,7 +75,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         public string NowLocal { get; private set; }
 
-        public OrcaHelloPodModel(OrcanodeMonitorContext context, ILogger<OrcaHelloPodModel> logger, InferenceSystemFetcher inferenceSystemFetcher)
+        public PodsAIPodModel(OrcanodeMonitorContext context, ILogger<PodsAIPodModel> logger, InferenceSystemFetcher inferenceSystemFetcher)
         {
             _databaseContext = context;
             _logger = logger;
@@ -91,7 +91,7 @@ namespace OrcanodeMonitor.Pages
         {
             get
             {
-                TimeSpan? ts = _orcanode?.OrcaHelloInferencePodLag;
+                TimeSpan? ts = _orcanode?.PodsAIInferencePodLag;
                 if (!ts.HasValue)
                 {
                     return string.Empty;
@@ -104,9 +104,9 @@ namespace OrcanodeMonitor.Pages
         {
             get
             {
-                if (_orcanode?.OrcaHelloInferencePodRunningSince.HasValue ?? false)
+                if (_orcanode?.PodsAIInferencePodRunningSince.HasValue ?? false)
                 {
-                    TimeSpan runTime = DateTime.UtcNow - _orcanode.OrcaHelloInferencePodRunningSince.Value;
+                    TimeSpan runTime = DateTime.UtcNow - _orcanode.PodsAIInferencePodRunningSince.Value;
                     return $"{Orcanode.FormatTimeSpan(runTime)}";
                 }
                 return "None";
@@ -142,13 +142,13 @@ namespace OrcanodeMonitor.Pages
                 return NotFound(); // Return a 404 error page
             }
 
-            _pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(_orcanode, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+            _pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(_orcanode, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
             if (_pod == null)
             {
                 return NotFound(); // Return a 404 error page
             }
 
-            _inferenceSystemNode = await _inferenceSystemFetcher.GetNodeAsync(_pod.NodeName, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+            _inferenceSystemNode = await _inferenceSystemFetcher.GetNodeAsync(_pod.NodeName, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
             if (_inferenceSystemNode == null)
             {
                 return NotFound(); // Return a 404 error page
@@ -156,7 +156,7 @@ namespace OrcanodeMonitor.Pages
 
             Namespace = podNamespace;
 
-            OtherPods = (await _inferenceSystemFetcher.GetOtherPodsByNameAsync(_orcanode, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger))
+            OtherPods = (await _inferenceSystemFetcher.GetOtherPodsByNameAsync(_orcanode, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger))
                 .OrderByDescending(p => p.StartTime)
                 .ToList();
 

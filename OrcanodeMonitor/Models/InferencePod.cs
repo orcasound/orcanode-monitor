@@ -4,7 +4,7 @@ using k8s.Models;
 
 namespace OrcanodeMonitor.Models
 {
-    public class OrcaHelloPod
+    public class InferencePod
     {
         private readonly V1Pod _pod;
         public string Name => _pod.Metadata?.Name ?? string.Empty;
@@ -54,7 +54,7 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        public OrcaHelloPod(V1Pod pod, string cpuUsage, string memoryUsage, long detectionCount, double? modelConfidenceThreshold = null, int? modelCountThreshold = null)
+        public InferencePod(V1Pod pod, string containerName, string cpuUsage, string memoryUsage, long detectionCount, double? modelConfidenceThreshold = null, int? modelCountThreshold = null)
         {
             _pod = pod;
             DetectionCount = detectionCount;
@@ -66,7 +66,7 @@ namespace OrcanodeMonitor.Models
 
             MemoryUsageInKi = long.Parse(memoryUsage.Replace("Ki", ""));
 
-            V1Container? container = pod.Spec.Containers.FirstOrDefault(c => c.Name == "inference-system");
+            V1Container? container = pod.Spec.Containers.FirstOrDefault(c => c.Name == containerName);
             var limits = container?.Resources?.Limits;
             if (limits != null)
             {
