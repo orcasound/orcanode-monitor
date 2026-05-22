@@ -574,7 +574,7 @@ namespace OrcanodeMonitor.Core
         /// <param name="namespaceName">Namespace</param>
         /// <param name="logger">Logger</param>
         /// <returns>Log</returns>
-        public async Task<string> GetOrcaHelloLogAsync(OrcaHelloPod? container, string namespaceName, ILogger logger)
+        public async Task<string> GetAIContainerLogAsync(OrcaHelloPod? container, string namespaceName, ILogger logger)
         {
             if (container == null)
             {
@@ -585,7 +585,7 @@ namespace OrcanodeMonitor.Core
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
-                logger.LogWarning("[GetOrcaHelloLogAsync] Kubernetes client is null");
+                logger.LogWarning("[GetAIContainerLogAsync] Kubernetes client is null");
                 return string.Empty;
             }
 
@@ -613,7 +613,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "[GetOrcaHelloLogAsync] Error reading pod log for '{PodName}'", podName);
+                logger.LogError(ex, "[GetAIContainerLogAsync] Error reading pod log for '{PodName}'", podName);
                 return string.Empty;
             }
         }

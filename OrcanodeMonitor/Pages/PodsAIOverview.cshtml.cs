@@ -191,7 +191,7 @@ namespace OrcanodeMonitor.Pages
         public string GetPodDetectionsBackgroundColor(OrcaHelloPod pod)
         {
             Orcanode? node = GetOrcanode(pod);
-            return IndexModel.GetNodeOrcaHelloDetectionsBackgroundColor(node, pod.DetectionCount);
+            return IndexModel.GetNodeMachineDetectionsBackgroundColor(node, pod.DetectionCount);
         }
 
         /// <summary>

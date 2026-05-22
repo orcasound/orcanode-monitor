@@ -160,7 +160,7 @@ namespace OrcanodeMonitor.Pages
                 .OrderByDescending(p => p.StartTime)
                 .ToList();
 
-            _logData = await _orcaHelloFetcher.GetOrcaHelloLogAsync(_pod, podNamespace, _logger);
+            _logData = await _orcaHelloFetcher.GetAIContainerLogAsync(_pod, podNamespace, _logger);
             if (_logData.IsNullOrEmpty())
             {
                 return NotFound(); // Return a 404 error page

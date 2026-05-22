@@ -90,7 +90,7 @@
                     </a>
                 </td>
             }
-            @if (Model.GetPodsAIStatus(item) == Models.OrcanodeOnlineStatus.Absent)
+            @if (item.PodsAIStatus == Models.OrcanodeOnlineStatus.Absent)
             {
                 <td style="background-color: @Model.NodePodsAIStatusBackgroundColor(item); color: @Model.NodePodsAITextColor(item)">
                     @item.PodsAIStatusString
@@ -104,8 +104,8 @@
                     </a>
                 </td>
             }
-            <td style="background-color: @Model.NodeOrcaHelloDetectionsBackgroundColor(item)">
-                <a asp-page="/NodeDetections" asp-route-slug="@item.OrcasoundSlug" style="color: @Model.NodeOrcaHelloDetectionsTextColor(item)">
+            <td style="background-color: @Model.NodeMachineDetectionsBackgroundColor(item)">
+                <a asp-page="/NodeDetections" asp-route-slug="@item.OrcasoundSlug" style="color: @Model.NodeMachineDetectionsTextColor(item)">
                     @Model.GetOrcaHelloDetectionCount(item)
                 </a>
             </td>

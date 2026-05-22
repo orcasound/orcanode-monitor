@@ -106,20 +106,20 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Gets the background color for the OrcaHello detections of the specified node.
+        /// Gets the background color for the Machine Detections of the specified node.
         /// </summary>
         /// <param name="node">Node, or null if none</param>
         /// <param name="detectionCount">Detection count</param>
         /// <returns>HTML color string</returns>
-        public static string GetNodeOrcaHelloDetectionsBackgroundColor(Orcanode? node, long detectionCount)
+        public static string GetNodeMachineDetectionsBackgroundColor(Orcanode? node, long detectionCount)
         {
             if (node == null)
             {
                 return ColorTranslator.ToHtml(Color.Red);
             }
 
-            // Light Red if OrcaHello Status is "Absent".
-            if (node.OrcaHelloStatus == OrcanodeOnlineStatus.Absent)
+            // Light Red if OrcaHello and PODS-AI Status values are both "Absent".
+            if (node.OrcaHelloStatus == OrcanodeOnlineStatus.Absent && node.PodsAIStatus == OrcanodeOnlineStatus.Absent)
             {
                 return ColorTranslator.ToHtml(LightRed);
             }
@@ -142,57 +142,29 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Get the background color for the OrcaHello detections cell of the specified node.
+        /// Get the background color for the Machine Detections cell of the specified node.
         /// </summary>
         /// <param name="node">Node</param>
         /// <returns>HTML color string</returns>
-        public string NodeOrcaHelloDetectionsBackgroundColor(Orcanode node)
+        public string NodeMachineDetectionsBackgroundColor(Orcanode node)
         {
             long detectionCount = GetOrcaHelloDetectionCount(node);
-            return GetNodeOrcaHelloDetectionsBackgroundColor(node, detectionCount);
+            return GetNodeMachineDetectionsBackgroundColor(node, detectionCount);
         }
 
-        public string NodeOrcaHelloDetectionsTextColor(Orcanode node) => GetTextColor(NodeOrcaHelloDetectionsBackgroundColor(node));
+        public string NodeMachineDetectionsTextColor(Orcanode node) => GetTextColor(NodeMachineDetectionsBackgroundColor(node));
 
         public string NodeOrcaHelloTextColor(Orcanode node) => GetTextColor(NodeOrcaHelloStatusBackgroundColor(node));
 
         public string NodeOrcaHelloStatusBackgroundColor(Orcanode node) => GetBackgroundColor(node.OrcaHelloStatus, node.OrcasoundStatus);
 
-        public OrcanodeOnlineStatus GetPodsAIStatus(Orcanode node)
-        {
-            if (!_podsAINamespaces.Contains(node.OrcasoundSlug))
-            {
-                return OrcanodeOnlineStatus.Absent;
-            }
-
-            TimeSpan? lag = GetPodsAILag(node);
-            if (!lag.HasValue)
-            {
-                return OrcanodeOnlineStatus.Offline;
-            }
-            if (lag.Value > TimeSpan.FromMinutes(5))
-            {
-                return OrcanodeOnlineStatus.Lagged;
-            }
-            return OrcanodeOnlineStatus.Online;
-        }
-
-        public string NodePodsAIStatusBackgroundColor(Orcanode node) => GetBackgroundColor(GetPodsAIStatus(node), node.OrcasoundStatus);
+        public string NodePodsAIStatusBackgroundColor(Orcanode node) => GetBackgroundColor(node.PodsAIStatus, node.OrcasoundStatus);
 
         public string NodePodsAITextColor(Orcanode node) => GetTextColor(NodePodsAIStatusBackgroundColor(node));
 
-        private TimeSpan? GetPodsAILag(Orcanode node)
-        {
-            if (!_podsAILagByNamespace.TryGetValue(node.OrcasoundSlug, out TimeSpan? lag))
-            {
-                return null;
-            }
-            return lag;
-        }
-
         private async Task<TimeSpan?> GetPodLagAsync(OrcaHelloPod pod, Orcanode node)
         {
-            string logs = await _orcaHelloFetcher.GetOrcaHelloLogAsync(pod, pod.NamespaceName, _logger);
+            string logs = await _orcaHelloFetcher.GetAIContainerLogAsync(pod, pod.NamespaceName, _logger);
             if (string.IsNullOrEmpty(logs))
             {
                 return null;
