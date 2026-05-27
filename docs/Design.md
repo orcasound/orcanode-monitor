@@ -111,6 +111,10 @@ use the appropriate environment variable configuration settings there.
 
 **AZURE_COSMOS_DATABASENAME**: The name of the Azure Cosmos database to use.
 
+**DATAPLICITY_API_KEY**: API key that allows reading state from Dataplicity.
+
+**DATAPLICITY_ORG_HASH**: Organisation ID for Orcasound at Dataplicity.
+
 **IFTTT_SERVICE_KEY**: If-This-Then-That service key as provided via the ifttt.com service.
 
 **KUBERNETES_CA_CERT**: The base64-encoded Kubernetes CA certificate, for checking Inference System status.  The value can be obtained from a ~/.kube/config file.
@@ -126,8 +130,6 @@ use the appropriate environment variable configuration settings there.
 **ORCANODE_MONITOR_OFFLINE**: If set to "true", mock calls will be made using fake data. Default: false
 
 **ORCAHELLO_HIGH_DETECTION_THRESHOLD**: The minimum number of detections within the past week to be considered unusually high, which will display the OrcaHello Detections cell with a yellow background color. Default: 100
-
-**ORCASOUND_DATAPLICITY_TOKEN**: Security token that allows reading state from Dataplicity.
 
 **ORCASOUND_SOCKETXP_TOKEN**: Security token that allows reading state from SocketXP.
 

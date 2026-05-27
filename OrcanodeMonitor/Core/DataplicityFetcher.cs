@@ -11,7 +11,7 @@ namespace OrcanodeMonitor.Core
 {
     public class DataplicityFetcher
     {
-        private static readonly string _dataplicityDevicesUrl = "https://apps.dataplicity.com/devices/";
+        private static readonly string _dataplicityDevicesUrl = "https://gateway.dataplicity.com/api/organisations/$ORG_HASH/devices/";
         private static readonly string _defaultProdS3Bucket = "audio-orcasound-net";
         private static readonly string _defaultDevS3Bucket = "dev-streaming-orcasound-net";
 
@@ -19,14 +19,20 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                string? orcasound_dataplicity_token = Fetcher.GetConfig("ORCASOUND_DATAPLICITY_TOKEN");
-                if (!Fetcher.IsOffline && (orcasound_dataplicity_token == null))
+                string? dataplicityApiKey = Fetcher.GetConfig("DATAPLICITY_API_KEY");
+                if (!Fetcher.IsOffline && (dataplicityApiKey == null))
                 {
-                    logger.LogError("ORCASOUND_DATAPLICITY_TOKEN not found");
+                    logger.LogError("DATAPLICITY_API_KEY not found");
                     return string.Empty;
                 }
 
-                string url = _dataplicityDevicesUrl;
+                string? dataplicityOrgHash = Fetcher.GetConfig("DATAPLICITY_ORG_HASH");
+                if (dataplicityOrgHash == null)
+                {
+                    logger.LogError("DATAPLICITY_ORG_HASH not found");
+                    return string.Empty;
+                }
+                string url = _dataplicityDevicesUrl.Replace("$ORG_HASH", dataplicityOrgHash);
                 if (!serial.IsNullOrEmpty())
                 {
                     url += serial + "/";
@@ -39,9 +45,9 @@ namespace OrcanodeMonitor.Core
                 })
                 {
                     // Set the token if we have one (in offline mode, we won't have one).
-                    if (!string.IsNullOrEmpty(orcasound_dataplicity_token))
+                    if (!string.IsNullOrEmpty(dataplicityApiKey))
                     {
-                        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Token", orcasound_dataplicity_token);
+                        request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("ApiKey", dataplicityApiKey);
                     }
                     using HttpResponseMessage response = await Fetcher.HttpClient.SendAsync(request);
                     response.EnsureSuccessStatusCode();
@@ -156,8 +162,8 @@ namespace OrcanodeMonitor.Core
             {
                 List<Orcanode> originalList = await context.Orcanodes.ToListAsync();
 
-                string jsonArray = await GetDataplicityDataAsync(string.Empty, logger);
-                if (jsonArray.IsNullOrEmpty())
+                string jsonObject = await GetDataplicityDataAsync(string.Empty, logger);
+                if (jsonObject.IsNullOrEmpty())
                 {
                     // Indeterminate result, so update any existing nodes to be status Unknown
                     // since we can't tell if they are online.
@@ -174,7 +180,16 @@ namespace OrcanodeMonitor.Core
                 // Create a list to track what nodes are no longer returned.
                 var unfoundList = originalList.ToList();
 
-                var deviceArray = JsonSerializer.Deserialize<JsonElement>(jsonArray);
+                var devicesObject = JsonSerializer.Deserialize<JsonElement>(jsonObject);
+                if (devicesObject.ValueKind != JsonValueKind.Object)
+                {
+                    logger.LogError($"Invalid devicesObject kind in UpdateDataplicityDataAsync: {devicesObject.ValueKind}");
+                    return;
+                }
+                if (!devicesObject.TryGetProperty("results", out var deviceArray))
+                {
+                    logger.LogError($"Missing results in UpdateDataplicityDataAsync devicesObject");
+                }
                 if (deviceArray.ValueKind != JsonValueKind.Array)
                 {
                     logger.LogError($"Invalid deviceArray kind in UpdateDataplicityDataAsync: {deviceArray.ValueKind}");
@@ -182,7 +197,7 @@ namespace OrcanodeMonitor.Core
                 }
                 foreach (JsonElement device in deviceArray.EnumerateArray())
                 {
-                    if (!device.TryGetProperty("serial", out var serial))
+                    if (!device.TryGetProperty("router_device_name", out var serial))
                     {
                         logger.LogError($"Missing serial in UpdateDataplicityDataAsync result");
                         continue;
@@ -223,31 +238,31 @@ namespace OrcanodeMonitor.Core
                             node.S3NodeName = Orcanode.DataplicityNameToS3Name(dataplicityName);
                         }
                     }
-                    if (device.TryGetProperty("online", out var online))
+                    if (device.TryGetProperty("status", out var status))
                     {
-                        node.DataplicityOnline = online.GetBoolean();
+                        node.DataplicityOnline = (status.GetString() == "online");
                     }
-                    if (device.TryGetProperty("description", out var description))
+                    if (device.TryGetProperty("vendor_description", out var description))
                     {
                         node.DataplicityDescription = description.ToString();
                     }
-                    if (device.TryGetProperty("agent_version", out var agentVersion))
+                    if (device.TryGetProperty("agent_version", out var agentVersion)) // OBSOLETE
                     {
                         node.AgentVersion = agentVersion.ToString();
                     }
-                    if (device.TryGetProperty("disk_capacity", out var diskCapacity) &&
+                    if (device.TryGetProperty("disk_capacity", out var diskCapacity) && // OBSOLETE
                         diskCapacity.ValueKind == JsonValueKind.Number &&
                         diskCapacity.TryGetInt64(out long diskCapacityValue))
                     {
                         node.DiskCapacity = diskCapacityValue;
                     }
-                    if (device.TryGetProperty("disk_used", out var diskUsed) &&
+                    if (device.TryGetProperty("disk_used", out var diskUsed) && // OBSOLETE
                         diskUsed.ValueKind == JsonValueKind.Number &&
                         diskUsed.TryGetInt64(out long diskUsedValue))
                     {
                         node.DiskUsed = diskUsedValue;
                     }
-                    if (device.TryGetProperty("upgrade_available", out var upgradeAvailable))
+                    if (device.TryGetProperty("upgrade_available", out var upgradeAvailable)) // OBSOLETE
                     {
                         node.DataplicityUpgradeAvailable = upgradeAvailable.GetBoolean();
                     }

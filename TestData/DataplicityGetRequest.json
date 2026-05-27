@@ -1,1 +1,499 @@
-[{"agent_version":"0.5.8","created_time":"2023-10-13T22:25:32.153854","delete_permitted":true,"description":"Relay of hydrophone via OrcaCam YouTube stream","diagnostics_permitted":true,"disk_capacity":31011049472,"disk_used":7436439552,"external_serial":null,"hostname":"raspberrypi","machine_manufacturer":"Sony UK","machine_model":"4B","machine_processor":"BCM2711","machine_ram":"2048","machine_revision":"1.1","machine_type_display":"Raspberry Pi 4 Model B","machine_type_short_display":"Pi 4 B","machine_type":"rpi_4b","name":"Beta: Point Robinson","operating_system":"Raspbian GNU/Linux 10 buster","port_forwarding_permitted":true,"ports_url":"https://apps.dataplicity.com/devices/4d20c298-466b-413e-86f9-f9452d0e7f63/ports/","processor_speed":null,"ram_capacity":null,"reboot_url":"https://apps.dataplicity.com/devices/4d20c298-466b-413e-86f9-f9452d0e7f63/reboot/","remote_directory_permitted":true,"remote_files":[{"path":"/var/log/dataplicity.log","url":"https://www.dataplicity.com/devices/4d20c298-466b-413e-86f9-f9452d0e7f63/serve/var/log/dataplicity.log"},{"path":"/var/log/dataplicity-diagnostics.log","url":"https://www.dataplicity.com/devices/4d20c298-466b-413e-86f9-f9452d0e7f63/serve/var/log/dataplicity-diagnostics.log"},{"path":"/var/log/dpinstall.log","url":"https://www.dataplicity.com/devices/4d20c298-466b-413e-86f9-f9452d0e7f63/serve/var/log/dpinstall.log"}],"serial":"4d20c298-466b-413e-86f9-f9452d0e7f63","tags":[],"tools_permitted":true,"uname":"Linux raspberrypi 5.10.63-v7l+ #1457 SMP Tue Sep 28 11:26:14 BST 2021 armv7l ","upgrade_available":true,"url":"https://apps.dataplicity.com/devices/4d20c298-466b-413e-86f9-f9452d0e7f63/","wormhole_enabled":false,"wormhole_override":null,"wormhole_slug":"unmanaged-dalmatian-6525","wormhole_url":null,"wormhole_disabled_by_admin":false,"online":true},{"agent_version":"0.5.11","created_time":"2024-09-30T21:37:27.975664","delete_permitted":true,"description":"","diagnostics_permitted":true,"disk_capacity":31105859584,"disk_used":5657415680,"external_serial":null,"hostname":"raspberrypi","machine_manufacturer":"Sony UK","machine_model":"4B","machine_processor":"BCM2711","machine_ram":"8192","machine_revision":"1.5","machine_type_display":"Raspberry Pi 4 Model B","machine_type_short_display":"Pi 4 B","machine_type":"rpi_4b","name":"DEV: Rpi+Pisound DAS","operating_system":"Raspbian GNU/Linux 10 buster","port_forwarding_permitted":true,"ports_url":"https://apps.dataplicity.com/devices/7b0d83f8-f365-4b7a-b74a-03b1913d3c89/ports/","processor_speed":null,"ram_capacity":null,"reboot_url":"https://apps.dataplicity.com/devices/7b0d83f8-f365-4b7a-b74a-03b1913d3c89/reboot/","remote_directory_permitted":true,"remote_files":[{"path":"/var/log/dataplicity.log","url":"https://www.dataplicity.com/devices/7b0d83f8-f365-4b7a-b74a-03b1913d3c89/serve/var/log/dataplicity.log"},{"path":"/var/log/dataplicity-diagnostics.log","url":"https://www.dataplicity.com/devices/7b0d83f8-f365-4b7a-b74a-03b1913d3c89/serve/var/log/dataplicity-diagnostics.log"},{"path":"/var/log/dpinstall.log","url":"https://www.dataplicity.com/devices/7b0d83f8-f365-4b7a-b74a-03b1913d3c89/serve/var/log/dpinstall.log"}],"serial":"7b0d83f8-f365-4b7a-b74a-03b1913d3c89","tags":[],"tools_permitted":true,"uname":"Linux raspberrypi 5.10.63-v7l+ #1457 SMP Tue Sep 28 11:26:14 BST 2021 armv7l ","upgrade_available":true,"url":"https://apps.dataplicity.com/devices/7b0d83f8-f365-4b7a-b74a-03b1913d3c89/","wormhole_enabled":false,"wormhole_override":null,"wormhole_slug":"undisguised-pigeon-3828","wormhole_url":null,"wormhole_disabled_by_admin":false,"online":false},{"agent_version":"0.5.11","created_time":"2023-11-15T23:53:52.439172","delete_permitted":true,"description":"Rpi4+Pisound-jumpered for single Labcore40 50m via WDFW in PVC compression on outer piling.","diagnostics_permitted":true,"disk_capacity":30998466560,"disk_used":7356223488,"external_serial":null,"hostname":"raspberrypi","machine_manufacturer":"Sony UK","machine_model":"4B","machine_processor":"BCM2711","machine_ram":"4096","machine_revision":"1.1","machine_type_display":"Raspberry Pi 4 Model B","machine_type_short_display":"Pi 4 B","machine_type":"rpi_4b","name":"Live: Bush Point","operating_system":"Raspbian GNU/Linux 10 buster","port_forwarding_permitted":true,"ports_url":"https://apps.dataplicity.com/devices/408e935e-746b-47d6-b6ab-b3bd88ce0449/ports/","processor_speed":null,"ram_capacity":null,"reboot_url":"https://apps.dataplicity.com/devices/408e935e-746b-47d6-b6ab-b3bd88ce0449/reboot/","remote_directory_permitted":true,"remote_files":[{"path":"/var/log/dataplicity.log","url":"https://www.dataplicity.com/devices/408e935e-746b-47d6-b6ab-b3bd88ce0449/serve/var/log/dataplicity.log"},{"path":"/var/log/dataplicity-diagnostics.log","url":"https://www.dataplicity.com/devices/408e935e-746b-47d6-b6ab-b3bd88ce0449/serve/var/log/dataplicity-diagnostics.log"},{"path":"/var/log/dpinstall.log","url":"https://www.dataplicity.com/devices/408e935e-746b-47d6-b6ab-b3bd88ce0449/serve/var/log/dpinstall.log"}],"serial":"408e935e-746b-47d6-b6ab-b3bd88ce0449","tags":[],"tools_permitted":true,"uname":"Linux raspberrypi 5.10.63-v7l+ #1457 SMP Tue Sep 28 11:26:14 BST 2021 armv7l ","upgrade_available":true,"url":"https://apps.dataplicity.com/devices/408e935e-746b-47d6-b6ab-b3bd88ce0449/","wormhole_enabled":false,"wormhole_override":null,"wormhole_slug":"transmissive-gazelle-9071","wormhole_url":null,"wormhole_disabled_by_admin":false,"online":true},{"agent_version":"0.5.8","created_time":"2023-07-06T19:32:15.225545","delete_permitted":true,"description":"RPi4/4GB + Aquarian end cap (right) + Labcore40 (left)","diagnostics_permitted":true,"disk_capacity":30998466560,"disk_used":6130700288,"external_serial":null,"hostname":"raspberrypi","machine_manufacturer":"Sony UK","machine_model":"4B","machine_processor":"BCM2711","machine_ram":"4096","machine_revision":"1.1","machine_type_display":"Raspberry Pi 4 Model B","machine_type_short_display":"Pi 4 B","machine_type":"rpi_4b","name":"Live: MaST Center","operating_system":"Raspbian GNU/Linux 10 buster","port_forwarding_permitted":true,"ports_url":"https://apps.dataplicity.com/devices/4bfe0d60-dc77-4622-a960-9c78a664a1b6/ports/","processor_speed":null,"ram_capacity":null,"reboot_url":"https://apps.dataplicity.com/devices/4bfe0d60-dc77-4622-a960-9c78a664a1b6/reboot/","remote_directory_permitted":true,"remote_files":[{"path":"/var/log/dataplicity.log","url":"https://www.dataplicity.com/devices/4bfe0d60-dc77-4622-a960-9c78a664a1b6/serve/var/log/dataplicity.log"},{"path":"/var/log/dataplicity-diagnostics.log","url":"https://www.dataplicity.com/devices/4bfe0d60-dc77-4622-a960-9c78a664a1b6/serve/var/log/dataplicity-diagnostics.log"},{"path":"/var/log/dpinstall.log","url":"https://www.dataplicity.com/devices/4bfe0d60-dc77-4622-a960-9c78a664a1b6/serve/var/log/dpinstall.log"}],"serial":"4bfe0d60-dc77-4622-a960-9c78a664a1b6","tags":[],"tools_permitted":true,"uname":"Linux raspberrypi 4.19.97-v7l+ #1294 SMP Thu Jan 30 13:21:14 GMT 2020 armv7l ","upgrade_available":true,"url":"https://apps.dataplicity.com/devices/4bfe0d60-dc77-4622-a960-9c78a664a1b6/","wormhole_enabled":false,"wormhole_override":null,"wormhole_slug":"prothalloid-gaur-8586","wormhole_url":null,"wormhole_disabled_by_admin":false,"online":true},{"agent_version":"0.5.11","created_time":"2024-06-03T07:26:05.538608","delete_permitted":true,"description":"Rpi4+Pisound, 60m single CRT-40 in garden hose, via intertidal","diagnostics_permitted":true,"disk_capacity":31011049472,"disk_used":7359856640,"external_serial":null,"hostname":"raspberrypi","machine_manufacturer":"Sony UK","machine_model":"4B","machine_processor":"BCM2711","machine_ram":"2048","machine_revision":"1.1","machine_type_display":"Raspberry Pi 4 Model B","machine_type_short_display":"Pi 4 B","machine_type":"rpi_4b","name":"Live: North San Juan Channel","operating_system":"Raspbian GNU/Linux 10 buster","port_forwarding_permitted":true,"ports_url":"https://apps.dataplicity.com/devices/e5a0cb44-f37f-48e8-9eed-15230d7c4b5a/ports/","processor_speed":null,"ram_capacity":null,"reboot_url":"https://apps.dataplicity.com/devices/e5a0cb44-f37f-48e8-9eed-15230d7c4b5a/reboot/","remote_directory_permitted":true,"remote_files":[{"path":"/var/log/dataplicity.log","url":"https://www.dataplicity.com/devices/e5a0cb44-f37f-48e8-9eed-15230d7c4b5a/serve/var/log/dataplicity.log"},{"path":"/var/log/dataplicity-diagnostics.log","url":"https://www.dataplicity.com/devices/e5a0cb44-f37f-48e8-9eed-15230d7c4b5a/serve/var/log/dataplicity-diagnostics.log"},{"path":"/var/log/dpinstall.log","url":"https://www.dataplicity.com/devices/e5a0cb44-f37f-48e8-9eed-15230d7c4b5a/serve/var/log/dpinstall.log"}],"serial":"e5a0cb44-f37f-48e8-9eed-15230d7c4b5a","tags":[],"tools_permitted":true,"uname":"Linux raspberrypi 5.10.63-v7l+ #1457 SMP Tue Sep 28 11:26:14 BST 2021 armv7l ","upgrade_available":true,"url":"https://apps.dataplicity.com/devices/e5a0cb44-f37f-48e8-9eed-15230d7c4b5a/","wormhole_enabled":false,"wormhole_override":null,"wormhole_slug":"subbasal-cobra-3952","wormhole_url":null,"wormhole_disabled_by_admin":false,"online":true},{"agent_version":"0.5.8","created_time":"2023-08-05T16:48:19.820808","delete_permitted":true,"description":"Rpi4+Pisound, Aquarian A5 binaural array 60m via dual drainage pipes deployed 11/2024 (R=North?)","diagnostics_permitted":true,"disk_capacity":30952329216,"disk_used":6080917504,"external_serial":null,"hostname":"raspberrypi","machine_manufacturer":"Sony UK","machine_model":"4B","machine_processor":"BCM2711","machine_ram":"1024","machine_revision":"1.1","machine_type_display":"Raspberry Pi 4 Model B","machine_type_short_display":"Pi 4 B","machine_type":"rpi_4b","name":"Live: Orcasound Lab","operating_system":"Raspbian GNU/Linux 10 buster","port_forwarding_permitted":true,"ports_url":"https://apps.dataplicity.com/devices/84bb6fee-b38c-488e-adac-1a36bbb9a4da/ports/","processor_speed":null,"ram_capacity":null,"reboot_url":"https://apps.dataplicity.com/devices/84bb6fee-b38c-488e-adac-1a36bbb9a4da/reboot/","remote_directory_permitted":true,"remote_files":[{"path":"/var/log/dataplicity.log","url":"https://www.dataplicity.com/devices/84bb6fee-b38c-488e-adac-1a36bbb9a4da/serve/var/log/dataplicity.log"},{"path":"/var/log/dataplicity-diagnostics.log","url":"https://www.dataplicity.com/devices/84bb6fee-b38c-488e-adac-1a36bbb9a4da/serve/var/log/dataplicity-diagnostics.log"},{"path":"/var/log/dpinstall.log","url":"https://www.dataplicity.com/devices/84bb6fee-b38c-488e-adac-1a36bbb9a4da/serve/var/log/dpinstall.log"}],"serial":"84bb6fee-b38c-488e-adac-1a36bbb9a4da","tags":[],"tools_permitted":true,"uname":"Linux raspberrypi 4.19.97-v7l+ #1294 SMP Thu Jan 30 13:21:14 GMT 2020 armv7l ","upgrade_available":true,"url":"https://apps.dataplicity.com/devices/84bb6fee-b38c-488e-adac-1a36bbb9a4da/","wormhole_enabled":false,"wormhole_override":null,"wormhole_slug":"heftiest-shrew-7911","wormhole_url":null,"wormhole_disabled_by_admin":false,"online":true},{"agent_version":"0.5.11","created_time":"2024-08-30T17:38:40.172788","delete_permitted":true,"description":"Rpi and Pisound for Dave's experimentation","diagnostics_permitted":true,"disk_capacity":31011049472,"disk_used":7855517696,"external_serial":null,"hostname":"raspberrypi","machine_manufacturer":"Sony UK","machine_model":"4B","machine_processor":"BCM2711","machine_ram":"1024","machine_revision":"1.5","machine_type_display":"Raspberry Pi 4 Model B","machine_type_short_display":"Pi 4 B","machine_type":"rpi_4b","name":"Live: Rpi Andrews Bay","operating_system":"Raspbian GNU/Linux 10 buster","port_forwarding_permitted":true,"ports_url":"https://apps.dataplicity.com/devices/7dcdf551-6283-4867-a0d4-13dc587e4233/ports/","processor_speed":null,"ram_capacity":null,"reboot_url":"https://apps.dataplicity.com/devices/7dcdf551-6283-4867-a0d4-13dc587e4233/reboot/","remote_directory_permitted":true,"remote_files":[{"path":"/var/log/dataplicity.log","url":"https://www.dataplicity.com/devices/7dcdf551-6283-4867-a0d4-13dc587e4233/serve/var/log/dataplicity.log"},{"path":"/var/log/dataplicity-diagnostics.log","url":"https://www.dataplicity.com/devices/7dcdf551-6283-4867-a0d4-13dc587e4233/serve/var/log/dataplicity-diagnostics.log"},{"path":"/var/log/dpinstall.log","url":"https://www.dataplicity.com/devices/7dcdf551-6283-4867-a0d4-13dc587e4233/serve/var/log/dpinstall.log"}],"serial":"7dcdf551-6283-4867-a0d4-13dc587e4233","tags":[],"tools_permitted":true,"uname":"Linux raspberrypi 5.10.63-v7l+ #1457 SMP Tue Sep 28 11:26:14 BST 2021 armv7l ","upgrade_available":true,"url":"https://apps.dataplicity.com/devices/7dcdf551-6283-4867-a0d4-13dc587e4233/","wormhole_enabled":false,"wormhole_override":null,"wormhole_slug":"bailable-seaurchin-6331","wormhole_url":null,"wormhole_disabled_by_admin":false,"online":false},{"agent_version":"0.4.32","created_time":"2018-12-06T18:52:43.688233","delete_permitted":true,"description":"RPi3b+Pisound dual Labcore40 on pilings of Port Townsend Marine Science Center","diagnostics_permitted":true,"disk_capacity":31440371712,"disk_used":3889233920,"external_serial":null,"hostname":"raspberrypi","machine_manufacturer":"Sony UK","machine_model":"3B+","machine_processor":"BCM2837","machine_ram":"1024","machine_revision":"1.3","machine_type_display":"Raspberry Pi 3 Model B+","machine_type_short_display":"Pi 3 B+","machine_type":"rpi_3b_plus","name":"Live: Rpi Port Townsend","operating_system":"debian 9.4","port_forwarding_permitted":true,"ports_url":"https://apps.dataplicity.com/devices/2881d3c2-4c57-41eb-9cde-5f10b4e8933a/ports/","processor_speed":null,"ram_capacity":null,"reboot_url":"https://apps.dataplicity.com/devices/2881d3c2-4c57-41eb-9cde-5f10b4e8933a/reboot/","remote_directory_permitted":false,"remote_files":[{"path":"/var/log/dataplicity.log","url":"https://www.dataplicity.com/devices/2881d3c2-4c57-41eb-9cde-5f10b4e8933a/serve/var/log/dataplicity.log"},{"path":"/var/log/dataplicity-diagnostics.log","url":"https://www.dataplicity.com/devices/2881d3c2-4c57-41eb-9cde-5f10b4e8933a/serve/var/log/dataplicity-diagnostics.log"},{"path":"/var/log/dpinstall.log","url":"https://www.dataplicity.com/devices/2881d3c2-4c57-41eb-9cde-5f10b4e8933a/serve/var/log/dpinstall.log"}],"serial":"2881d3c2-4c57-41eb-9cde-5f10b4e8933a","tags":[],"tools_permitted":true,"uname":"Linux raspberrypi 4.14.71-v7+ #1145 SMP Fri Sep 21 15:38:35 BST 2018 armv7l ","upgrade_available":true,"url":"https://apps.dataplicity.com/devices/2881d3c2-4c57-41eb-9cde-5f10b4e8933a/","wormhole_enabled":false,"wormhole_override":null,"wormhole_slug":"offenceless-sponge-0442","wormhole_url":null,"wormhole_disabled_by_admin":false,"online":true},{"agent_version":"0.5.11","created_time":"2024-05-31T00:39:39.137053","delete_permitted":true,"description":"RPi4+Pisound single SQ26-08 in hose at base of ladder (orcanode from clone 5/30/24)","diagnostics_permitted":true,"disk_capacity":31011049472,"disk_used":7342497792,"external_serial":null,"hostname":"raspberrypi","machine_manufacturer":"Sony UK","machine_model":"4B","machine_processor":"BCM2711","machine_ram":"8192","machine_revision":"1.4","machine_type_display":"Raspberry Pi 4 Model B","machine_type_short_display":"Pi 4 B","machine_type":"rpi_4b","name":"Live: Rpi Sunset Bay","operating_system":"Raspbian GNU/Linux 10 buster","port_forwarding_permitted":true,"ports_url":"https://apps.dataplicity.com/devices/de353bfe-b252-4259-a944-285942290953/ports/","processor_speed":null,"ram_capacity":null,"reboot_url":"https://apps.dataplicity.com/devices/de353bfe-b252-4259-a944-285942290953/reboot/","remote_directory_permitted":true,"remote_files":[{"path":"/var/log/dataplicity.log","url":"https://www.dataplicity.com/devices/de353bfe-b252-4259-a944-285942290953/serve/var/log/dataplicity.log"},{"path":"/var/log/dataplicity-diagnostics.log","url":"https://www.dataplicity.com/devices/de353bfe-b252-4259-a944-285942290953/serve/var/log/dataplicity-diagnostics.log"},{"path":"/var/log/dpinstall.log","url":"https://www.dataplicity.com/devices/de353bfe-b252-4259-a944-285942290953/serve/var/log/dpinstall.log"}],"serial":"de353bfe-b252-4259-a944-285942290953","tags":[],"tools_permitted":true,"uname":"Linux raspberrypi 5.10.63-v7l+ #1457 SMP Tue Sep 28 11:26:14 BST 2021 armv7l ","upgrade_available":true,"url":"https://apps.dataplicity.com/devices/de353bfe-b252-4259-a944-285942290953/","wormhole_enabled":false,"wormhole_override":null,"wormhole_slug":"curative-ostrich-2463","wormhole_url":null,"wormhole_disabled_by_admin":false,"online":true},{"agent_version":"0.5.8","created_time":"2023-05-20T16:54:09.337098","delete_permitted":true,"description":"Rpi3B+ w/Chromium kiosk atop Langley Whale Center booth","diagnostics_permitted":true,"disk_capacity":61943808000,"disk_used":5193359360,"external_serial":null,"hostname":"raspberrypi","machine_manufacturer":"Sony UK","machine_model":"3B+","machine_processor":"BCM2837","machine_ram":"1024","machine_revision":"1.3","machine_type_display":"Raspberry Pi 3 Model B+","machine_type_short_display":"Pi 3 B+","machine_type":"rpi_3b_plus","name":"Pat Price ocean listening exhibit","operating_system":"Raspbian GNU/Linux 11 bullseye","port_forwarding_permitted":true,"ports_url":"https://apps.dataplicity.com/devices/568f94b7-0598-4944-83d9-6dbf405c2392/ports/","processor_speed":null,"ram_capacity":null,"reboot_url":"https://apps.dataplicity.com/devices/568f94b7-0598-4944-83d9-6dbf405c2392/reboot/","remote_directory_permitted":true,"remote_files":[{"path":"/var/log/dataplicity.log","url":"https://www.dataplicity.com/devices/568f94b7-0598-4944-83d9-6dbf405c2392/serve/var/log/dataplicity.log"},{"path":"/var/log/dataplicity-diagnostics.log","url":"https://www.dataplicity.com/devices/568f94b7-0598-4944-83d9-6dbf405c2392/serve/var/log/dataplicity-diagnostics.log"},{"path":"/var/log/dpinstall.log","url":"https://www.dataplicity.com/devices/568f94b7-0598-4944-83d9-6dbf405c2392/serve/var/log/dpinstall.log"}],"serial":"568f94b7-0598-4944-83d9-6dbf405c2392","tags":[],"tools_permitted":true,"uname":"Linux raspberrypi 6.1.21-v7+ #1642 SMP Mon Apr  3 17:20:52 BST 2023 armv7l ","upgrade_available":true,"url":"https://apps.dataplicity.com/devices/568f94b7-0598-4944-83d9-6dbf405c2392/","wormhole_enabled":false,"wormhole_override":null,"wormhole_slug":"nonillionth-himalayan-5601","wormhole_url":null,"wormhole_disabled_by_admin":false,"online":true}]
+{
+  "count": 11,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "hash_id": "a3b2c8c7179a88022f0ef0e42b09be284e1971854556467a7d6b9d9ca62c5748",
+      "router_device_name": "4d20c298-466b-413e-86f9-f9452d0e7f63",
+      "name": "Beta: Point Robinson",
+      "hostname": "raspberrypi",
+      "is_online": true,
+      "is_active": true,
+      "enabled": true,
+      "status": "online",
+      "device_class": {
+        "hash_id": "9ad6f59d5f8ecfe1d802d40acdc2158f6c1a53d71c0b64c581ede77ce2a3c0f2",
+        "name": "Default"
+      },
+      "vendor_name": "Beta: Point Robinson",
+      "vendor_description": "Relay of hydrophone via OrcaCam YouTube stream",
+      "tag_names": [],
+      "vendor_tag_names": [],
+      "created_at": "2023-10-13T22:25:32.153854Z",
+      "last_heartbeat": "2026-05-27T20:42:14.340988Z",
+      "property_tags": [
+        "device_class:default",
+        "status:online",
+        "network:default",
+        "organisation:orcasound",
+        "location:country:united-states",
+        "location:region:washington",
+        "location:city:kirkland",
+        "location:asn:7922",
+        "location:isp:comcast"
+      ],
+      "developer_serial": "7D6B9D9CA62C5748",
+      "current_firmware_version": null,
+      "latest_firmware_version": null,
+      "network_hash": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+      "wormhole_enabled": false,
+      "wormhole_disabled_by_admin": false,
+      "wormhole_slug": "unmanaged-dalmatian-6525",
+      "wormhole_override": null,
+      "network": {
+        "hash_id": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+        "name": "Default",
+        "organisation": {
+          "hash_id": "dc62a5d1f9f507e23da3d75ddcfeb1f5a48011fb00c56eba0afd409d24ae20b2",
+          "name": "Orcasound"
+        }
+      }
+    },
+    {
+      "hash_id": "68fde806a767a1a4b3d8517ab7dcd0f6c2b9e3f8edabce42879977f9697821e1",
+      "router_device_name": "7b0d83f8-f365-4b7a-b74a-03b1913d3c89",
+      "name": "DEV: Rpi+Pisound DAS",
+      "hostname": "raspberrypi",
+      "is_online": false,
+      "is_active": true,
+      "enabled": true,
+      "status": "offline",
+      "device_class": {
+        "hash_id": "9ad6f59d5f8ecfe1d802d40acdc2158f6c1a53d71c0b64c581ede77ce2a3c0f2",
+        "name": "Default"
+      },
+      "vendor_name": "DEV: Rpi+Pisound DAS",
+      "vendor_description": null,
+      "tag_names": [],
+      "vendor_tag_names": [],
+      "created_at": "2024-09-30T21:37:27.975664Z",
+      "last_heartbeat": "2024-10-10T23:02:34.364811Z",
+      "property_tags": [
+        "device_class:default",
+        "status:offline",
+        "network:default",
+        "organisation:orcasound"
+      ],
+      "developer_serial": "879977F9697821E1",
+      "current_firmware_version": null,
+      "latest_firmware_version": null,
+      "network_hash": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+      "wormhole_enabled": false,
+      "wormhole_disabled_by_admin": false,
+      "wormhole_slug": "undisguised-pigeon-3828",
+      "wormhole_override": null,
+      "network": {
+        "hash_id": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+        "name": "Default",
+        "organisation": {
+          "hash_id": "dc62a5d1f9f507e23da3d75ddcfeb1f5a48011fb00c56eba0afd409d24ae20b2",
+          "name": "Orcasound"
+        }
+      }
+    },
+    {
+      "hash_id": "e1e25ddf7fbe17e5544c1efdfc8d0f1bd708175e144ee3c31bd98a4350b40910",
+      "router_device_name": "408e935e-746b-47d6-b6ab-b3bd88ce0449",
+      "name": "Live: Bush Point",
+      "hostname": "raspberrypi",
+      "is_online": true,
+      "is_active": true,
+      "enabled": true,
+      "status": "online",
+      "device_class": {
+        "hash_id": "9ad6f59d5f8ecfe1d802d40acdc2158f6c1a53d71c0b64c581ede77ce2a3c0f2",
+        "name": "Default"
+      },
+      "vendor_name": "Live: Bush Point",
+      "vendor_description": "Rpi4+Pisound-jumpered for single Labcore40 50m via WDFW in PVC compression on outer piling.",
+      "tag_names": [],
+      "vendor_tag_names": [],
+      "created_at": "2023-11-15T23:53:52.439172Z",
+      "last_heartbeat": "2026-05-27T21:04:52.087927Z",
+      "property_tags": [
+        "device_class:default",
+        "status:online",
+        "network:default",
+        "organisation:orcasound",
+        "location:country:united-states",
+        "location:region:washington",
+        "location:city:freeland",
+        "location:asn:3853"
+      ],
+      "developer_serial": "1BD98A4350B40910",
+      "current_firmware_version": null,
+      "latest_firmware_version": null,
+      "network_hash": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+      "wormhole_enabled": false,
+      "wormhole_disabled_by_admin": false,
+      "wormhole_slug": "transmissive-gazelle-9071",
+      "wormhole_override": null,
+      "network": {
+        "hash_id": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+        "name": "Default",
+        "organisation": {
+          "hash_id": "dc62a5d1f9f507e23da3d75ddcfeb1f5a48011fb00c56eba0afd409d24ae20b2",
+          "name": "Orcasound"
+        }
+      }
+    },
+    {
+      "hash_id": "d0028a760b397c3691e6d633b7290f1ff898265bbe229f778555cbb81a185b56",
+      "router_device_name": "4bfe0d60-dc77-4622-a960-9c78a664a1b6",
+      "name": "Live: MaST Center",
+      "hostname": "raspberrypi",
+      "is_online": true,
+      "is_active": true,
+      "enabled": true,
+      "status": "online",
+      "device_class": {
+        "hash_id": "9ad6f59d5f8ecfe1d802d40acdc2158f6c1a53d71c0b64c581ede77ce2a3c0f2",
+        "name": "Default"
+      },
+      "vendor_name": "Live: MaST Center",
+      "vendor_description": "RPi4/4GB + Aquarian end cap (right) + Labcore40 (left)",
+      "tag_names": [],
+      "vendor_tag_names": [],
+      "created_at": "2023-07-06T19:32:15.225545Z",
+      "last_heartbeat": "2026-05-27T20:50:30.461113Z",
+      "property_tags": [
+        "device_class:default",
+        "status:online",
+        "network:default",
+        "organisation:orcasound",
+        "location:country:united-states",
+        "location:region:washington",
+        "location:city:bellevue",
+        "location:asn:10430"
+      ],
+      "developer_serial": "8555CBB81A185B56",
+      "current_firmware_version": null,
+      "latest_firmware_version": null,
+      "network_hash": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+      "wormhole_enabled": false,
+      "wormhole_disabled_by_admin": false,
+      "wormhole_slug": "prothalloid-gaur-8586",
+      "wormhole_override": null,
+      "network": {
+        "hash_id": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+        "name": "Default",
+        "organisation": {
+          "hash_id": "dc62a5d1f9f507e23da3d75ddcfeb1f5a48011fb00c56eba0afd409d24ae20b2",
+          "name": "Orcasound"
+        }
+      }
+    },
+    {
+      "hash_id": "10fb7368de44a8a6ae268b067145deca097ed49f35de9207ff67aa6a3ae11e89",
+      "router_device_name": "e5a0cb44-f37f-48e8-9eed-15230d7c4b5a",
+      "name": "Live: North San Juan Channel",
+      "hostname": "raspberrypi",
+      "is_online": false,
+      "is_active": true,
+      "enabled": true,
+      "status": "offline",
+      "device_class": {
+        "hash_id": "9ad6f59d5f8ecfe1d802d40acdc2158f6c1a53d71c0b64c581ede77ce2a3c0f2",
+        "name": "Default"
+      },
+      "vendor_name": "Live: North San Juan Channel",
+      "vendor_description": "Rpi4+Pisound, 60m single CRT-40 in garden hose, via intertidal",
+      "tag_names": [],
+      "vendor_tag_names": [],
+      "created_at": "2024-06-03T07:26:05.538608Z",
+      "last_heartbeat": "2026-05-27T20:51:02.587371Z",
+      "property_tags": [
+        "device_class:default",
+        "status:offline",
+        "network:default",
+        "organisation:orcasound",
+        "location:country:united-states",
+        "location:region:washington",
+        "location:city:friday-harbor",
+        "location:asn:19518"
+      ],
+      "developer_serial": "FF67AA6A3AE11E89",
+      "current_firmware_version": null,
+      "latest_firmware_version": null,
+      "network_hash": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+      "wormhole_enabled": false,
+      "wormhole_disabled_by_admin": false,
+      "wormhole_slug": "subbasal-cobra-3952",
+      "wormhole_override": null,
+      "network": {
+        "hash_id": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+        "name": "Default",
+        "organisation": {
+          "hash_id": "dc62a5d1f9f507e23da3d75ddcfeb1f5a48011fb00c56eba0afd409d24ae20b2",
+          "name": "Orcasound"
+        }
+      }
+    },
+    {
+      "hash_id": "fa8cb012d842e5d539b1b0d4090976c10eb70d71ed0f33f0abc1a338b7a285fd",
+      "router_device_name": "95d1dce7-b153-48e6-8da8-81330fa6b00e",
+      "name": "Live: Orcasound Lab",
+      "hostname": "raspberrypi",
+      "is_online": false,
+      "is_active": true,
+      "enabled": true,
+      "status": "offline",
+      "device_class": {
+        "hash_id": "9ad6f59d5f8ecfe1d802d40acdc2158f6c1a53d71c0b64c581ede77ce2a3c0f2",
+        "name": "Default"
+      },
+      "vendor_name": "Live: Orcasound Lab",
+      "vendor_description": "Rpi4+Pisound, Aquarian A5 binaural array 60m via dual drainage pipes deployed 11/2024 (R=North?)",
+      "tag_names": [],
+      "vendor_tag_names": [],
+      "created_at": "2026-02-20T01:04:58.787343Z",
+      "last_heartbeat": "2026-05-07T07:59:31.015272Z",
+      "property_tags": [
+        "device_class:default",
+        "status:offline",
+        "network:default",
+        "organisation:orcasound"
+      ],
+      "developer_serial": "ABC1A338B7A285FD",
+      "current_firmware_version": null,
+      "latest_firmware_version": null,
+      "network_hash": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+      "wormhole_enabled": false,
+      "wormhole_disabled_by_admin": false,
+      "wormhole_slug": "another-warthog-3478",
+      "wormhole_override": null,
+      "network": {
+        "hash_id": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+        "name": "Default",
+        "organisation": {
+          "hash_id": "dc62a5d1f9f507e23da3d75ddcfeb1f5a48011fb00c56eba0afd409d24ae20b2",
+          "name": "Orcasound"
+        }
+      }
+    },
+    {
+      "hash_id": "59b31cb068e3221a8728a12f79de1bd3ecbdb0b4c61eabe3d9d6b2ea6e6fba48",
+      "router_device_name": "7dcdf551-6283-4867-a0d4-13dc587e4233",
+      "name": "Live: Rpi Andrews Bay",
+      "hostname": "raspberrypi",
+      "is_online": false,
+      "is_active": true,
+      "enabled": true,
+      "status": "offline",
+      "device_class": {
+        "hash_id": "9ad6f59d5f8ecfe1d802d40acdc2158f6c1a53d71c0b64c581ede77ce2a3c0f2",
+        "name": "Default"
+      },
+      "vendor_name": "Live: Rpi Andrews Bay",
+      "vendor_description": "Rpi+Pisound at Andrews Bay",
+      "tag_names": [],
+      "vendor_tag_names": [],
+      "created_at": "2024-08-30T17:38:40.172788Z",
+      "last_heartbeat": "2026-05-04T18:19:23.956759Z",
+      "property_tags": [
+        "device_class:default",
+        "status:offline",
+        "network:default",
+        "organisation:orcasound"
+      ],
+      "developer_serial": "D9D6B2EA6E6FBA48",
+      "current_firmware_version": null,
+      "latest_firmware_version": null,
+      "network_hash": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+      "wormhole_enabled": false,
+      "wormhole_disabled_by_admin": false,
+      "wormhole_slug": "bailable-seaurchin-6331",
+      "wormhole_override": null,
+      "network": {
+        "hash_id": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+        "name": "Default",
+        "organisation": {
+          "hash_id": "dc62a5d1f9f507e23da3d75ddcfeb1f5a48011fb00c56eba0afd409d24ae20b2",
+          "name": "Orcasound"
+        }
+      }
+    },
+    {
+      "hash_id": "335ffd05a11d3acaad24b7858cc9724ee5c88a132e19f94258edcea0eced1304",
+      "router_device_name": "2881d3c2-4c57-41eb-9cde-5f10b4e8933a",
+      "name": "Live: Rpi Port Townsend",
+      "hostname": "raspberrypi",
+      "is_online": true,
+      "is_active": true,
+      "enabled": true,
+      "status": "online",
+      "device_class": {
+        "hash_id": "9ad6f59d5f8ecfe1d802d40acdc2158f6c1a53d71c0b64c581ede77ce2a3c0f2",
+        "name": "Default"
+      },
+      "vendor_name": "Live: Rpi Port Townsend",
+      "vendor_description": "RPi3b+Pisound dual Labcore40 on pilings of Port Townsend Marine Science Center",
+      "tag_names": [],
+      "vendor_tag_names": [],
+      "created_at": "2018-12-06T18:52:43.688233Z",
+      "last_heartbeat": "2026-05-27T20:39:36.733444Z",
+      "property_tags": [
+        "device_class:default",
+        "status:online",
+        "network:default",
+        "organisation:orcasound",
+        "location:country:united-states",
+        "location:region:washington",
+        "location:city:pasco",
+        "location:asn:16713"
+      ],
+      "developer_serial": "58EDCEA0ECED1304",
+      "current_firmware_version": null,
+      "latest_firmware_version": null,
+      "network_hash": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+      "wormhole_enabled": false,
+      "wormhole_disabled_by_admin": false,
+      "wormhole_slug": "offenceless-sponge-0442",
+      "wormhole_override": null,
+      "network": {
+        "hash_id": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+        "name": "Default",
+        "organisation": {
+          "hash_id": "dc62a5d1f9f507e23da3d75ddcfeb1f5a48011fb00c56eba0afd409d24ae20b2",
+          "name": "Orcasound"
+        }
+      }
+    },
+    {
+      "hash_id": "07d1a80b52881a533952085be74a68c23e46588eb59199eb4299d1737bd0c351",
+      "router_device_name": "de353bfe-b252-4259-a944-285942290953",
+      "name": "Live: Rpi Sunset Bay",
+      "hostname": "raspberrypi",
+      "is_online": true,
+      "is_active": true,
+      "enabled": true,
+      "status": "online",
+      "device_class": {
+        "hash_id": "9ad6f59d5f8ecfe1d802d40acdc2158f6c1a53d71c0b64c581ede77ce2a3c0f2",
+        "name": "Default"
+      },
+      "vendor_name": "Live: Rpi Sunset Bay",
+      "vendor_description": "RPi4+Pisound single SQ26-08 in hose at base of ladder (orcanode from clone 5/30/24)",
+      "tag_names": [],
+      "vendor_tag_names": [],
+      "created_at": "2024-05-31T00:39:39.137053Z",
+      "last_heartbeat": "2026-05-27T20:30:59.523813Z",
+      "property_tags": [
+        "device_class:default",
+        "status:online",
+        "network:default",
+        "organisation:orcasound",
+        "location:country:united-states",
+        "location:region:washington",
+        "location:city:edmonds",
+        "location:asn:7922",
+        "location:isp:comcast"
+      ],
+      "developer_serial": "4299D1737BD0C351",
+      "current_firmware_version": null,
+      "latest_firmware_version": null,
+      "network_hash": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+      "wormhole_enabled": false,
+      "wormhole_disabled_by_admin": false,
+      "wormhole_slug": "curative-ostrich-2463",
+      "wormhole_override": null,
+      "network": {
+        "hash_id": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+        "name": "Default",
+        "organisation": {
+          "hash_id": "dc62a5d1f9f507e23da3d75ddcfeb1f5a48011fb00c56eba0afd409d24ae20b2",
+          "name": "Orcasound"
+        }
+      }
+    },
+    {
+      "hash_id": "60f0400f761cda6c2b39cd8f5b77616ea4f2c09b90245900dd7b18073721a10a",
+      "router_device_name": "568f94b7-0598-4944-83d9-6dbf405c2392",
+      "name": "Pat Price ocean listening exhibit",
+      "hostname": "raspberrypi",
+      "is_online": true,
+      "is_active": true,
+      "enabled": true,
+      "status": "online",
+      "device_class": {
+        "hash_id": "9ad6f59d5f8ecfe1d802d40acdc2158f6c1a53d71c0b64c581ede77ce2a3c0f2",
+        "name": "Default"
+      },
+      "vendor_name": "Pat Price ocean listening exhibit",
+      "vendor_description": "Rpi3B+ w/Chromium kiosk atop Langley Whale Center booth",
+      "tag_names": [],
+      "vendor_tag_names": [],
+      "created_at": "2023-05-20T16:54:09.337098Z",
+      "last_heartbeat": "2026-05-27T20:23:59.697205Z",
+      "property_tags": [
+        "device_class:default",
+        "status:online",
+        "network:default",
+        "organisation:orcasound",
+        "location:country:united-states",
+        "location:region:washington",
+        "location:city:langley",
+        "location:asn:3853"
+      ],
+      "developer_serial": "DD7B18073721A10A",
+      "current_firmware_version": null,
+      "latest_firmware_version": null,
+      "network_hash": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+      "wormhole_enabled": false,
+      "wormhole_disabled_by_admin": false,
+      "wormhole_slug": "nonillionth-himalayan-5601",
+      "wormhole_override": null,
+      "network": {
+        "hash_id": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+        "name": "Default",
+        "organisation": {
+          "hash_id": "dc62a5d1f9f507e23da3d75ddcfeb1f5a48011fb00c56eba0afd409d24ae20b2",
+          "name": "Orcasound"
+        }
+      }
+    },
+    {
+      "hash_id": "3d53c95e0ee171869c09fa2859ef607958f89deeeb989adb593919ea877a68d3",
+      "router_device_name": "77140dfc-8c0f-4b1b-9197-5011c5ec1d5f",
+      "name": "raspberrypi",
+      "hostname": "raspberrypi",
+      "is_online": false,
+      "is_active": true,
+      "enabled": true,
+      "status": "offline",
+      "device_class": {
+        "hash_id": "9ad6f59d5f8ecfe1d802d40acdc2158f6c1a53d71c0b64c581ede77ce2a3c0f2",
+        "name": "Default"
+      },
+      "vendor_name": "raspberrypi",
+      "vendor_description": null,
+      "tag_names": [],
+      "vendor_tag_names": [],
+      "created_at": "2026-04-16T16:23:21.642300Z",
+      "last_heartbeat": "2026-04-23T15:34:32.213882Z",
+      "property_tags": [
+        "device_class:default",
+        "status:offline",
+        "network:default",
+        "organisation:orcasound"
+      ],
+      "developer_serial": "593919EA877A68D3",
+      "current_firmware_version": null,
+      "latest_firmware_version": null,
+      "network_hash": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+      "wormhole_enabled": false,
+      "wormhole_disabled_by_admin": false,
+      "wormhole_slug": "carpetbag-shrimp-4366",
+      "wormhole_override": null,
+      "network": {
+        "hash_id": "90d48fbd43eae41237894eb375386a906ada9b480a4f214d69b2987e97080f28",
+        "name": "Default",
+        "organisation": {
+          "hash_id": "dc62a5d1f9f507e23da3d75ddcfeb1f5a48011fb00c56eba0afd409d24ae20b2",
+          "name": "Orcasound"
+        }
+      }
+    }
+  ]
+}

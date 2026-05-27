@@ -76,7 +76,7 @@ namespace OrcanodeMonitor.Core
 
             // Mock the GET request to dataplicity.
             container.AddJsonResponse(
-                $"https://apps.dataplicity.com/devices/{TestDataplicityDeviceSerial}/",
+                $"https://gateway.dataplicity.com/api/organisations/*/devices/{TestDataplicityDeviceSerial}/",
                 "DataplicityGetRequestWithSerial.json");
 
             container.AddJsonResponse(
@@ -96,7 +96,7 @@ namespace OrcanodeMonitor.Core
                 "MezmoExportLog.json");
 
             container.AddJsonResponse(
-                "https://apps.dataplicity.com/devices/",
+                "https://gateway.dataplicity.com/api/organisations/*/devices/",
                 "DataplicityGetRequest.json");
 
             container.AddJsonResponse(
