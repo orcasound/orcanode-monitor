@@ -258,16 +258,6 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeUptimePercentageTextColor(Orcanode node) => GetTextColor(NodeUptimePercentageBackgroundColor(node));
 
-        public string NodeDataplicityUpgradeColor(Orcanode node)
-        {
-            OrcanodeUpgradeStatus status = node.DataplicityUpgradeStatus;
-            if (status == OrcanodeUpgradeStatus.UpgradeAvailable)
-            {
-                return ColorTranslator.ToHtml(Color.Yellow);
-            }
-            return ColorTranslator.ToHtml(Color.LightGreen);
-        }
-
         public string NodeDiskUsagePercentageColor(Orcanode node)
         {
             long percentage = node.DiskUsagePercentage;

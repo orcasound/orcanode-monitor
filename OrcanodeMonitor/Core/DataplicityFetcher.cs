@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
+using Amazon.Runtime.Internal.Endpoints.StandardLibrary;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Data;
@@ -17,6 +18,30 @@ namespace OrcanodeMonitor.Core
 
         public async static Task<string> GetDataplicityDataAsync(string serial, ILogger logger)
         {
+            if (!serial.IsNullOrEmpty())
+            {
+                string jsonObject = await GetDataplicityDataAsync(string.Empty, logger);
+
+                var devicesObject = JsonSerializer.Deserialize<JsonElement>(jsonObject);
+                if (devicesObject.ValueKind == JsonValueKind.Object &&
+                    devicesObject.TryGetProperty("results", out var resultsArray) &&
+                    resultsArray.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (JsonElement device in resultsArray.EnumerateArray())
+                    {
+                        if (device.TryGetProperty("router_device_name", out var routerDeviceName) &&
+                            routerDeviceName.GetString() == serial)
+                        {
+                            JsonElement redactedDevice = RedactHashIds(device);
+                            return JsonSerializer.Serialize(redactedDevice, new JsonSerializerOptions { WriteIndented = true });
+                        }
+                    }
+                }
+
+                logger.LogWarning($"[GetDataplicityDataAsync] Device with router_device_name '{serial}' not found");
+                return string.Empty;
+            }
+
             try
             {
                 string? dataplicityApiKey = Fetcher.GetConfig("DATAPLICITY_API_KEY");
@@ -33,10 +58,6 @@ namespace OrcanodeMonitor.Core
                     return string.Empty;
                 }
                 string url = _dataplicityDevicesUrl.Replace("$ORG_HASH", dataplicityOrgHash);
-                if (!serial.IsNullOrEmpty())
-                {
-                    url += serial + "/";
-                }
 
                 using (var request = new HttpRequestMessage
                 {
@@ -170,7 +191,7 @@ namespace OrcanodeMonitor.Core
                     var unknownNodes = originalList.Where(n => !string.IsNullOrEmpty(n.DataplicitySerial));
                     foreach (var unknownNode in unknownNodes)
                     {
-                        unknownNode.DataplicityUpgradeAvailable = null;
+                        unknownNode.DataplicityOnline = null;
                     }
                     MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
                     await Fetcher.SaveChangesAsync(context);
@@ -365,6 +386,57 @@ namespace OrcanodeMonitor.Core
         {
             string value = string.Format("{0}G", node.DiskCapacityInGigs);
             Fetcher.AddOrcanodeEvent(context, logger, node, OrcanodeEventTypes.SDCardSize, value);
+        }
+
+        /// <summary>
+        /// Recursively redact all "hash_id" properties in a JSON element.
+        /// </summary>
+        /// <param name="element">JSON element to process</param>
+        /// <returns>New JSON element with hash_id values redacted</returns>
+        private static JsonElement RedactHashIds(JsonElement element)
+        {
+            if (element.ValueKind == JsonValueKind.Object)
+            {
+                var dict = new Dictionary<string, object?>();
+                foreach (JsonProperty property in element.EnumerateObject())
+                {
+                    if (property.Name.Contains("hash"))
+                    {
+                        dict[property.Name] = "(redacted)";
+                    }
+                    else if (property.Value.ValueKind == JsonValueKind.Object)
+                    {
+                        // Recursively redact nested objects
+                        dict[property.Name] = JsonSerializer.Deserialize<Dictionary<string, object?>>(
+                            JsonSerializer.Serialize(RedactHashIds(property.Value)));
+                    }
+                    else if (property.Value.ValueKind == JsonValueKind.Array)
+                    {
+                        // Recursively redact array elements
+                        var array = new List<object?>();
+                        foreach (JsonElement arrayElement in property.Value.EnumerateArray())
+                        {
+                            if (arrayElement.ValueKind == JsonValueKind.Object)
+                            {
+                                array.Add(JsonSerializer.Deserialize<Dictionary<string, object?>>(
+                                    JsonSerializer.Serialize(RedactHashIds(arrayElement))));
+                            }
+                            else
+                            {
+                                array.Add(JsonSerializer.Deserialize<object>(arrayElement.GetRawText()));
+                            }
+                        }
+                        dict[property.Name] = array;
+                    }
+                    else
+                    {
+                        // Preserve other property values as-is
+                        dict[property.Name] = JsonSerializer.Deserialize<object>(property.Value.GetRawText());
+                    }
+                }
+                return JsonSerializer.SerializeToElement(dict);
+            }
+            return element;
         }
     }
 }
