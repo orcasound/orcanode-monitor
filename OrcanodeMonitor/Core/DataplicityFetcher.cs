@@ -21,9 +21,25 @@ namespace OrcanodeMonitor.Core
             if (!serial.IsNullOrEmpty())
             {
                 string jsonObject = await GetDataplicityDataAsync(string.Empty, logger);
+                if (jsonObject.IsNullOrEmpty())
+                {
+                    logger.LogWarning($"[GetDataplicityDataAsync] Empty Dataplicity payload while searching for router_device_name '{serial}'");
+                    return string.Empty;
+                }
 
-                var devicesObject = JsonSerializer.Deserialize<JsonElement>(jsonObject);
+                JsonElement devicesObject;
+                try
+                {
+                    devicesObject = JsonSerializer.Deserialize<JsonElement>(jsonObject);
+                }
+                catch (JsonException ex)
+                {
+                    logger.LogError(ex, "[GetDataplicityDataAsync] Invalid Dataplicity JSON payload");
+                    return string.Empty;
+                }
                 if (devicesObject.ValueKind == JsonValueKind.Object &&
+                    devicesObject.TryGetProperty("results", out var resultsArray) &&
+                    resultsArray.ValueKind == JsonValueKind.Array)
                     devicesObject.TryGetProperty("results", out var resultsArray) &&
                     resultsArray.ValueKind == JsonValueKind.Array)
                 {
