@@ -432,19 +432,17 @@ namespace OrcanodeMonitor.Models
         public long DiskCapacityInGigs => (long)Math.Round(DiskCapacity / 1000000_000.0);
 
 
-        public OrcanodeUpgradeStatus DataplicityUpgradeStatus => DataplicityUpgradeAvailable ?? false ? OrcanodeUpgradeStatus.UpgradeAvailable : OrcanodeUpgradeStatus.UpToDate;
         public OrcanodeOnlineStatus DataplicityConnectionStatus
         {
             get
             {
-                if (!string.IsNullOrEmpty(DataplicitySerial) && !DataplicityUpgradeAvailable.HasValue)
+                if (string.IsNullOrEmpty(DataplicitySerial))
                 {
-                    // Status is unknown.
-                    return OrcanodeOnlineStatus.Unknown;
+                    return OrcanodeOnlineStatus.Absent;
                 }
                 if (!DataplicityOnline.HasValue)
                 {
-                    return OrcanodeOnlineStatus.Absent;
+                    return OrcanodeOnlineStatus.Unknown;
                 }
                 return (DataplicityOnline.Value) ? OrcanodeOnlineStatus.Online : OrcanodeOnlineStatus.Offline;
             }

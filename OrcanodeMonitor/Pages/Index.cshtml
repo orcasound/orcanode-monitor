@@ -138,11 +138,6 @@
                     </a>
                 </td>
             }
-            <!--
-               <td style="background-color: @Model.NodeDataplicityUpgradeColor(item)">
-                   @Html.DisplayFor(modelItem => item.AgentVersion)
-               </td>
-            -->
             <td style="background-color: @Model.NodeSocketXPBackgroundColor(item)">
                 @if (!string.IsNullOrWhiteSpace(item.SocketXPDeviceId))
                 {
@@ -263,11 +258,6 @@
         <li>
             <b>Dataplicity Online</b>: Dataplicity connection is up.
         </li>
-        <!--
-           <li>
-               <b>Dataplicity Version</b>: Dataplicity agent version.
-           </li>
-        -->
         <li>
             <b>SocketXP Absent</b>: SocketXP does not know about the node.
         </li>
