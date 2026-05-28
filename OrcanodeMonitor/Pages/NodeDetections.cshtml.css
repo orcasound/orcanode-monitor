@@ -18,3 +18,7 @@ h1 {
 .unselected {
     border-color: blue;
 }
+
+.preserve-line-breaks {
+    white-space: pre-line;
+}
