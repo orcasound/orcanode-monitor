@@ -40,8 +40,6 @@ namespace OrcanodeMonitor.Core
                 if (devicesObject.ValueKind == JsonValueKind.Object &&
                     devicesObject.TryGetProperty("results", out var resultsArray) &&
                     resultsArray.ValueKind == JsonValueKind.Array)
-                    devicesObject.TryGetProperty("results", out var resultsArray) &&
-                    resultsArray.ValueKind == JsonValueKind.Array)
                 {
                     foreach (JsonElement device in resultsArray.EnumerateArray())
                     {
