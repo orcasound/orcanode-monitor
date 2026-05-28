@@ -189,6 +189,7 @@ namespace OrcanodeMonitor.Core
                 if (!devicesObject.TryGetProperty("results", out var deviceArray))
                 {
                     logger.LogError($"Missing results in UpdateDataplicityDataAsync devicesObject");
+                    return;
                 }
                 if (deviceArray.ValueKind != JsonValueKind.Array)
                 {
