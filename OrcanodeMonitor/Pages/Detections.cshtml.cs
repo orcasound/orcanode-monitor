@@ -95,9 +95,19 @@ namespace OrcanodeMonitor.Pages
         public long NegativeHumanDetectionCount;
 
         /// <summary>
+        /// Number of unreviewed human detections.
+        /// </summary>
+        public long UnreviewedHumanDetectionCount;
+
+        /// <summary>
+        /// Number of reviewed human detections (positive + negative).
+        /// </summary>
+        public long ReviewedHumanDetectionCount => PositiveHumanDetectionCount + NegativeHumanDetectionCount;
+
+        /// <summary>
         /// Total number of human detections.
         /// </summary>
-        public long HumanDetectionCount => PositiveHumanDetectionCount + NegativeHumanDetectionCount;
+        public long TotalHumanDetectionCount => ReviewedHumanDetectionCount + UnreviewedHumanDetectionCount;
 
         public string OrcaHelloConfidenceThreshold = string.Empty;
         public string PodsAIConfidenceThreshold = string.Empty;
@@ -219,7 +229,15 @@ namespace OrcanodeMonitor.Pages
 
                         if (detection.Source == "human")
                         {
-                            // TODO: only count reviewed detections.
+                            if (!detection.Reviewed)
+                            {
+                                monthData.UnreviewedHumanDetectionCount++;
+                                if (inPastWeek)
+                                {
+                                    weekData.UnreviewedHumanDetectionCount++;
+                                }
+                                continue;
+                            }
                             if (detection.Category == "whale")
                             {
                                 monthData.PositiveHumanDetectionCount++;
@@ -322,11 +340,23 @@ namespace OrcanodeMonitor.Pages
             {
                 return "Unknown";
             }
-            if (data.HumanDetectionCount == 0)
+            // If there are no human detections at all, report "None".
+            if (data.TotalHumanDetectionCount == 0)
             {
                 return "None";
             }
-            return $"{data.PositiveHumanDetectionCount} / {data.HumanDetectionCount} ({(data.PositiveHumanDetectionCount / (double)data.HumanDetectionCount):P0})";
+            // If there are detections but none have been reviewed yet, show the total
+            // without attempting to compute a percentage on a zero denominator.
+            if (data.ReviewedHumanDetectionCount == 0)
+            {
+                return $"0 / 0 of {data.TotalHumanDetectionCount}";
+            }
+            string result = $"{data.PositiveHumanDetectionCount} / {data.ReviewedHumanDetectionCount} ({(data.PositiveHumanDetectionCount / (double)data.ReviewedHumanDetectionCount):P0})";
+            if (data.UnreviewedHumanDetectionCount > 0)
+            {
+                result += $" of {data.TotalHumanDetectionCount}";
+            }
+            return result;
         }
 
         public string GetMachineDetectionCount(Orcanode node, string timeRange)
