@@ -35,12 +35,22 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public static string GetSourceClass(OrcasiteDetection item) => item.Source switch
+        public static string GetSourceClass(OrcasiteDetection item)
         {
-            DetectionSource.Machine => "machine",
-            DetectionSource.Human => "human",
-            _ => string.Empty
-        };
+            if (item.Source == DetectionSource.Human)
+            {
+                return "human";
+            }
+            if (item.Source != DetectionSource.Machine)
+            {
+                return string.Empty;
+            }
+            if (item.Description.StartsWith("AI:"))
+            {
+                return "podsai";
+            }
+            return "orcahello";
+        }
 
         /// <summary>
         /// Get category CSS class for a detection.

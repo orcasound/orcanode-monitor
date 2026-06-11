@@ -55,9 +55,12 @@
         Filter by Source:
         <button id="btn-source-all" class="btn selected" onclick="updateFilter('source', 'all')">All</button>
         <button id="btn-source-human" class="btn unselected" onclick="updateFilter('source', 'human')">Human</button>
-        <button id="btn-source-machine" class="btn unselected" onclick="updateFilter('source', 'machine')">Machine</button>
+        <button id="btn-source-orcahello" class="btn unselected" onclick="updateFilter('source', 'orcahello')">OrcaHello</button>
+        <button id="btn-source-podsai" class="btn unselected" onclick="updateFilter('source', 'podsai')">PODS-AI</button>
         <p></p>
     </div>
+
+    Detections: <span id="visibleCount">@Model.RecentDetections.Count</span> of <span id="timeRangeCount">@Model.RecentDetections.Count</span> in the past <span id="timeRange">week</span>
 
     <table id="detectionsTable" class="table">
         <thead>
@@ -136,6 +139,10 @@
                 var newTimeRangeButton = document.getElementById(newTimeRangeButtonId);
                 newTimeRangeButton.classList.remove('unselected');
                 newTimeRangeButton.classList.add('selected');
+
+                // Update the visible count display.
+                var displayText = filterValue === 'pastWeek' ? 'week' : 'month';
+                document.getElementById('timeRange').textContent = displayText;
             }
 
             // Update category filter.
@@ -174,6 +181,8 @@
         function filterTable() {
             // Get all rows from the table.
             var rows = document.querySelectorAll('#detectionsTable tbody tr');
+            var visibleCount = 0;
+            var timeRangeCount = 0;
 
             // Loop through each row.
             rows.forEach(function(row) {
@@ -182,12 +191,21 @@
                 var matchesCategory = (currentFilters.category === 'all' || row.classList.contains(currentFilters.category));
                 var matchesSource = (currentFilters.source === 'all' || row.classList.contains(currentFilters.source));
 
+                if (matchesTimeRange) {
+                    timeRangeCount++;
+                }
+
                 if (matchesTimeRange && matchesCategory && matchesSource) {
                     row.style.display = ''; // Show matching rows.
+                    visibleCount++;
                 } else {
                     row.style.display = 'none'; // Hide non-matching rows.
                 }
             });
+
+            // Update the visible count display.
+            document.getElementById('visibleCount').textContent = visibleCount;
+            document.getElementById('timeRangeCount').textContent = timeRangeCount;
         }
 
         function goToOrcasite() {
