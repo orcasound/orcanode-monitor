@@ -129,13 +129,13 @@ namespace OrcanodeMonitor.Pages
                 }
             }
 
-            if (orcasiteDetection.Category != "whale")
-            {
-                return "Not whale";
-            }
-            else if (string.IsNullOrEmpty(orcasiteDetection.Description))
+            if (!orcasiteDetection.Reviewed)
             {
                 return "Unreviewed";
+            }
+            else if (orcasiteDetection.Category != "whale")
+            {
+                return "Not whale";
             }
             else
             {

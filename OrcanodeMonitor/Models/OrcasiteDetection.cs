@@ -53,6 +53,26 @@ namespace OrcanodeMonitor.Models
         {
             return $"{Source} {Timestamp}";
         }
+
+        public bool Reviewed
+        {
+            get
+            {
+                // Heuristic since reviewed is not a property.
+                if (Category != "whale")
+                {
+                    return true;
+                }
+                else if (string.IsNullOrEmpty(Description))
+                {
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
+            }
+        }
     }
 
     public static class DetectionCategory
