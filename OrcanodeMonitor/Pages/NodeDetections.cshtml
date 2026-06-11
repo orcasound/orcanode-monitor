@@ -60,7 +60,7 @@
         <p></p>
     </div>
 
-    Detections: <span id="visibleCount">@Model.RecentDetections.Count</span> of <span id="timeRangeCount">@Model.RecentDetections.Count</span> in the past <span id="timeRange">week</span>
+    <p id="detectionCount" aria-live="polite">Detections: <span id="visibleCount">@Model.RecentDetections.Count</span> of <span id="timeRangeCount">@Model.RecentDetections.Count</span> in the past <span id="timeRange">week</span></p>
 
     <table id="detectionsTable" class="table">
         <thead>
