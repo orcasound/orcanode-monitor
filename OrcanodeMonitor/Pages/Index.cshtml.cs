@@ -30,6 +30,7 @@ namespace OrcanodeMonitor.Pages
             _events = new List<OrcanodeEvent>();
             _nodes = new List<Orcanode>();
             _recentEvents = new List<OrcanodeEvent>();
+            _periodDetectionData = new PeriodDetectionData(context, inferenceSystemFetcher, logger);
         }
 
         public string LastChecked
@@ -91,15 +92,32 @@ namespace OrcanodeMonitor.Pages
 
         public string NodeS3TextColor(Orcanode node) => GetTextColor(NodeS3BackgroundColor(node));
 
-        private readonly Dictionary<string, long> _machineDetectionCounts = new Dictionary<string, long>();
+        private readonly PeriodDetectionData _periodDetectionData;
 
-        public long GetMachineDetectionCount(Orcanode node)
+        public string GetMachineDetectionCount(Orcanode node)
         {
-            if (!_machineDetectionCounts.TryGetValue(node.OrcasoundSlug, out long count))
+            if (!_periodDetectionData.WeekData.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
-                return 0;
+                return "None";
             }
-            return count;
+
+            // If there are no machine detections at all, report "None".
+            if (data.TotalMachineDetectionCount == 0)
+            {
+                return "None";
+            }
+            // If there are detections but none have been reviewed yet, show the total
+            // without attempting to compute a percentage on a zero denominator.
+            if (data.ReviewedMachineDetectionCount == 0)
+            {
+                return $"0 / 0 of {data.TotalMachineDetectionCount}";
+            }
+            string result = $"{data.PositiveMachineDetectionCount} / {data.ReviewedMachineDetectionCount} ({(data.PositiveMachineDetectionCount / (double)data.ReviewedMachineDetectionCount):P0})";
+            if (data.UnreviewedMachineDetectionCount > 0)
+            {
+                result += $" of {data.TotalMachineDetectionCount}";
+            }
+            return result;
         }
 
         /// <summary>
@@ -145,8 +163,12 @@ namespace OrcanodeMonitor.Pages
         /// <returns>HTML color string</returns>
         public string NodeMachineDetectionsBackgroundColor(Orcanode node)
         {
-            long detectionCount = GetMachineDetectionCount(node);
-            return GetNodeMachineDetectionsBackgroundColor(node, detectionCount);
+            if (!_periodDetectionData.WeekData.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
+            {
+                return "None";
+            }
+
+            return GetNodeMachineDetectionsBackgroundColor(node, data.TotalMachineDetectionCount);
         }
 
         public string NodeMachineDetectionsTextColor(Orcanode node) => GetTextColor(NodeMachineDetectionsBackgroundColor(node));
@@ -290,7 +312,7 @@ namespace OrcanodeMonitor.Pages
                 var events = await _databaseContext.OrcanodeEvents.ToListAsync();
                 _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
 
-                await _inferenceSystemFetcher.FetchMachineDetectionCountsAsync(_nodes, _machineDetectionCounts, _logger);
+                await _periodDetectionData.GetAsync(_nodes);
 
                 _recentEvents = await Fetcher.GetRecentEventsAsync(_databaseContext, DateTime.UtcNow.AddDays(-7), _logger) ?? new List<OrcanodeEvent>();
             }

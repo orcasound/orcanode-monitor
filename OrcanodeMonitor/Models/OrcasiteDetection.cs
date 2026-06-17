@@ -2,23 +2,22 @@
 // SPDX-License-Identifier: MIT
 
 using System.Text.Json.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace OrcanodeMonitor.Models
 {
-    public class DetectionResponse
+    public class OrcasiteDetectionResponse
     {
-        public List<DetectionData>? Data { get; set; }
+        public List<OrcasiteDetectionData>? Data { get; set; }
     }
 
-    public class DetectionData
+    public class OrcasiteDetectionData
     {
         public string Id { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
-        public DetectionAttributes? Attributes { get; set; }
+        public OrcasiteDetectionAttributes? Attributes { get; set; }
     }
 
-    public class DetectionAttributes
+    public class OrcasiteDetectionAttributes
     {
         public DateTime Timestamp { get; set; }
         public string? Description { get; set; }
@@ -45,7 +44,7 @@ namespace OrcanodeMonitor.Models
         public string NodeID { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }
         public string Category { get; set; } = string.Empty;
-        public string Source { get; set; } = DetectionSource.Machine;
+        public string Source { get; set; } = OrcasiteDetectionSource.Machine;
         public string Description { get; set; } = string.Empty;
         public string IdempotencyKey { get; set; } = string.Empty;
 
@@ -75,7 +74,7 @@ namespace OrcanodeMonitor.Models
         }
     }
 
-    public static class DetectionCategory
+    public static class OrcasiteDetectionCategory
     {
         public const string All = "all";
         public const string Whale = "whale";
@@ -83,7 +82,7 @@ namespace OrcanodeMonitor.Models
         public const string Other = "other";
     }
 
-    public static class DetectionSource
+    public static class OrcasiteDetectionSource
     {
         public const string All = "all";
         public const string Human = "human";

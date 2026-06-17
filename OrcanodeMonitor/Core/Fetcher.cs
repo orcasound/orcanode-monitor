@@ -663,7 +663,7 @@ namespace OrcanodeMonitor.Core
                         break;
                     }
 
-                    var response = JsonSerializer.Deserialize<DetectionResponse>(
+                    var response = JsonSerializer.Deserialize<OrcasiteDetectionResponse>(
                         jsonString,
                         new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                     );
@@ -740,7 +740,7 @@ namespace OrcanodeMonitor.Core
                         break;
                     }
 
-                    var response = JsonSerializer.Deserialize<DetectionResponse>(
+                    var response = JsonSerializer.Deserialize<OrcasiteDetectionResponse>(
                         jsonString,
                         new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                     );

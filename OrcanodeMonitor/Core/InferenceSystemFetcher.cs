@@ -978,27 +978,6 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Fetch machine detection counts in parallel.
-        /// </summary>
-        /// <param name="nodes">List of Orcanodes</param>
-        /// <param name="counts">Dictionary of counts</param>
-        /// <param name="logger">Logger instance</param>
-        /// <returns></returns>
-        public async Task FetchMachineDetectionCountsAsync(List<Orcanode> nodes, Dictionary<string, long> counts, ILogger logger)
-        {
-            var detectionTasks = nodes.Select(async node => new
-            {
-                Slug = node.OrcasoundSlug,
-                Count = await GetMachineDetectionCountAsync(node, logger)
-            });
-            var results = await Task.WhenAll(detectionTasks);
-            foreach (var result in results)
-            {
-                counts[result.Slug] = result.Count;
-            }
-        }
-
-        /// <summary>
         /// Get a list of InferencePod objects.
         /// </summary>
         /// <param name="orcanodes">List of orcanodes</param>

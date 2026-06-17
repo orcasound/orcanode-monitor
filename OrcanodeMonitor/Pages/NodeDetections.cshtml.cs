@@ -37,11 +37,11 @@ namespace OrcanodeMonitor.Pages
         /// <returns>CSS class</returns>
         public static string GetSourceClass(OrcasiteDetection item)
         {
-            if (item.Source == DetectionSource.Human)
+            if (item.Source == OrcasiteDetectionSource.Human)
             {
                 return "human";
             }
-            if (item.Source != DetectionSource.Machine)
+            if (item.Source != OrcasiteDetectionSource.Machine)
             {
                 return string.Empty;
             }
@@ -59,9 +59,9 @@ namespace OrcanodeMonitor.Pages
         /// <returns>CSS class</returns>
         public static string GetCategoryClass(OrcasiteDetection item) => item.Category switch
         {
-            DetectionCategory.Whale => "whale",
-            DetectionCategory.Vessel => "vessel",
-            DetectionCategory.Other => "other",
+            OrcasiteDetectionCategory.Whale => "whale",
+            OrcasiteDetectionCategory.Vessel => "vessel",
+            OrcasiteDetectionCategory.Other => "other",
             _ => string.Empty
         };
 
@@ -108,7 +108,7 @@ namespace OrcanodeMonitor.Pages
         /// </returns>
         public string GetDetectionStatus(OrcasiteDetection orcasiteDetection)
         {
-            if (orcasiteDetection.Source == DetectionSource.Machine)
+            if (orcasiteDetection.Source == OrcasiteDetectionSource.Machine)
             {
                 MachineDetection? machineDetection = _machineDetections.FirstOrDefault(d => d.Id == orcasiteDetection.IdempotencyKey);
                 if (machineDetection == null)
