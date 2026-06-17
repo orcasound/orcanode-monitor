@@ -16,8 +16,8 @@
             <th><a href="https://live.orcasound.net/listen" target="_blank">Orcasound</a></th>
             <th><a href="https://open.quiltdata.com/b/audio-orcasound-net/tree/" target="_blank">S3 Stream</a></th>
             <th>Up%</th>
-            <th>Real dB</th>
-            <th>Hum dB</th>
+            <!-- <th>Real dB</th> -->
+            <!-- <th>Hum dB</th> -->
             <th>OrcaHello Lag</th>
             <th>PODS-AI Lag</th>
             <th>Machine Detections</th>
@@ -70,12 +70,14 @@
                     @Model.GetUptimePercentage(item)%
                 </a>
             </td>
+            <!--
             <td style="background-color: @Model.NodeRealDecibelLevelBackgroundColor(item)">
                 @Html.DisplayFor(modelItem => item.RealDecibelLevelForDisplay)
             </td>
             <td style="background-color: @Model.NodeHumDecibelLevelBackgroundColor(item)">
                 @Html.DisplayFor(modelItem => item.HumDecibelLevelForDisplay)
             </td>
+            -->
             @if (item.OrcaHelloStatus == Models.OrcanodeOnlineStatus.Absent)
             {
                 <td style="background-color: @Model.NodeOrcaHelloStatusBackgroundColor(item); color: @Model.NodeOrcaHelloTextColor(item)">
@@ -210,12 +212,14 @@
         <li>
             <b>Up%</b>: Percentage of time the S3 Stream has been online over the past week.
         </li>
+        <!--
         <li>
             <b>Real dB</b>: Average relative decibels other than audio hum across all frequencies in the most recent 10 second sample.
         </li>
         <li>
             <b>Hum dB</b>: Average relative decibels of audio hum in the most recent 10 second sample.
         </li>
+        -->
         <li>
             <b>OrcaHello Absent</b>: No AI inference container is defined.
         </li>
