@@ -743,6 +743,19 @@ namespace OrcanodeMonitor.Models
                     {
                         up += (current - start);
                     }
+                    else if (lastValue == "UNINTELLIGIBLE")
+                    {
+                        if (IsStateOnline(e.Value))
+                        {
+                            // The hum went away so treat it as up the whole time.
+                            up += (current - start);
+                        }
+                        else
+                        {
+                            // The situation got worse so treat it as down since going unintelligible.
+                            down += (current - start);
+                        }
+                    }
                     else
                     {
                         down += (current - start);
@@ -760,6 +773,7 @@ namespace OrcanodeMonitor.Models
             }
             else
             {
+                // Treat unintelligible as down.
                 down += now - start;
             }
 
