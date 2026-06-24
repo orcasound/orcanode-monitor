@@ -44,7 +44,11 @@ namespace OrcanodeMonitor.Models
         public string ID { get; set; } = string.Empty;
         public string NodeID { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }
-        public string Category { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Whale, vessel, or human.
+        /// </summary>
+        public string GeneralCategory { get; set; } = string.Empty;
         public string Source { get; set; } = DetectionSource.Machine;
         public string Description { get; set; } = string.Empty;
         public string IdempotencyKey { get; set; } = string.Empty;
@@ -59,7 +63,7 @@ namespace OrcanodeMonitor.Models
             get
             {
                 // Heuristic since reviewed is not a property.
-                if (Category != "whale")
+                if (GeneralCategory != "whale")
                 {
                     return true;
                 }

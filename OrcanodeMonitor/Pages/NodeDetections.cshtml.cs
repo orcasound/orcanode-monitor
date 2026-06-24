@@ -57,7 +57,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public static string GetCategoryClass(OrcasiteDetection item) => item.Category switch
+        public static string GetCategoryClass(OrcasiteDetection item) => item.GeneralCategory switch
         {
             DetectionCategory.Whale => "whale",
             DetectionCategory.Vessel => "vessel",
@@ -133,7 +133,7 @@ namespace OrcanodeMonitor.Pages
             {
                 return "Unreviewed";
             }
-            else if (orcasiteDetection.Category != "whale")
+            else if (orcasiteDetection.GeneralCategory != "whale")
             {
                 return "Not whale";
             }

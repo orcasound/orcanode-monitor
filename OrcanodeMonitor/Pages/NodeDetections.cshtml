@@ -42,7 +42,7 @@
 
     <!-- Filter Buttons for Category -->
     <div>
-        Filter by Category:
+        Filter by Orcasite Category:
         <button id="btn-category-all" class="btn selected" onclick="updateFilter('category', 'all')">All</button>
         <button id="btn-category-whale" class="btn unselected" onclick="updateFilter('category', 'whale')">Whale</button>
         <button id="btn-category-vessel" class="btn unselected" onclick="updateFilter('category', 'vessel')">Vessel</button>
@@ -66,7 +66,7 @@
         <thead>
             <tr>
                 <th>Timestamp (Pacific)</th>
-                <th>Category</th>
+                <th>Orcasite Category</th>
                 <th>Source</th>
                 <th>Status</th>
                 <th align="left">Description</th>
@@ -89,7 +89,7 @@
                         var pacificTime = TimeZoneInfo.ConvertTimeFromUtc(item.Timestamp, pacific);
                     }
                     <td>@pacificTime.ToString("g")</td>
-                    <td>@item.Category</td>
+                    <td>@item.GeneralCategory</td>
                     <td>@item.Source</td>
                     <td>@Model.GetDetectionStatus(item)</td>
                     <td align="left">

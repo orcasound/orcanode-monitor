@@ -680,7 +680,7 @@ namespace OrcanodeMonitor.Core
                             Timestamp = d.Attributes?.Timestamp ?? default,
                             Source = d.Attributes?.Source ?? string.Empty,
                             Description = d.Attributes?.Description ?? string.Empty,
-                            Category = d.Attributes?.Category ?? string.Empty,
+                            GeneralCategory = d.Attributes?.Category ?? string.Empty,
                             IdempotencyKey = d.Attributes?.IdempotencyKey ?? string.Empty,
                         }).ToList();
 
@@ -757,7 +757,7 @@ namespace OrcanodeMonitor.Core
                             Timestamp = d.Attributes?.Timestamp ?? default,
                             Source = d.Attributes?.Source ?? string.Empty,
                             Description = d.Attributes?.Description ?? string.Empty,
-                            Category = d.Attributes?.Category ?? string.Empty,
+                            GeneralCategory = d.Attributes?.Category ?? string.Empty,
                             IdempotencyKey = d.Attributes?.IdempotencyKey ?? string.Empty,
                         }).ToList();
 

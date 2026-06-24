@@ -238,7 +238,7 @@ namespace OrcanodeMonitor.Pages
                                 }
                                 continue;
                             }
-                            if (detection.Category == "whale")
+                            if (detection.GeneralCategory == "whale")
                             {
                                 monthData.PositiveHumanDetectionCount++;
                                 if (inPastWeek) weekData.PositiveHumanDetectionCount++;
