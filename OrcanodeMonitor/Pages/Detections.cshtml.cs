@@ -227,7 +227,7 @@ namespace OrcanodeMonitor.Pages
                         DetectionData monthData = _detectionCountsPastMonth[node.OrcasoundSlug];
                         DetectionData weekData = _detectionCountsPastWeek[node.OrcasoundSlug];
 
-                        if (detection.Source == "human")
+                        if (detection.Source == DetectionSource.Human)
                         {
                             if (!detection.Reviewed)
                             {
@@ -238,7 +238,7 @@ namespace OrcanodeMonitor.Pages
                                 }
                                 continue;
                             }
-                            if (detection.GeneralCategory == "whale")
+                            if (detection.GeneralCategory == DetectionGeneralCategoryEnum.Whale)
                             {
                                 monthData.PositiveHumanDetectionCount++;
                                 if (inPastWeek) weekData.PositiveHumanDetectionCount++;

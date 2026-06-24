@@ -1,8 +1,8 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
+using System.Runtime.ExceptionServices;
 using System.Text.Json.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace OrcanodeMonitor.Models
 {
@@ -39,17 +39,62 @@ namespace OrcanodeMonitor.Models
         public string? IdempotencyKey { get; set; }
     }
 
+    public enum DetectionGeneralCategoryEnum
+    {
+        Whale,
+        Vessel,
+        Human,
+        Other
+    }
+
+    public enum DetectionSpecificCategoryEnum
+    {
+        Water,
+        Resident,
+        Transient,
+        Humpback,
+        Vessel,
+        Jingle,
+        Human,
+        Unknown
+    }
+
     public class OrcasiteDetection
     {
         public string ID { get; set; } = string.Empty;
         public string NodeID { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }
 
+        public static DetectionSource GetSource(string source, string comments)
+        {
+            if (source.ToLower() == "human")
+            {
+                return DetectionSource.Human;
+            }
+            else if (comments.StartsWith("AI:"))
+            {
+                return DetectionSource.PodsAI;
+            }
+            else
+            {
+                return DetectionSource.OrcaHello;
+            }
+        }
+
+        public string OrcasiteCategory { get; set; } = string.Empty;
+
         /// <summary>
         /// Whale, vessel, or human.
         /// </summary>
-        public string GeneralCategory { get; set; } = string.Empty;
-        public string Source { get; set; } = DetectionSource.Machine;
+        public DetectionGeneralCategoryEnum GeneralCategory => OrcasiteCategory.ToLower() switch
+        {
+            DetectionCategory.Whale => DetectionGeneralCategoryEnum.Whale,
+            DetectionCategory.Vessel => DetectionGeneralCategoryEnum.Vessel,
+            DetectionCategory.Human => DetectionGeneralCategoryEnum.Human,
+            _ => DetectionGeneralCategoryEnum.Other
+        };
+
+        public DetectionSource Source { get; set; } = DetectionSource.OrcaHello;
         public string Description { get; set; } = string.Empty;
         public string IdempotencyKey { get; set; } = string.Empty;
 
@@ -63,7 +108,7 @@ namespace OrcanodeMonitor.Models
             get
             {
                 // Heuristic since reviewed is not a property.
-                if (GeneralCategory != "whale")
+                if (GeneralCategory != DetectionGeneralCategoryEnum.Whale)
                 {
                     return true;
                 }
@@ -84,13 +129,15 @@ namespace OrcanodeMonitor.Models
         public const string All = "all";
         public const string Whale = "whale";
         public const string Vessel = "vessel";
+        public const string Human = "human";
         public const string Other = "other";
     }
 
-    public static class DetectionSource
+    public enum DetectionSource
     {
-        public const string All = "all";
-        public const string Human = "human";
-        public const string Machine = "machine";
+        All,
+        Human,
+        OrcaHello,
+        PodsAI
     }
 }
