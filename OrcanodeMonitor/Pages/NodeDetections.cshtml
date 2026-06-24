@@ -42,7 +42,7 @@
 
     <!-- Filter Buttons for Category -->
     <div>
-        Filter by Category:
+        Filter by Orcasite Category:
         <button id="btn-category-all" class="btn selected" onclick="updateFilter('category', 'all')">All</button>
         <button id="btn-category-whale" class="btn unselected" onclick="updateFilter('category', 'whale')">Whale</button>
         <button id="btn-category-vessel" class="btn unselected" onclick="updateFilter('category', 'vessel')">Vessel</button>
@@ -66,7 +66,8 @@
         <thead>
             <tr>
                 <th>Timestamp (Pacific)</th>
-                <th>Category</th>
+                <th>Orcasite Category</th>
+                <th>PODS-AI Category</th>
                 <th>Source</th>
                 <th>Status</th>
                 <th align="left">Description</th>
@@ -78,7 +79,7 @@
             @if (!Model.RecentDetections.Any())
             {
                 <tr>
-                    <td colspan="7" class="text-center">No detections found for this time period.</td>
+                    <td colspan="8" class="text-center">No detections found for this time period.</td>
                 </tr>
             }
             @foreach (Models.OrcasiteDetection item in Model.RecentDetections)
@@ -89,7 +90,8 @@
                         var pacificTime = TimeZoneInfo.ConvertTimeFromUtc(item.Timestamp, pacific);
                     }
                     <td>@pacificTime.ToString("g")</td>
-                    <td>@item.Category</td>
+                    <td>@item.GeneralCategory</td>
+                    <td>@Model.GetSpecificCategory(item)</td>
                     <td>@item.Source</td>
                     <td>@Model.GetDetectionStatus(item)</td>
                     <td align="left">

@@ -35,35 +35,14 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public static string GetSourceClass(OrcasiteDetection item)
-        {
-            if (item.Source == DetectionSource.Human)
-            {
-                return "human";
-            }
-            if (item.Source != DetectionSource.Machine)
-            {
-                return string.Empty;
-            }
-            if (item.Description.StartsWith("AI:"))
-            {
-                return "podsai";
-            }
-            return "orcahello";
-        }
+        public static string GetSourceClass(OrcasiteDetection item) => item.Source.ToString().ToLowerInvariant();
 
         /// <summary>
         /// Get category CSS class for a detection.
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public static string GetCategoryClass(OrcasiteDetection item) => item.Category switch
-        {
-            DetectionCategory.Whale => "whale",
-            DetectionCategory.Vessel => "vessel",
-            DetectionCategory.Other => "other",
-            _ => string.Empty
-        };
+        public static string GetCategoryClass(OrcasiteDetection item) => item.GeneralCategory.ToString().ToLowerInvariant();
 
         /// <summary>
         /// Get time range CSS classes for a detection.
@@ -98,6 +77,57 @@ namespace OrcanodeMonitor.Pages
             return classes;
         }
 
+        public DetectionSpecificCategoryEnum GetSpecificCategory(OrcasiteDetection orcasiteDetection)
+        {
+            if (orcasiteDetection.GeneralCategory == DetectionGeneralCategoryEnum.Vessel)
+            {
+                return DetectionSpecificCategoryEnum.Vessel;
+            }
+            if (orcasiteDetection.GeneralCategory == DetectionGeneralCategoryEnum.Human)
+            {
+                return DetectionSpecificCategoryEnum.Human;
+            }
+
+            if (orcasiteDetection.Source == DetectionSource.PodsAI)
+            {
+                string comments = orcasiteDetection.Description ?? string.Empty;
+
+                const string aiPrefix = "AI:";
+                string categoryText = comments.StartsWith(aiPrefix, StringComparison.OrdinalIgnoreCase)
+                                    ? comments[aiPrefix.Length..].TrimStart()
+                                    : comments;
+
+                // Find the first category token after the "AI:" prefix.
+                string firstWord = categoryText
+                                    .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                                    .FirstOrDefault()?.Trim(',', '.', ':', ';') ?? string.Empty;
+
+                // Convert it to the corresponding DetectionSpecificCategoryEnum value.
+                if (Enum.TryParse<DetectionSpecificCategoryEnum>(firstWord, true, out var specificCategory))
+                {
+                    return specificCategory;
+                }
+
+                return DetectionSpecificCategoryEnum.Unknown;
+            }
+
+            if (orcasiteDetection.Source == DetectionSource.OrcaHello)
+            {
+                MachineDetection? machineDetection = _machineDetections.FirstOrDefault(d => d.Id == orcasiteDetection.IdempotencyKey);
+                if (machineDetection == null)
+                {
+                    return DetectionSpecificCategoryEnum.Unknown;
+                }
+                if (machineDetection.IsPositive(orcasiteDetection))
+                {
+                    return DetectionSpecificCategoryEnum.Resident;
+                }
+                return DetectionSpecificCategoryEnum.Unknown;
+            }
+
+            return DetectionSpecificCategoryEnum.Unknown;
+        }
+
         /// <summary>
         /// Get the human-readable status of a detection based on its source, review state, and classification.
         /// </summary>
@@ -108,7 +138,8 @@ namespace OrcanodeMonitor.Pages
         /// </returns>
         public string GetDetectionStatus(OrcasiteDetection orcasiteDetection)
         {
-            if (orcasiteDetection.Source == DetectionSource.Machine)
+            if (orcasiteDetection.Source == DetectionSource.OrcaHello ||
+                orcasiteDetection.Source == DetectionSource.PodsAI)
             {
                 MachineDetection? machineDetection = _machineDetections.FirstOrDefault(d => d.Id == orcasiteDetection.IdempotencyKey);
                 if (machineDetection == null)
@@ -133,7 +164,7 @@ namespace OrcanodeMonitor.Pages
             {
                 return "Unreviewed";
             }
-            else if (orcasiteDetection.Category != "whale")
+            else if (orcasiteDetection.GeneralCategory != DetectionGeneralCategoryEnum.Whale)
             {
                 return "Not whale";
             }

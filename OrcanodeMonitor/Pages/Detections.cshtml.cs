@@ -227,7 +227,7 @@ namespace OrcanodeMonitor.Pages
                         DetectionData monthData = _detectionCountsPastMonth[node.OrcasoundSlug];
                         DetectionData weekData = _detectionCountsPastWeek[node.OrcasoundSlug];
 
-                        if (detection.Source == "human")
+                        if (detection.Source == DetectionSource.Human)
                         {
                             if (!detection.Reviewed)
                             {
@@ -238,7 +238,7 @@ namespace OrcanodeMonitor.Pages
                                 }
                                 continue;
                             }
-                            if (detection.Category == "whale")
+                            if (detection.GeneralCategory == DetectionGeneralCategoryEnum.Whale)
                             {
                                 monthData.PositiveHumanDetectionCount++;
                                 if (inPastWeek) weekData.PositiveHumanDetectionCount++;
@@ -249,7 +249,7 @@ namespace OrcanodeMonitor.Pages
                                 if (inPastWeek) weekData.NegativeHumanDetectionCount++;
                             }
                         }
-                        else // detection.Source == "machine"
+                        else // detection.Source == OrcaHello or PodsAI.
                         {
                             // Find the matching InferenceSystemDetection.
                             MachineDetection? inferenceSystemDetection = machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
