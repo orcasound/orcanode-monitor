@@ -249,7 +249,7 @@ namespace OrcanodeMonitor.Pages
                                 if (inPastWeek) weekData.NegativeHumanDetectionCount++;
                             }
                         }
-                        else // detection.Source == "machine"
+                        else // detection.Source == OrcaHello or PodsAI.
                         {
                             // Find the matching InferenceSystemDetection.
                             MachineDetection? inferenceSystemDetection = machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();

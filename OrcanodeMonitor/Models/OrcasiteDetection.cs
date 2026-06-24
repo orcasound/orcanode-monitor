@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
-using System.Runtime.ExceptionServices;
 using System.Text.Json.Serialization;
 
 namespace OrcanodeMonitor.Models
@@ -86,7 +85,7 @@ namespace OrcanodeMonitor.Models
         /// <summary>
         /// Whale, vessel, or human.
         /// </summary>
-        public DetectionGeneralCategoryEnum GeneralCategory => OrcasiteCategory.ToLower() switch
+        public DetectionGeneralCategoryEnum GeneralCategory => OrcasiteCategory.ToLowerInvariant() switch
         {
             DetectionCategory.Whale => DetectionGeneralCategoryEnum.Whale,
             DetectionCategory.Vessel => DetectionGeneralCategoryEnum.Vessel,
