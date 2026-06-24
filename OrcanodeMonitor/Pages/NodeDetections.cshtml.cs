@@ -92,8 +92,15 @@ namespace OrcanodeMonitor.Pages
             {
                 string comments = orcasiteDetection.Description ?? string.Empty;
 
-                // Find the first word after "AI: " in the comments.
-                string firstWord = comments.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1).FirstOrDefault() ?? string.Empty;
+                const string aiPrefix = "AI:";
+                string categoryText = comments.StartsWith(aiPrefix, StringComparison.OrdinalIgnoreCase)
+                                    ? comments[aiPrefix.Length..].TrimStart()
+                                    : comments;
+
+                // Find the first category token after the "AI:" prefix.
+                string firstWord = categoryText
+                                    .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                                    .FirstOrDefault()?.Trim(',', '.', ':', ';') ?? string.Empty;
 
                 // Convert it to the corresponding DetectionSpecificCategoryEnum value.
                 if (Enum.TryParse<DetectionSpecificCategoryEnum>(firstWord, true, out var specificCategory))
@@ -101,7 +108,7 @@ namespace OrcanodeMonitor.Pages
                     return specificCategory;
                 }
 
-                return DetectionSpecificCategoryEnum.Water;
+                return DetectionSpecificCategoryEnum.Unknown;
             }
 
             if (orcasiteDetection.Source == DetectionSource.OrcaHello)
