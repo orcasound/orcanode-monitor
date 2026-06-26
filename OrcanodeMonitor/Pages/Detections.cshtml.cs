@@ -143,7 +143,7 @@ namespace OrcanodeMonitor.Pages
         private Dictionary<string, DetectionData> GetDict(string timeRange) =>
             timeRange == "pastWeek" ? _detectionCountsPastWeek : _detectionCountsPastMonth;
 
-        private void EnsureNodeEntries(Dictionary<string, DetectionData> dictionary, Orcanode node, string confidenceThreshold, string fieldNamePrefix)
+        private void EnsureNodeEntries(Dictionary<string, DetectionData> dictionary, Orcanode node, string confidenceThreshold, DetectionSource source)
         {
             if (!dictionary.ContainsKey(node.OrcasoundSlug))
             {
@@ -151,8 +151,7 @@ namespace OrcanodeMonitor.Pages
             }
 
             var data = dictionary[node.OrcasoundSlug];
-            FieldInfo? field = data.GetType().GetField(fieldNamePrefix + "ConfidenceThreshold");
-            field?.SetValue(data, confidenceThreshold);
+            data.Source[(int)source].ConfidenceThreshold = confidenceThreshold;
         }
 
         public async Task OnGetAsync()
@@ -200,12 +199,12 @@ namespace OrcanodeMonitor.Pages
                         if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                         {
                             InferencePod? inferencePod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
-                            EnsureNodeEntries(_detectionCountsPastMonth, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.OrcaHelloFieldPrefix);
-                            EnsureNodeEntries(_detectionCountsPastWeek, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.OrcaHelloFieldPrefix);
+                            EnsureNodeEntries(_detectionCountsPastMonth, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.OrcaHello);
+                            EnsureNodeEntries(_detectionCountsPastWeek, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.OrcaHello);
 
                             inferencePod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
-                            EnsureNodeEntries(_detectionCountsPastMonth, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.PodsAIFieldPrefix);
-                            EnsureNodeEntries(_detectionCountsPastWeek, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.PodsAIFieldPrefix);
+                            EnsureNodeEntries(_detectionCountsPastMonth, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.PodsAI);
+                            EnsureNodeEntries(_detectionCountsPastWeek, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.PodsAI);
                         }
 
                         DetectionData monthData = _detectionCountsPastMonth[node.OrcasoundSlug];
@@ -305,12 +304,12 @@ namespace OrcanodeMonitor.Pages
                     if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                     {
                         InferencePod? pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
-                        EnsureNodeEntries(_detectionCountsPastMonth, node, pod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.OrcaHelloFieldPrefix);
-                        EnsureNodeEntries(_detectionCountsPastWeek, node, pod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.OrcaHelloFieldPrefix);
+                        EnsureNodeEntries(_detectionCountsPastMonth, node, pod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.OrcaHello);
+                        EnsureNodeEntries(_detectionCountsPastWeek, node, pod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.OrcaHello);
 
                         pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
-                        EnsureNodeEntries(_detectionCountsPastMonth, node, pod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.PodsAIFieldPrefix);
-                        EnsureNodeEntries(_detectionCountsPastWeek, node, pod?.GetConfidenceThreshold() ?? "Unknown", InferenceSystemFetcher.PodsAIFieldPrefix);
+                        EnsureNodeEntries(_detectionCountsPastMonth, node, pod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.PodsAI);
+                        EnsureNodeEntries(_detectionCountsPastWeek, node, pod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.PodsAI);
                     }
                 }
             }
