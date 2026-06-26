@@ -469,9 +469,10 @@ namespace OrcanodeMonitor.Core
         /// </summary>
         /// <param name="orcanode">Orcanode object associated with the pod</param>
         /// <param name="containerName">Name of the container</param>
+        /// <param name="source">Detection source associated with the pod</param>
         /// <param name="logger">Logger</param>
         /// <returns>InferencePod</returns>
-        public async Task<InferencePod?> GetInferencePodByNameAsync(Orcanode orcanode, string containerName, ILogger logger)
+        public async Task<InferencePod?> GetInferencePodByNameAsync(Orcanode orcanode, string containerName, DetectionSource source, ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
@@ -495,7 +496,7 @@ namespace OrcanodeMonitor.Core
             string cpuUsage = container?.Usage?.TryGetValue("cpu", out var cpu) == true ? cpu.ToString() : "0n";
             string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
-            long detectionCount = await GetMachineDetectionCountAsync(orcanode, logger);
+            long detectionCount = await GetDetectionCountAsync(orcanode, source, logger);
 
             (double? confidenceThreshold, int? countThreshold) = await GetModelThresholdsAsync(namespaceName, logger);
 
@@ -928,12 +929,13 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Get the number of machine detections for a given location in the past week.
+        /// Get the number of detections for a given source and location in the past week.
         /// </summary>
         /// <param name="orcanode">Node to check</param>
+        /// <param name="source">Detection source to check</param>
         /// <param name="logger">Logger instance</param>
         /// <returns>Count of AI detections in the past week</returns>
-        public async Task<long> GetMachineDetectionCountAsync(Orcanode orcanode, ILogger logger)
+        public async Task<long> GetDetectionCountAsync(Orcanode orcanode, DetectionSource source, ILogger logger)
         {
             try
             {
@@ -981,15 +983,16 @@ namespace OrcanodeMonitor.Core
         /// Fetch machine detection counts in parallel.
         /// </summary>
         /// <param name="nodes">List of Orcanodes</param>
+        /// <param name="source">Detection source</param>
         /// <param name="counts">Dictionary of counts</param>
         /// <param name="logger">Logger instance</param>
         /// <returns></returns>
-        public async Task FetchMachineDetectionCountsAsync(List<Orcanode> nodes, Dictionary<string, long> counts, ILogger logger)
+        public async Task FetchMachineDetectionCountsAsync(List<Orcanode> nodes, DetectionSource source, Dictionary<string, long> counts, ILogger logger)
         {
             var detectionTasks = nodes.Select(async node => new
             {
                 Slug = node.OrcasoundSlug,
-                Count = await GetMachineDetectionCountAsync(node, logger)
+                Count = await GetDetectionCountAsync(node, source, logger)
             });
             var results = await Task.WhenAll(detectionTasks);
             foreach (var result in results)
@@ -1002,9 +1005,11 @@ namespace OrcanodeMonitor.Core
         /// Get a list of InferencePod objects.
         /// </summary>
         /// <param name="orcanodes">List of orcanodes</param>
+        /// <param name="containerName">Name of the container</param>
+        /// <param name="source">Detection source</param>
         /// <param name="logger">Logger instance</param>
         /// <returns>List of InferencePod objects</returns>
-        public async Task<List<InferencePod>> FetchPodMetricsAsync(List<Orcanode> orcanodes, string containerName, ILogger logger)
+        public async Task<List<InferencePod>> FetchPodMetricsAsync(List<Orcanode> orcanodes, string containerName, DetectionSource source, ILogger logger)
         {
             var resultList = new List<InferencePod>();
             IKubernetes? client = _k8sClient;
@@ -1040,7 +1045,7 @@ namespace OrcanodeMonitor.Core
                     string memoryUsage = container?.Usage?.TryGetValue("memory", out var mem) == true ? mem.ToString() : "0Ki";
 
                     Orcanode? orcanode = orcanodes.Find(a => a.OrcasoundSlug == pod.Metadata.NamespaceProperty);
-                    long detectionCount = (orcanode != null) ? await GetMachineDetectionCountAsync(orcanode, logger) : 0;
+                    long detectionCount = (orcanode != null) ? await GetDetectionCountAsync(orcanode, source, logger) : 0;
 
                     (double? confidenceThreshold, int? countThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty, logger);
 

@@ -135,7 +135,8 @@ namespace Test
             InferenceSystemFetcher fetcher = OrcasiteTestHelper.GetMockInferenceSystemFetcher(node);
 
             // Act
-            var pod = await fetcher.GetInferencePodByNameAsync(node, containerName, _logger);
+            // TODO: do the same for PODS-AI.
+            var pod = await fetcher.GetInferencePodByNameAsync(node, containerName, DetectionSource.OrcaHello, _logger);
 
             // Assert
             Assert.IsNotNull(pod, "Pod should not be null");
