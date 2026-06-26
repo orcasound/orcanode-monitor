@@ -40,7 +40,7 @@ namespace OrcanodeMonitor.Pages
         /// <summary>
         /// Minimum global confidence of positive machine detections.
         /// </summary>
-        public double MinimumPositiveDetectionConfidence = long.MaxValue;
+        public double MinimumPositiveDetectionConfidence = double.MaxValue;
 
         /// <summary>
         /// Cumulative global confidence of positive machine detections.
@@ -220,7 +220,7 @@ namespace OrcanodeMonitor.Pages
                                 sourceMonthData.UnreviewedDetectionCount++;
                                 if (inPastWeek)
                                 {
-                                    sourceMonthData.UnreviewedDetectionCount++;
+                                    sourceWeekData.UnreviewedDetectionCount++;
                                 }
                                 continue;
                             }
