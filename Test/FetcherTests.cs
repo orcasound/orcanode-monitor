@@ -128,15 +128,14 @@ namespace Test
             await Fetcher.UpdateS3DataAsync(_context, _logger);
         }
 
-        private async Task TestGetInferencePodAsync(string containerName)
+        private async Task TestGetInferencePodAsync(string containerName, DetectionSource source)
         {
             // Arrange - Create mock Kubernetes client with all required operations.
             var node = new Orcanode { OrcasoundSlug = "andrews-bay" };
             InferenceSystemFetcher fetcher = OrcasiteTestHelper.GetMockInferenceSystemFetcher(node);
 
             // Act
-            // TODO: do the same for PODS-AI.
-            var pod = await fetcher.GetInferencePodByNameAsync(node, containerName, DetectionSource.OrcaHello, _logger);
+            var pod = await fetcher.GetInferencePodByNameAsync(node, containerName, source, _logger);
 
             // Assert
             Assert.IsNotNull(pod, "Pod should not be null");
@@ -149,13 +148,13 @@ namespace Test
         [TestMethod]
         public async Task TestGetOrcaHelloPodAsync()
         {
-            await TestGetInferencePodAsync(InferenceSystemFetcher.OrcaHelloInferenceContainerName);
+            await TestGetInferencePodAsync(InferenceSystemFetcher.OrcaHelloInferenceContainerName, DetectionSource.OrcaHello);
         }
 
         [TestMethod]
         public async Task TestGetPodsAIPodAsync()
         {
-            await TestGetInferencePodAsync(InferenceSystemFetcher.PodsAIInferenceContainerName);
+            await TestGetInferencePodAsync(InferenceSystemFetcher.PodsAIInferenceContainerName, DetectionSource.PodsAI);
         }
     }
 }
