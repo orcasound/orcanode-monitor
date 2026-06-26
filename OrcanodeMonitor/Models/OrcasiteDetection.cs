@@ -134,9 +134,9 @@ namespace OrcanodeMonitor.Models
 
     public enum DetectionSource
     {
-        All,
         Human,
         OrcaHello,
-        PodsAI
+        PodsAI,
+        All
     }
 }

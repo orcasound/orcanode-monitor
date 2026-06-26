@@ -10,107 +10,94 @@ using System.Reflection;
 
 namespace OrcanodeMonitor.Pages
 {
-    public class DetectionData
+    public class DetectionSourceData
     {
         /// <summary>
-        /// Number of positive machine detections.
+        /// Number of positive detections.
         /// </summary>
-        public long PositiveMachineDetectionCount;
+        public long PositiveDetectionCount;
+
+        /// <summary>
+        /// Number of negative detections.
+        /// </summary>
+        public long NegativeDetectionCount;
+
+        /// <summary>
+        /// Number of unreviewed detections.
+        /// </summary>
+        public long UnreviewedDetectionCount;
+
+        /// <summary>
+        /// Total number of reviewed detections (positive + negative).
+        /// </summary>
+        public long ReviewedDetectionCount => PositiveDetectionCount + NegativeDetectionCount;
+
+        /// <summary>
+        /// Total number of detections (reviewed and unreviewed).
+        /// </summary>
+        public long TotalDetectionCount => ReviewedDetectionCount + UnreviewedDetectionCount;
 
         /// <summary>
         /// Minimum global confidence of positive machine detections.
         /// </summary>
-        public double MinimumPositiveMachineDetectionConfidence;
+        public double MinimumPositiveDetectionConfidence = long.MaxValue;
 
         /// <summary>
         /// Cumulative global confidence of positive machine detections.
         /// </summary>
-        public double CumulativePositiveMachineDetectionConfidence;
+        public double CumulativePositiveDetectionConfidence;
 
         /// <summary>
         /// Average global confidence of positive machine detections.
         /// </summary>
-        public long AveragePositiveMachineDetectionConfidence
+        public long AveragePositiveDetectionConfidence
         {
             get
             {
-                if (PositiveMachineDetectionCount == 0)
+                if (PositiveDetectionCount == 0)
                 {
                     return 0;
                 }
-                return (long)Math.Round(CumulativePositiveMachineDetectionConfidence * 1.0 / PositiveMachineDetectionCount);
+                return (long)Math.Round(CumulativePositiveDetectionConfidence * 1.0 / PositiveDetectionCount);
             }
         }
 
         /// <summary>
-        /// Number of negative machine detections.
-        /// </summary>
-        public long NegativeMachineDetectionCount;
-
-        /// <summary>
         /// Cumulative global confidence of negative machine detections.
         /// </summary>
-        public double CumulativeNegativeMachineDetectionConfidence;
+        public double CumulativeNegativeDetectionConfidence;
 
-        public long AverageNegativeMachineDetectionConfidence
+        public long AverageNegativeDetectionConfidence
         {
             get
             {
-                if (NegativeMachineDetectionCount == 0)
+                if (NegativeDetectionCount == 0)
                 {
                     return 0;
                 }
-                return (long)Math.Round(CumulativeNegativeMachineDetectionConfidence * 1.0 / NegativeMachineDetectionCount);
+                return (long)Math.Round(CumulativeNegativeDetectionConfidence * 1.0 / NegativeDetectionCount);
             }
         }
 
         /// <summary>
         /// Average global confidence of negative machine detections.
         /// </summary>
-        public double MaximumNegativeMachineDetectionConfidence;
+        public double MaximumNegativeDetectionConfidence;
 
-        /// <summary>
-        /// Number of unreviewed machine detections.
-        /// </summary>
-        public long UnreviewedMachineDetectionCount;
+        public string ConfidenceThreshold = string.Empty;
+    }
 
-        /// <summary>
-        /// Total number of reviewed machine detections (positive + negative).
-        /// </summary>
-        public long ReviewedMachineDetectionCount => PositiveMachineDetectionCount + NegativeMachineDetectionCount;
+    public class DetectionData
+    {
+        public DetectionSourceData[] Source = new DetectionSourceData[(int)DetectionSource.All];
 
-        /// <summary>
-        /// Total number of machine detections (reviewed and unreviewed).
-        /// </summary>
-        public long TotalMachineDetectionCount => ReviewedMachineDetectionCount + UnreviewedMachineDetectionCount;
-
-        /// <summary>
-        /// Number of positive human detections.
-        /// </summary>
-        public long PositiveHumanDetectionCount;
-
-        /// <summary>
-        /// Number of negative human detections.
-        /// </summary>
-        public long NegativeHumanDetectionCount;
-
-        /// <summary>
-        /// Number of unreviewed human detections.
-        /// </summary>
-        public long UnreviewedHumanDetectionCount;
-
-        /// <summary>
-        /// Number of reviewed human detections (positive + negative).
-        /// </summary>
-        public long ReviewedHumanDetectionCount => PositiveHumanDetectionCount + NegativeHumanDetectionCount;
-
-        /// <summary>
-        /// Total number of human detections.
-        /// </summary>
-        public long TotalHumanDetectionCount => ReviewedHumanDetectionCount + UnreviewedHumanDetectionCount;
-
-        public string OrcaHelloConfidenceThreshold = string.Empty;
-        public string PodsAIConfidenceThreshold = string.Empty;
+        public DetectionData()
+        {
+            for (int i = 0; i < Source.Length; i++)
+            {
+                Source[i] = new DetectionSourceData();
+            }
+        }
     }
 
     public class DetectionsModel : PageModel
@@ -160,10 +147,7 @@ namespace OrcanodeMonitor.Pages
         {
             if (!dictionary.ContainsKey(node.OrcasoundSlug))
             {
-                dictionary[node.OrcasoundSlug] = new DetectionData
-                {
-                    MinimumPositiveMachineDetectionConfidence = long.MaxValue
-                };
+                dictionary[node.OrcasoundSlug] = new DetectionData();
             }
 
             var data = dictionary[node.OrcasoundSlug];
@@ -226,30 +210,32 @@ namespace OrcanodeMonitor.Pages
 
                         DetectionData monthData = _detectionCountsPastMonth[node.OrcasoundSlug];
                         DetectionData weekData = _detectionCountsPastWeek[node.OrcasoundSlug];
+                        DetectionSourceData sourceMonthData = monthData.Source[(int)detection.Source];
+                        DetectionSourceData sourceWeekData = weekData.Source[(int)detection.Source];
 
                         if (detection.Source == DetectionSource.Human)
                         {
                             if (!detection.Reviewed)
                             {
-                                monthData.UnreviewedHumanDetectionCount++;
+                                sourceMonthData.UnreviewedDetectionCount++;
                                 if (inPastWeek)
                                 {
-                                    weekData.UnreviewedHumanDetectionCount++;
+                                    sourceMonthData.UnreviewedDetectionCount++;
                                 }
                                 continue;
                             }
                             if (detection.GeneralCategory == DetectionGeneralCategoryEnum.Whale)
                             {
-                                monthData.PositiveHumanDetectionCount++;
-                                if (inPastWeek) weekData.PositiveHumanDetectionCount++;
+                                sourceMonthData.PositiveDetectionCount++;
+                                if (inPastWeek) sourceWeekData.PositiveDetectionCount++;
                             }
                             else
                             {
-                                monthData.NegativeHumanDetectionCount++;
-                                if (inPastWeek) weekData.NegativeHumanDetectionCount++;
+                                sourceMonthData.NegativeDetectionCount++;
+                                if (inPastWeek) sourceWeekData.NegativeDetectionCount++;
                             }
                         }
-                        else // detection.Source == OrcaHello or PodsAI.
+                        else // Machine detections.
                         {
                             // Find the matching InferenceSystemDetection.
                             MachineDetection? inferenceSystemDetection = machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
@@ -262,10 +248,10 @@ namespace OrcanodeMonitor.Pages
                             // Count unreviewed detections separately; only reviewed detections affect the confirmed/total stats.
                             if (!inferenceSystemDetection.Reviewed)
                             {
-                                monthData.UnreviewedMachineDetectionCount++;
+                                sourceMonthData.UnreviewedDetectionCount++;
                                 if (inPastWeek)
                                 {
-                                    weekData.UnreviewedMachineDetectionCount++;
+                                    sourceWeekData.UnreviewedDetectionCount++;
                                 }
                                 continue;
                             }
@@ -274,39 +260,39 @@ namespace OrcanodeMonitor.Pages
 
                             if (inferenceSystemDetection.IsPositive(detection))
                             {
-                                monthData.PositiveMachineDetectionCount++;
-                                monthData.CumulativePositiveMachineDetectionConfidence += globalConfidence;
-                                if (globalConfidence < monthData.MinimumPositiveMachineDetectionConfidence)
+                                sourceMonthData.PositiveDetectionCount++;
+                                sourceMonthData.CumulativePositiveDetectionConfidence += globalConfidence;
+                                if (globalConfidence < sourceMonthData.MinimumPositiveDetectionConfidence)
                                 {
-                                    monthData.MinimumPositiveMachineDetectionConfidence = globalConfidence;
+                                    sourceMonthData.MinimumPositiveDetectionConfidence = globalConfidence;
                                 }
 
                                 if (inPastWeek)
                                 {
-                                    weekData.PositiveMachineDetectionCount++;
-                                    weekData.CumulativePositiveMachineDetectionConfidence += globalConfidence;
-                                    if (globalConfidence < weekData.MinimumPositiveMachineDetectionConfidence)
+                                    sourceWeekData.PositiveDetectionCount++;
+                                    sourceWeekData.CumulativePositiveDetectionConfidence += globalConfidence;
+                                    if (globalConfidence < sourceWeekData.MinimumPositiveDetectionConfidence)
                                     {
-                                        weekData.MinimumPositiveMachineDetectionConfidence = globalConfidence;
+                                        sourceWeekData.MinimumPositiveDetectionConfidence = globalConfidence;
                                     }
                                 }
                             }
                             else
                             {
-                                monthData.NegativeMachineDetectionCount++;
-                                monthData.CumulativeNegativeMachineDetectionConfidence += globalConfidence;
-                                if (globalConfidence > monthData.MaximumNegativeMachineDetectionConfidence)
+                                sourceMonthData.NegativeDetectionCount++;
+                                sourceMonthData.CumulativeNegativeDetectionConfidence += globalConfidence;
+                                if (globalConfidence > sourceMonthData.MaximumNegativeDetectionConfidence)
                                 {
-                                    monthData.MaximumNegativeMachineDetectionConfidence = globalConfidence;
+                                    sourceMonthData.MaximumNegativeDetectionConfidence = globalConfidence;
                                 }
 
                                 if (inPastWeek)
                                 {
-                                    weekData.NegativeMachineDetectionCount++;
-                                    weekData.CumulativeNegativeMachineDetectionConfidence += globalConfidence;
-                                    if (globalConfidence > weekData.MaximumNegativeMachineDetectionConfidence)
+                                    sourceWeekData.NegativeDetectionCount++;
+                                    sourceWeekData.CumulativeNegativeDetectionConfidence += globalConfidence;
+                                    if (globalConfidence > sourceWeekData.MaximumNegativeDetectionConfidence)
                                     {
-                                        weekData.MaximumNegativeMachineDetectionConfidence = globalConfidence;
+                                        sourceWeekData.MaximumNegativeDetectionConfidence = globalConfidence;
                                     }
                                 }
                             }
@@ -334,67 +320,48 @@ namespace OrcanodeMonitor.Pages
             }
         }
 
-        public string GetHumanDetectionCount(Orcanode node, string timeRange)
+        public string GetDetectionCount(Orcanode node, string timeRange, DetectionSource source)
         {
             if (!GetDict(timeRange).TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
             }
-            // If there are no human detections at all, report "None".
-            if (data.TotalHumanDetectionCount == 0)
+            DetectionSourceData sourceData = data.Source[(int)source];
+
+            // If there are no detections for the specified source at all, report "None".
+            if (sourceData.TotalDetectionCount == 0)
             {
                 return "None";
             }
+
             // If there are detections but none have been reviewed yet, show the total
             // without attempting to compute a percentage on a zero denominator.
-            if (data.ReviewedHumanDetectionCount == 0)
+            if (sourceData.ReviewedDetectionCount == 0)
             {
-                return $"0 / 0 of {data.TotalHumanDetectionCount}";
+                return $"0 / 0 of {sourceData.TotalDetectionCount}";
             }
-            string result = $"{data.PositiveHumanDetectionCount} / {data.ReviewedHumanDetectionCount} ({(data.PositiveHumanDetectionCount / (double)data.ReviewedHumanDetectionCount):P0})";
-            if (data.UnreviewedHumanDetectionCount > 0)
+
+            string result = $"{sourceData.PositiveDetectionCount} / {sourceData.ReviewedDetectionCount} ({(sourceData.PositiveDetectionCount / (double)sourceData.ReviewedDetectionCount):P0})";
+            if (sourceData.UnreviewedDetectionCount > 0)
             {
-                result += $" of {data.TotalHumanDetectionCount}";
+                result += $" of {sourceData.TotalDetectionCount}";
             }
             return result;
         }
 
-        public string GetMachineDetectionCount(Orcanode node, string timeRange)
-        {
-            if (!GetDict(timeRange).TryGetValue(node.OrcasoundSlug, out DetectionData? data))
-            {
-                return "Unknown";
-            }
-            // If there are no machine detections at all, report "None".
-            if (data.TotalMachineDetectionCount == 0)
-            {
-                return "None";
-            }
-            // If there are detections but none have been reviewed yet, show the total
-            // without attempting to compute a percentage on a zero denominator.
-            if (data.ReviewedMachineDetectionCount == 0)
-            {
-                return $"0 / 0 of {data.TotalMachineDetectionCount}";
-            }
-            string result = $"{data.PositiveMachineDetectionCount} / {data.ReviewedMachineDetectionCount} ({(data.PositiveMachineDetectionCount / (double)data.ReviewedMachineDetectionCount):P0})";
-            if (data.UnreviewedMachineDetectionCount > 0)
-            {
-                result += $" of {data.TotalMachineDetectionCount}";
-            }
-            return result;
-        }
-
-        public string GetMachineDetectionBackgroundColor(Orcanode node, string timeRange)
+        public string GetDetectionBackgroundColor(Orcanode node, string timeRange, DetectionSource source)
         {
             if (!GetDict(timeRange).TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return ColorTranslator.ToHtml(Color.White);
             }
-            if (data.ReviewedMachineDetectionCount == 0)
+            DetectionSourceData sourceData = data.Source[(int)source];
+
+            if (sourceData.ReviewedDetectionCount == 0)
             {
                 return ColorTranslator.ToHtml(Color.White);
             }
-            double percentage = data.PositiveMachineDetectionCount / (double)data.ReviewedMachineDetectionCount;
+            double percentage = sourceData.PositiveDetectionCount / (double)sourceData.ReviewedDetectionCount;
             if (percentage > 0.5)
             {
                 return ColorTranslator.ToHtml(Color.LightGreen);
@@ -408,17 +375,19 @@ namespace OrcanodeMonitor.Pages
         /// <param name="node"></param>
         /// <param name="timeRange">Time range: "pastWeek" or "pastMonth"</param>
         /// <returns>Threshold percentage</returns>
-        public string GetAveragePositiveMachineConfidence(Orcanode node, string timeRange)
+        public string GetAveragePositiveConfidence(Orcanode node, string timeRange, DetectionSource source)
         {
             if (!GetDict(timeRange).TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
             }
-            if (data.PositiveMachineDetectionCount == 0)
+            DetectionSourceData sourceData = data.Source[(int)source];
+
+            if (sourceData.PositiveDetectionCount == 0)
             {
                 return "-";
             }
-            return $"{data.MinimumPositiveMachineDetectionConfidence:F2}% min, {data.AveragePositiveMachineDetectionConfidence:F2}% avg";
+            return $"{sourceData.MinimumPositiveDetectionConfidence:F2}% min, {sourceData.AveragePositiveDetectionConfidence:F2}% avg";
         }
 
         /// <summary>
@@ -427,47 +396,36 @@ namespace OrcanodeMonitor.Pages
         /// <param name="node"></param>
         /// <param name="timeRange">Time range: "pastWeek" or "pastMonth"</param>
         /// <returns>Threshold percentage</returns>
-        public string GetAverageNegativeMachineConfidence(Orcanode node, string timeRange)
+        public string GetAverageNegativeConfidence(Orcanode node, string timeRange, DetectionSource source)
         {
             if (!GetDict(timeRange).TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
             }
-            if (data.NegativeMachineDetectionCount == 0)
+            DetectionSourceData sourceData = data.Source[(int)source];
+
+            if (sourceData.NegativeDetectionCount == 0)
             {
                 return "-";
             }
-            return $"{data.AverageNegativeMachineDetectionConfidence:F2}% avg, {data.MaximumNegativeMachineDetectionConfidence:F2}% max";
+            return $"{sourceData.AverageNegativeDetectionConfidence:F2}% avg, {sourceData.MaximumNegativeDetectionConfidence:F2}% max";
         }
 
         /// <summary>
-        /// Get the OrcaHello confidence threshold display string for a node.
+        /// Get the machine confidence threshold display string for a node.
         /// Format: "{globalThreshold} @ {localThreshold}%" (e.g., "3 @ 70%")
         /// </summary>
         /// <param name="node">Node to check</param>
         /// <returns>Confidence threshold string</returns>
-        public string GetOrcaHelloConfiguredConfidenceThreshold(Orcanode node)
+        public string GetConfiguredConfidenceThreshold(Orcanode node, DetectionSource source)
         {
             if (!_detectionCountsPastMonth.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
             }
-            return data.OrcaHelloConfidenceThreshold;
-        }
+            DetectionSourceData sourceData = data.Source[(int)source];
 
-        /// <summary>
-        /// Get the PODS-AI confidence threshold display string for a node.
-        /// Format: "{globalThreshold} @ {localThreshold}%" (e.g., "3 @ 70%")
-        /// </summary>
-        /// <param name="node">Node to check</param>
-        /// <returns>Confidence threshold string</returns>
-        public string GetPodsAIConfiguredConfidenceThreshold(Orcanode node)
-        {
-            if (!_detectionCountsPastMonth.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
-            {
-                return "Unknown";
-            }
-            return data.PodsAIConfidenceThreshold;
+            return sourceData.ConfidenceThreshold;
         }
     }
 }
