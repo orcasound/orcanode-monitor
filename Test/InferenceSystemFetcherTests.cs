@@ -46,6 +46,7 @@ namespace Test
             var orcanode = new Orcanode { OrcasoundSlug = "test-slug" };
 
             // Act
+            // The source doesn't matter since it won't be used.
             var result = await fetcher.GetInferencePodByNameAsync(orcanode, containerName, DetectionSource.OrcaHello, _logger);
 
             // Assert
@@ -87,6 +88,7 @@ namespace Test
             var orcanodes = new List<Orcanode>();
 
             // Act
+            // The source doesn't matter since it won't be used.
             var result = await fetcher.FetchPodMetricsAsync(orcanodes, containerName, DetectionSource.OrcaHello, _logger);
 
             // Assert
