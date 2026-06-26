@@ -932,7 +932,7 @@ namespace OrcanodeMonitor.Core
         /// Get the number of detections for a given source and location in the past week.
         /// </summary>
         /// <param name="orcanode">Node to check</param>
-        /// <param name="source">Detection source to check</param>
+        /// <param name="source">Detection source to check (All for all machine sources)</param>
         /// <param name="logger">Logger instance</param>
         /// <returns>Count of AI detections in the past week</returns>
         public async Task<long> GetDetectionCountAsync(Orcanode orcanode, DetectionSource source, ILogger logger)
@@ -959,8 +959,11 @@ namespace OrcanodeMonitor.Core
                 );
 
                 // Try to get the custom header.
-                // TODO: this gets the total number of machine detections, not
-                // the count specific to PODS-AI or OrcaHello.
+                if (source != DetectionSource.All)
+                {
+                    logger.LogWarning("[GetDetectionCountAsync] Detection source filtering is not implemented. Returning total count for all sources.");
+                }
+
                 if (!response.Headers.TryGetValues("totalnumberrecords", out var values))
                 {
                     return 0;
@@ -985,7 +988,7 @@ namespace OrcanodeMonitor.Core
         /// Fetch machine detection counts in parallel.
         /// </summary>
         /// <param name="nodes">List of Orcanodes</param>
-        /// <param name="source">Detection source</param>
+        /// <param name="source">Detection source (All for all machine sources)</param>
         /// <param name="counts">Dictionary of counts</param>
         /// <param name="logger">Logger instance</param>
         /// <returns></returns>
