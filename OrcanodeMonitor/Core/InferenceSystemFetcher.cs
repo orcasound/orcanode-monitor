@@ -959,6 +959,8 @@ namespace OrcanodeMonitor.Core
                 );
 
                 // Try to get the custom header.
+                // TODO: this gets the total number of machine detections, not
+                // the count specific to PODS-AI or OrcaHello.
                 if (!response.Headers.TryGetValues("totalnumberrecords", out var values))
                 {
                     return 0;
