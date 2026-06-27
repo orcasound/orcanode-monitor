@@ -290,7 +290,8 @@ namespace OrcanodeMonitor.Pages
                 var events = await _databaseContext.OrcanodeEvents.ToListAsync();
                 _events = events.Where(e => e.Type == OrcanodeEventTypes.HydrophoneStream).ToList();
 
-                await _inferenceSystemFetcher.FetchMachineDetectionCountsAsync(_nodes, _machineDetectionCounts, _logger);
+                // TODO: separate PODS-AI vs OrcaHello counts, and display them separately in the UI.
+                await _inferenceSystemFetcher.FetchMachineDetectionCountsAsync(_nodes, DetectionSource.All, _machineDetectionCounts, _logger);
 
                 _recentEvents = await Fetcher.GetRecentEventsAsync(_databaseContext, DateTime.UtcNow.AddDays(-7), _logger) ?? new List<OrcanodeEvent>();
             }
