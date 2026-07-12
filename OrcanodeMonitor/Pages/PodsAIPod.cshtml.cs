@@ -142,7 +142,7 @@ namespace OrcanodeMonitor.Pages
                 return NotFound(); // Return a 404 error page
             }
 
-            _pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(_orcanode, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
+            _pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(_orcanode, InferenceSystemFetcher.PodsAIInferenceContainerName, DetectionSource.PodsAI, _logger);
             if (_pod == null)
             {
                 return NotFound(); // Return a 404 error page

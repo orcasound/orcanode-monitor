@@ -251,15 +251,15 @@ namespace OrcanodeMonitor.Pages
         {
             var orcanodes = await _databaseContext.Orcanodes.ToListAsync();
             Orcanodes = orcanodes.Where(n => ((n.DataplicityConnectionStatus != OrcanodeOnlineStatus.Absent) ||
-                                       (n.OrcasoundStatus != OrcanodeOnlineStatus.Absent) ||
-                                       (n.S3StreamStatus != OrcanodeOnlineStatus.Absent &&
-                                        n.S3StreamStatus != OrcanodeOnlineStatus.Unauthorized)) &&
-                                      (n.OrcasoundHost != "dev.orcasound.net"))
+                                              (n.OrcasoundStatus != OrcanodeOnlineStatus.Absent) ||
+                                              (n.S3StreamStatus != OrcanodeOnlineStatus.Absent &&
+                                               n.S3StreamStatus != OrcanodeOnlineStatus.Unauthorized)) &&
+                                             (n.OrcasoundHost != "dev.orcasound.net"))
                           .OrderBy(n => n.DisplayName)
                           .ToList();
 
             // Fetch pods and nodes for display.
-            List<InferencePod> pods = await _inferenceSystemFetcher.FetchPodMetricsAsync(orcanodes, InferenceSystemFetcher.PodsAIInferenceContainerName, _logger);
+            List<InferencePod> pods = await _inferenceSystemFetcher.FetchPodMetricsAsync(Orcanodes, InferenceSystemFetcher.PodsAIInferenceContainerName, DetectionSource.PodsAI, _logger);
             Pods = pods.OrderBy(n => n.NamespaceName).ToList();
 
             List<InferenceSystemNode> nodes = await _inferenceSystemFetcher.FetchNodeMetricsAsync(_logger, InferenceSystemFetcher.PodsAIInferenceContainerName);

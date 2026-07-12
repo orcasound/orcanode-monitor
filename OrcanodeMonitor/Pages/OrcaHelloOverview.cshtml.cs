@@ -260,7 +260,7 @@ namespace OrcanodeMonitor.Pages
                           .ToList();
 
             // Fetch pods and nodes for display.
-            List<InferencePod> pods = await _inferenceSystemFetcher.FetchPodMetricsAsync(Orcanodes, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+            List<InferencePod> pods = await _inferenceSystemFetcher.FetchPodMetricsAsync(Orcanodes, InferenceSystemFetcher.OrcaHelloInferenceContainerName, DetectionSource.OrcaHello, _logger);
             Pods = pods.OrderBy(n => n.NamespaceName).ToList();
 
             // Assume that all nodes have an OrcaHello instance on them.
