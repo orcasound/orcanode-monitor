@@ -81,7 +81,22 @@ jobs:
         shell: pwsh
 
       - name: Retry Deploy to Azure WebApp
+        id: deploy_retry
         if: steps.deploy_attempt.outcome == 'failure'
+        uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383  # v3.0.8
+        continue-on-error: true
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.OrcanodeMonitorPublishProfile }}
+          package: deployment.zip
+
+      - name: Wait before second retry
+        if: steps.deploy_retry.outcome == 'failure'
+        run: Start-Sleep -Seconds 120
+        shell: pwsh
+
+      - name: Second Retry Deploy to Azure WebApp
+        if: steps.deploy_retry.outcome == 'failure'
         uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383  # v3.0.8
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
