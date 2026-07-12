@@ -965,6 +965,11 @@ namespace OrcanodeMonitor.Core
                 }
 
                 // Try to get the custom header.
+                if (source != DetectionSource.All)
+                {
+                    logger.LogWarning("[GetDetectionCountAsync] Detection source filtering is not implemented. Returning total count for all sources.");
+                }
+
                 if (!response.Headers.TryGetValues("totalnumberrecords", out var values))
                 {
                     return 0;
