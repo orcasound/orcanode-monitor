@@ -958,12 +958,13 @@ namespace OrcanodeMonitor.Core
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                 );
 
-                // Try to get the custom header.
                 if (source != DetectionSource.All)
                 {
+                    // TODO: get the count per source type.
                     logger.LogWarning("[GetDetectionCountAsync] Detection source filtering is not implemented. Returning total count for all sources.");
                 }
 
+                // Try to get the custom header.
                 if (!response.Headers.TryGetValues("totalnumberrecords", out var values))
                 {
                     return 0;
@@ -979,7 +980,7 @@ namespace OrcanodeMonitor.Core
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "[GetMachineDetectionCountAsync] Error retrieving detections");
+                logger.LogError(ex, "[GetDetectionCountAsync] Error retrieving detections");
                 return 0;
             }
         }
