@@ -88,22 +88,16 @@ namespace OrcanodeMonitor.Pages
                 return DetectionSpecificCategoryEnum.Human;
             }
 
+            MachineDetection? machineDetection = _machineDetections.FirstOrDefault(d => d.Id == orcasiteDetection.IdempotencyKey);
+            if (machineDetection == null)
+            {
+                return DetectionSpecificCategoryEnum.Unknown;
+            }
+
             if (orcasiteDetection.Source == DetectionSource.PodsAI)
             {
-                string comments = orcasiteDetection.Description ?? string.Empty;
-
-                const string aiPrefix = "AI:";
-                string categoryText = comments.StartsWith(aiPrefix, StringComparison.OrdinalIgnoreCase)
-                                    ? comments[aiPrefix.Length..].TrimStart()
-                                    : comments;
-
-                // Find the first category token after the "AI:" prefix.
-                string firstWord = categoryText
-                                    .Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                                    .FirstOrDefault()?.Trim(',', '.', ':', ';') ?? string.Empty;
-
                 // Convert it to the corresponding DetectionSpecificCategoryEnum value.
-                if (Enum.TryParse<DetectionSpecificCategoryEnum>(firstWord, true, out var specificCategory))
+                if (Enum.TryParse<DetectionSpecificCategoryEnum>(machineDetection?.GlobalPredictionLabel, true, out var specificCategory))
                 {
                     return specificCategory;
                 }
@@ -113,11 +107,6 @@ namespace OrcanodeMonitor.Pages
 
             if (orcasiteDetection.Source == DetectionSource.OrcaHello)
             {
-                MachineDetection? machineDetection = _machineDetections.FirstOrDefault(d => d.Id == orcasiteDetection.IdempotencyKey);
-                if (machineDetection == null)
-                {
-                    return DetectionSpecificCategoryEnum.Unknown;
-                }
                 if (machineDetection.IsPositive(orcasiteDetection))
                 {
                     return DetectionSpecificCategoryEnum.Resident;
