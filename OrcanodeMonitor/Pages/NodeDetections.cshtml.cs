@@ -77,6 +77,17 @@ namespace OrcanodeMonitor.Pages
             return classes;
         }
 
+        public string GetTags(OrcasiteDetection item)
+        {
+            MachineDetection? machineDetection = _machineDetections.FirstOrDefault(d => d.Id == item.IdempotencyKey);
+            if (machineDetection == null)
+            {
+                return string.Empty;
+            }
+
+            return machineDetection.Tags ?? string.Empty;
+        }
+
         public DetectionSpecificCategoryEnum GetSpecificCategory(OrcasiteDetection orcasiteDetection)
         {
             if (orcasiteDetection.GeneralCategory == DetectionGeneralCategoryEnum.Vessel)

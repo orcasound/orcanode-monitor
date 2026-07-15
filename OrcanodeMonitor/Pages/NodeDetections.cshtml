@@ -68,6 +68,7 @@
                 <th>Timestamp (Pacific)</th>
                 <th>Orcasite Category</th>
                 <th>PODS-AI Category</th>
+                <th>Tags</th>
                 <th>Source</th>
                 <th>Status</th>
                 <th align="left">Description</th>
@@ -92,6 +93,7 @@
                     <td>@pacificTime.ToString("g")</td>
                     <td>@item.GeneralCategory</td>
                     <td>@Model.GetSpecificCategory(item)</td>
+                    <td>@Model.GetTags(item)</td>
                     <td>@item.Source</td>
                     <td>@Model.GetDetectionStatus(item)</td>
                     <td align="left">
