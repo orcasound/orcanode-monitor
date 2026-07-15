@@ -27,6 +27,7 @@ namespace OrcanodeMonitor.Core
     public class MachineDetectionAnnotation
     {
         public int Id { get; set; }
+        public string? Label { get; set; }
         public double StartTime { get; set; }
         public double EndTime { get; set; }
         public double Confidence { get; set; }
@@ -39,6 +40,7 @@ namespace OrcanodeMonitor.Core
         public string SpectrogramUri { get; set; } = string.Empty;
         public MachineDetectionLocation Location { get; set; } = new();
         public string Timestamp { get; set; } = string.Empty;
+        public string? GlobalPredictionLabel { get; set; }
         public List<MachineDetectionAnnotation> Annotations { get; set; } = new();
         public bool Reviewed { get; set; }
         public string? Found { get; set; }
