@@ -68,6 +68,7 @@
                 <th>Timestamp (Pacific)</th>
                 <th>Orcasite Category</th>
                 <th>PODS-AI Category</th>
+                <th>Tags</th>
                 <th>Source</th>
                 <th>Status</th>
                 <th align="left">Description</th>
@@ -79,7 +80,7 @@
             @if (!Model.RecentDetections.Any())
             {
                 <tr>
-                    <td colspan="8" class="text-center">No detections found for this time period.</td>
+                    <td colspan="9" class="text-center">No detections found for this time period.</td>
                 </tr>
             }
             @foreach (Models.OrcasiteDetection item in Model.RecentDetections)
@@ -92,6 +93,7 @@
                     <td>@pacificTime.ToString("g")</td>
                     <td>@item.GeneralCategory</td>
                     <td>@Model.GetSpecificCategory(item)</td>
+                    <td>@Model.GetTags(item)</td>
                     <td>@item.Source</td>
                     <td>@Model.GetDetectionStatus(item)</td>
                     <td align="left">
