@@ -50,6 +50,20 @@
         <p></p>
     </div>
 
+    <!-- Filter Buttons for Label -->
+    <div>
+        Filter by PODS-AI Category:
+        <button id="btn-label-all" class="btn selected" onclick="updateFilter('label', 'all')">All</button>
+        <button id="btn-label-resident" class="btn unselected" onclick="updateFilter('label', 'resident')">Resident</button>
+        <button id="btn-label-transient" class="btn unselected" onclick="updateFilter('label', 'transient')">Transient</button>
+        <button id="btn-label-humpback" class="btn unselected" onclick="updateFilter('label', 'humpback')">Humpback</button>
+        <button id="btn-label-vessel" class="btn unselected" onclick="updateFilter('label', 'vessel')">Vessel</button>
+        <button id="btn-label-human" class="btn unselected" onclick="updateFilter('label', 'human')">Human</button>
+        <button id="btn-label-jingle" class="btn unselected" onclick="updateFilter('label', 'jingle')">Jingle</button>
+        <button id="btn-label-water" class="btn unselected" onclick="updateFilter('label', 'water')">Water</button>
+        <p></p>
+    </div>
+
     <!-- Filter Buttons for Source -->
     <div>
         Filter by Source:
@@ -125,6 +139,7 @@
         var currentFilters = {
             timeRange: 'pastWeek',
             category: 'all',
+            label: 'all',
             source: 'all' };
 
         updateFilter('default', 'default');
@@ -164,6 +179,21 @@
                 newCategoryButton.classList.add('selected');
             }
 
+            // Update label filter.
+            if (filterType == 'label') {
+                var oldLabelButtonId = 'btn-label-' + currentFilters.label;
+                var oldLabelButton = document.getElementById(oldLabelButtonId);
+                oldLabelButton.classList.remove('selected');
+                oldLabelButton.classList.add('unselected');
+
+                currentFilters.label = filterValue;
+
+                var newLabelButtonId = 'btn-label-' + currentFilters.label;
+                var newLabelButton = document.getElementById(newLabelButtonId);
+                newLabelButton.classList.remove('unselected');
+                newLabelButton.classList.add('selected');
+            }
+
             // Update source filter.
             if (filterType == 'source') {
                 var oldSourceButtonId = 'btn-source-' + currentFilters.source;
@@ -191,15 +221,16 @@
             // Loop through each row.
             rows.forEach(function(row) {
                 // Check if the row matches the selected time range, category, and source.
-                var matchesTimeRange = (currentFilters.timeRange === 'all' || row.classList.contains(currentFilters.timeRange));
-                var matchesCategory = (currentFilters.category === 'all' || row.classList.contains(currentFilters.category));
-                var matchesSource = (currentFilters.source === 'all' || row.classList.contains(currentFilters.source));
+                var matchesTimeRange = (currentFilters.timeRange === 'all' || row.classList.contains("timeRange-" + currentFilters.timeRange));
+                var matchesCategory = (currentFilters.category === 'all' || row.classList.contains("category-" + currentFilters.category));
+                var matchesLabel = (currentFilters.label === 'all' || row.classList.contains("label-" + currentFilters.label));
+                var matchesSource = (currentFilters.source === 'all' || row.classList.contains("source-" + currentFilters.source));
 
                 if (matchesTimeRange) {
                     timeRangeCount++;
                 }
 
-                if (matchesTimeRange && matchesCategory && matchesSource) {
+                if (matchesTimeRange && matchesCategory && matchesLabel && matchesSource) {
                     row.style.display = ''; // Show matching rows.
                     visibleCount++;
                 } else {

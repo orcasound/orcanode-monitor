@@ -38,11 +38,18 @@ namespace OrcanodeMonitor.Pages
         public static string GetSourceClass(OrcasiteDetection item) => item.Source.ToString().ToLowerInvariant();
 
         /// <summary>
-        /// Get category CSS class for a detection.
+        /// Get general (i.e., Orcasite) category CSS class for a detection.
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public static string GetCategoryClass(OrcasiteDetection item) => item.GeneralCategory.ToString().ToLowerInvariant();
+        public static string GetGeneralCategoryClass(OrcasiteDetection item) => item.GeneralCategory.ToString().ToLowerInvariant();
+
+        /// <summary>
+        /// Get specific (i.e., PODS-AI) category CSS class for a detection.
+        /// </summary>
+        /// <param name="item">Detection</param>
+        /// <returns>CSS class</returns>
+        public string GetSpecificCategoryClass(OrcasiteDetection item) => GetSpecificCategory(item).ToString().ToLowerInvariant();
 
         /// <summary>
         /// Get time range CSS classes for a detection.
@@ -73,7 +80,10 @@ namespace OrcanodeMonitor.Pages
         /// <returns>String containing CSS classes</returns>
         public string GetDetectionClasses(OrcasiteDetection item)
         {
-            string classes = GetSourceClass(item) + " " + GetCategoryClass(item) + " " + GetTimeRangeClass(item);
+            string classes = "source-" + GetSourceClass(item) + " " +
+                             "category-" + GetGeneralCategoryClass(item) + " " +
+                             "label-" + GetSpecificCategoryClass(item) + " " +
+                             "timeRange-" + GetTimeRangeClass(item);
             return classes;
         }
 
