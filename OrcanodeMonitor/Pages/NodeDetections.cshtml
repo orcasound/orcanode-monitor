@@ -221,10 +221,10 @@
             // Loop through each row.
             rows.forEach(function(row) {
                 // Check if the row matches the selected time range, category, and source.
-                var matchesTimeRange = (currentFilters.timeRange === 'all' || row.classList.contains(currentFilters.timeRange));
-                var matchesCategory = (currentFilters.category === 'all' || row.classList.contains(currentFilters.category));
-                var matchesLabel = (currentFilters.label === 'all' || row.classList.contains(currentFilters.label));
-                var matchesSource = (currentFilters.source === 'all' || row.classList.contains(currentFilters.source));
+                var matchesTimeRange = (currentFilters.timeRange === 'all' || row.classList.contains("timeRange-" + currentFilters.timeRange));
+                var matchesCategory = (currentFilters.category === 'all' || row.classList.contains("category-" + currentFilters.category));
+                var matchesLabel = (currentFilters.label === 'all' || row.classList.contains("label-" + currentFilters.label));
+                var matchesSource = (currentFilters.source === 'all' || row.classList.contains("source-" + currentFilters.source));
 
                 if (matchesTimeRange) {
                     timeRangeCount++;

@@ -80,7 +80,10 @@ namespace OrcanodeMonitor.Pages
         /// <returns>String containing CSS classes</returns>
         public string GetDetectionClasses(OrcasiteDetection item)
         {
-            string classes = GetSourceClass(item) + " " + GetGeneralCategoryClass(item) + " " + GetSpecificCategoryClass(item) + " " + GetTimeRangeClass(item);
+            string classes = "source-" + GetSourceClass(item) + " " +
+                             "category-" + GetGeneralCategoryClass(item) + " " +
+                             "label-" + GetSpecificCategoryClass(item) + " " +
+                             "timeRange-" + GetTimeRangeClass(item);
             return classes;
         }
 
