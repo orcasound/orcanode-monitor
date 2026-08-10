@@ -37,6 +37,17 @@ namespace OrcanodeMonitor.Pages
         /// <returns>CSS class</returns>
         public string GetSourceClass(OrcasiteDetection item) => item.DetectionSource.ToString().ToLowerInvariant();
 
+        public string GetSourceLabel(OrcasiteDetection item)
+        {
+            switch (item.DetectionSource)
+            {
+                case DetectionSource.Human: return "Human";
+                case DetectionSource.PodsAI: return "PODS-AI";
+                case DetectionSource.OrcaHello: return "OrcaHello";
+                default: return "Unknown";
+            }
+        }
+
         /// <summary>
         /// Get general (i.e., Orcasite) category CSS class for a detection.
         /// </summary>
