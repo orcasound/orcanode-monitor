@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
+using OrcanodeMonitor.Core;
 using System.Text.Json.Serialization;
 
 namespace OrcanodeMonitor.Models
@@ -64,18 +65,26 @@ namespace OrcanodeMonitor.Models
         public string NodeID { get; set; } = string.Empty;
         public DateTime Timestamp { get; set; }
 
-        public static DetectionSource GetSource(string source, string comments)
+        public MachineDetection? MachineDetection { get; set; }
+
+        /// <summary>
+        /// Source of detection, as an enum value: Human, OrcaHello, or PODS-AI.
+        /// </summary>
+        public DetectionSource DetectionSource
         {
-            if (source.ToLower() == "human")
+            get
             {
-                return DetectionSource.Human;
-            }
-            else if (comments.StartsWith("AI:"))
-            {
-                return DetectionSource.PodsAI;
-            }
-            else
-            {
+                if (MachineDetection == null)
+                {
+                    return DetectionSource.Human;
+                }
+
+                if (!string.IsNullOrEmpty(MachineDetection.GlobalPredictionLabel) ||
+                    (MachineDetection.Comments != null && MachineDetection.Comments.StartsWith("AI:")))
+                {
+                    return DetectionSource.PodsAI;
+                }
+
                 return DetectionSource.OrcaHello;
             }
         }
@@ -93,7 +102,7 @@ namespace OrcanodeMonitor.Models
             _ => DetectionGeneralCategoryEnum.Other
         };
 
-        public DetectionSource Source { get; set; } = DetectionSource.OrcaHello;
+        public string Source { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string IdempotencyKey { get; set; } = string.Empty;
 
