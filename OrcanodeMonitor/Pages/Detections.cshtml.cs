@@ -187,6 +187,7 @@ namespace OrcanodeMonitor.Pages
                         {
                             continue;
                         }
+                        detection.MachineDetection = machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
 
                         bool inPastMonth = detection.Timestamp >= oneMonthAgo;
                         bool inPastWeek = detection.Timestamp >= oneWeekAgo;
@@ -209,10 +210,10 @@ namespace OrcanodeMonitor.Pages
 
                         DetectionData monthData = _detectionCountsPastMonth[node.OrcasoundSlug];
                         DetectionData weekData = _detectionCountsPastWeek[node.OrcasoundSlug];
-                        DetectionSourceData sourceMonthData = monthData.Source[(int)detection.Source];
-                        DetectionSourceData sourceWeekData = weekData.Source[(int)detection.Source];
+                        DetectionSourceData sourceMonthData = monthData.Source[(int)detection.DetectionSource];
+                        DetectionSourceData sourceWeekData = weekData.Source[(int)detection.DetectionSource];
 
-                        if (detection.Source == DetectionSource.Human)
+                        if (detection.DetectionSource == DetectionSource.Human)
                         {
                             if (!detection.Reviewed)
                             {
@@ -237,7 +238,7 @@ namespace OrcanodeMonitor.Pages
                         else // Machine detections.
                         {
                             // Find the matching InferenceSystemDetection.
-                            MachineDetection? inferenceSystemDetection = machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
+                            MachineDetection? inferenceSystemDetection = detection.MachineDetection;
                             if (inferenceSystemDetection == null)
                             {
                                 _logger.LogError($"Failed to find matching inferenceSystemDetection for {detection.ID}");

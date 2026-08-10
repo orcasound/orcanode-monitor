@@ -35,7 +35,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public static string GetSourceClass(OrcasiteDetection item) => item.Source.ToString().ToLowerInvariant();
+        public string GetSourceClass(OrcasiteDetection item) => item.DetectionSource.ToString().ToLowerInvariant();
 
         /// <summary>
         /// Get general (i.e., Orcasite) category CSS class for a detection.
@@ -89,13 +89,7 @@ namespace OrcanodeMonitor.Pages
 
         public string GetTags(OrcasiteDetection item)
         {
-            MachineDetection? machineDetection = _machineDetections.FirstOrDefault(d => d.Id == item.IdempotencyKey);
-            if (machineDetection == null)
-            {
-                return string.Empty;
-            }
-
-            return machineDetection.Tags ?? string.Empty;
+            return item.MachineDetection?.Tags ?? string.Empty;
         }
 
         public DetectionSpecificCategoryEnum GetSpecificCategory(OrcasiteDetection orcasiteDetection)
@@ -109,13 +103,13 @@ namespace OrcanodeMonitor.Pages
                 return DetectionSpecificCategoryEnum.Human;
             }
 
-            MachineDetection? machineDetection = _machineDetections.FirstOrDefault(d => d.Id == orcasiteDetection.IdempotencyKey);
+            MachineDetection? machineDetection = orcasiteDetection.MachineDetection;
             if (machineDetection == null)
             {
                 return DetectionSpecificCategoryEnum.Unknown;
             }
 
-            if (orcasiteDetection.Source == DetectionSource.PodsAI)
+            if (orcasiteDetection.DetectionSource == DetectionSource.PodsAI)
             {
                 // Convert it to the corresponding DetectionSpecificCategoryEnum value.
                 if (Enum.TryParse<DetectionSpecificCategoryEnum>(machineDetection?.GlobalPredictionLabel, true, out var specificCategory))
@@ -126,7 +120,7 @@ namespace OrcanodeMonitor.Pages
                 return DetectionSpecificCategoryEnum.Unknown;
             }
 
-            if (orcasiteDetection.Source == DetectionSource.OrcaHello)
+            if (orcasiteDetection.DetectionSource == DetectionSource.OrcaHello)
             {
                 if (machineDetection.IsPositive(orcasiteDetection))
                 {
@@ -148,10 +142,10 @@ namespace OrcanodeMonitor.Pages
         /// </returns>
         public string GetDetectionStatus(OrcasiteDetection orcasiteDetection)
         {
-            if (orcasiteDetection.Source == DetectionSource.OrcaHello ||
-                orcasiteDetection.Source == DetectionSource.PodsAI)
+            var source = orcasiteDetection.DetectionSource;
+            if (source == DetectionSource.OrcaHello || source == DetectionSource.PodsAI)
             {
-                MachineDetection? machineDetection = _machineDetections.FirstOrDefault(d => d.Id == orcasiteDetection.IdempotencyKey);
+                MachineDetection? machineDetection = orcasiteDetection.MachineDetection;
                 if (machineDetection == null)
                 {
                     return "Unknown";
@@ -204,6 +198,14 @@ namespace OrcanodeMonitor.Pages
             if (machineDetections != null)
             {
                 _machineDetections = machineDetections;
+            }
+
+            if (_orcasiteDetections != null && _machineDetections != null)
+            {
+                foreach (OrcasiteDetection detection in _orcasiteDetections)
+                {
+                    detection.MachineDetection = _machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
+                }
             }
         }
     }
