@@ -87,6 +87,8 @@ namespace OrcanodeMonitor.Pages
 
         public long DetectionCount => _pod?.DetectionCount ?? 0;
 
+        public bool PodRunning => _pod != null;
+
         public string Lag
         {
             get
@@ -142,28 +144,31 @@ namespace OrcanodeMonitor.Pages
                 return NotFound(); // Return a 404 error page
             }
 
-            _pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(_orcanode, InferenceSystemFetcher.OrcaHelloInferenceContainerName, DetectionSource.OrcaHello, _logger);
-            if (_pod == null)
-            {
-                return NotFound(); // Return a 404 error page
-            }
-
-            _inferenceSystemNode = await _inferenceSystemFetcher.GetNodeAsync(_pod.NodeName, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
-            if (_inferenceSystemNode == null)
-            {
-                return NotFound(); // Return a 404 error page
-            }
-
+            // Always set namespace and other-pods list so page header and "Other Pods" can display even if no current pod.
             Namespace = podNamespace;
-
             OtherPods = (await _inferenceSystemFetcher.GetOtherPodsByNameAsync(_orcanode, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger))
                 .OrderByDescending(p => p.StartTime)
                 .ToList();
 
+            _pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(_orcanode, InferenceSystemFetcher.OrcaHelloInferenceContainerName, DetectionSource.OrcaHello, _logger);
+            if (_pod == null)
+            {
+                // No running pod for this node — render the normal page header and OtherPods section,
+                // but skip pod/node details and log.
+                _logData = string.Empty;
+                return Page();
+            }
+
+            // Pod exists — fetch node info and logs as before.
+            _inferenceSystemNode = await _inferenceSystemFetcher.GetNodeAsync(_pod.NodeName, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
+            // If node info is missing, continue rendering page but leave node fields as "Unknown".
+            _inferenceSystemNode ??= null;
+
             _logData = await _inferenceSystemFetcher.GetAIContainerLogAsync(_pod, podNamespace, _logger);
             if (_logData.IsNullOrEmpty())
             {
-                return NotFound(); // Return a 404 error page
+                // Don't return 404 for missing logs; show an empty log area with a friendly message.
+                _logData = "No logs available for this pod.";
             }
             return Page();
         }
