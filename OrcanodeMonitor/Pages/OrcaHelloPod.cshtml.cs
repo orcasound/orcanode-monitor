@@ -153,16 +153,15 @@ namespace OrcanodeMonitor.Pages
             _pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(_orcanode, InferenceSystemFetcher.OrcaHelloInferenceContainerName, DetectionSource.OrcaHello, _logger);
             if (_pod == null)
             {
-                // No running pod for this node — render the normal page header and OtherPods section,
+                // No running pod for this node - render the normal page header and OtherPods section,
                 // but skip pod/node details and log.
                 _logData = string.Empty;
                 return Page();
             }
 
-            // Pod exists — fetch node info and logs as before.
+            // Pod exists - fetch node info and logs as before.
             _inferenceSystemNode = await _inferenceSystemFetcher.GetNodeAsync(_pod.NodeName, InferenceSystemFetcher.OrcaHelloInferenceContainerName, _logger);
             // If node info is missing, continue rendering page but leave node fields as "Unknown".
-            _inferenceSystemNode ??= null;
 
             _logData = await _inferenceSystemFetcher.GetAIContainerLogAsync(_pod, podNamespace, _logger);
             if (_logData.IsNullOrEmpty())
