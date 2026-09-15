@@ -173,6 +173,7 @@ jobs:
           Write-Host "Deploy attempt 3/3 outcome: ${{ steps.deploy_attempt_3.outcome }}"
 
       - name: Deployment diagnostic summary
+        id: deployment_summary
         if: always()
         shell: pwsh
         run: |
@@ -189,6 +190,9 @@ jobs:
           Write-Host "Deploy attempt 2/3: $attempt2"
           Write-Host "Deploy attempt 3/3: $attempt3"
 
+          $deploymentSucceeded = $attempt1 -eq 'success' -or $attempt2 -eq 'success' -or $attempt3 -eq 'success'
+          "deployment_succeeded=$($deploymentSucceeded.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
           @(
             '### Production deployment diagnostic summary',
             '',
@@ -199,12 +203,12 @@ jobs:
             "- Deploy attempt 3/3: $attempt3"
           ) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
 
-          if ($attempt1 -ne 'success' -and $attempt2 -ne 'success' -and $attempt3 -ne 'success') {
+          if (-not $deploymentSucceeded) {
             Write-Host '::warning::All deployment attempts failed. This was likely caused by Azure App Service or SCM endpoint unavailability rather than a .NET build or packaging failure.'
           }
 
       - name: Fail if all deployment attempts fail
-        if: steps.deploy_attempt_1.outcome != 'success' && steps.deploy_attempt_2.outcome != 'success' && steps.deploy_attempt_3.outcome != 'success'
+        if: steps.deployment_summary.outputs.deployment_succeeded != 'true'
         shell: pwsh
         run: |
           Write-Host '::error::Deployment failed after 3 attempts. Azure App Service or SCM endpoint for the target app was likely unavailable.'
