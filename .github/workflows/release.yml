@@ -42,7 +42,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: webapp
-          path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}\*
   deploy:
     runs-on: windows-latest
     needs: build
@@ -59,7 +59,12 @@ jobs:
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
         with:
           name: webapp
-          path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          path: deployment-package
+
+      - name: Create deployment package
+        run: |
+          Compress-Archive -Path "deployment-package\*" -DestinationPath "deployment.zip" -Force
+        shell: pwsh
 
       - name: Preflight Azure Web App availability probe
         id: preflight_probe
@@ -117,7 +122,7 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.OrcanodeMonitorPublishProfile }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          package: deployment.zip
 
       - name: Log deploy attempt 1 outcome
         if: always()
@@ -138,7 +143,7 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.OrcanodeMonitorPublishProfile }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          package: deployment.zip
 
       - name: Log deploy attempt 2 outcome
         if: steps.deploy_attempt_1.outcome == 'failure'
@@ -159,7 +164,7 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.OrcanodeMonitorPublishProfile }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          package: deployment.zip
 
       - name: Log deploy attempt 3 outcome
         if: steps.deploy_attempt_2.outcome == 'failure'
