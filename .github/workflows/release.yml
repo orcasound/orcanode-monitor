@@ -61,11 +61,6 @@ jobs:
           name: webapp
           path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
-      - name: Create deployment package
-        run: |
-          Compress-Archive -Path "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}\*" -DestinationPath "deployment.zip" -Force
-        shell: pwsh
-
       - name: Preflight Azure Web App availability probe
         id: preflight_probe
         shell: pwsh
@@ -122,7 +117,7 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.OrcanodeMonitorPublishProfile }}
-          package: deployment.zip
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
       - name: Log deploy attempt 1 outcome
         if: always()
@@ -143,7 +138,7 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.OrcanodeMonitorPublishProfile }}
-          package: deployment.zip
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
       - name: Log deploy attempt 2 outcome
         if: steps.deploy_attempt_1.outcome == 'failure'
@@ -164,7 +159,7 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.OrcanodeMonitorPublishProfile }}
-          package: deployment.zip
+          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
       - name: Log deploy attempt 3 outcome
         if: steps.deploy_attempt_2.outcome == 'failure'
