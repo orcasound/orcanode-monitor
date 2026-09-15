@@ -61,6 +61,11 @@ jobs:
           name: webapp
           path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
 
+      - name: Create deployment package
+        run: |
+          Compress-Archive -Path "${{ env.AZURE_WEBAPP_PACKAGE_PATH }}\*" -DestinationPath "deployment.zip" -Force
+        shell: pwsh
+
       - name: Deploy to Azure WebApp
         id: deploy_attempt
         uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383  # v3.0.8
@@ -68,7 +73,7 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.OrcanodeMonitorStagingPublishProfile }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          package: deployment.zip
 
       - name: Wait before retry
         if: steps.deploy_attempt.outcome == 'failure'
@@ -83,7 +88,7 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.OrcanodeMonitorStagingPublishProfile }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          package: deployment.zip
 
       - name: Wait before second retry
         if: steps.deploy_retry.outcome == 'failure'
@@ -96,4 +101,4 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.OrcanodeMonitorStagingPublishProfile }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          package: deployment.zip
