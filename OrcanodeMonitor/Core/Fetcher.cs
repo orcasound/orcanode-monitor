@@ -847,6 +847,12 @@ namespace OrcanodeMonitor.Core
             int lineNumber = lines.Count();
             lineNumber = (lineNumber > 3) ? lineNumber - 3 : lineNumber - 1;
             string lastLine = lines[lineNumber];
+            while (lineNumber > 0 && lastLine.StartsWith('#'))
+            {
+                // This is metadata not a filename, so back up a line.
+                lineNumber--;
+                lastLine = lines[lineNumber];
+            }
             Uri newUri = new Uri(baseUri, lastLine);
             return await GetExactAudioSampleAsync(node, newUri, logger);
         }
