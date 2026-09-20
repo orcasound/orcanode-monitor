@@ -99,7 +99,7 @@ namespace OrcanodeMonitor.Pages
             {
                 if (!string.IsNullOrWhiteSpace(tag))
                 {
-                    classes += " tag-" + tag.Trim();
+                    classes += " tag-" + tag.Trim().ToLowerInvariant();
                 }
             }
             return classes;
