@@ -85,7 +85,7 @@ namespace OrcanodeMonitor.Pages
         }
 
         /// <summary>
-        /// Get detection CSS classes based on source, category, and time range.
+        /// Get detection CSS classes based on source, category, label, tags, and time range.
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>String containing CSS classes</returns>
@@ -95,6 +95,13 @@ namespace OrcanodeMonitor.Pages
                              "category-" + GetGeneralCategoryClass(item) + " " +
                              "label-" + GetSpecificCategoryClass(item) + " " +
                              "timeRange-" + GetTimeRangeClass(item);
+            foreach (var tag in GetTags(item).Split(';'))
+            {
+                if (!string.IsNullOrWhiteSpace(tag))
+                {
+                    classes += " tag-" + tag.Trim().ToLowerInvariant();
+                }
+            }
             return classes;
         }
 
@@ -120,14 +127,13 @@ namespace OrcanodeMonitor.Pages
                 return DetectionSpecificCategoryEnum.Unknown;
             }
 
-            if (orcasiteDetection.DetectionSource == DetectionSource.PodsAI)
+            if (!string.IsNullOrEmpty(machineDetection?.GlobalPredictionLabel))
             {
                 // Convert it to the corresponding DetectionSpecificCategoryEnum value.
                 if (Enum.TryParse<DetectionSpecificCategoryEnum>(machineDetection?.GlobalPredictionLabel, true, out var specificCategory))
                 {
                     return specificCategory;
                 }
-
                 return DetectionSpecificCategoryEnum.Unknown;
             }
 
@@ -137,7 +143,6 @@ namespace OrcanodeMonitor.Pages
                 {
                     return DetectionSpecificCategoryEnum.Resident;
                 }
-                return DetectionSpecificCategoryEnum.Unknown;
             }
 
             return DetectionSpecificCategoryEnum.Unknown;

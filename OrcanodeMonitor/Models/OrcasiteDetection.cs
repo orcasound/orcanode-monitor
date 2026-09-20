@@ -56,6 +56,7 @@ namespace OrcanodeMonitor.Models
         Vessel,
         Jingle,
         Human,
+        Bird,
         Unknown
     }
 
