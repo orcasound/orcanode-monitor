@@ -66,55 +66,6 @@ jobs:
           Compress-Archive -Path "deployment-package\*" -DestinationPath "deployment.zip" -Force
         shell: pwsh
 
-      - name: Preflight Azure Web App availability probe
-        id: preflight_probe
-        shell: pwsh
-        run: |
-          $url = "https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
-          $maxAttempts = 5
-          $delaySeconds = 15
-          $ready = $false
-
-          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
-            Write-Host "Preflight availability probe attempt $attempt/$maxAttempts for $url"
-
-            try {
-              $response = Invoke-WebRequest -Uri $url -Method Head -TimeoutSec 30 -MaximumRedirection 0 -SkipHttpErrorCheck
-              $statusCode = [int]$response.StatusCode
-              Write-Host "Preflight probe HTTP status: $statusCode"
-
-              if ($statusCode -lt 500) {
-                $ready = $true
-                break
-              }
-            } catch {
-              if ($_.Exception.Response -and $_.Exception.Response.StatusCode) {
-                $statusCode = [int]$_.Exception.Response.StatusCode
-                Write-Host "Preflight probe HTTP status: $statusCode"
-
-                if ($statusCode -lt 500) {
-                  $ready = $true
-                  break
-                }
-              } else {
-                Write-Host "Preflight probe error: $($_.Exception.Message)"
-              }
-            }
-
-            if ($attempt -lt $maxAttempts) {
-              Start-Sleep -Seconds $delaySeconds
-            }
-          }
-
-          "url=$url" >> $env:GITHUB_OUTPUT
-          "ready=$($ready.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
-
-          if ($ready) {
-            Write-Host "Preflight availability probe succeeded for $url"
-          } else {
-            Write-Host "::warning::Preflight availability probe did not succeed for $url. Continuing with deployment retries for additional diagnostics."
-          }
-
       - name: Deploy attempt 1 to Azure WebApp
         id: deploy_attempt_1
         uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383  # v3.0.8
@@ -177,15 +128,13 @@ jobs:
         if: always()
         shell: pwsh
         run: |
-          $url = "${{ steps.preflight_probe.outputs.url }}"
-          $preflight = "${{ steps.preflight_probe.outputs.ready }}"
+          $url = "https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
           $attempt1 = "${{ steps.deploy_attempt_1.outcome }}"
           $attempt2 = "${{ steps.deploy_attempt_2.outcome }}"
           $attempt3 = "${{ steps.deploy_attempt_3.outcome }}"
 
           Write-Host "Production deployment diagnostic summary"
           Write-Host "Target application URL: $url"
-          Write-Host "Preflight availability succeeded: $preflight"
           Write-Host "Deploy attempt 1/3: $attempt1"
           Write-Host "Deploy attempt 2/3: $attempt2"
           Write-Host "Deploy attempt 3/3: $attempt3"
@@ -197,7 +146,6 @@ jobs:
             '### Production deployment diagnostic summary',
             '',
             "- Target application URL: $url",
-            "- Preflight availability succeeded: $preflight",
             "- Deploy attempt 1/3: $attempt1",
             "- Deploy attempt 2/3: $attempt2",
             "- Deploy attempt 3/3: $attempt3"
