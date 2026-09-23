@@ -66,39 +66,151 @@ jobs:
           Compress-Archive -Path "deployment-package\*" -DestinationPath "deployment.zip" -Force
         shell: pwsh
 
-      - name: Deploy to Azure WebApp
-        id: deploy_attempt
-        uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383  # v3.0.8
-        continue-on-error: true
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.OrcanodeMonitorStagingPublishProfile }}
-          package: deployment.zip
-
-      - name: Wait before retry
-        if: steps.deploy_attempt.outcome == 'failure'
-        run: Start-Sleep -Seconds 60
+      - name: Deploy to Azure WebApp with direct Kudu ZipDeploy
         shell: pwsh
+        env:
+          AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.OrcanodeMonitorStagingPublishProfile }}
+        run: |
+          $ErrorActionPreference = 'Stop'
 
-      - name: Retry Deploy to Azure WebApp
-        id: deploy_retry
-        if: steps.deploy_attempt.outcome == 'failure'
-        uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383  # v3.0.8
-        continue-on-error: true
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.OrcanodeMonitorStagingPublishProfile }}
-          package: deployment.zip
+          function Get-DeploymentCredentials([xml]$publishProfileXml) {
+            $profile = $publishProfileXml.publishData.publishProfile |
+              Where-Object { $_.publishUrl -like '*.scm.azurewebsites.net*' } |
+              Select-Object -First 1
 
-      - name: Wait before second retry
-        if: steps.deploy_retry.outcome == 'failure'
-        run: Start-Sleep -Seconds 120
-        shell: pwsh
+            if (-not $profile) {
+              $profile = $publishProfileXml.publishData.publishProfile | Select-Object -First 1
+            }
 
-      - name: Second Retry Deploy to Azure WebApp
-        if: steps.deploy_retry.outcome == 'failure'
-        uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383  # v3.0.8
-        with:
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.OrcanodeMonitorStagingPublishProfile }}
-          package: deployment.zip
+            if (-not $profile) {
+              throw 'No publish profile entries were found in the Azure publish profile secret.'
+            }
+
+            return @{
+              PublishHost = $profile.publishUrl.Split(':')[0]
+              Username = $profile.userName
+              Password = $profile.userPWD
+            }
+          }
+
+          function Invoke-ZipDeployAttempt([string]$zipPath, [string]$publishHost, [hashtable]$headers, [int]$attemptNumber) {
+            $deployUrl = "https://$publishHost/api/zipdeploy?isAsync=true"
+            Write-Host "Starting ZipDeploy attempt ${attemptNumber}/3 for ${{ env.AZURE_WEBAPP_NAME }}"
+
+            $response = Invoke-WebRequest `
+              -Uri $deployUrl `
+              -Method Post `
+              -Headers $headers `
+              -InFile $zipPath `
+              -ContentType 'application/zip' `
+              -MaximumRedirection 0 `
+              -SkipHttpErrorCheck
+
+            $statusCode = [int]$response.StatusCode
+            if ($statusCode -notin @(200, 202)) {
+              return [pscustomobject]@{
+                Outcome = 'failure'
+                Message = "ZipDeploy request returned HTTP $statusCode."
+              }
+            }
+
+            $pollUrl = $response.Headers.Location
+            if ([string]::IsNullOrWhiteSpace($pollUrl)) {
+              $pollUrl = "https://$publishHost/api/deployments/latest"
+            }
+
+            for ($pollAttempt = 1; $pollAttempt -le 40; $pollAttempt++) {
+              $deployment = Invoke-RestMethod `
+                -Uri $pollUrl `
+                -Method Get `
+                -Headers $headers `
+                -SkipHttpErrorCheck
+
+              $deploymentStatus = [int]$deployment.status
+              $provisioningState = "$($deployment.provisioningState)"
+              $complete = [bool]$deployment.complete
+
+              Write-Host "ZipDeploy attempt ${attemptNumber}/3 poll $pollAttempt/40: status=$deploymentStatus complete=$complete provisioningState=$provisioningState"
+
+              if ($deploymentStatus -eq 4 -or $provisioningState -eq 'Succeeded') {
+                return [pscustomobject]@{
+                  Outcome = 'success'
+                  Message = "Deployment succeeded with status=$deploymentStatus provisioningState=$provisioningState."
+                }
+              }
+
+              if ($deploymentStatus -eq 3 -or $provisioningState -eq 'Failed') {
+                return [pscustomobject]@{
+                  Outcome = 'failure'
+                  Message = "Deployment failed with status=$deploymentStatus provisioningState=$provisioningState."
+                }
+              }
+
+              if ($complete) {
+                return [pscustomobject]@{
+                  Outcome = 'failure'
+                  Message = "Deployment completed without a success status (status=$deploymentStatus provisioningState=$provisioningState)."
+                }
+              }
+
+              Start-Sleep -Seconds 15
+            }
+
+            return [pscustomobject]@{
+              Outcome = 'failure'
+              Message = 'Timed out waiting for ZipDeploy to finish.'
+            }
+          }
+
+          [xml]$publishProfileXml = $env:AZURE_WEBAPP_PUBLISH_PROFILE
+          $credentials = Get-DeploymentCredentials $publishProfileXml
+          $authBytes = [System.Text.Encoding]::ASCII.GetBytes("$($credentials.Username):$($credentials.Password)")
+          $headers = @{
+            Authorization = "Basic $([Convert]::ToBase64String($authBytes))"
+          }
+          $zipPath = Join-Path $PWD 'deployment.zip'
+          $delays = @(0, 60, 120)
+          $attemptResults = @()
+
+          for ($attemptIndex = 0; $attemptIndex -lt $delays.Length; $attemptIndex++) {
+            $attemptNumber = $attemptIndex + 1
+
+            if ($delays[$attemptIndex] -gt 0) {
+              Write-Host "Waiting $($delays[$attemptIndex]) seconds before ZipDeploy attempt ${attemptNumber}/3"
+              Start-Sleep -Seconds $delays[$attemptIndex]
+            }
+
+            $result = Invoke-ZipDeployAttempt -zipPath $zipPath -publishHost $credentials.PublishHost -headers $headers -attemptNumber $attemptNumber
+            $attemptResults += $result
+            Write-Host "Deploy attempt ${attemptNumber}/3 outcome: $($result.Outcome)"
+            Write-Host $result.Message
+
+            if ($result.Outcome -eq 'success') {
+              break
+            }
+          }
+
+          Write-Host 'Staging deployment diagnostic summary'
+          Write-Host "Target application URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+
+          $summaryLines = @(
+            '### Staging deployment diagnostic summary',
+            '',
+            "- Target application URL: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+          )
+
+          for ($attemptIndex = 0; $attemptIndex -lt $attemptResults.Count; $attemptIndex++) {
+            $attemptNumber = $attemptIndex + 1
+            $result = $attemptResults[$attemptIndex]
+            Write-Host "Deploy attempt ${attemptNumber}/3: $($result.Outcome)"
+            $summaryLines += "- Deploy attempt ${attemptNumber}/3: $($result.Outcome) — $($result.Message)"
+          }
+
+          $summaryLines | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+
+          if ($attemptResults.Outcome -contains 'success') {
+            return
+          }
+
+          Write-Host '::error::Deployment failed after 3 direct ZipDeploy attempts.'
+          throw "Deployment failed for ${{ env.AZURE_WEBAPP_NAME }} after 3 direct ZipDeploy attempts."
