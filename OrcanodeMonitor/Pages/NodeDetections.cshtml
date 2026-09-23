@@ -61,6 +61,22 @@
         <button id="btn-label-human" class="btn unselected" onclick="updateFilter('label', 'human')">Human</button>
         <button id="btn-label-jingle" class="btn unselected" onclick="updateFilter('label', 'jingle')">Jingle</button>
         <button id="btn-label-water" class="btn unselected" onclick="updateFilter('label', 'water')">Water</button>
+        <button id="btn-label-bird" class="btn unselected" onclick="updateFilter('label', 'bird')">Bird</button>
+        <p></p>
+    </div>
+
+    <!-- Filter Buttons for Tag -->
+    <div>
+        Filter by Tag:
+        <button id="btn-tag-all" class="btn selected" onclick="updateFilter('tag', 'all')">all</button>
+        <button id="btn-tag-srkw" class="btn unselected" onclick="updateFilter('tag', 'srkw')">srkw</button>
+        <button id="btn-tag-transient" class="btn unselected" onclick="updateFilter('tag', 'transient')">transient</button>
+        <button id="btn-tag-humpback" class="btn unselected" onclick="updateFilter('tag', 'humpback')">humpback</button>
+        <button id="btn-tag-vessel" class="btn unselected" onclick="updateFilter('tag', 'vessel')">vessel</button>
+        <button id="btn-tag-human" class="btn unselected" onclick="updateFilter('tag', 'human')">human</button>
+        <button id="btn-tag-jingle" class="btn unselected" onclick="updateFilter('tag', 'jingle')">jingle</button>
+        <button id="btn-tag-water" class="btn unselected" onclick="updateFilter('tag', 'water')">water</button>
+        <button id="btn-tag-bird" class="btn unselected" onclick="updateFilter('tag', 'bird')">bird</button>
         <p></p>
     </div>
 
@@ -140,6 +156,7 @@
             timeRange: 'pastWeek',
             category: 'all',
             label: 'all',
+            tag: 'all',
             source: 'all' };
 
         updateFilter('default', 'default');
@@ -194,6 +211,21 @@
                 newLabelButton.classList.add('selected');
             }
 
+            // Update tag filter.
+            if (filterType == 'tag') {
+                var oldLabelButtonId = 'btn-tag-' + currentFilters.tag;
+                var oldLabelButton = document.getElementById(oldLabelButtonId);
+                oldLabelButton.classList.remove('selected');
+                oldLabelButton.classList.add('unselected');
+
+                currentFilters.tag = filterValue;
+
+                var newLabelButtonId = 'btn-tag-' + currentFilters.tag;
+                var newLabelButton = document.getElementById(newLabelButtonId);
+                newLabelButton.classList.remove('unselected');
+                newLabelButton.classList.add('selected');
+            }
+
             // Update source filter.
             if (filterType == 'source') {
                 var oldSourceButtonId = 'btn-source-' + currentFilters.source;
@@ -224,13 +256,14 @@
                 var matchesTimeRange = (currentFilters.timeRange === 'all' || row.classList.contains("timeRange-" + currentFilters.timeRange));
                 var matchesCategory = (currentFilters.category === 'all' || row.classList.contains("category-" + currentFilters.category));
                 var matchesLabel = (currentFilters.label === 'all' || row.classList.contains("label-" + currentFilters.label));
+                var matchesTag = (currentFilters.tag === 'all' || row.classList.contains("tag-" + currentFilters.tag));
                 var matchesSource = (currentFilters.source === 'all' || row.classList.contains("source-" + currentFilters.source));
 
                 if (matchesTimeRange) {
                     timeRangeCount++;
                 }
 
-                if (matchesTimeRange && matchesCategory && matchesLabel && matchesSource) {
+                if (matchesTimeRange && matchesCategory && matchesLabel && matchesTag && matchesSource) {
                     row.style.display = ''; // Show matching rows.
                     visibleCount++;
                 } else {
