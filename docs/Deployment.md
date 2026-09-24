@@ -3,7 +3,7 @@
 Orcanode Monitor is deployed to:
 
 * https://orcanodemonitorstaging.azurewebsites.net/ on every merge to main.
-* https://orcanodemonitor.azurewebsites.net/ when a version tag is pushed to main.
+* https://orcanodemonitor.azurewebsites.net/ when a matching version tag is pushed.
 
 ## Release tag format
 
