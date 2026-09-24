@@ -38,7 +38,7 @@ Both staging (`publish.yml`) and production (`release.yml`) workflows use the sa
 
 ## Troubleshooting Deployment Failures
 
-Log into https://orcanodemonitor.scm.azurewebsites.net/ and go into a Debug console.
+Log into the SCM site for the affected app (`https://orcanodemonitor.scm.azurewebsites.net/` for production or `https://orcanodemonitorstaging.scm.azurewebsites.net/` for staging) and go into a Debug console.
 
 * Look under LogFiles/kudu for recent logs that may explain the issue
 * Check whether one can create a file in D:\home.  If that fails, there is some disk space issue.
