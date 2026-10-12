@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
+using System.Globalization;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -387,6 +388,12 @@ namespace OrcanodeMonitor.Core
             DetectionSource source,
             ILogger logger)
         {
+            if (source != DetectionSource.OrcaHello && source != DetectionSource.PodsAI)
+            {
+                logger.LogWarning("[GetModelThresholdsAsync] Invalid detection source: {Source}", source);
+                return (null, null);
+            }
+
             IKubernetes? client = _k8sClient;
             if (client == null)
             {
@@ -422,7 +429,11 @@ namespace OrcanodeMonitor.Core
                             {
                                 confidenceThreshold = d;
                             }
-                            else if (double.TryParse(localValue?.ToString(), out double parsed))
+                            else if (double.TryParse(
+                                localValue?.ToString(),
+                                NumberStyles.Float,
+                                CultureInfo.InvariantCulture,
+                                out double parsed))
                             {
                                 confidenceThreshold = parsed;
                             }
@@ -437,7 +448,11 @@ namespace OrcanodeMonitor.Core
                                     {
                                         if (globalPredictionDict.TryGetValue("pred_global_threshold", out object? thresholdValue))
                                         {
-                                            if (double.TryParse(thresholdValue?.ToString(), out double parsed))
+                                            if (double.TryParse(
+                                                thresholdValue?.ToString(),
+                                                NumberStyles.Float,
+                                                CultureInfo.InvariantCulture,
+                                                out double parsed))
                                             {
                                                 confidenceThreshold = parsed;
                                             }
@@ -472,7 +487,11 @@ namespace OrcanodeMonitor.Core
 
                         if (config.TryGetValue("threshold", out object? thresholdValue))
                         {
-                            if (double.TryParse(thresholdValue?.ToString(), out double parsed))
+                            if (double.TryParse(
+                                thresholdValue?.ToString(),
+                                NumberStyles.Float,
+                                CultureInfo.InvariantCulture,
+                                out double parsed))
                             {
                                 confidenceThreshold = parsed;
                             }
