@@ -379,9 +379,13 @@ namespace OrcanodeMonitor.Core
         /// Get model thresholds from the hydrophone-configs ConfigMap.
         /// </summary>
         /// <param name="namespaceName">Namespace name</param>
+        /// <param name="source">Detection source</param>
         /// <param name="logger">Logger</param>
         /// <returns>Tuple of (confidenceThreshold, countThreshold) or (null, null) if not found</returns>
-        private async Task<(double? confidenceThreshold, int? countThreshold)> GetModelThresholdsAsync(string namespaceName, ILogger logger)
+        private async Task<(double? confidenceThreshold, int? countThreshold)> GetModelThresholdsAsync(
+            string namespaceName,
+            DetectionSource source,
+            ILogger logger)
         {
             IKubernetes? client = _k8sClient;
             if (client == null)
@@ -390,10 +394,12 @@ namespace OrcanodeMonitor.Core
                 return (null, null);
             }
 
+            string configMapName = (source == DetectionSource.OrcaHello) ? "hydrophone-configs" : "pods-ai-hydrophone-configs";
+
             try
             {
                 V1ConfigMap configMap = await client.CoreV1.ReadNamespacedConfigMapAsync(
-                    name: "hydrophone-configs",
+                    name: configMapName,
                     namespaceParameter: namespaceName);
 
                 if (configMap.Data != null && configMap.Data.TryGetValue("config.yml", out string? yamlContent))
@@ -407,53 +413,79 @@ namespace OrcanodeMonitor.Core
                     double? confidenceThreshold = null;
                     int? countThreshold = null;
 
-                    if (config.TryGetValue("model_local_threshold", out object? localValue))
+                    if (source == DetectionSource.OrcaHello)
                     {
-                        if (localValue is double d)
+
+                        if (config.TryGetValue("model_local_threshold", out object? localValue))
                         {
-                            confidenceThreshold = d;
-                        }
-                        else if (double.TryParse(localValue?.ToString(), out double parsed))
-                        {
-                            confidenceThreshold = parsed;
-                        }
-                    }
-                    else if (config.TryGetValue("model_config_overrides", out object? overrides))
-                    {
-                        if (overrides is Dictionary<object, object> overridesDict)
-                        {
-                            if (overridesDict.TryGetValue("global_prediction", out object? globalPrediction))
+                            if (localValue is double d)
                             {
-                                if (globalPrediction is Dictionary<object, object> globalPredictionDict)
+                                confidenceThreshold = d;
+                            }
+                            else if (double.TryParse(localValue?.ToString(), out double parsed))
+                            {
+                                confidenceThreshold = parsed;
+                            }
+                        }
+                        else if (config.TryGetValue("model_config_overrides", out object? overrides))
+                        {
+                            if (overrides is Dictionary<object, object> overridesDict)
+                            {
+                                if (overridesDict.TryGetValue("global_prediction", out object? globalPrediction))
                                 {
-                                    if (globalPredictionDict.TryGetValue("pred_global_threshold", out object? thresholdValue))
+                                    if (globalPrediction is Dictionary<object, object> globalPredictionDict)
                                     {
-                                        if (double.TryParse(thresholdValue?.ToString(), out double parsed))
+                                        if (globalPredictionDict.TryGetValue("pred_global_threshold", out object? thresholdValue))
                                         {
-                                            confidenceThreshold = parsed;
+                                            if (double.TryParse(thresholdValue?.ToString(), out double parsed))
+                                            {
+                                                confidenceThreshold = parsed;
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    if (config.TryGetValue("model_global_threshold", out object? globalValue))
+                        if (config.TryGetValue("model_global_threshold", out object? globalValue))
+                        {
+                            if (globalValue is int i)
+                            {
+                                countThreshold = i;
+                            }
+                            else if (int.TryParse(globalValue?.ToString(), out int parsed))
+                            {
+                                countThreshold = parsed;
+                            }
+                        }
+
+                        // Note: model_config_overrides does not contain a detection count threshold.
+                        // The inference.max_batch_size is an unrelated inference engine parameter
+                        // and should not be used as a threshold value. If no model_global_threshold
+                        // is found, countThreshold remains null.
+                    }
+                    else
                     {
-                        if (globalValue is int i)
+                        // Default values in LiveInferenceOrchestrator.py.
+                        confidenceThreshold = 0.5;
+                        countThreshold = 2;
+
+                        if (config.TryGetValue("threshold", out object? thresholdValue))
                         {
-                            countThreshold = i;
+                            if (double.TryParse(thresholdValue?.ToString(), out double parsed))
+                            {
+                                confidenceThreshold = parsed;
+                            }
                         }
-                        else if (int.TryParse(globalValue?.ToString(), out int parsed))
+
+                        if (config.TryGetValue("min_num_positive_calls_threshold", out object? countValue))
                         {
-                            countThreshold = parsed;
+                            if (int.TryParse(countValue?.ToString(), out int parsed))
+                            {
+                                countThreshold = parsed;
+                            }
                         }
                     }
-
-                    // Note: model_config_overrides does not contain a detection count threshold.
-                    // The inference.max_batch_size is an unrelated inference engine parameter
-                    // and should not be used as a threshold value. If no model_global_threshold
-                    // is found, countThreshold remains null.
 
                     return (confidenceThreshold, countThreshold);
                 }
@@ -500,7 +532,7 @@ namespace OrcanodeMonitor.Core
 
             long detectionCount = await GetDetectionCountAsync(orcanode, source, logger);
 
-            (double? confidenceThreshold, int? countThreshold) = await GetModelThresholdsAsync(namespaceName, logger);
+            (double? confidenceThreshold, int? countThreshold) = await GetModelThresholdsAsync(namespaceName, source, logger);
 
             return new InferencePod(bestPod, containerName, cpuUsage, memoryUsage, detectionCount, confidenceThreshold, countThreshold);
         }
@@ -1060,7 +1092,7 @@ namespace OrcanodeMonitor.Core
                     Orcanode? orcanode = orcanodes.Find(a => a.OrcasoundSlug == pod.Metadata.NamespaceProperty);
                     long detectionCount = (orcanode != null) ? await GetDetectionCountAsync(orcanode, source, logger) : 0;
 
-                    (double? confidenceThreshold, int? countThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty, logger);
+                    (double? confidenceThreshold, int? countThreshold) = await GetModelThresholdsAsync(pod.Metadata.NamespaceProperty, source, logger);
 
                     var inferencePod = new InferencePod(pod, containerName, cpuUsage, memoryUsage, detectionCount, confidenceThreshold, countThreshold);
                     resultList.Add(inferencePod);
