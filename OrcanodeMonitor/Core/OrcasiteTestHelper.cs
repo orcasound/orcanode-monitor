@@ -349,6 +349,32 @@ model_timestamp: {DateTime.UtcNow.AddDays(-1):yyyy-MM-ddTHH:mm:ssZ}";
                     Body = configMap
                 });
 
+            string podsAIYamlContent = @"threshold: 0.6
+min_num_positive_calls_threshold: 3";
+            var podsAIConfigMap = new V1ConfigMap
+            {
+                Metadata = new V1ObjectMeta
+                {
+                    Name = "pods-ai-hydrophone-configs",
+                    NamespaceProperty = namespaceName
+                },
+                Data = new Dictionary<string, string>
+                {
+                    { "config.yml", podsAIYamlContent }
+                }
+            };
+
+            mockCoreV1.Setup(c => c.ReadNamespacedConfigMapWithHttpMessagesAsync(
+                "pods-ai-hydrophone-configs",
+                namespaceName,
+                It.IsAny<bool?>(),
+                It.IsAny<IReadOnlyDictionary<string, IReadOnlyList<string>>>(),
+                It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(new HttpOperationResponse<V1ConfigMap>
+                {
+                    Body = podsAIConfigMap
+                });
+
             return new InferenceSystemFetcher(mockK8s.Object);
         }
     }

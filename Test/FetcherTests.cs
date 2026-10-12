@@ -143,6 +143,9 @@ namespace Test
             Assert.AreEqual(node.OrcasoundSlug, pod.NamespaceName);
             Assert.AreEqual("test-node", pod.NodeName);
             Assert.AreEqual(0, pod.RestartCount);
+            Assert.AreEqual(source == DetectionSource.PodsAI ? 0.6 : 0.7, pod.ModelConfidenceThreshold);
+            Assert.AreEqual(3, pod.ModelCountThreshold);
+            Assert.AreNotEqual("Unknown", pod.GetConfidenceThreshold());
         }
 
         [TestMethod]
