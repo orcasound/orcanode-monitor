@@ -448,7 +448,11 @@ namespace OrcanodeMonitor.Core
                                     {
                                         if (globalPredictionDict.TryGetValue("pred_global_threshold", out object? thresholdValue))
                                         {
-                                            if (double.TryParse(
+                                            if (thresholdValue is double d)
+                                            {
+                                                confidenceThreshold = d;
+                                            }
+                                            else if (double.TryParse(
                                                 thresholdValue?.ToString(),
                                                 NumberStyles.Float,
                                                 CultureInfo.InvariantCulture,
@@ -487,7 +491,11 @@ namespace OrcanodeMonitor.Core
 
                         if (config.TryGetValue("threshold", out object? thresholdValue))
                         {
-                            if (double.TryParse(
+                            if (thresholdValue is double d)
+                            {
+                                confidenceThreshold = d;
+                            }
+                            else if (double.TryParse(
                                 thresholdValue?.ToString(),
                                 NumberStyles.Float,
                                 CultureInfo.InvariantCulture,
