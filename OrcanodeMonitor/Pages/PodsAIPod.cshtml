@@ -1,11 +1,11 @@
 ﻿@page "{podNamespace}"
 @model OrcanodeMonitor.Pages.PodsAIPodModel
 @{
-    ViewData["Title"] = "Pods AI for " + Model.Location;
+    ViewData["Title"] = "PODS-AI for " + Model.Location;
 }
 
 <div class="text-center">
-    <h1 class="display-4">Pods AI for @Model.Location</h1>
+    <h1 class="display-4">PODS-AI for @Model.Location</h1>
     As of: @Model.NowLocal (Pacific)<br />
     @* If no pod is currently running, show a message. *@
     @if (!Model.PodRunning)
