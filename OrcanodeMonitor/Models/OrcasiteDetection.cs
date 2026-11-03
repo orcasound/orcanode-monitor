@@ -167,6 +167,10 @@ namespace OrcanodeMonitor.Models
                 {
                     return MachineDetection.GlobalPredictionLabel;
                 }
+                if (Source == "human")
+                {
+                    return "whale";
+                }
                 return "resident";
             }
         }

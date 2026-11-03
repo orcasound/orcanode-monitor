@@ -97,7 +97,7 @@ namespace OrcanodeMonitor.Pages
                     {
                         var result = new ModelComparisonResult
                         {
-                            Name = detection.Source
+                            Name = source
                         };
                         Results[source] = result;
                     }
@@ -106,7 +106,7 @@ namespace OrcanodeMonitor.Pages
                     {
                         ConfusionMatrices[source] = new ConfusionMatrix
                         {
-                            ModelName = detection.Source
+                            ModelName = source
                         };
                     }
                     ConfusionMatrix matrix = ConfusionMatrices[source];
@@ -121,19 +121,14 @@ namespace OrcanodeMonitor.Pages
                     string actualCategory = detection.ActualCategory;
 
                     // TODO: move the following code block to a helper in ConfusionMatrix.
-                    ConfusionMatrixRow row;
-                    if (matrix.Rows.ContainsKey(actualCategory))
+                    if (!matrix.Rows.ContainsKey(actualCategory))
                     {
-                        row = matrix.Rows[actualCategory];
-                    }
-                    else
-                    {
-                        row = new ConfusionMatrixRow()
+                        matrix.Rows[actualCategory] = new ConfusionMatrixRow()
                         {
-
+                            ActualClass = actualCategory
                         };
-                        matrix.Rows[actualCategory] = row;
                     }
+                    ConfusionMatrixRow row = matrix.Rows[actualCategory];
                     if (!row.PredictedCounts.ContainsKey(predictedCategory))
                     {
                         row.PredictedCounts[predictedCategory] = 0;
@@ -163,26 +158,29 @@ namespace OrcanodeMonitor.Pages
                         {
                             result.Correct += row.PredictedCounts[row.ActualClass];
                         }
+
                         if (row.ActualClass == "resident")
                         {
                             long falsePositives = row.PredictedCounts.Where(kvp => kvp.Key != "resident").Sum(kvp => kvp.Value);
                             long falseNegatives = matrix.Rows.Where(r => r.Key != "resident").Sum(r => r.Value.PredictedCounts.ContainsKey("resident") ? r.Value.PredictedCounts["resident"] : 0);
-                            result.ResidentFalsePositiveRate = (double)falsePositives / (falsePositives + row.Total);
-                            result.ResidentFalseNegativeRate = (double)falseNegatives / (falseNegatives + row.Total);
+                            result.ResidentFalsePositiveRate = (double)falsePositives / matrix.Total;
+                            result.ResidentFalseNegativeRate = (double)falseNegatives / matrix.Total;
                         }
+
                         if (row.ActualClass == "transient")
                         {
                             long falsePositives = row.PredictedCounts.Where(kvp => kvp.Key != "transient").Sum(kvp => kvp.Value);
                             long falseNegatives = matrix.Rows.Where(r => r.Key != "transient").Sum(r => r.Value.PredictedCounts.ContainsKey("transient") ? r.Value.PredictedCounts["transient"] : 0);
-                            result.TransientFalsePositiveRate = (double)falsePositives / (falsePositives + row.Total);
-                            result.TransientFalseNegativeRate = (double)falseNegatives / (falseNegatives + row.Total);
+                            result.TransientFalsePositiveRate = (double)falsePositives / matrix.Total;
+                            result.TransientFalseNegativeRate = (double)falseNegatives / matrix.Total;
                         }
+
                         if (row.ActualClass == "humpback")
                         {
                             long falsePositives = row.PredictedCounts.Where(kvp => kvp.Key != "humpback").Sum(kvp => kvp.Value);
                             long falseNegatives = matrix.Rows.Where(r => r.Key != "humpback").Sum(r => r.Value.PredictedCounts.ContainsKey("humpback") ? r.Value.PredictedCounts["humpback"] : 0);
-                            result.HumpbackFalsePositiveRate = (double)falsePositives / (falsePositives + row.Total);
-                            result.HumpbackFalseNegativeRate = (double)falseNegatives / (falseNegatives + row.Total);
+                            result.HumpbackFalsePositiveRate = (double)falsePositives / matrix.Total;
+                            result.HumpbackFalseNegativeRate = (double)falseNegatives / matrix.Total;
                         }
                     }
                     result.F1 = matrix.GetWhaleF1();
