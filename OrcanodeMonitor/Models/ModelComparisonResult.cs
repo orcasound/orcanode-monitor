@@ -48,7 +48,7 @@ namespace OrcanodeMonitor.Models
             "whale", // Used by human detections.
         };
 
-        public long Total => Rows.Sum(r => r.Value.Total);
+        public long TotalReviewed => Rows.Sum(r => r.Key == "unreviewed" ? 0 : r.Value.Total);
 
         /// <summary>
         /// Compute macro F1 across whale classes that appear in actual labels or predictions.

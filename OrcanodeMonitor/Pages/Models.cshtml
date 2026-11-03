@@ -61,8 +61,10 @@
         </ul>
     </div>
 
-    @foreach (var matrix in Model.ConfusionMatrices.Values)
+    @foreach (var result in Model.Results.Values.OrderByDescending(r => r.F1))
     {
+        var matrix = Model.ConfusionMatrices[result.Name];
+
         <h2>Confusion Matrix for @Model.GetDisplayName(matrix.ModelName) (rows=actual, cols=predicted)</h2>
         <table style="border: 1px solid #ccc; border-collapse: separate; text-align: right; margin: 0 auto 32px auto;">
             <tr style="border-bottom: 1px solid #ccc;">

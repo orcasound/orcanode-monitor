@@ -143,19 +143,18 @@ namespace OrcanodeMonitor.Models
         {
             get
             {
-                if (Reviewed)
+                if (!Reviewed)
                 {
-                    string[] tagList = TagList;
-                    if (tagList.Any())
-                    {
-                        return tagList.First();
-                    }
-                    return GeneralCategory.ToString().ToLowerInvariant();
+                    return "unreviewed";
                 }
 
-                // Unless human detections show up as Reviewed then
-                // they will also be "unknown" for the actual category.
-                return "unknown";
+                string[] tagList = TagList;
+                if (tagList.Any())
+                {
+                    string tag = tagList.First();
+                    return (tag == "srkw") ? "resident" : tag;
+                }
+                return GeneralCategory.ToString().ToLowerInvariant();
             }
         }
 
