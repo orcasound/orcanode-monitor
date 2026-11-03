@@ -105,12 +105,12 @@ namespace OrcanodeMonitor.Pages
             return classes;
         }
 
-        public string GetTags(OrcasiteDetection item)
+        public static string GetTags(OrcasiteDetection item)
         {
             return item.MachineDetection?.Tags ?? string.Empty;
         }
 
-        public DetectionSpecificCategoryEnum GetSpecificCategory(OrcasiteDetection orcasiteDetection)
+        public static DetectionSpecificCategoryEnum GetSpecificCategory(OrcasiteDetection orcasiteDetection)
         {
             if (orcasiteDetection.GeneralCategory == DetectionGeneralCategoryEnum.Vessel)
             {
