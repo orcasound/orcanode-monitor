@@ -90,6 +90,9 @@ namespace OrcanodeMonitor.Models
             }
         }
 
+        // TODO: allow for other models by keeping modelid not using DetectionSource enum.
+        public string DetectionSourceString => DetectionSource.ToString().ToLowerInvariant();
+
         public string OrcasiteCategory { get; set; } = string.Empty;
 
         /// <summary>
@@ -131,6 +134,42 @@ namespace OrcanodeMonitor.Models
                 }
             }
         }
+
+        // TODO: Update other code to call these.
+        public string Tags => MachineDetection?.Tags ?? string.Empty;
+        public string[] TagList => !string.IsNullOrEmpty(Tags) ? Tags.Split(';') : [];
+
+        public string ActualCategory
+        {
+            get
+            {
+                if (Reviewed)
+                {
+                    string[] tagList = TagList;
+                    if (tagList.Any())
+                    {
+                        return tagList.First();
+                    }
+                    return GeneralCategory.ToString().ToLowerInvariant();
+                }
+
+                // Unless human detections show up as Reviewed then
+                // they will also be "unknown" for the actual category.
+                return "unknown";
+            }
+        }
+
+        public string PredictedCategory
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(MachineDetection?.GlobalPredictionLabel))
+                {
+                    return MachineDetection.GlobalPredictionLabel;
+                }
+                return "resident";
+            }
+        }
     }
 
     public static class DetectionCategory
@@ -147,6 +186,7 @@ namespace OrcanodeMonitor.Models
         Human,
         OrcaHello,
         PodsAI,
+        Other,
         All
     }
 }

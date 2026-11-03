@@ -1,0 +1,90 @@
+﻿@page
+@model ModelsModel
+@{
+    ViewData["Title"] = "Model Comparison";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Model Comparison Summary</h1>
+    As of: @Model.NowLocal (Pacific)<br />
+
+    <table style="border: 1px solid #ccc; border-collapse: separate; text-align: center; margin: 0 auto;">
+        <tr style="border-bottom: 1px solid #ccc;">
+            <th style="padding: 4px 8px;">Model</th>
+            <th style="padding: 4px 8px;">Evaluated</th>
+            <th style="padding: 4px 8px;">Correct</th>
+            <th style="padding: 4px 8px;">Accuracy</th>
+            <th style="padding: 4px 8px;">F1</th>
+            <th style="padding: 4px 8px;">RFP%</th>
+            <th style="padding: 4px 8px;">RFN%</th>
+            <th style="padding: 4px 8px;">TFP%</th>
+            <th style="padding: 4px 8px;">TFN%</th>
+            <th style="padding: 4px 8px;">HFP%</th>
+            <th style="padding: 4px 8px;">HFN%</th>
+            <th style="padding: 4px 8px;">Avg Time</th>
+        </tr>
+        @foreach (var result in Model.Results.Values.OrderBy(r => r.F1))
+        {
+            var overviewPage = Model.GetOverviewPage(result.Name);
+            <tr>
+                <td style="padding: 4px 8px; text-align: left;">
+                    @if (overviewPage != null)
+                    {
+                        <a asp-page="@overviewPage">@Model.GetDisplayName(result.Name)</a>
+                    }
+                    else
+                    {
+                        @Model.GetDisplayName(result.Name)
+                    }
+                </td>
+                <td style="padding: 4px 8px;">@result.Evaluated</td>
+                <td style="padding: 4px 8px;">@result.Correct</td>
+                <td style="padding: 4px 8px;">@result.Accuracy.ToString("P1")</td>
+                <td style="padding: 4px 8px;">@result.F1.ToString("F3")</td>
+                <td style="padding: 4px 8px;">@result.ResidentFalsePositiveRate.ToString("P1")</td>
+                <td style="padding: 4px 8px;">@result.ResidentFalseNegativeRate.ToString("P1")</td>
+                <td style="padding: 4px 8px;">@result.TransientFalsePositiveRate.ToString("P1")</td>
+                <td style="padding: 4px 8px;">@result.TransientFalseNegativeRate.ToString("P1")</td>
+                <td style="padding: 4px 8px;">@result.HumpbackFalsePositiveRate.ToString("P1")</td>
+                <td style="padding: 4px 8px;">@result.HumpbackFalseNegativeRate.ToString("P1")</td>
+            </tr>
+        }
+    </table>
+
+    <div style="text-align: left; max-width: 700px; margin: 24px auto;">
+        <h3>Definitions</h3>
+        <ul>
+            <li><strong>Accuracy</strong> = Correct / Evaluated</li>
+            <li><strong>Correct</strong> = fastai/orcahello: resident vs other; wav2vec2/oldpodsai/podsai: category in prediction set</li>
+            <li><strong>F1</strong> = macro F1 over humpback, resident, and transient classes that are present</li>
+            <li><strong>[R|T|H]FP%</strong> = among non-[R|T|H] samples, fraction predicted as that class</li>
+            <li><strong>[R|T|H]FN%</strong> = among actual samples of that class, fraction predicted as another class</li>
+        </ul>
+    </div>
+
+    @foreach (var matrix in Model.ConfusionMatrices.Values)
+    {
+        <h2>Confusion Matrix for @Model.GetDisplayName(matrix.ModelName) (rows=actual, cols=predicted)</h2>
+        <table style="border: 1px solid #ccc; border-collapse: separate; text-align: right; margin: 0 auto 32px auto;">
+            <tr style="border-bottom: 1px solid #ccc;">
+                <th style="padding: 4px 8px; text-align: left;"></th>
+                @foreach (var predictedClass in matrix.PredictedClasses)
+                {
+                    <th style="padding: 4px 8px;">@predictedClass</th>
+                }
+                <th style="padding: 4px 8px;">total</th>
+            </tr>
+            @foreach (var row in matrix.Rows.Values)
+            {
+                <tr>
+                    <td style="padding: 4px 8px; text-align: left; font-weight: bold;">@row.ActualClass</td>
+                    @foreach (var predictedClass in matrix.PredictedClasses)
+                    {
+                        <td style="padding: 4px 8px;">@(row.PredictedCounts.TryGetValue(predictedClass, out var count) ? count : 0)</td>
+                    }
+                    <td style="padding: 4px 8px; font-weight: bold;">@row.Total</td>
+                </tr>
+            }
+        </table>
+    }
+</div>
