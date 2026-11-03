@@ -153,6 +153,10 @@ namespace OrcanodeMonitor.Pages
                     ModelComparisonResult result = Results[matrix.ModelName];
                     foreach (var row in matrix.Rows.Values)
                     {
+                        if (row.ActualClass == "unreviewed")
+                        {
+                            continue;
+                        }
                         result.Evaluated += row.Total;
                         if (row.ActualClass == row.PredictedCounts.Keys.FirstOrDefault())
                         {
@@ -161,26 +165,47 @@ namespace OrcanodeMonitor.Pages
 
                         if (row.ActualClass == "resident")
                         {
-                            long falsePositives = row.PredictedCounts.Where(kvp => kvp.Key != "resident").Sum(kvp => kvp.Value);
-                            long falseNegatives = matrix.Rows.Where(r => r.Key != "resident").Sum(r => r.Value.PredictedCounts.ContainsKey("resident") ? r.Value.PredictedCounts["resident"] : 0);
-                            result.ResidentFalsePositiveRate = (double)falsePositives / matrix.Total;
-                            result.ResidentFalseNegativeRate = (double)falseNegatives / matrix.Total;
+                            // Compute number of non-resident reviewed samples.
+                            long nonResidentReviewedSampleCount = matrix.Rows.Where(r => r.Key != "resident" && r.Key != "unreviewed").Sum(r => r.Value.Total);
+
+                            // Compute number of non-resident reviewed samples predicted as resident.
+                            long falsePositives = matrix.Rows.Where(r => r.Key != "resident" && r.Key != "unreviewed").Sum(r => r.Value.PredictedCounts.ContainsKey("resident") ? r.Value.PredictedCounts["resident"] : 0);
+
+                            result.ResidentFalsePositiveRate = (double)falsePositives / nonResidentReviewedSampleCount;
+
+                            long falseNegatives = row.PredictedCounts.Where(kvp => kvp.Key != "resident").Sum(kvp => kvp.Value);
+
+                            result.ResidentFalseNegativeRate = (double)falseNegatives / row.Total;
                         }
 
                         if (row.ActualClass == "transient")
                         {
-                            long falsePositives = row.PredictedCounts.Where(kvp => kvp.Key != "transient").Sum(kvp => kvp.Value);
-                            long falseNegatives = matrix.Rows.Where(r => r.Key != "transient").Sum(r => r.Value.PredictedCounts.ContainsKey("transient") ? r.Value.PredictedCounts["transient"] : 0);
-                            result.TransientFalsePositiveRate = (double)falsePositives / matrix.Total;
-                            result.TransientFalseNegativeRate = (double)falseNegatives / matrix.Total;
+                            // Compute number of non-transient reviewed samples.
+                            long nonTransientReviewedSampleCount = matrix.Rows.Where(r => r.Key != "transient" && r.Key != "unreviewed").Sum(r => r.Value.Total);
+
+                            // Compute number of non-transient reviewed samples predicted as transient.
+                            long falsePositives = matrix.Rows.Where(r => r.Key != "transient" && r.Key != "unreviewed").Sum(r => r.Value.PredictedCounts.ContainsKey("transient") ? r.Value.PredictedCounts["transient"] : 0);
+
+                            result.TransientFalsePositiveRate = (double)falsePositives / nonTransientReviewedSampleCount;
+
+                            long falseNegatives = row.PredictedCounts.Where(kvp => kvp.Key != "transient").Sum(kvp => kvp.Value);
+
+                            result.TransientFalseNegativeRate = (double)falseNegatives / row.Total;
                         }
 
                         if (row.ActualClass == "humpback")
                         {
-                            long falsePositives = row.PredictedCounts.Where(kvp => kvp.Key != "humpback").Sum(kvp => kvp.Value);
-                            long falseNegatives = matrix.Rows.Where(r => r.Key != "humpback").Sum(r => r.Value.PredictedCounts.ContainsKey("humpback") ? r.Value.PredictedCounts["humpback"] : 0);
-                            result.HumpbackFalsePositiveRate = (double)falsePositives / matrix.Total;
-                            result.HumpbackFalseNegativeRate = (double)falseNegatives / matrix.Total;
+                            // Compute number of non-humpback reviewed samples.
+                            long nonHumpbackReviewedSampleCount = matrix.Rows.Where(r => r.Key != "humpback" && r.Key != "unreviewed").Sum(r => r.Value.Total);
+
+                            // Compute number of non-humpback reviewed samples predicted as humpback.
+                            long falsePositives = matrix.Rows.Where(r => r.Key != "humpback" && r.Key != "unreviewed").Sum(r => r.Value.PredictedCounts.ContainsKey("humpback") ? r.Value.PredictedCounts["humpback"] : 0);
+
+                            result.HumpbackFalsePositiveRate = (double)falsePositives / nonHumpbackReviewedSampleCount;
+
+                            long falseNegatives = row.PredictedCounts.Where(kvp => kvp.Key != "humpback").Sum(kvp => kvp.Value);
+
+                            result.HumpbackFalseNegativeRate = (double)falseNegatives / row.Total;
                         }
                     }
                     result.F1 = matrix.GetWhaleF1();
