@@ -44,8 +44,11 @@ namespace OrcanodeMonitor.Models
         {
             "humpback",
             "resident",
-            "transient"
+            "transient",
+            "whale", // Used by human detections.
         };
+
+        public long Total => Rows.Sum(r => r.Value.Total);
 
         /// <summary>
         /// Compute macro F1 across whale classes that appear in actual labels or predictions.
