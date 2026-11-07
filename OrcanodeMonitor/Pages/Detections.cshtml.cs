@@ -174,12 +174,11 @@ namespace OrcanodeMonitor.Pages
                 // Fetch additional detection details (human/machine detections, confidence levels, etc.)
                 // Pass oneMonthAgo so that pagination stops once records older than a month are reached.
                 List<OrcasiteDetection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger, oneMonthAgo);
-
-                // Fetch machine detection details for the past month to support both time ranges.
-                var machineDetections = await _inferenceSystemFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: "all", logger: _logger);
-
                 if (detections != null)
                 {
+                    // Fetch machine detection details for the past month to support both time ranges.
+                    var machineDetections = await _inferenceSystemFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: "all", logger: _logger);
+
                     foreach (OrcasiteDetection detection in detections)
                     {
                         Orcanode? node = _nodes.Where(n => n.OrcasoundFeedId == detection.NodeID).FirstOrDefault();
@@ -187,15 +186,15 @@ namespace OrcanodeMonitor.Pages
                         {
                             continue;
                         }
-                        detection.MachineDetection = machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
 
                         bool inPastMonth = detection.Timestamp >= oneMonthAgo;
-                        bool inPastWeek = detection.Timestamp >= oneWeekAgo;
-
                         if (!inPastMonth)
                         {
                             continue;
                         }
+                        bool inPastWeek = detection.Timestamp >= oneWeekAgo;
+
+                        detection.MachineDetection = machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
 
                         if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                         {

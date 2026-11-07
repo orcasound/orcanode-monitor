@@ -90,6 +90,9 @@ namespace OrcanodeMonitor.Models
             }
         }
 
+        // TODO: allow for other models by keeping modelid not using DetectionSource enum.
+        public string DetectionSourceString => DetectionSource.ToString().ToLowerInvariant();
+
         public string OrcasiteCategory { get; set; } = string.Empty;
 
         /// <summary>
@@ -131,6 +134,45 @@ namespace OrcanodeMonitor.Models
                 }
             }
         }
+
+        // TODO: Update other code to call these.
+        public string Tags => MachineDetection?.Tags ?? string.Empty;
+        public string[] TagList => !string.IsNullOrEmpty(Tags) ? Tags.Split(';') : [];
+
+        public string ActualCategory
+        {
+            get
+            {
+                if (!Reviewed)
+                {
+                    return "unreviewed";
+                }
+
+                string[] tagList = TagList;
+                if (tagList.Any())
+                {
+                    string tag = tagList.First();
+                    return (tag == "srkw") ? "resident" : tag;
+                }
+                return GeneralCategory.ToString().ToLowerInvariant();
+            }
+        }
+
+        public string PredictedCategory
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(MachineDetection?.GlobalPredictionLabel))
+                {
+                    return MachineDetection.GlobalPredictionLabel;
+                }
+                if (Source == "human")
+                {
+                    return "whale";
+                }
+                return "resident";
+            }
+        }
     }
 
     public static class DetectionCategory
@@ -147,6 +189,7 @@ namespace OrcanodeMonitor.Models
         Human,
         OrcaHello,
         PodsAI,
+        Other,
         All
     }
 }
