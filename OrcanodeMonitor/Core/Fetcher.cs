@@ -345,6 +345,7 @@ namespace OrcanodeMonitor.Core
                 {
                     unfoundNode.OrcasoundFeedId = string.Empty;
                     unfoundNode.OrcasoundSlug = string.Empty;
+                    unfoundNode.OrcasoundName = string.Empty;
                     unfoundNode.OrcasoundHost = string.Empty;
                     unfoundNode.OrcasoundVisible = null;
                 }
