@@ -100,26 +100,11 @@ namespace OrcanodeMonitor.Core
         }
 
         /// <summary>
-        /// Find or create a node using the serial number value at Dataplicity.
+        /// Finds the first orcanode whose Orcasound feed ID matches the specified feed ID.
         /// </summary>
-        /// <param name="nodeList">Database table to look in and potentially update</param>
-        /// <param name="serial">Dataplicity serial number to look for</param>
-        /// <param name="connectionStatus">Returns the dataplicity connection status</param>
-        /// <returns></returns>
-        public static Orcanode FindOrCreateOrcanodeByDataplicitySerial(DbSet<Orcanode> nodeList, string serial, out OrcanodeOnlineStatus connectionStatus)
-        {
-            Orcanode? node = FindOrcanodeByDataplicitySerial(nodeList.ToList(), serial, out connectionStatus);
-            if (node != null)
-            {
-                return node;
-            }
-
-            connectionStatus = OrcanodeOnlineStatus.Absent;
-            Orcanode newNode = CreateOrcanode(nodeList);
-            newNode.DataplicitySerial = serial;
-            return newNode;
-        }
-
+        /// <param name="nodes">The orcanodes to search.</param>
+        /// <param name="feedId">The Orcasound feed ID to match.</param>
+        /// <returns>The first matching orcanode, or <see langword="null"/> when no match is found.</returns>
         public static Orcanode? FindOrcanodeByOrcasoundFeedId(List<Orcanode> nodes, string feedId)
         {
             foreach (Orcanode node in nodes)
