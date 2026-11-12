@@ -113,6 +113,55 @@ namespace Test
         }
 
         [TestMethod]
+        public async Task TestUpdateOrcasoundDataReconcilesAssociationsWithoutDeletingNodesOrHistory()
+        {
+            var serialMatchedNode = new Orcanode
+            {
+                ID = Guid.NewGuid().ToString(),
+                OrcasoundName = "Old Orcasound Lab",
+                OrcasoundFeedId = "old-feed-id",
+                OrcasoundSlug = "old-orcasound-lab",
+                DataplicityName = "Orcasound Lab",
+                DataplicitySerial = "84bb6fee-b38c-488e-adac-1a36bbb9a4da"
+            };
+            var staleNode = new Orcanode
+            {
+                ID = Guid.NewGuid().ToString(),
+                OrcasoundName = "Stale node",
+                OrcasoundFeedId = "stale-feed-id",
+                OrcasoundSlug = "stale-node",
+                OrcasoundHost = "orcasound.net",
+                OrcasoundVisible = true
+            };
+            var sourceOnlyNode = new Orcanode
+            {
+                ID = Guid.NewGuid().ToString(),
+                DataplicityName = "Dataplicity-only node",
+                DataplicitySerial = "dataplicity-only-serial"
+            };
+            var historyEvent = new OrcanodeEvent(staleNode, OrcanodeEventTypes.HydrophoneStream, "online", DateTime.UtcNow, null);
+
+            _context.Orcanodes.AddRange(serialMatchedNode, staleNode, sourceOnlyNode);
+            _context.OrcanodeEvents.Add(historyEvent);
+            await _context.SaveChangesAsync();
+
+            await Fetcher.UpdateOrcasoundDataAsync(_context, _logger);
+
+            Assert.AreEqual("feed_02u8r4ELz2xkCjPTc4yLWE", serialMatchedNode.OrcasoundFeedId);
+            Assert.AreEqual(string.Empty, staleNode.OrcasoundFeedId);
+            Assert.AreEqual(string.Empty, staleNode.OrcasoundSlug);
+            Assert.AreEqual(string.Empty, staleNode.OrcasoundHost);
+            Assert.IsNull(staleNode.OrcasoundVisible);
+            Assert.IsTrue(await _context.Orcanodes.AnyAsync(node => node.ID == staleNode.ID));
+            Assert.IsTrue(await _context.OrcanodeEvents.AnyAsync(item => item.ID == historyEvent.ID));
+            Assert.IsTrue(await _context.Orcanodes.AnyAsync(node => node.ID == sourceOnlyNode.ID));
+
+            int nodeCount = await _context.Orcanodes.CountAsync();
+            await DataplicityFetcher.UpdateDataplicityDataAsync(_context, _logger);
+            Assert.AreEqual(nodeCount, await _context.Orcanodes.CountAsync());
+        }
+
+        [TestMethod]
         public async Task TestGetLatestS3TimestampAsync()
         {
             var node = new Orcanode();
