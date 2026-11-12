@@ -63,9 +63,10 @@ namespace OrcanodeMonitor.Core
             using var scope = _scopeFactory.CreateScope();
             OrcanodeMonitorContext context = scope.ServiceProvider.GetRequiredService<OrcanodeMonitorContext>();
 
-            await DataplicityFetcher.UpdateDataplicityDataAsync(context, _logger);
-
+            // Fetch orcasound data first since it's authoritative for the Orcanode list.
             await Fetcher.UpdateOrcasoundDataAsync(context, _logger);
+
+            await DataplicityFetcher.UpdateDataplicityDataAsync(context, _logger);
 
             await SocketXPFetcher.UpdateSocketXPDataAsync(context, _logger);
 

@@ -331,14 +331,34 @@ namespace OrcanodeMonitor.Core
             }
         }
 
-        private async static Task UpdateOrcasoundDataAsync(IOrcanodeMonitorContext context, string site, List<Orcanode> foundList, List<Orcanode> unfoundList, ILogger logger)
+        /// <summary>
+        /// Asynchronously refreshes Orcasound node data for a site by applying feed updates and removing nodes that are
+        /// no longer present in the latest data.
+        /// </summary>
+        /// <remarks>If feed data is available, nodes not returned in the latest feed are removed from the
+        /// context.</remarks>
+        /// <param name="context">The monitor data context used to query and remove Orcanode entities.</param>
+        /// <param name="site">The site identifier used to retrieve Orcasound feed data.</param>
+        /// <param name="foundList">The current collection of discovered nodes to reconcile with the latest feed data.</param>
+        /// <param name="logger">The logger used to record diagnostic and operational information.</param>
+        /// <returns>A task that represents the asynchronous update operation.</returns>
+        private async static Task UpdateOrcasoundDataAsync(IOrcanodeMonitorContext context, string site, List<Orcanode> foundList, ILogger logger)
         {
+            // Create a list to track what nodes are no longer returned.
+            List<Orcanode> unfoundList = foundList.ToList();
+
             JsonElement? dataArray = await GetOrcasoundDataAsync(context, site, logger);
             if (dataArray.HasValue)
             {
                 foreach (JsonElement feed in dataArray.Value.EnumerateArray())
                 {
                     UpdateOrcasoundNode(feed, foundList, unfoundList, context, site, logger);
+                }
+
+                // Remove any remaining unfound nodes.
+                foreach (var unfoundNode in unfoundList)
+                {
+                    context.Orcanodes.Remove(unfoundNode);
                 }
             }
         }
@@ -366,22 +386,9 @@ namespace OrcanodeMonitor.Core
         {
             try
             {
-                var foundList = await context.Orcanodes.ToListAsync();
+                List<Orcanode> foundList = await context.Orcanodes.ToListAsync();
 
-                // Create a list to track what nodes are no longer returned.
-                var unfoundList = foundList.ToList();
-
-                await UpdateOrcasoundDataAsync(context, _orcasoundProdSite, foundList, unfoundList, logger);
-
-                // Mark any remaining unfound nodes as absent.
-                foreach (var unfoundNode in unfoundList)
-                {
-                    var oldNode = FindOrcanodeByOrcasoundFeedId(foundList, unfoundNode.OrcasoundFeedId);
-                    if (oldNode != null)
-                    {
-                        oldNode.OrcasoundFeedId = String.Empty;
-                    }
-                }
+                await UpdateOrcasoundDataAsync(context, _orcasoundProdSite, foundList, logger);
 
                 MonitorState.GetFrom(context).LastUpdatedTimestampUtc = DateTime.UtcNow;
                 await SaveChangesAsync(context);
