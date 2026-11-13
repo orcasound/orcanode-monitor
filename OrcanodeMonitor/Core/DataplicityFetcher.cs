@@ -1,7 +1,6 @@
 ﻿// Copyright (c) Orcanode Monitor contributors
 // SPDX-License-Identifier: MIT
 
-using Amazon.Runtime.Internal.Endpoints.StandardLibrary;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OrcanodeMonitor.Data;
@@ -251,7 +250,12 @@ namespace OrcanodeMonitor.Core
                         unfoundList.Remove(oldListNode);
                     }
 
-                    Orcanode node = Fetcher.FindOrCreateOrcanodeByDataplicitySerial(context.Orcanodes, serial.ToString(), out OrcanodeOnlineStatus oldStatus);
+                    Orcanode? node = Fetcher.FindOrcanodeByDataplicitySerial(context.Orcanodes.ToList(), serial.ToString(), out OrcanodeOnlineStatus oldStatus);
+                    if (node == null)
+                    {
+                        // Although this device is on the dataplicity account, it is not an Orcanode.
+                        continue;
+                    }
                     long oldDiskCapacityInGigs = node.DiskCapacityInGigs;
 
                     if (device.TryGetProperty("name", out var name))
