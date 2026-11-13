@@ -162,10 +162,11 @@ namespace OrcanodeMonitor.Models
                 }
 
                 string[] tagList = TagList;
-                if (tagList.Any())
+                string? firstTag = tagList.FirstOrDefault(tag => !string.IsNullOrWhiteSpace(tag));
+                if (!string.IsNullOrWhiteSpace(firstTag))
                 {
-                    string tag = tagList.First();
-                    return (tag == "srkw") ? "resident" : tag;
+                    string normalizedTag = firstTag.Trim().ToLowerInvariant();
+                    return (normalizedTag == "srkw") ? "resident" : normalizedTag;
                 }
                 return GeneralCategory.ToString().ToLowerInvariant();
             }
