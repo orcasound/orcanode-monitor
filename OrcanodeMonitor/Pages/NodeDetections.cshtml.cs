@@ -243,7 +243,8 @@ namespace OrcanodeMonitor.Pages
                 bool isMachineDataUnavailable = hasMachineSourceDetections && _machineDetections.Count == 0;
                 if (isMachineDataUnavailable)
                 {
-                    _logger.LogWarning("Skipping node leaderboard metrics because machine detections were unavailable for node {NodeSlug}", slug);
+                    string sanitizedSlug = (slug ?? string.Empty).Replace("\r", string.Empty).Replace("\n", string.Empty);
+                    _logger.LogWarning("Skipping node leaderboard metrics because machine detections were unavailable for node {NodeSlug}", sanitizedSlug);
                     return;
                 }
 
