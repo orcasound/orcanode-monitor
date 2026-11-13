@@ -38,7 +38,7 @@ namespace Test
             Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
 
             var options = new DbContextOptionsBuilder<OrcanodeMonitorContext>()
-                            .UseInMemoryDatabase(databaseName: "FetcherTestsDatabase")
+                            .UseInMemoryDatabase(databaseName: $"FetcherTestsDatabase-{Guid.NewGuid()}")
                             .Options;
             _context = new OrcanodeMonitorContext(options);
 
