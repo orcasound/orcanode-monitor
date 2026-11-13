@@ -98,9 +98,9 @@ namespace OrcanodeMonitor.Models
                 long falseNegatives = actualCount - truePositives;
 
                 // FP: actual!=label but predicted=label
-                long falsePositives = Rows
-                    .Where(r => !string.Equals(r.Key, label, StringComparison.OrdinalIgnoreCase))
-                    .Sum(r => r.Value.PredictedCounts.TryGetValue(label, out var count) ? count : 0);
+                    .Where(r => r.Key != "unreviewed" &&
+                                !string.Equals(r.Key, label, StringComparison.OrdinalIgnoreCase))
+                    .Sum(r => r.Value.PredictedCounts.TryGetValue(label, out var count) ? count : 0)
 
                 double precision = (truePositives + falsePositives) > 0
                     ? (double)truePositives / (truePositives + falsePositives)
