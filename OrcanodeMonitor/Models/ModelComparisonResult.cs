@@ -52,8 +52,7 @@ namespace OrcanodeMonitor.Models
 
         /// <summary>
         /// Compute macro F1 across whale classes that appear in actual labels or predictions.
-        /// Returns null if no whale labels are present.
-        /// </summary>
+        /// Returns 0 if no whale labels are present.
         public double GetWhaleF1()
         {
             // Labels seen in rows (actual) and columns (predicted).
