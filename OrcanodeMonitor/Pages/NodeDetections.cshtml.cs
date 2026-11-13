@@ -97,7 +97,7 @@ namespace OrcanodeMonitor.Pages
                              "category-" + GetGeneralCategoryClass(item) + " " +
                              "label-" + GetSpecificCategoryClass(item) + " " +
                              "timeRange-" + GetTimeRangeClass(item);
-            foreach (var tag in GetTags(item).Split(';'))
+            foreach (var tag in item.TagList)
             {
                 if (!string.IsNullOrWhiteSpace(tag))
                 {
@@ -109,7 +109,7 @@ namespace OrcanodeMonitor.Pages
 
         public static string GetTags(OrcasiteDetection item)
         {
-            return item.MachineDetection?.Tags ?? string.Empty;
+            return item.Tags;
         }
 
         /// <summary>

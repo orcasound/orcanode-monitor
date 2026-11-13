@@ -90,8 +90,18 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        // TODO: allow for other models by keeping modelid not using DetectionSource enum.
-        public string DetectionSourceString => DetectionSource.ToString().ToLowerInvariant();
+        public string DetectionSourceString
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(MachineDetection?.ModelId))
+                {
+                    return MachineDetection.ModelId.Trim().ToLowerInvariant();
+                }
+
+                return DetectionSource.ToString().ToLowerInvariant();
+            }
+        }
 
         public string OrcasiteCategory { get; set; } = string.Empty;
 
@@ -140,7 +150,6 @@ namespace OrcanodeMonitor.Models
             }
         }
 
-        // TODO: Update other code to call these.
         public string Tags => MachineDetection?.Tags ?? string.Empty;
         public string[] TagList => !string.IsNullOrEmpty(Tags) ? Tags.Split(';') : [];
 
@@ -183,7 +192,7 @@ namespace OrcanodeMonitor.Models
             {
                 if (!string.IsNullOrEmpty(MachineDetection?.GlobalPredictionLabel))
                 {
-                    return MachineDetection.GlobalPredictionLabel;
+                    return MachineDetection.GlobalPredictionLabel.Trim().ToLowerInvariant();
                 }
                 if (Source == "human")
                 {
