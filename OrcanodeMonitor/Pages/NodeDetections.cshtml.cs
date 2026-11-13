@@ -228,6 +228,14 @@ namespace OrcanodeMonitor.Pages
                     }
                 }
 
+                bool hasMachineSourceDetections = _orcasiteDetections.Any(d => string.Equals(d.Source, "machine", StringComparison.OrdinalIgnoreCase));
+                bool isMachineDataUnavailable = hasMachineSourceDetections && _machineDetections.Count == 0;
+                if (isMachineDataUnavailable)
+                {
+                    _logger.LogWarning("Skipping node leaderboard metrics because machine detections were unavailable for node {NodeSlug}", slug);
+                    return;
+                }
+
                 List<Orcanode> nodes = await _databaseContext.Orcanodes.ToListAsync();
 
                 // Compute confusion matrices.
