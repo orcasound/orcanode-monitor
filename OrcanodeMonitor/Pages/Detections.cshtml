@@ -52,31 +52,31 @@
                         </a>
                     </td>
                     <td>
-                        @Model.GetDetectionCount(item, "pastWeek", Models.DetectionSource.Human)
+                        @Model.GetDetectionCount(item, "pastWeek", OrcanodeMonitor.Models.OrcasiteDetection.HumanSourceId)
                     </td>
-                    <td style="background-color: @Model.GetDetectionBackgroundColor(item, "pastWeek", Models.DetectionSource.OrcaHello)">
-                        @Model.GetDetectionCount(item, "pastWeek", Models.DetectionSource.OrcaHello)
-                    </td>
-                    <td>
-                        @Model.GetAverageNegativeConfidence(item, "pastWeek", Models.DetectionSource.OrcaHello)
+                    <td style="background-color: @Model.GetDetectionBackgroundColor(item, "pastWeek", OrcanodeMonitor.Models.OrcasiteDetection.OrcaHelloSourceId)">
+                        @Model.GetDetectionCount(item, "pastWeek", OrcanodeMonitor.Models.OrcasiteDetection.OrcaHelloSourceId)
                     </td>
                     <td>
-                        @Model.GetConfiguredConfidenceThreshold(item, Models.DetectionSource.OrcaHello)
+                        @Model.GetAverageNegativeConfidence(item, "pastWeek", OrcanodeMonitor.Models.OrcasiteDetection.OrcaHelloSourceId)
                     </td>
                     <td>
-                        @Model.GetAveragePositiveConfidence(item, "pastWeek", Models.DetectionSource.OrcaHello)
-                    </td>
-                    <td style="background-color: @Model.GetDetectionBackgroundColor(item, "pastWeek", Models.DetectionSource.PodsAI)">
-                        @Model.GetDetectionCount(item, "pastWeek", Models.DetectionSource.PodsAI)
+                        @Model.GetConfiguredConfidenceThreshold(item, OrcanodeMonitor.Models.OrcasiteDetection.OrcaHelloSourceId)
                     </td>
                     <td>
-                        @Model.GetAverageNegativeConfidence(item, "pastWeek", Models.DetectionSource.PodsAI)
+                        @Model.GetAveragePositiveConfidence(item, "pastWeek", OrcanodeMonitor.Models.OrcasiteDetection.OrcaHelloSourceId)
+                    </td>
+                    <td style="background-color: @Model.GetDetectionBackgroundColor(item, "pastWeek", OrcanodeMonitor.Models.OrcasiteDetection.PodsAISourceId)">
+                        @Model.GetDetectionCount(item, "pastWeek", OrcanodeMonitor.Models.OrcasiteDetection.PodsAISourceId)
                     </td>
                     <td>
-                        @Model.GetConfiguredConfidenceThreshold(item, Models.DetectionSource.PodsAI)
+                        @Model.GetAverageNegativeConfidence(item, "pastWeek", OrcanodeMonitor.Models.OrcasiteDetection.PodsAISourceId)
                     </td>
                     <td>
-                        @Model.GetAveragePositiveConfidence(item, "pastWeek", Models.DetectionSource.PodsAI)
+                        @Model.GetConfiguredConfidenceThreshold(item, OrcanodeMonitor.Models.OrcasiteDetection.PodsAISourceId)
+                    </td>
+                    <td>
+                        @Model.GetAveragePositiveConfidence(item, "pastWeek", OrcanodeMonitor.Models.OrcasiteDetection.PodsAISourceId)
                     </td>
                 </tr>
             }
@@ -91,31 +91,31 @@
                         </a>
                     </td>
                     <td>
-                        @Model.GetDetectionCount(item, "pastMonth", Models.DetectionSource.Human)
+                        @Model.GetDetectionCount(item, "pastMonth", OrcanodeMonitor.Models.OrcasiteDetection.HumanSourceId)
                     </td>
-                    <td style="background-color: @Model.GetDetectionBackgroundColor(item, "pastMonth", Models.DetectionSource.OrcaHello)">
-                        @Model.GetDetectionCount(item, "pastMonth", Models.DetectionSource.OrcaHello)
-                    </td>
-                    <td>
-                        @Model.GetAverageNegativeConfidence(item, "pastMonth", Models.DetectionSource.OrcaHello)
+                    <td style="background-color: @Model.GetDetectionBackgroundColor(item, "pastMonth", OrcanodeMonitor.Models.OrcasiteDetection.OrcaHelloSourceId)">
+                        @Model.GetDetectionCount(item, "pastMonth", OrcanodeMonitor.Models.OrcasiteDetection.OrcaHelloSourceId)
                     </td>
                     <td>
-                        @Model.GetConfiguredConfidenceThreshold(item, Models.DetectionSource.OrcaHello)
+                        @Model.GetAverageNegativeConfidence(item, "pastMonth", OrcanodeMonitor.Models.OrcasiteDetection.OrcaHelloSourceId)
                     </td>
                     <td>
-                        @Model.GetAveragePositiveConfidence(item, "pastMonth", Models.DetectionSource.OrcaHello)
-                    </td>
-                    <td style="background-color: @Model.GetDetectionBackgroundColor(item, "pastMonth", Models.DetectionSource.PodsAI)">
-                        @Model.GetDetectionCount(item, "pastMonth", Models.DetectionSource.PodsAI)
+                        @Model.GetConfiguredConfidenceThreshold(item, OrcanodeMonitor.Models.OrcasiteDetection.OrcaHelloSourceId)
                     </td>
                     <td>
-                        @Model.GetAverageNegativeConfidence(item, "pastMonth", Models.DetectionSource.PodsAI)
+                        @Model.GetAveragePositiveConfidence(item, "pastMonth", OrcanodeMonitor.Models.OrcasiteDetection.OrcaHelloSourceId)
+                    </td>
+                    <td style="background-color: @Model.GetDetectionBackgroundColor(item, "pastMonth", OrcanodeMonitor.Models.OrcasiteDetection.PodsAISourceId)">
+                        @Model.GetDetectionCount(item, "pastMonth", OrcanodeMonitor.Models.OrcasiteDetection.PodsAISourceId)
                     </td>
                     <td>
-                        @Model.GetConfiguredConfidenceThreshold(item, Models.DetectionSource.PodsAI)
+                        @Model.GetAverageNegativeConfidence(item, "pastMonth", OrcanodeMonitor.Models.OrcasiteDetection.PodsAISourceId)
                     </td>
                     <td>
-                        @Model.GetAveragePositiveConfidence(item, "pastMonth", Models.DetectionSource.PodsAI)
+                        @Model.GetConfiguredConfidenceThreshold(item, OrcanodeMonitor.Models.OrcasiteDetection.PodsAISourceId)
+                    </td>
+                    <td>
+                        @Model.GetAveragePositiveConfidence(item, "pastMonth", OrcanodeMonitor.Models.OrcasiteDetection.PodsAISourceId)
                     </td>
                 </tr>
             }

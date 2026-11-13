@@ -68,27 +68,9 @@ namespace OrcanodeMonitor.Models
 
         public MachineDetection? MachineDetection { get; set; }
 
-        /// <summary>
-        /// Source of detection, as an enum value: Human, OrcaHello, or PODS-AI.
-        /// </summary>
-        public DetectionSource DetectionSource
-        {
-            get
-            {
-                if (MachineDetection == null)
-                {
-                    return DetectionSource.Human;
-                }
-
-                if (!string.IsNullOrEmpty(MachineDetection.GlobalPredictionLabel) ||
-                    (MachineDetection.Comments != null && MachineDetection.Comments.StartsWith("AI:")))
-                {
-                    return DetectionSource.PodsAI;
-                }
-
-                return DetectionSource.OrcaHello;
-            }
-        }
+        public static string OrcaHelloSourceId => "orcahello";
+        public static string PodsAISourceId => "podsai";
+        public static string HumanSourceId => "human";
 
         /// <summary>
         /// Gets the default specific detection category for any sources that
@@ -110,12 +92,27 @@ namespace OrcanodeMonitor.Models
         {
             get
             {
-                if (!string.IsNullOrWhiteSpace(MachineDetection?.ModelId))
+                if (MachineDetection == null)
+                {
+                    return HumanSourceId;
+                }
+
+                if (!string.IsNullOrWhiteSpace(MachineDetection.ModelId))
                 {
                     return MachineDetection.ModelId.Trim().ToLowerInvariant();
                 }
 
-                return DetectionSource.ToString().ToLowerInvariant();
+                // PODS-AI is the only model that filled in GlobalPredictionLabel
+                // or "AI: ..." comments without a ModelId.  It no longer does so,
+                // but we keep this for legacy detection support.
+                if (!string.IsNullOrEmpty(MachineDetection.GlobalPredictionLabel) ||
+                    (MachineDetection.Comments != null && MachineDetection.Comments.StartsWith("AI:")))
+                {
+                    return PodsAISourceId;
+                }
+
+                // Last resort.
+                return OrcaHelloSourceId;
             }
         }
 
