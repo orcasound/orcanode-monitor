@@ -55,14 +55,7 @@ namespace OrcanodeMonitor.Pages
             // TODO: share some code with Detections.cshtml.cs.
 
             // Fetch nodes.
-            var nodes = await _databaseContext.Orcanodes.ToListAsync();
-            _nodes = nodes.Where(n => ((n.DataplicityConnectionStatus != OrcanodeOnlineStatus.Absent) ||
-                                       (n.OrcasoundStatus != OrcanodeOnlineStatus.Absent) ||
-                                       (n.S3StreamStatus != OrcanodeOnlineStatus.Absent &&
-                                        n.S3StreamStatus != OrcanodeOnlineStatus.Unauthorized)) &&
-                                      (n.OrcasoundHost != "dev.orcasound.net"))
-                          .OrderBy(n => n.DisplayName)
-                          .ToList();
+            _nodes = await _databaseContext.Orcanodes.ToListAsync();
 
             var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
             var oneMonthAgo = DateTime.UtcNow.AddMonths(-1);

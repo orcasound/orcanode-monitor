@@ -228,7 +228,7 @@ namespace OrcanodeMonitor.Pages
                     }
                 }
 
-                List<Orcanode> nodes = _databaseContext.Orcanodes.ToList();
+                List<Orcanode> nodes = await _databaseContext.Orcanodes.ToListAsync();
 
                 // Compute confusion matrices.
                 ModelsModel.ComputeConfusionMatrices(nodes, _orcasiteDetections, ConfusionMatrices);
