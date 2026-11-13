@@ -61,7 +61,7 @@ namespace OrcanodeMonitor.Models
             {
                 labelsSeen.Add(actual);
             }
-            foreach (var row in Rows.Values)
+            foreach (var row in Rows.Where(r => r.Key != "unreviewed").Select(r => r.Value))
             {
                 foreach (var predicted in row.PredictedCounts.Keys)
                 {
