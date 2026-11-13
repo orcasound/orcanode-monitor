@@ -212,8 +212,9 @@ namespace OrcanodeMonitor.Pages
                         DetectionSourceData sourceMonthData = monthData.Source[(int)detection.DetectionSource];
                         DetectionSourceData sourceWeekData = weekData.Source[(int)detection.DetectionSource];
 
-                        if (detection.DetectionSource == DetectionSource.Human)
+                        if (detection.MachineDetection == null)
                         {
+                            // This detection was reported by a human.
                             if (!detection.Reviewed)
                             {
                                 sourceMonthData.UnreviewedDetectionCount++;

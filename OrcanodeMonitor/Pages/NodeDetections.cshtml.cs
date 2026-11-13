@@ -37,18 +37,7 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public string GetSourceClass(OrcasiteDetection item) => item.DetectionSource.ToString().ToLowerInvariant();
-
-        public string GetSourceLabel(OrcasiteDetection item)
-        {
-            switch (item.DetectionSource)
-            {
-                case DetectionSource.Human: return "Human";
-                case DetectionSource.PodsAI: return "PODS-AI";
-                case DetectionSource.OrcaHello: return "OrcaHello";
-                default: return "Unknown";
-            }
-        }
+        public string GetSourceClass(OrcasiteDetection item) => item.DetectionSourceString;
 
         /// <summary>
         /// Get general (i.e., Orcasite) category CSS class for a detection.
@@ -93,7 +82,7 @@ namespace OrcanodeMonitor.Pages
         /// <returns>String containing CSS classes</returns>
         public string GetDetectionClasses(OrcasiteDetection item)
         {
-            string classes = "source-" + GetSourceClass(item) + " " +
+            string classes = "source-" + item.DetectionSourceString + " " +
                              "category-" + GetGeneralCategoryClass(item) + " " +
                              "label-" + GetSpecificCategoryClass(item) + " " +
                              "timeRange-" + GetTimeRangeClass(item);
@@ -150,12 +139,10 @@ namespace OrcanodeMonitor.Pages
                 return DetectionSpecificCategoryEnum.Unknown;
             }
 
-            if (orcasiteDetection.DetectionSource == DetectionSource.OrcaHello)
+            if ((orcasiteDetection.DefaultSpecificCategory.HasValue) &&
+                (machineDetection?.IsPositive(orcasiteDetection) ?? false))
             {
-                if (machineDetection.IsPositive(orcasiteDetection))
-                {
-                    return DetectionSpecificCategoryEnum.Resident;
-                }
+                return orcasiteDetection.DefaultSpecificCategory.Value;
             }
 
             return DetectionSpecificCategoryEnum.Unknown;
@@ -171,15 +158,10 @@ namespace OrcanodeMonitor.Pages
         /// </returns>
         public string GetDetectionStatus(OrcasiteDetection orcasiteDetection)
         {
-            var source = orcasiteDetection.DetectionSource;
-            if (source == DetectionSource.OrcaHello || source == DetectionSource.PodsAI)
+            MachineDetection? machineDetection = orcasiteDetection.MachineDetection;
+            if (machineDetection != null)
             {
-                MachineDetection? machineDetection = orcasiteDetection.MachineDetection;
-                if (machineDetection == null)
-                {
-                    return "Unknown";
-                }
-                else if (!machineDetection.Reviewed)
+                if (!machineDetection.Reviewed)
                 {
                     return "Unreviewed";
                 }

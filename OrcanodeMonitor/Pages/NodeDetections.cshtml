@@ -124,7 +124,7 @@
                     <td>@item.GeneralCategory</td>
                     <td>@NodeDetectionsModel.GetSpecificCategory(item)</td>
                     <td>@NodeDetectionsModel.GetTags(item)</td>
-                    <td>@Model.GetSourceLabel(item)</td>
+                    <td>@item.SourceLabel</td>
                     <td>@Model.GetDetectionStatus(item)</td>
                     <td align="left">
                         <span class="preserve-line-breaks">@item.Description</span>
@@ -170,7 +170,7 @@
         {
             <tr>
                 <td style="padding: 4px 8px; text-align: left;">
-                    @ModelsModel.GetDisplayName(result.Name)
+                    @OrcanodeMonitor.Models.OrcasiteDetection.GetModelDisplayName(result.Name)
                 </td>
                 <td style="padding: 4px 8px;">@result.Evaluated</td>
                 <td style="padding: 4px 8px;">@result.Correct</td>
@@ -190,7 +190,7 @@
     {
         var matrix = Model.ConfusionMatrices[result.Name];
 
-        <h2>Confusion Matrix for @ModelsModel.GetDisplayName(matrix.ModelName) (rows=actual, cols=predicted)</h2>
+        <h2>Confusion Matrix for @OrcanodeMonitor.Models.OrcasiteDetection.GetModelDisplayName(matrix.ModelName) (rows=actual, cols=predicted)</h2>
         <table style="border: 1px solid #ccc; border-collapse: separate; text-align: right; margin: 0 auto 32px auto;">
             <tr style="border-bottom: 1px solid #ccc;">
                 <th style="padding: 4px 8px; text-align: left;"></th>

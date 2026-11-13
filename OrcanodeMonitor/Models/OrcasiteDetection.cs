@@ -90,6 +90,22 @@ namespace OrcanodeMonitor.Models
             }
         }
 
+        /// <summary>
+        /// Gets the default specific detection category for any sources that
+        /// are binary detectors.
+        /// </summary>
+        public DetectionSpecificCategoryEnum? DefaultSpecificCategory => DetectionSourceString switch
+        {
+            "orcahello" => DetectionSpecificCategoryEnum.Resident,
+            _ => null
+        };
+
+        /// <summary>
+        /// Gets a normalized detection source identifier.
+        /// </summary>
+        /// <remarks>Uses `MachineDetection.ModelId` when present; otherwise uses `DetectionSource`. The
+        /// returned value is trimmed when sourced from `ModelId` and converted to lowercase using invariant
+        /// culture.</remarks>
         public string DetectionSourceString
         {
             get
@@ -102,6 +118,8 @@ namespace OrcanodeMonitor.Models
                 return DetectionSource.ToString().ToLowerInvariant();
             }
         }
+
+        public string SourceLabel => GetModelDisplayName(DetectionSourceString);
 
         public string OrcasiteCategory { get; set; } = string.Empty;
 
@@ -119,6 +137,19 @@ namespace OrcanodeMonitor.Models
         public string Source { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string IdempotencyKey { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Gets the display name for a model identifier.
+        /// </summary>
+        /// <param name="modelName">Model identifier to format.</param>
+        /// <returns>Mapped display name for known model identifiers; otherwise, the original model identifier.</returns>
+        public static string GetModelDisplayName(string modelName) => modelName switch
+        {
+            "human" => "Human",
+            "podsai" => "PODS-AI",
+            "orcahello" => "OrcaHello",
+            _ => modelName
+        };
 
         public override string ToString()
         {

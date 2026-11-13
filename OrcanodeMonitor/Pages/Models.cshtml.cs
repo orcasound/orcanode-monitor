@@ -39,17 +39,6 @@ namespace OrcanodeMonitor.Pages
             _ => null
         };
 
-        /// <summary>
-        /// Get the display name for a model.
-        /// TODO: combine with NodeDetectionsModel.GetSourceLabel() to avoid duplication.
-        /// </summary>
-        public static string GetDisplayName(string modelName) => modelName switch
-        {
-            "orcahello" => "OrcaHello",
-            "podsai" => "PODS-AI",
-            _ => modelName
-        };   
-
         public async Task OnGetAsync(string slug)
         {
             // TODO: share some code with Detections.cshtml.cs.
@@ -57,7 +46,6 @@ namespace OrcanodeMonitor.Pages
             // Fetch nodes.
             _nodes = await _databaseContext.Orcanodes.ToListAsync();
 
-            var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
             var oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
 
             // Fetch additional detection details (human/machine detections, confidence levels, etc.)
@@ -94,7 +82,6 @@ namespace OrcanodeMonitor.Pages
             List<OrcasiteDetection> detections,
             SortedDictionary<string, ConfusionMatrix> ConfusionMatrices)
         {
-            var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
             var oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
 
             foreach (OrcasiteDetection detection in detections)
@@ -116,8 +103,6 @@ namespace OrcanodeMonitor.Pages
                 {
                     continue;
                 }
-                bool inPastWeek = detection.Timestamp >= oneWeekAgo;
-
                 string source = detection.DetectionSourceString;
                 if (!ConfusionMatrices.ContainsKey(source))
                 {
@@ -130,27 +115,8 @@ namespace OrcanodeMonitor.Pages
 
                 // Update ConfusionMatrix entry.
                 string predictedCategory = detection.PredictedCategory;
-                if (!matrix.PredictedClasses.Contains(predictedCategory))
-                {
-                    matrix.PredictedClasses.Add(predictedCategory);
-                    // TODO: can PredictedClasses be computed from Rows?
-                }
                 string actualCategory = detection.ActualCategory;
-
-                // TODO: move the following code block to a helper in ConfusionMatrix.
-                if (!matrix.Rows.ContainsKey(actualCategory))
-                {
-                    matrix.Rows[actualCategory] = new ConfusionMatrixRow()
-                    {
-                        ActualClass = actualCategory
-                    };
-                }
-                ConfusionMatrixRow row = matrix.Rows[actualCategory];
-                if (!row.PredictedCounts.ContainsKey(predictedCategory))
-                {
-                    row.PredictedCounts[predictedCategory] = 0;
-                }
-                row.PredictedCounts[predictedCategory]++;
+                matrix.AddPrediction(actualCategory, predictedCategory);
             }
         }
 

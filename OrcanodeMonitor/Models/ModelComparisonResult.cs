@@ -37,7 +37,13 @@ namespace OrcanodeMonitor.Models
     public class ConfusionMatrix
     {
         public string ModelName { get; set; } = string.Empty;
-        public SortedSet<string> PredictedClasses { get; set; } = new();
+
+        /// <summary>
+        /// Gets the distinct predicted class names across all rows.
+        /// </summary>
+        public SortedSet<string> PredictedClasses =>
+            new(Rows.Values.SelectMany(row => row.PredictedCounts.Keys), StringComparer.OrdinalIgnoreCase);
+
         public SortedDictionary<string, ConfusionMatrixRow> Rows { get; set; } = new();
 
         private static readonly HashSet<string> WhaleClassNames = new(StringComparer.OrdinalIgnoreCase)
@@ -49,6 +55,32 @@ namespace OrcanodeMonitor.Models
         };
 
         public long TotalReviewed => Rows.Sum(r => r.Key == "unreviewed" ? 0 : r.Value.Total);
+
+        /// <summary>
+        /// Adds one prediction to the confusion matrix for the specified actual and predicted categories.
+        /// </summary>
+        /// <remarks>If the actual category or predicted category entry does not exist, it is created
+        /// before incrementing the count.</remarks>
+        /// <param name="actualCategory">The actual category label for the observation.</param>
+        /// <param name="predictedCategory">The predicted category label assigned to the observation.</param>
+        public void AddPrediction(string actualCategory, string predictedCategory)
+        {
+            if (!Rows.ContainsKey(actualCategory))
+            {
+                Rows[actualCategory] = new ConfusionMatrixRow
+                {
+                    ActualClass = actualCategory
+                };
+            }
+
+            ConfusionMatrixRow row = Rows[actualCategory];
+            if (!row.PredictedCounts.ContainsKey(predictedCategory))
+            {
+                row.PredictedCounts[predictedCategory] = 0;
+            }
+
+            row.PredictedCounts[predictedCategory]++;
+        }
 
         /// <summary>
         /// Compute macro F1 across whale classes that appear in actual labels or predictions.
