@@ -143,7 +143,8 @@ namespace OrcanodeMonitor.Models
         {
             get
             {
-                if (!Reviewed)
+                if ((MachineDetection != null && !MachineDetection.Reviewed) ||
+                    (MachineDetection == null && !Reviewed))
                 {
                     return "unreviewed";
                 }
