@@ -89,6 +89,12 @@ namespace OrcanodeMonitor.Pages
 
             foreach (OrcasiteDetection detection in detections)
             {
+                if (string.Equals(detection.Source, "machine", StringComparison.OrdinalIgnoreCase) &&
+                    (detection.MachineDetection == null))
+                {
+                    continue;
+                }
+
                 Orcanode? node = nodes.Where(n => n.OrcasoundFeedId == detection.NodeID).FirstOrDefault();
                 if (node == null)
                 {
