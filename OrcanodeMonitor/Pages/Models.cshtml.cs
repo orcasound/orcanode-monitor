@@ -43,7 +43,7 @@ namespace OrcanodeMonitor.Pages
         /// Get the display name for a model.
         /// TODO: combine with NodeDetectionsModel.GetSourceLabel() to avoid duplication.
         /// </summary>
-        public string GetDisplayName(string modelName) => modelName switch
+        public static string GetDisplayName(string modelName) => modelName switch
         {
             "orcahello" => "OrcaHello",
             "podsai" => "PODS-AI",
@@ -74,142 +74,153 @@ namespace OrcanodeMonitor.Pages
             {
                 // Fetch machine detection details for the past month to support both time ranges.
                 var machineDetections = await _inferenceSystemFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: "all", logger: _logger);
-
                 foreach (OrcasiteDetection detection in detections)
                 {
-                    Orcanode? node = _nodes.Where(n => n.OrcasoundFeedId == detection.NodeID).FirstOrDefault();
-                    if (node == null)
-                    {
-                        continue;
-                    }
-
-                    bool inPastMonth = detection.Timestamp >= oneMonthAgo;
-                    if (!inPastMonth)
-                    {
-                        continue;
-                    }
-                    bool inPastWeek = detection.Timestamp >= oneWeekAgo;
-
                     detection.MachineDetection = machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
-
-                    string source = detection.DetectionSourceString;
-                    if (!Results.ContainsKey(source))
-                    {
-                        var result = new ModelComparisonResult
-                        {
-                            Name = source
-                        };
-                        Results[source] = result;
-                    }
-
-                    if (!ConfusionMatrices.ContainsKey(source))
-                    {
-                        ConfusionMatrices[source] = new ConfusionMatrix
-                        {
-                            ModelName = source
-                        };
-                    }
-                    ConfusionMatrix matrix = ConfusionMatrices[source];
-
-                    // Update ConfusionMatrix entry.
-                    string predictedCategory = detection.PredictedCategory;
-                    if (!matrix.PredictedClasses.Contains(predictedCategory))
-                    {
-                        matrix.PredictedClasses.Add(predictedCategory);
-                        // TODO: can PredictedClasses be computed from Rows?
-                    }
-                    string actualCategory = detection.ActualCategory;
-
-                    // TODO: move the following code block to a helper in ConfusionMatrix.
-                    if (!matrix.Rows.ContainsKey(actualCategory))
-                    {
-                        matrix.Rows[actualCategory] = new ConfusionMatrixRow()
-                        {
-                            ActualClass = actualCategory
-                        };
-                    }
-                    ConfusionMatrixRow row = matrix.Rows[actualCategory];
-                    if (!row.PredictedCounts.ContainsKey(predictedCategory))
-                    {
-                        row.PredictedCounts[predictedCategory] = 0;
-                    }
-                    row.PredictedCounts[predictedCategory]++;
                 }
+
+                ComputeConfusionMatrices(_nodes, detections, ConfusionMatrices);
 
                 // Compute ModelComparisonResult entries from ConfusionMatrix entries.
-                foreach (ConfusionMatrix matrix in ConfusionMatrices.Values)
+                ComputeModelComparisonResults(ConfusionMatrices, Results);
+            }
+        }
+
+        public static void ComputeConfusionMatrices(
+            List<Orcanode> nodes,
+            List<OrcasiteDetection> detections,
+            SortedDictionary<string, ConfusionMatrix> ConfusionMatrices)
+        {
+            var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
+            var oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
+
+            foreach (OrcasiteDetection detection in detections)
+            {
+                Orcanode? node = nodes.Where(n => n.OrcasoundFeedId == detection.NodeID).FirstOrDefault();
+                if (node == null)
                 {
-                    if (matrix.Rows == null)
+                    continue;
+                }
+
+                bool inPastMonth = detection.Timestamp >= oneMonthAgo;
+                if (!inPastMonth)
+                {
+                    continue;
+                }
+                bool inPastWeek = detection.Timestamp >= oneWeekAgo;
+
+                string source = detection.DetectionSourceString;
+                if (!ConfusionMatrices.ContainsKey(source))
+                {
+                    ConfusionMatrices[source] = new ConfusionMatrix
+                    {
+                        ModelName = source
+                    };
+                }
+                ConfusionMatrix matrix = ConfusionMatrices[source];
+
+                // Update ConfusionMatrix entry.
+                string predictedCategory = detection.PredictedCategory;
+                if (!matrix.PredictedClasses.Contains(predictedCategory))
+                {
+                    matrix.PredictedClasses.Add(predictedCategory);
+                    // TODO: can PredictedClasses be computed from Rows?
+                }
+                string actualCategory = detection.ActualCategory;
+
+                // TODO: move the following code block to a helper in ConfusionMatrix.
+                if (!matrix.Rows.ContainsKey(actualCategory))
+                {
+                    matrix.Rows[actualCategory] = new ConfusionMatrixRow()
+                    {
+                        ActualClass = actualCategory
+                    };
+                }
+                ConfusionMatrixRow row = matrix.Rows[actualCategory];
+                if (!row.PredictedCounts.ContainsKey(predictedCategory))
+                {
+                    row.PredictedCounts[predictedCategory] = 0;
+                }
+                row.PredictedCounts[predictedCategory]++;
+            }
+        }
+
+        public static void ComputeModelComparisonResults(
+            SortedDictionary<string, ConfusionMatrix> ConfusionMatrices,
+            Dictionary<string, ModelComparisonResult> Results)
+        {
+            foreach (ConfusionMatrix matrix in ConfusionMatrices.Values)
+            {
+                if (matrix.Rows == null)
+                {
+                    continue;
+                }
+                if (!Results.ContainsKey(matrix.ModelName))
+                {
+                    Results[matrix.ModelName] = new ModelComparisonResult
+                    {
+                        Name = matrix.ModelName
+                    };
+                }
+                ModelComparisonResult result = Results[matrix.ModelName];
+                foreach (var row in matrix.Rows.Values)
+                {
+                    if (row.ActualClass == "unreviewed")
                     {
                         continue;
                     }
-                    if (!Results.ContainsKey(matrix.ModelName))
+                    result.Evaluated += row.Total;
+                    if (row.ActualClass == row.PredictedCounts.Keys.FirstOrDefault())
                     {
-                        Results[matrix.ModelName] = new ModelComparisonResult
-                        {
-                            Name = matrix.ModelName
-                        };
+                        result.Correct += row.PredictedCounts[row.ActualClass];
                     }
-                    ModelComparisonResult result = Results[matrix.ModelName];
-                    foreach (var row in matrix.Rows.Values)
+
+                    if (row.ActualClass == "resident")
                     {
-                        if (row.ActualClass == "unreviewed")
-                        {
-                            continue;
-                        }
-                        result.Evaluated += row.Total;
-                        if (row.ActualClass == row.PredictedCounts.Keys.FirstOrDefault())
-                        {
-                            result.Correct += row.PredictedCounts[row.ActualClass];
-                        }
+                        // Compute number of non-resident reviewed samples.
+                        long nonResidentReviewedSampleCount = matrix.Rows.Where(r => r.Key != "resident" && r.Key != "unreviewed").Sum(r => r.Value.Total);
 
-                        if (row.ActualClass == "resident")
-                        {
-                            // Compute number of non-resident reviewed samples.
-                            long nonResidentReviewedSampleCount = matrix.Rows.Where(r => r.Key != "resident" && r.Key != "unreviewed").Sum(r => r.Value.Total);
+                        // Compute number of non-resident reviewed samples predicted as resident.
+                        long falsePositives = matrix.Rows.Where(r => r.Key != "resident" && r.Key != "unreviewed").Sum(r => r.Value.PredictedCounts.ContainsKey("resident") ? r.Value.PredictedCounts["resident"] : 0);
 
-                            // Compute number of non-resident reviewed samples predicted as resident.
-                            long falsePositives = matrix.Rows.Where(r => r.Key != "resident" && r.Key != "unreviewed").Sum(r => r.Value.PredictedCounts.ContainsKey("resident") ? r.Value.PredictedCounts["resident"] : 0);
+                        result.ResidentFalsePositiveRate = (double)falsePositives / nonResidentReviewedSampleCount;
 
-                            result.ResidentFalsePositiveRate = (double)falsePositives / nonResidentReviewedSampleCount;
+                        long falseNegatives = row.PredictedCounts.Where(kvp => kvp.Key != "resident").Sum(kvp => kvp.Value);
 
-                            long falseNegatives = row.PredictedCounts.Where(kvp => kvp.Key != "resident").Sum(kvp => kvp.Value);
-
-                            result.ResidentFalseNegativeRate = (double)falseNegatives / row.Total;
-                        }
-
-                        if (row.ActualClass == "transient")
-                        {
-                            // Compute number of non-transient reviewed samples.
-                            long nonTransientReviewedSampleCount = matrix.Rows.Where(r => r.Key != "transient" && r.Key != "unreviewed").Sum(r => r.Value.Total);
-
-                            // Compute number of non-transient reviewed samples predicted as transient.
-                            long falsePositives = matrix.Rows.Where(r => r.Key != "transient" && r.Key != "unreviewed").Sum(r => r.Value.PredictedCounts.ContainsKey("transient") ? r.Value.PredictedCounts["transient"] : 0);
-
-                            result.TransientFalsePositiveRate = (double)falsePositives / nonTransientReviewedSampleCount;
-
-                            long falseNegatives = row.PredictedCounts.Where(kvp => kvp.Key != "transient").Sum(kvp => kvp.Value);
-
-                            result.TransientFalseNegativeRate = (double)falseNegatives / row.Total;
-                        }
-
-                        if (row.ActualClass == "humpback")
-                        {
-                            // Compute number of non-humpback reviewed samples.
-                            long nonHumpbackReviewedSampleCount = matrix.Rows.Where(r => r.Key != "humpback" && r.Key != "unreviewed").Sum(r => r.Value.Total);
-
-                            // Compute number of non-humpback reviewed samples predicted as humpback.
-                            long falsePositives = matrix.Rows.Where(r => r.Key != "humpback" && r.Key != "unreviewed").Sum(r => r.Value.PredictedCounts.ContainsKey("humpback") ? r.Value.PredictedCounts["humpback"] : 0);
-
-                            result.HumpbackFalsePositiveRate = (double)falsePositives / nonHumpbackReviewedSampleCount;
-
-                            long falseNegatives = row.PredictedCounts.Where(kvp => kvp.Key != "humpback").Sum(kvp => kvp.Value);
-
-                            result.HumpbackFalseNegativeRate = (double)falseNegatives / row.Total;
-                        }
+                        result.ResidentFalseNegativeRate = (double)falseNegatives / row.Total;
                     }
-                    result.F1 = matrix.GetWhaleF1();
+
+                    if (row.ActualClass == "transient")
+                    {
+                        // Compute number of non-transient reviewed samples.
+                        long nonTransientReviewedSampleCount = matrix.Rows.Where(r => r.Key != "transient" && r.Key != "unreviewed").Sum(r => r.Value.Total);
+
+                        // Compute number of non-transient reviewed samples predicted as transient.
+                        long falsePositives = matrix.Rows.Where(r => r.Key != "transient" && r.Key != "unreviewed").Sum(r => r.Value.PredictedCounts.ContainsKey("transient") ? r.Value.PredictedCounts["transient"] : 0);
+
+                        result.TransientFalsePositiveRate = (double)falsePositives / nonTransientReviewedSampleCount;
+
+                        long falseNegatives = row.PredictedCounts.Where(kvp => kvp.Key != "transient").Sum(kvp => kvp.Value);
+
+                        result.TransientFalseNegativeRate = (double)falseNegatives / row.Total;
+                    }
+
+                    if (row.ActualClass == "humpback")
+                    {
+                        // Compute number of non-humpback reviewed samples.
+                        long nonHumpbackReviewedSampleCount = matrix.Rows.Where(r => r.Key != "humpback" && r.Key != "unreviewed").Sum(r => r.Value.Total);
+
+                        // Compute number of non-humpback reviewed samples predicted as humpback.
+                        long falsePositives = matrix.Rows.Where(r => r.Key != "humpback" && r.Key != "unreviewed").Sum(r => r.Value.PredictedCounts.ContainsKey("humpback") ? r.Value.PredictedCounts["humpback"] : 0);
+
+                        result.HumpbackFalsePositiveRate = (double)falsePositives / nonHumpbackReviewedSampleCount;
+
+                        long falseNegatives = row.PredictedCounts.Where(kvp => kvp.Key != "humpback").Sum(kvp => kvp.Value);
+
+                        result.HumpbackFalseNegativeRate = (double)falseNegatives / row.Total;
+                    }
                 }
+                result.F1 = matrix.GetWhaleF1();
             }
         }
     }

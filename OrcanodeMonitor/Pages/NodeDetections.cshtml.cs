@@ -20,6 +20,8 @@ namespace OrcanodeMonitor.Pages
         public List<OrcasiteDetection> RecentDetections => _orcasiteDetections;
         private readonly InferenceSystemFetcher _inferenceSystemFetcher;
         private List<MachineDetection> _machineDetections;
+        public Dictionary<string, ModelComparisonResult> Results = new();
+        public SortedDictionary<string, ConfusionMatrix> ConfusionMatrices = new();
 
         public NodeDetectionsModel(OrcanodeMonitorContext context, ILogger<NodeDetectionsModel> logger, InferenceSystemFetcher inferenceSystemFetcher)
         {
@@ -216,12 +218,23 @@ namespace OrcanodeMonitor.Pages
                 _machineDetections = machineDetections;
             }
 
-            if (_orcasiteDetections != null && _machineDetections != null)
+            if (_orcasiteDetections != null)
             {
-                foreach (OrcasiteDetection detection in _orcasiteDetections)
+                if (_machineDetections != null)
                 {
-                    detection.MachineDetection = _machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
+                    foreach (OrcasiteDetection detection in _orcasiteDetections)
+                    {
+                        detection.MachineDetection = _machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
+                    }
                 }
+
+                List<Orcanode> nodes = _databaseContext.Orcanodes.ToList();
+
+                // Compute confusion matrices.
+                ModelsModel.ComputeConfusionMatrices(nodes, _orcasiteDetections, ConfusionMatrices);
+
+                // Compute model comparison results for the node.
+                ModelsModel.ComputeModelComparisonResults(ConfusionMatrices, Results);
             }
         }
     }

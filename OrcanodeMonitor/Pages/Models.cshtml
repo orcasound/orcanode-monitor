@@ -29,11 +29,11 @@
                 <td style="padding: 4px 8px; text-align: left;">
                     @if (overviewPage != null)
                     {
-                        <a asp-page="@overviewPage">@Model.GetDisplayName(result.Name)</a>
+                        <a asp-page="@overviewPage">@ModelsModel.GetDisplayName(result.Name)</a>
                     }
                     else
                     {
-                        @Model.GetDisplayName(result.Name)
+                        @ModelsModel.GetDisplayName(result.Name)
                     }
                 </td>
                 <td style="padding: 4px 8px;">@result.Evaluated</td>
@@ -65,7 +65,7 @@
     {
         var matrix = Model.ConfusionMatrices[result.Name];
 
-        <h2>Confusion Matrix for @Model.GetDisplayName(matrix.ModelName) (rows=actual, cols=predicted)</h2>
+        <h2>Confusion Matrix for @ModelsModel.GetDisplayName(matrix.ModelName) (rows=actual, cols=predicted)</h2>
         <table style="border: 1px solid #ccc; border-collapse: separate; text-align: right; margin: 0 auto 32px auto;">
             <tr style="border-bottom: 1px solid #ccc;">
                 <th style="padding: 4px 8px; text-align: left;"></th>
