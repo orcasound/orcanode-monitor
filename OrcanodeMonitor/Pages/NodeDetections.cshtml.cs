@@ -37,39 +37,39 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public string GetSourceClass(OrcasiteDetection item) => item.DetectionSourceString;
+        public string GetSourceClass(OrcasiteDetection item) => "source-" + item.DetectionSourceString;
 
         /// <summary>
         /// Get general (i.e., Orcasite) category CSS class for a detection.
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public static string GetGeneralCategoryClass(OrcasiteDetection item) => item.GeneralCategory.ToString().ToLowerInvariant();
+        public static string GetGeneralCategoryClass(OrcasiteDetection item) => "category-" + item.GeneralCategory.ToString().ToLowerInvariant();
 
         /// <summary>
         /// Get specific (i.e., PODS-AI) category CSS class for a detection.
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public string GetSpecificCategoryClass(OrcasiteDetection item) => GetSpecificCategory(item).ToString().ToLowerInvariant();
+        public string GetSpecificCategoryClass(OrcasiteDetection item) => "label-" + GetSpecificCategory(item).ToString().ToLowerInvariant();
 
         /// <summary>
         /// Get time range CSS classes for a detection.
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>String containing CSS classes</returns>
-        public static string GetTimeRangeClass(OrcasiteDetection item)
+        public static string GetTimeRangeClasses(OrcasiteDetection item)
         {
             DateTime oneWeekAgo = DateTime.UtcNow.AddDays(-7);
             if (item.Timestamp.ToUniversalTime() > oneWeekAgo)
             {
-                return "pastWeek pastMonth";
+                return "timeRange-pastWeek timeRange-pastMonth";
             }
 
             DateTime oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
             if (item.Timestamp.ToUniversalTime() > oneMonthAgo)
             {
-                return "pastMonth";
+                return "timeRange-pastMonth";
             }
 
             return string.Empty;
@@ -82,10 +82,10 @@ namespace OrcanodeMonitor.Pages
         /// <returns>String containing CSS classes</returns>
         public string GetDetectionClasses(OrcasiteDetection item)
         {
-            string classes = "source-" + item.DetectionSourceString + " " +
-                             "category-" + GetGeneralCategoryClass(item) + " " +
-                             "label-" + GetSpecificCategoryClass(item) + " " +
-                             "timeRange-" + GetTimeRangeClass(item);
+            string classes = GetSourceClass(item) + " " +
+                             GetGeneralCategoryClass(item) + " " +
+                             GetSpecificCategoryClass(item) + " " +
+                             GetTimeRangeClasses(item);
             foreach (var tag in item.TagList)
             {
                 if (!string.IsNullOrWhiteSpace(tag))

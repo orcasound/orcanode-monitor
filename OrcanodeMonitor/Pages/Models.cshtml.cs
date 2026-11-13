@@ -41,8 +41,6 @@ namespace OrcanodeMonitor.Pages
 
         public async Task OnGetAsync(string slug)
         {
-            // TODO: share some code with Detections.cshtml.cs.
-
             // Fetch nodes.
             _nodes = await _databaseContext.Orcanodes.ToListAsync();
 

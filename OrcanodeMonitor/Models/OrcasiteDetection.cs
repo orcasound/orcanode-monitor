@@ -99,20 +99,21 @@ namespace OrcanodeMonitor.Models
 
                 if (!string.IsNullOrWhiteSpace(MachineDetection.ModelId))
                 {
-                    return MachineDetection.ModelId.Trim().ToLowerInvariant();
+                    string modelId = MachineDetection.ModelId.Trim().ToLowerInvariant();
+                    if (modelId.StartsWith("orcasound/orcahello-srkw-detector-v1"))
+                    {
+                        return OrcaHelloSourceId;
+                    }
+                    if (modelId.StartsWith("davethaler/whale-call-detector"))
+                    {
+                        return PodsAISourceId;
+                    }
+
+                    // For any other models, use the model ID directly.
+                    return modelId;
                 }
 
-                // PODS-AI is the only model that filled in GlobalPredictionLabel
-                // or "AI: ..." comments without a ModelId.  It no longer does so,
-                // but we keep this for legacy detection support.
-                if (!string.IsNullOrEmpty(MachineDetection.GlobalPredictionLabel) ||
-                    (MachineDetection.Comments != null && MachineDetection.Comments.StartsWith("AI:")))
-                {
-                    return PodsAISourceId;
-                }
-
-                // Last resort.
-                return OrcaHelloSourceId;
+                return "unknown";
             }
         }
 
