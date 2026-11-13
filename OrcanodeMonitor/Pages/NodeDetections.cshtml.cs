@@ -112,6 +112,17 @@ namespace OrcanodeMonitor.Pages
             return item.MachineDetection?.Tags ?? string.Empty;
         }
 
+        /// <summary>
+        /// Gets the specific detection category from an orcasite detection using general category, machine prediction
+        /// label, and source-specific positive detection rules.
+        /// </summary>
+        /// <remarks>General categories for Vessel and Human take precedence. If available,
+        /// <c>GlobalPredictionLabel</c> is parsed to <see cref="DetectionSpecificCategoryEnum"/>. For OrcaHello
+        /// detections without a prediction label, a positive machine detection maps to <see
+        /// cref="DetectionSpecificCategoryEnum.Resident"/>.</remarks>
+        /// <param name="orcasiteDetection">Detection data used to determine the specific category.</param>
+        /// <returns>A <see cref="DetectionSpecificCategoryEnum"/> value matching the detection; returns <see
+        /// cref="DetectionSpecificCategoryEnum.Unknown"/> when no specific category can be determined.</returns>
         public static DetectionSpecificCategoryEnum GetSpecificCategory(OrcasiteDetection orcasiteDetection)
         {
             if (orcasiteDetection.GeneralCategory == DetectionGeneralCategoryEnum.Vessel)

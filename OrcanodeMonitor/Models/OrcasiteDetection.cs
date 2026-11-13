@@ -115,6 +115,11 @@ namespace OrcanodeMonitor.Models
             return $"{Source} {Timestamp}";
         }
 
+        /// <summary>
+        /// Gets a value indicating whether the detection is considered reviewed.
+        /// </summary>
+        /// <remarks>Review status is inferred heuristically because it is not stored
+        /// explicitly.</remarks>
         public bool Reviewed
         {
             get
@@ -139,6 +144,13 @@ namespace OrcanodeMonitor.Models
         public string Tags => MachineDetection?.Tags ?? string.Empty;
         public string[] TagList => !string.IsNullOrEmpty(Tags) ? Tags.Split(';') : [];
 
+        /// <summary>
+        /// Gets the effective category.
+        /// </summary>
+        /// <remarks>Returns "unreviewed" when a machine detection exists and is not reviewed, or when no
+        /// machine detection exists and the item is not reviewed. Otherwise, uses the first tag when available, mapping
+        /// "srkw" to "resident". If no tags are present, returns the lowercase invariant name of the general
+        /// category.</remarks>
         public string ActualCategory
         {
             get
@@ -159,6 +171,11 @@ namespace OrcanodeMonitor.Models
             }
         }
 
+        /// <summary>
+        /// Gets the predicted category label for the detection result.
+        /// </summary>
+        /// <remarks>Uses the machine prediction label when available; otherwise returns "whale" for
+        /// human-sourced detections and "resident" as the default.</remarks>
         public string PredictedCategory
         {
             get
@@ -171,6 +188,10 @@ namespace OrcanodeMonitor.Models
                 {
                     return "whale";
                 }
+
+                // A binary model that predicts "resident" vs "not resident" is used
+                // for machine detections that don't provide a GlobalPredictionLabel,
+                // so we return "resident" as the default.
                 return "resident";
             }
         }

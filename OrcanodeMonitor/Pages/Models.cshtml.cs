@@ -79,6 +79,16 @@ namespace OrcanodeMonitor.Pages
             }
         }
 
+        /// <summary>
+        /// Computes confusion matrices by detection source from recent detections and updates predicted-versus-actual
+        /// class counts.
+        /// </summary>
+        /// <remarks>Processes detections from the past month only, tracks whether detections are in the
+        /// past week for downstream use, skips machine-source detections without machine data, and ignores detections
+        /// whose node cannot be matched.</remarks>
+        /// <param name="nodes">The orcanode records used to match detections by node identifier.</param>
+        /// <param name="detections">The detections to evaluate and aggregate into confusion matrices.</param>
+        /// <param name="ConfusionMatrices">The destination map of confusion matrices keyed by detection source to create or update.</param>
         public static void ComputeConfusionMatrices(
             List<Orcanode> nodes,
             List<OrcasiteDetection> detections,
@@ -144,6 +154,16 @@ namespace OrcanodeMonitor.Pages
             }
         }
 
+        /// <summary>
+        /// Computes model comparison metrics from confusion matrices and updates per-model results, including evaluated
+        /// count, correct count, class-specific false positive and false negative rates, and whale F1 score.
+        /// </summary>
+        /// <remarks>Skips matrices with no rows and excludes rows labeled "unreviewed" from evaluated and
+        /// rate calculations.</remarks>
+        /// <param name="ConfusionMatrices">Confusion matrices keyed by identifier, where each matrix provides reviewed row totals and predicted class
+        /// counts for a model.</param>
+        /// <param name="Results">Dictionary of model comparison results keyed by model name; entries are created when missing and updated
+        /// with computed metrics.</param>
         public static void ComputeModelComparisonResults(
             SortedDictionary<string, ConfusionMatrix> ConfusionMatrices,
             Dictionary<string, ModelComparisonResult> Results)
