@@ -163,9 +163,9 @@ namespace OrcanodeMonitor.Pages
                         continue;
                     }
                     result.Evaluated += row.Total;
-                    if (row.ActualClass == row.PredictedCounts.Keys.FirstOrDefault())
+                    if (row.PredictedCounts.TryGetValue(row.ActualClass, out long correct))
                     {
-                        result.Correct += row.PredictedCounts[row.ActualClass];
+                        result.Correct += correct;
                     }
 
                     if (row.ActualClass == "resident")
