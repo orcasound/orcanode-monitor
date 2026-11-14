@@ -8,6 +8,7 @@ namespace OrcanodeMonitor.Models
     public class ModelComparisonResult
     {
         public string Name { get; set; } = string.Empty;
+        public long Total { get; set; }
         public long Evaluated { get; set; }
         public long Correct { get; set; }
         public double Accuracy => Evaluated == 0 ? 0 : (double)Correct / Evaluated;
@@ -18,6 +19,11 @@ namespace OrcanodeMonitor.Models
         public double TransientFalseNegativeRate { get; set; }
         public double HumpbackFalsePositiveRate { get; set; }
         public double HumpbackFalseNegativeRate { get; set; }
+        public long ActualResidents { get; set; }
+        public long ActualTransients { get; set; }
+        public long ActualHumpbacks { get; set; }
+        public long ActualAllWhales { get; set; }
+        public long ActualOthers { get; set; }
     }
 
     /// <summary>
@@ -44,7 +50,10 @@ namespace OrcanodeMonitor.Models
         public SortedSet<string> PredictedClasses =>
             new(Rows.Values.SelectMany(row => row.PredictedCounts.Keys), StringComparer.OrdinalIgnoreCase);
 
-        public SortedDictionary<string, ConfusionMatrixRow> Rows { get; set; } = new();
+        /// <summary>
+        /// Gets or sets the confusion matrix rows, keyed by actual class in sorted order.
+        /// </summary>
+        public SortedDictionary<string, ConfusionMatrixRow> Rows { get; private set; } = new();
 
         private static readonly HashSet<string> WhaleClassNames = new(StringComparer.OrdinalIgnoreCase)
         {

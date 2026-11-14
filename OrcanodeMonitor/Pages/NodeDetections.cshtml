@@ -30,6 +30,35 @@
 </div>
 
 <div class="text-center">
+    <h2>Model summary for the week</h2>
+    <table style="border: 1px solid #ccc; border-collapse: separate; text-align: center; margin: 0 auto;">
+        <tr style="border-bottom: 1px solid #ccc;">
+            <th style="padding: 4px 8px;">Model</th>
+            <th style="padding: 4px 8px;">Detections</th>
+            <th style="padding: 4px 8px;">Reviewed</th>
+            <th style="padding: 4px 8px;">All Whales</th>
+            <th style="padding: 4px 8px;">Resident</th>
+            <th style="padding: 4px 8px;">Transient</th>
+            <th style="padding: 4px 8px;">Humpback</th>
+            <th style="padding: 4px 8px;">Non-Whale</th>
+        </tr>
+        @foreach (Models.ModelComparisonResult result in Model.Results.Values.OrderByDescending(r => r.ActualAllWhales))
+        {
+            <tr>
+                <td style="padding: 4px 8px; text-align: left;">
+                    @OrcanodeMonitor.Models.OrcasiteDetection.GetModelDisplayName(result.Name)
+                </td>
+                <td style="padding: 4px 8px;">@result.Total</td>
+                <td style="padding: 4px 8px;">@result.Evaluated</td>
+                <td style="padding: 4px 8px;">@result.ActualAllWhales</td>
+                <td style="padding: 4px 8px;">@result.ActualResidents</td>
+                <td style="padding: 4px 8px;">@result.ActualTransients</td>
+                <td style="padding: 4px 8px;">@result.ActualHumpbacks</td>
+                <td style="padding: 4px 8px;">@result.ActualOthers</td>
+            </tr>
+        }
+    </table>
+
     <h2>Recent Detections</h2>
 
     <!-- Filter Buttons for Time Range -->
@@ -150,69 +179,6 @@
             }
         </tbody>
     </table>
-
-    <h2 class="display-4">Model Leaderboard for @Model.NodeName</h2>
-    <table style="border: 1px solid #ccc; border-collapse: separate; text-align: center; margin: 0 auto;">
-        <tr style="border-bottom: 1px solid #ccc;">
-            <th style="padding: 4px 8px;">Model</th>
-            <th style="padding: 4px 8px;">Evaluated</th>
-            <th style="padding: 4px 8px;">Correct</th>
-            <th style="padding: 4px 8px;">Accuracy</th>
-            <th style="padding: 4px 8px;">F1</th>
-            <th style="padding: 4px 8px;">RFP%</th>
-            <th style="padding: 4px 8px;">RFN%</th>
-            <th style="padding: 4px 8px;">TFP%</th>
-            <th style="padding: 4px 8px;">TFN%</th>
-            <th style="padding: 4px 8px;">HFP%</th>
-            <th style="padding: 4px 8px;">HFN%</th>
-        </tr>
-        @foreach (var result in Model.Results.Values.OrderByDescending(r => r.F1))
-        {
-            <tr>
-                <td style="padding: 4px 8px; text-align: left;">
-                    @OrcanodeMonitor.Models.OrcasiteDetection.GetModelDisplayName(result.Name)
-                </td>
-                <td style="padding: 4px 8px;">@result.Evaluated</td>
-                <td style="padding: 4px 8px;">@result.Correct</td>
-                <td style="padding: 4px 8px;">@result.Accuracy.ToString("P1")</td>
-                <td style="padding: 4px 8px;">@result.F1.ToString("F3")</td>
-                <td style="padding: 4px 8px;">@result.ResidentFalsePositiveRate.ToString("P1")</td>
-                <td style="padding: 4px 8px;">@result.ResidentFalseNegativeRate.ToString("P1")</td>
-                <td style="padding: 4px 8px;">@result.TransientFalsePositiveRate.ToString("P1")</td>
-                <td style="padding: 4px 8px;">@result.TransientFalseNegativeRate.ToString("P1")</td>
-                <td style="padding: 4px 8px;">@result.HumpbackFalsePositiveRate.ToString("P1")</td>
-                <td style="padding: 4px 8px;">@result.HumpbackFalseNegativeRate.ToString("P1")</td>
-            </tr>
-        }
-    </table>
-
-    @foreach (var result in Model.Results.Values.OrderByDescending(r => r.F1))
-    {
-        var matrix = Model.ConfusionMatrices[result.Name];
-
-        <h2>Confusion Matrix for @OrcanodeMonitor.Models.OrcasiteDetection.GetModelDisplayName(matrix.ModelName) (rows=actual, cols=predicted)</h2>
-        <table style="border: 1px solid #ccc; border-collapse: separate; text-align: right; margin: 0 auto 32px auto;">
-            <tr style="border-bottom: 1px solid #ccc;">
-                <th style="padding: 4px 8px; text-align: left;"></th>
-                @foreach (var predictedClass in matrix.PredictedClasses)
-                {
-                    <th style="padding: 4px 8px;">@predictedClass</th>
-                }
-                <th style="padding: 4px 8px;">total</th>
-            </tr>
-            @foreach (var row in matrix.Rows.Values)
-            {
-                <tr>
-                    <td style="padding: 4px 8px; text-align: left; font-weight: bold;">@row.ActualClass</td>
-                    @foreach (var predictedClass in matrix.PredictedClasses)
-                    {
-                        <td style="padding: 4px 8px;">@(row.PredictedCounts.TryGetValue(predictedClass, out var count) ? count : 0)</td>
-                    }
-                    <td style="padding: 4px 8px; font-weight: bold;">@row.Total</td>
-                </tr>
-            }
-        </table>
-    }
 
     <script>
         var currentFilters = {

@@ -58,7 +58,7 @@ namespace OrcanodeMonitor.Pages
                     detection.MachineDetection = machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
                 }
 
-                ComputeConfusionMatrices(_nodes, detections, ConfusionMatrices);
+                ComputeConfusionMatrices(_nodes, detections, ConfusionMatrices, oneMonthAgo);
 
                 // Compute ModelComparisonResult entries from ConfusionMatrix entries.
                 ComputeModelComparisonResults(ConfusionMatrices, Results);
@@ -75,13 +75,13 @@ namespace OrcanodeMonitor.Pages
         /// <param name="nodes">The orcanode records used to match detections by node identifier.</param>
         /// <param name="detections">The detections to evaluate and aggregate into confusion matrices.</param>
         /// <param name="ConfusionMatrices">The destination map of confusion matrices keyed by detection source to create or update.</param>
+        /// <param name="startTime"></param>
         public static void ComputeConfusionMatrices(
             List<Orcanode> nodes,
             List<OrcasiteDetection> detections,
-            SortedDictionary<string, ConfusionMatrix> ConfusionMatrices)
+            SortedDictionary<string, ConfusionMatrix> ConfusionMatrices,
+            DateTime startTime)
         {
-            var oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
-
             foreach (OrcasiteDetection detection in detections)
             {
                 if (string.Equals(detection.Source, "machine", StringComparison.OrdinalIgnoreCase) &&
@@ -96,8 +96,8 @@ namespace OrcanodeMonitor.Pages
                     continue;
                 }
 
-                bool inPastMonth = detection.Timestamp >= oneMonthAgo;
-                if (!inPastMonth)
+                bool inTimeRange = detection.Timestamp >= startTime;
+                if (!inTimeRange)
                 {
                     continue;
                 }
@@ -163,6 +163,7 @@ namespace OrcanodeMonitor.Pages
 
                 foreach (var row in matrix.Rows.Values)
                 {
+                    result.Total += row.Total;
                     if (row.ActualClass == "unreviewed")
                     {
                         continue;
@@ -173,25 +174,35 @@ namespace OrcanodeMonitor.Pages
                         result.Correct += correct;
                     }
 
+                    if (OrcasiteDetection.IsWhaleTag(row.ActualClass))
+                    {
+                        result.ActualAllWhales += row.Total;
+                    }
+                    else
+                    {
+                        result.ActualOthers += row.Total;
+                    }
+
                     if (row.ActualClass == "resident")
                     {
                         long falseNegatives = row.PredictedCounts.Where(kvp => kvp.Key != "resident").Sum(kvp => kvp.Value);
 
                         result.ResidentFalseNegativeRate = (double)falseNegatives / row.Total;
+                        result.ActualResidents += row.Total;
                     }
-
-                    if (row.ActualClass == "transient")
+                    else if (row.ActualClass == "transient")
                     {
                         long falseNegatives = row.PredictedCounts.Where(kvp => kvp.Key != "transient").Sum(kvp => kvp.Value);
 
                         result.TransientFalseNegativeRate = (double)falseNegatives / row.Total;
+                        result.ActualTransients += row.Total;
                     }
-
-                    if (row.ActualClass == "humpback")
+                    else if (row.ActualClass == "humpback")
                     {
                         long falseNegatives = row.PredictedCounts.Where(kvp => kvp.Key != "humpback").Sum(kvp => kvp.Value);
 
                         result.HumpbackFalseNegativeRate = (double)falseNegatives / row.Total;
+                        result.ActualHumpbacks += row.Total;
                     }
                 }
                 result.F1 = matrix.GetWhaleF1();

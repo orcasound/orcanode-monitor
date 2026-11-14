@@ -183,6 +183,17 @@ namespace OrcanodeMonitor.Models
         public string[] TagList => !string.IsNullOrEmpty(Tags) ? Tags.Split(';') : [];
 
         /// <summary>
+        /// Determines whether a normalized tag matches a known whale-related tag.
+        /// </summary>
+        /// <param name="normalizedTag">Normalized tag to evaluate.</param>
+        /// <returns><see langword="true"/> when the tag matches a known whale-related value; otherwise, <see langword="false"/>.</returns>
+        public static bool IsWhaleTag(string normalizedTag)
+        {
+            string[] whaleTags = { "srkw", "resident", "transient", "humpback", "orca", "whale" };
+            return whaleTags.Contains(normalizedTag);
+        }
+
+        /// <summary>
         /// Gets the effective category.
         /// </summary>
         /// <remarks>Returns "unreviewed" when a machine detection exists and is not reviewed, or when no
@@ -200,12 +211,30 @@ namespace OrcanodeMonitor.Models
                 }
 
                 string[] tagList = TagList;
-                string? firstTag = tagList.FirstOrDefault(tag => !string.IsNullOrWhiteSpace(tag));
-                if (!string.IsNullOrWhiteSpace(firstTag))
+
+                // Prioritize the first whale tag, then the first non-whale tag.
+                string? firstNonWhaleTag = null;
+                foreach (string tag in tagList)
                 {
-                    string normalizedTag = firstTag.Trim().ToLowerInvariant();
-                    return (normalizedTag == "srkw") ? "resident" : normalizedTag;
+                    if (!string.IsNullOrWhiteSpace(tag))
+                    {
+                        string normalizedTag = tag.Trim().ToLowerInvariant();
+                        normalizedTag = (normalizedTag == "srkw") ? "resident" : normalizedTag;
+                        if (IsWhaleTag(normalizedTag))
+                        {
+                            return normalizedTag;
+                        }
+                        if (firstNonWhaleTag == null)
+                        {
+                            firstNonWhaleTag = normalizedTag;
+                        }
+                    }
                 }
+                if (firstNonWhaleTag != null)
+                {
+                    return firstNonWhaleTag;
+                }
+
                 return GeneralCategory.ToString().ToLowerInvariant();
             }
         }

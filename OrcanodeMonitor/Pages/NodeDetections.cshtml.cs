@@ -233,7 +233,8 @@ namespace OrcanodeMonitor.Pages
                 List<Orcanode> nodes = await _databaseContext.Orcanodes.ToListAsync();
 
                 // Compute confusion matrices.
-                ModelsModel.ComputeConfusionMatrices(nodes, _orcasiteDetections, ConfusionMatrices);
+                DateTime oneWeekAgo = DateTime.UtcNow.AddDays(-7);
+                ModelsModel.ComputeConfusionMatrices(nodes, _orcasiteDetections, ConfusionMatrices, oneWeekAgo);
 
                 // Compute model comparison results for the node.
                 ModelsModel.ComputeModelComparisonResults(ConfusionMatrices, Results);
