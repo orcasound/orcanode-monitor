@@ -20,6 +20,8 @@ namespace OrcanodeMonitor.Pages
         public List<OrcasiteDetection> RecentDetections => _orcasiteDetections;
         private readonly InferenceSystemFetcher _inferenceSystemFetcher;
         private List<MachineDetection> _machineDetections;
+        public Dictionary<string, ModelComparisonResult> Results = new();
+        public SortedDictionary<string, ConfusionMatrix> ConfusionMatrices = new();
 
         public NodeDetectionsModel(OrcanodeMonitorContext context, ILogger<NodeDetectionsModel> logger, InferenceSystemFetcher inferenceSystemFetcher)
         {
@@ -35,50 +37,39 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public string GetSourceClass(OrcasiteDetection item) => item.DetectionSource.ToString().ToLowerInvariant();
-
-        public string GetSourceLabel(OrcasiteDetection item)
-        {
-            switch (item.DetectionSource)
-            {
-                case DetectionSource.Human: return "Human";
-                case DetectionSource.PodsAI: return "PODS-AI";
-                case DetectionSource.OrcaHello: return "OrcaHello";
-                default: return "Unknown";
-            }
-        }
+        public string GetSourceClass(OrcasiteDetection item) => "source-" + item.DetectionSourceString;
 
         /// <summary>
         /// Get general (i.e., Orcasite) category CSS class for a detection.
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public static string GetGeneralCategoryClass(OrcasiteDetection item) => item.GeneralCategory.ToString().ToLowerInvariant();
+        public static string GetGeneralCategoryClass(OrcasiteDetection item) => "category-" + item.GeneralCategory.ToString().ToLowerInvariant();
 
         /// <summary>
         /// Get specific (i.e., PODS-AI) category CSS class for a detection.
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>CSS class</returns>
-        public string GetSpecificCategoryClass(OrcasiteDetection item) => GetSpecificCategory(item).ToString().ToLowerInvariant();
+        public string GetSpecificCategoryClass(OrcasiteDetection item) => "label-" + GetSpecificCategory(item).ToString().ToLowerInvariant();
 
         /// <summary>
         /// Get time range CSS classes for a detection.
         /// </summary>
         /// <param name="item">Detection</param>
         /// <returns>String containing CSS classes</returns>
-        public static string GetTimeRangeClass(OrcasiteDetection item)
+        public static string GetTimeRangeClasses(OrcasiteDetection item)
         {
             DateTime oneWeekAgo = DateTime.UtcNow.AddDays(-7);
             if (item.Timestamp.ToUniversalTime() > oneWeekAgo)
             {
-                return "pastWeek pastMonth";
+                return "timeRange-pastWeek timeRange-pastMonth";
             }
 
             DateTime oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
             if (item.Timestamp.ToUniversalTime() > oneMonthAgo)
             {
-                return "pastMonth";
+                return "timeRange-pastMonth";
             }
 
             return string.Empty;
@@ -91,11 +82,11 @@ namespace OrcanodeMonitor.Pages
         /// <returns>String containing CSS classes</returns>
         public string GetDetectionClasses(OrcasiteDetection item)
         {
-            string classes = "source-" + GetSourceClass(item) + " " +
-                             "category-" + GetGeneralCategoryClass(item) + " " +
-                             "label-" + GetSpecificCategoryClass(item) + " " +
-                             "timeRange-" + GetTimeRangeClass(item);
-            foreach (var tag in GetTags(item).Split(';'))
+            string classes = GetSourceClass(item) + " " +
+                             GetGeneralCategoryClass(item) + " " +
+                             GetSpecificCategoryClass(item) + " " +
+                             GetTimeRangeClasses(item);
+            foreach (var tag in item.TagList)
             {
                 if (!string.IsNullOrWhiteSpace(tag))
                 {
@@ -105,12 +96,23 @@ namespace OrcanodeMonitor.Pages
             return classes;
         }
 
-        public string GetTags(OrcasiteDetection item)
+        public static string GetTags(OrcasiteDetection item)
         {
-            return item.MachineDetection?.Tags ?? string.Empty;
+            return item.Tags;
         }
 
-        public DetectionSpecificCategoryEnum GetSpecificCategory(OrcasiteDetection orcasiteDetection)
+        /// <summary>
+        /// Gets the specific detection category from an orcasite detection using general category, machine prediction
+        /// label, and source-specific positive detection rules.
+        /// </summary>
+        /// <remarks>General categories for Vessel and Human take precedence. If available,
+        /// <c>GlobalPredictionLabel</c> is parsed to <see cref="DetectionSpecificCategoryEnum"/>. For OrcaHello
+        /// detections without a prediction label, a positive machine detection maps to <see
+        /// cref="DetectionSpecificCategoryEnum.Resident"/>.</remarks>
+        /// <param name="orcasiteDetection">Detection data used to determine the specific category.</param>
+        /// <returns>A <see cref="DetectionSpecificCategoryEnum"/> value matching the detection; returns <see
+        /// cref="DetectionSpecificCategoryEnum.Unknown"/> when no specific category can be determined.</returns>
+        public static DetectionSpecificCategoryEnum GetSpecificCategory(OrcasiteDetection orcasiteDetection)
         {
             if (orcasiteDetection.GeneralCategory == DetectionGeneralCategoryEnum.Vessel)
             {
@@ -137,12 +139,10 @@ namespace OrcanodeMonitor.Pages
                 return DetectionSpecificCategoryEnum.Unknown;
             }
 
-            if (orcasiteDetection.DetectionSource == DetectionSource.OrcaHello)
+            if ((orcasiteDetection.DefaultSpecificCategory.HasValue) &&
+                (machineDetection?.IsPositive(orcasiteDetection) ?? false))
             {
-                if (machineDetection.IsPositive(orcasiteDetection))
-                {
-                    return DetectionSpecificCategoryEnum.Resident;
-                }
+                return orcasiteDetection.DefaultSpecificCategory.Value;
             }
 
             return DetectionSpecificCategoryEnum.Unknown;
@@ -158,15 +158,10 @@ namespace OrcanodeMonitor.Pages
         /// </returns>
         public string GetDetectionStatus(OrcasiteDetection orcasiteDetection)
         {
-            var source = orcasiteDetection.DetectionSource;
-            if (source == DetectionSource.OrcaHello || source == DetectionSource.PodsAI)
+            MachineDetection? machineDetection = orcasiteDetection.MachineDetection;
+            if (machineDetection != null)
             {
-                MachineDetection? machineDetection = orcasiteDetection.MachineDetection;
-                if (machineDetection == null)
-                {
-                    return "Unknown";
-                }
-                else if (!machineDetection.Reviewed)
+                if (!machineDetection.Reviewed)
                 {
                     return "Unreviewed";
                 }
@@ -216,12 +211,33 @@ namespace OrcanodeMonitor.Pages
                 _machineDetections = machineDetections;
             }
 
-            if (_orcasiteDetections != null && _machineDetections != null)
+            if (_orcasiteDetections != null)
             {
-                foreach (OrcasiteDetection detection in _orcasiteDetections)
+                if (_machineDetections != null)
                 {
-                    detection.MachineDetection = _machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
+                    foreach (OrcasiteDetection detection in _orcasiteDetections)
+                    {
+                        detection.MachineDetection = _machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
+                    }
                 }
+
+                bool hasMachineSourceDetections = _orcasiteDetections.Any(d => string.Equals(d.Source, "machine", StringComparison.OrdinalIgnoreCase));
+                bool isMachineDataUnavailable = hasMachineSourceDetections && _machineDetections.Count == 0;
+                if (isMachineDataUnavailable)
+                {
+                    string sanitizedSlug = (slug ?? string.Empty).Replace("\r", string.Empty).Replace("\n", string.Empty);
+                    _logger.LogWarning("Skipping node leaderboard metrics because machine detections were unavailable for node {NodeSlug}", sanitizedSlug);
+                    return;
+                }
+
+                List<Orcanode> nodes = await _databaseContext.Orcanodes.ToListAsync();
+
+                // Compute confusion matrices.
+                DateTime oneWeekAgo = DateTime.UtcNow.AddDays(-7);
+                ModelsModel.ComputeConfusionMatrices(nodes, _orcasiteDetections, ConfusionMatrices, oneWeekAgo);
+
+                // Compute model comparison results for the node.
+                ModelsModel.ComputeModelComparisonResults(ConfusionMatrices, Results);
             }
         }
     }

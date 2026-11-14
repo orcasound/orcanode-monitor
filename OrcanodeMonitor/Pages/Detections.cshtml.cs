@@ -6,7 +6,6 @@ using OrcanodeMonitor.Core;
 using OrcanodeMonitor.Data;
 using OrcanodeMonitor.Models;
 using System.Drawing;
-using System.Reflection;
 
 namespace OrcanodeMonitor.Pages
 {
@@ -89,14 +88,19 @@ namespace OrcanodeMonitor.Pages
 
     public class DetectionData
     {
-        public DetectionSourceData[] Source = new DetectionSourceData[(int)DetectionSource.All];
+        public Dictionary<string, DetectionSourceData> Source = new ();
+
+        public DetectionSourceData GetSourceData(string source)
+        {
+            if (!Source.ContainsKey(source))
+            {
+                Source[source] = new DetectionSourceData();
+            }
+            return Source[source];
+        }
 
         public DetectionData()
         {
-            for (int i = 0; i < Source.Length; i++)
-            {
-                Source[i] = new DetectionSourceData();
-            }
         }
     }
 
@@ -143,7 +147,7 @@ namespace OrcanodeMonitor.Pages
         private Dictionary<string, DetectionData> GetDict(string timeRange) =>
             timeRange == "pastWeek" ? _detectionCountsPastWeek : _detectionCountsPastMonth;
 
-        private void EnsureNodeEntries(Dictionary<string, DetectionData> dictionary, Orcanode node, string confidenceThreshold, DetectionSource source)
+        private void EnsureNodeEntries(Dictionary<string, DetectionData> dictionary, Orcanode node, string confidenceThreshold, string source)
         {
             if (!dictionary.ContainsKey(node.OrcasoundSlug))
             {
@@ -151,7 +155,8 @@ namespace OrcanodeMonitor.Pages
             }
 
             var data = dictionary[node.OrcasoundSlug];
-            data.Source[(int)source].ConfidenceThreshold = confidenceThreshold;
+            DetectionSourceData sourceData = data.GetSourceData(source);
+            sourceData.ConfidenceThreshold = confidenceThreshold;
         }
 
         public async Task OnGetAsync()
@@ -174,12 +179,11 @@ namespace OrcanodeMonitor.Pages
                 // Fetch additional detection details (human/machine detections, confidence levels, etc.)
                 // Pass oneMonthAgo so that pagination stops once records older than a month are reached.
                 List<OrcasiteDetection>? detections = await Fetcher.GetRecentDetectionsAsync(_logger, oneMonthAgo);
-
-                // Fetch machine detection details for the past month to support both time ranges.
-                var machineDetections = await _inferenceSystemFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: "all", logger: _logger);
-
                 if (detections != null)
                 {
+                    // Fetch machine detection details for the past month to support both time ranges.
+                    var machineDetections = await _inferenceSystemFetcher.GetRecentDetectionsAsync(timeframe: "1m", hydrophoneId: "all", logger: _logger);
+
                     foreach (OrcasiteDetection detection in detections)
                     {
                         Orcanode? node = _nodes.Where(n => n.OrcasoundFeedId == detection.NodeID).FirstOrDefault();
@@ -187,34 +191,35 @@ namespace OrcanodeMonitor.Pages
                         {
                             continue;
                         }
-                        detection.MachineDetection = machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
 
                         bool inPastMonth = detection.Timestamp >= oneMonthAgo;
-                        bool inPastWeek = detection.Timestamp >= oneWeekAgo;
-
                         if (!inPastMonth)
                         {
                             continue;
                         }
+                        bool inPastWeek = detection.Timestamp >= oneWeekAgo;
+
+                        detection.MachineDetection = machineDetections.Where(d => d.Id == detection.IdempotencyKey).FirstOrDefault();
 
                         if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                         {
                             InferencePod? inferencePod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.OrcaHelloInferenceContainerName, DetectionSource.OrcaHello, _logger);
-                            EnsureNodeEntries(_detectionCountsPastMonth, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.OrcaHello);
-                            EnsureNodeEntries(_detectionCountsPastWeek, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.OrcaHello);
+                            EnsureNodeEntries(_detectionCountsPastMonth, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", OrcasiteDetection.OrcaHelloSourceId);
+                            EnsureNodeEntries(_detectionCountsPastWeek, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", OrcasiteDetection.OrcaHelloSourceId);
 
                             inferencePod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.PodsAIInferenceContainerName, DetectionSource.PodsAI, _logger);
-                            EnsureNodeEntries(_detectionCountsPastMonth, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.PodsAI);
-                            EnsureNodeEntries(_detectionCountsPastWeek, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.PodsAI);
+                            EnsureNodeEntries(_detectionCountsPastMonth, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", OrcasiteDetection.PodsAISourceId);
+                            EnsureNodeEntries(_detectionCountsPastWeek, node, inferencePod?.GetConfidenceThreshold() ?? "Unknown", OrcasiteDetection.PodsAISourceId);
                         }
 
                         DetectionData monthData = _detectionCountsPastMonth[node.OrcasoundSlug];
                         DetectionData weekData = _detectionCountsPastWeek[node.OrcasoundSlug];
-                        DetectionSourceData sourceMonthData = monthData.Source[(int)detection.DetectionSource];
-                        DetectionSourceData sourceWeekData = weekData.Source[(int)detection.DetectionSource];
+                        DetectionSourceData sourceMonthData = monthData.GetSourceData(detection.DetectionSourceString);
+                        DetectionSourceData sourceWeekData = weekData.GetSourceData(detection.DetectionSourceString);
 
-                        if (detection.DetectionSource == DetectionSource.Human)
+                        if (detection.MachineDetection == null)
                         {
+                            // This detection was reported by a human.
                             if (!detection.Reviewed)
                             {
                                 sourceMonthData.UnreviewedDetectionCount++;
@@ -305,12 +310,12 @@ namespace OrcanodeMonitor.Pages
                     if (!_detectionCountsPastMonth.ContainsKey(node.OrcasoundSlug))
                     {
                         InferencePod? pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.OrcaHelloInferenceContainerName, DetectionSource.OrcaHello, _logger);
-                        EnsureNodeEntries(_detectionCountsPastMonth, node, pod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.OrcaHello);
-                        EnsureNodeEntries(_detectionCountsPastWeek, node, pod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.OrcaHello);
+                        EnsureNodeEntries(_detectionCountsPastMonth, node, pod?.GetConfidenceThreshold() ?? "Unknown", OrcasiteDetection.OrcaHelloSourceId);
+                        EnsureNodeEntries(_detectionCountsPastWeek, node, pod?.GetConfidenceThreshold() ?? "Unknown", OrcasiteDetection.OrcaHelloSourceId);
 
                         pod = await _inferenceSystemFetcher.GetInferencePodByNameAsync(node, InferenceSystemFetcher.PodsAIInferenceContainerName, DetectionSource.PodsAI, _logger);
-                        EnsureNodeEntries(_detectionCountsPastMonth, node, pod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.PodsAI);
-                        EnsureNodeEntries(_detectionCountsPastWeek, node, pod?.GetConfidenceThreshold() ?? "Unknown", DetectionSource.PodsAI);
+                        EnsureNodeEntries(_detectionCountsPastMonth, node, pod?.GetConfidenceThreshold() ?? "Unknown", OrcasiteDetection.PodsAISourceId);
+                        EnsureNodeEntries(_detectionCountsPastWeek, node, pod?.GetConfidenceThreshold() ?? "Unknown", OrcasiteDetection.PodsAISourceId);
                     }
                 }
             }
@@ -320,13 +325,13 @@ namespace OrcanodeMonitor.Pages
             }
         }
 
-        public string GetDetectionCount(Orcanode node, string timeRange, DetectionSource source)
+        public string GetDetectionCount(Orcanode node, string timeRange, string source)
         {
             if (!GetDict(timeRange).TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
             }
-            DetectionSourceData sourceData = data.Source[(int)source];
+            DetectionSourceData sourceData = data.GetSourceData(source);
 
             // If there are no detections for the specified source at all, report "None".
             if (sourceData.TotalDetectionCount == 0)
@@ -349,13 +354,13 @@ namespace OrcanodeMonitor.Pages
             return result;
         }
 
-        public string GetDetectionBackgroundColor(Orcanode node, string timeRange, DetectionSource source)
+        public string GetDetectionBackgroundColor(Orcanode node, string timeRange, string source)
         {
             if (!GetDict(timeRange).TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return ColorTranslator.ToHtml(Color.White);
             }
-            DetectionSourceData sourceData = data.Source[(int)source];
+            DetectionSourceData sourceData = data.GetSourceData(source);
 
             if (sourceData.ReviewedDetectionCount == 0)
             {
@@ -375,13 +380,13 @@ namespace OrcanodeMonitor.Pages
         /// <param name="node"></param>
         /// <param name="timeRange">Time range: "pastWeek" or "pastMonth"</param>
         /// <returns>Threshold percentage</returns>
-        public string GetAveragePositiveConfidence(Orcanode node, string timeRange, DetectionSource source)
+        public string GetAveragePositiveConfidence(Orcanode node, string timeRange, string source)
         {
             if (!GetDict(timeRange).TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
             }
-            DetectionSourceData sourceData = data.Source[(int)source];
+            DetectionSourceData sourceData = data.GetSourceData(source);
 
             if (sourceData.PositiveDetectionCount == 0)
             {
@@ -396,13 +401,13 @@ namespace OrcanodeMonitor.Pages
         /// <param name="node"></param>
         /// <param name="timeRange">Time range: "pastWeek" or "pastMonth"</param>
         /// <returns>Threshold percentage</returns>
-        public string GetAverageNegativeConfidence(Orcanode node, string timeRange, DetectionSource source)
+        public string GetAverageNegativeConfidence(Orcanode node, string timeRange, string source)
         {
             if (!GetDict(timeRange).TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
             }
-            DetectionSourceData sourceData = data.Source[(int)source];
+            DetectionSourceData sourceData = data.GetSourceData(source);
 
             if (sourceData.NegativeDetectionCount == 0)
             {
@@ -417,13 +422,13 @@ namespace OrcanodeMonitor.Pages
         /// </summary>
         /// <param name="node">Node to check</param>
         /// <returns>Confidence threshold string</returns>
-        public string GetConfiguredConfidenceThreshold(Orcanode node, DetectionSource source)
+        public string GetConfiguredConfidenceThreshold(Orcanode node, string source)
         {
             if (!_detectionCountsPastMonth.TryGetValue(node.OrcasoundSlug, out DetectionData? data))
             {
                 return "Unknown";
             }
-            DetectionSourceData sourceData = data.Source[(int)source];
+            DetectionSourceData sourceData = data.GetSourceData(source);
 
             return sourceData.ConfidenceThreshold;
         }
