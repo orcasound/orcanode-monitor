@@ -71,6 +71,7 @@ namespace OrcanodeMonitor.Models
         public static string OrcaHelloSourceId => "orcahello";
         public static string PodsAISourceId => "podsai";
         public static string HumanSourceId => "human";
+        public static string UnknownSourceId => "unknown";
 
         /// <summary>
         /// Gets the default specific detection category for any sources that
@@ -94,7 +95,9 @@ namespace OrcanodeMonitor.Models
             {
                 if (MachineDetection == null)
                 {
-                    return HumanSourceId;
+                    return string.Equals(Source, "machine", StringComparison.OrdinalIgnoreCase)
+                        ? UnknownSourceId
+                        : HumanSourceId;
                 }
 
                 if (!string.IsNullOrWhiteSpace(MachineDetection.ModelId))
@@ -113,7 +116,7 @@ namespace OrcanodeMonitor.Models
                     return modelId;
                 }
 
-                return "unknown";
+                return UnknownSourceId;
             }
         }
 
