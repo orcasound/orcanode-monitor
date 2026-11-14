@@ -20,8 +20,10 @@ namespace OrcanodeMonitor.Pages
         public List<OrcasiteDetection> RecentDetections => _orcasiteDetections;
         private readonly InferenceSystemFetcher _inferenceSystemFetcher;
         private List<MachineDetection> _machineDetections;
-        public Dictionary<string, ModelComparisonResult> Results = new();
-        public SortedDictionary<string, ConfusionMatrix> ConfusionMatrices = new();
+        public Dictionary<string, ModelComparisonResult> WeekResults = new();
+        public Dictionary<string, ModelComparisonResult> MonthResults = new();
+        public SortedDictionary<string, ConfusionMatrix> WeekConfusionMatrices = new();
+        public SortedDictionary<string, ConfusionMatrix> MonthConfusionMatrices = new();
 
         public NodeDetectionsModel(OrcanodeMonitorContext context, ILogger<NodeDetectionsModel> logger, InferenceSystemFetcher inferenceSystemFetcher)
         {
@@ -234,10 +236,13 @@ namespace OrcanodeMonitor.Pages
 
                 // Compute confusion matrices.
                 DateTime oneWeekAgo = DateTime.UtcNow.AddDays(-7);
-                ModelsModel.ComputeConfusionMatrices(nodes, _orcasiteDetections, ConfusionMatrices, oneWeekAgo);
+                ModelsModel.ComputeConfusionMatrices(nodes, _orcasiteDetections, WeekConfusionMatrices, oneWeekAgo);
+                DateTime oneMonthAgo = DateTime.UtcNow.AddMonths(-1);
+                ModelsModel.ComputeConfusionMatrices(nodes, _orcasiteDetections, MonthConfusionMatrices, oneMonthAgo);
 
                 // Compute model comparison results for the node.
-                ModelsModel.ComputeModelComparisonResults(ConfusionMatrices, Results);
+                ModelsModel.ComputeModelComparisonResults(WeekConfusionMatrices, WeekResults);
+                ModelsModel.ComputeModelComparisonResults(MonthConfusionMatrices, MonthResults);
             }
         }
     }
