@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -37,6 +38,18 @@ namespace OrcanodeMonitor.Core
     public class MachineDetection
     {
         public string Id { get; set; } = string.Empty;
+        public string? ModelId { get; set; }
+        [JsonPropertyName("model_id")]
+        public string? ModelIdSnakeCase
+        {
+            set
+            {
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    ModelId = value;
+                }
+            }
+        }
         public string AudioUri { get; set; } = string.Empty;
         public string SpectrogramUri { get; set; } = string.Empty;
         public MachineDetectionLocation Location { get; set; } = new();
@@ -44,6 +57,10 @@ namespace OrcanodeMonitor.Core
         public string? GlobalPredictionLabel { get; set; }
         public List<MachineDetectionAnnotation> Annotations { get; set; } = new();
         public bool Reviewed { get; set; }
+
+        /// <summary>
+        /// SRKW found can be "yes" or "no".
+        /// </summary>
         public string? Found { get; set; }
         public string? Comments { get; set; }
         public double Confidence { get; set; }
