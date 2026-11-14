@@ -234,6 +234,11 @@ namespace OrcanodeMonitor.Models
                 {
                     return firstNonWhaleTag;
                 }
+                if (MachineDetection?.Found == "yes")
+                {
+                    // Default to resident when a machine detection is found but no tags are present.
+                    return "resident";
+                }
 
                 return GeneralCategory.ToString().ToLowerInvariant();
             }

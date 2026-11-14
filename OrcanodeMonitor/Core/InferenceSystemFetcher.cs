@@ -57,6 +57,10 @@ namespace OrcanodeMonitor.Core
         public string? GlobalPredictionLabel { get; set; }
         public List<MachineDetectionAnnotation> Annotations { get; set; } = new();
         public bool Reviewed { get; set; }
+
+        /// <summary>
+        /// SRKW found can be "yes" or "no".
+        /// </summary>
         public string? Found { get; set; }
         public string? Comments { get; set; }
         public double Confidence { get; set; }
