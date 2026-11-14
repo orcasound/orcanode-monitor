@@ -55,14 +55,6 @@ namespace OrcanodeMonitor.Models
         /// </summary>
         public SortedDictionary<string, ConfusionMatrixRow> Rows { get; private set; } = new();
 
-        private static readonly HashSet<string> WhaleClassNames = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "humpback",
-            "resident",
-            "transient",
-            "whale", // Used by human detections.
-        };
-
         public long TotalReviewed => Rows.Sum(r => r.Key == "unreviewed" ? 0 : r.Value.Total);
 
         /// <summary>
@@ -111,7 +103,7 @@ namespace OrcanodeMonitor.Models
             }
 
             var whaleLabels = labelsSeen
-                .Where(label => WhaleClassNames.Contains(label))
+                .Where(label => OrcasiteDetection.IsWhaleTag(label))
                 .OrderBy(label => label)
                 .ToList();
 
